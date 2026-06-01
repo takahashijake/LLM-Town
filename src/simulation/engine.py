@@ -8,7 +8,7 @@ from src.town.location import Location
 from src.utils.logger import TownLogger
 from src.agents.relationships import RelationshipManager
 from src.simulation.state import SimulationState
-from src.llm.client import FakeLLMClient 
+from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
 from src.llm.parser import clean_conversation_output
 
@@ -19,7 +19,7 @@ class SimulationEngine:
         self.logger.clear_logs()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
-        self.llm = FakeLLMClient()
+        self.llm = TransformersLLMClient()
         saved_state = self.state.load() if load_state else None
     
         if saved_state:

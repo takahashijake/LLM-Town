@@ -8,6 +8,6 @@ def build_conversation_context(speaker, listener, location_id, relationship_labe
         "relationship_score": relationship_score,
         "recent_memories": [
             memory.description
-            for memory in speaker.get_memories_about(listener.name, limit=5)
+            for memory in speaker.get_relevant_memories(listener.name, limit=5)
         ],
     }
