@@ -1,0 +1,26 @@
+[
+  {
+    "id": "agent_001",
+    "name": "Maya",
+    "personality": "curious",
+    "location_id": "town_square"
+  },
+  {
+    "id": "agent_002",
+    "name": "Ethan",
+    "personality": "skeptical",
+    "location_id": "cafe"
+  },
+  {
+    "id": "agent_003",
+    "name": "Lena",
+    "personality": "friendly",
+    "location_id": "library"
+  },
+  {
+    "id": "agent_004",
+    "name": "Carlos",
+    "personality": "ambitious",
+    "location_id": "market"
+  }
+]
