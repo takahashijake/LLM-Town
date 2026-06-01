@@ -8,6 +8,9 @@ from src.town.location import Location
 from src.utils.logger import TownLogger
 from src.agents.relationships import RelationshipManager
 from src.simulation.state import SimulationState
+from src.llm.client import FakeLLMClient 
+from src.llm.context import build_conversation_context 
+from src.llm.parser import clean_conversation_output
 
 class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
@@ -16,7 +19,7 @@ class SimulationEngine:
         self.logger.clear_logs()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
-    
+        self.llm = FakeLLMClient()
         saved_state = self.state.load() if load_state else None
     
         if saved_state:
@@ -251,7 +254,19 @@ class SimulationEngine:
             relationship_change, new_score, relationship_label = (
                 self.update_relationship_after_conversation(speaker, listener)
             )
-            conversation = speaker.speak_to(listener, relationship_label)
+            context = build_conversation_context(
+                speaker=speaker,
+                listener=listener,
+                location_id=location_id,
+                relationship_label=relationship_label,
+                relationship_score=new_score,
+            )
+            
+            conversation = self.llm.generate_conversation(context)
+            conversation = clean_conversation_output(conversation)
+            
+            if not conversation:
+                conversation = speaker.speak_to(listener, relationship_label)
 
 
 

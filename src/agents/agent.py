@@ -62,4 +62,19 @@ class Agent:
 
         return memories[-limit:]
 
+    def get_relevant_memories(self, other_name : str, limit: int = 5) -> list[Memory]: 
+        memories = [
+            memory 
+            for memory in self.memory
+            if other_name in memory.participants
+        ]
+
+        memories.sort(
+            key=lambda memory: (memory.importance, memory.day, memory.hour),
+            reverse=True
+        )
+
+        return memories[:limit]
+
+        
         
