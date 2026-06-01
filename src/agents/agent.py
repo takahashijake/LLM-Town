@@ -88,7 +88,7 @@ class Agent:
             reverse=True,
         )
     
-    return memories[:limit]
+        return memories[:limit]
 
     def initialize_needs(self) -> None:
         if not self.needs:

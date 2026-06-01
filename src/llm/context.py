@@ -28,6 +28,7 @@ def build_conversation_context(
         "occupation" : speaker.occupation,
         "primary_need" : speaker.get_primary_need(),
         "daily_event": {
+            "id" : daily_event_id,
             "name": daily_event.name,
             "description": daily_event.description,
             "location_id": daily_event.location_id,

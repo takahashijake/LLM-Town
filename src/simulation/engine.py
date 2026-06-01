@@ -76,6 +76,18 @@ class SimulationEngine:
         
         return agents
 
+    def create_daily_event_memory(self, day: int, event) -> Memory:
+        return Memory(
+            day=day,
+            hour=0,
+            type="daily_event",
+            description=f"Town event today: {event.name}. {event.description}",
+            participants=[],
+            location=event.location_id,
+            importance=3,
+            sentiment=0,
+            tags=["event", event.id] + event.tags,
+        )
     def load_locations(self, path: str) -> list[Location]:
         with open(path, "r") as f:
             data = json.load(f)
@@ -88,6 +100,10 @@ class SimulationEngine:
         for day in range(1, days + 1):
             print(f"\n=== Day {day} ===")
             self.current_daily_event = choose_daily_event() 
+            event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
+            for agent in self.agents:
+                agent.remember(event_memory)
+                
             print(
                 f"Daily Event: {self.current_daily_event.name} - "
                 f"{self.current_daily_event.description}"
