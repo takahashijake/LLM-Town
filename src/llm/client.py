@@ -69,6 +69,8 @@ class TransformersLLMClient:
         needs = context.get("needs", {})
         primary_need = context.get("primary_need", "social")
         daily_event = context.get("daily_event") 
+        allowed_actions = context.get("allowed_actions", ["chat"])
+        allowed_action_text = ", ".join(allowed_actions)
         if daily_event:
             daily_event_text = (
                 f"{daily_event['name']}: {daily_event['description']} "
@@ -107,7 +109,12 @@ class TransformersLLMClient:
     Location: {context["location"]}
     Speaker occupation: {context["occupation"]}
     Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
-    
+    Relationship behavior:
+- close friends: warm, comfortable, cooperative
+- friendly: positive, open, helpful
+- neutral: ordinary, polite, casual
+- tense: guarded, skeptical, cautious
+- enemies: distrustful, cold, unwilling to cooperate
     Relevant memories:
     {memory_text}
     Today's town event:
@@ -121,8 +128,8 @@ class TransformersLLMClient:
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
 
-    Allowed actions:
-    chat, compliment, apologize, offer_help, ask_for_help, argue, insult, storm_off, confess_feelings, share_rumor
+    Allowed actions: 
+    {allowed_action_text}
     
     Choose exactly one action from the allowed actions.
     Prefer "chat" for ordinary conversation. 

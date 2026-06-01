@@ -24,7 +24,21 @@ class ActionSystem:
         "confess_feelings": {"social": 3},
         "share_rumor": {"knowledge": 1},
     }
+    def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
+        if relationship_score <= -6:
+            return ["chat", "argue", "insult", "storm_off"]
 
+        if relationship_score <= -3:
+            return ["chat", "argue", "storm_off", "ask_for_help"]
+    
+        if relationship_score >= 6:
+            return ["chat", "compliment", "offer_help", "ask_for_help", "confess_feelings"]
+    
+        if relationship_score >= 3:
+            return ["chat", "compliment", "offer_help", "ask_for_help"]
+    
+        return ["chat", "compliment", "offer_help", "ask_for_help", "share_rumor"]
+        
     def get_need_effects(self, action: str) -> dict[str, int]:
         return self.ACTION_NEED_EFFECTS.get(action, {})
     

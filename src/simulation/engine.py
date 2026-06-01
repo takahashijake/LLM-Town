@@ -292,6 +292,7 @@ class SimulationEngine:
             relationship_change, new_score, relationship_label = (
                 self.update_relationship_after_conversation(speaker, listener)
             )
+            allowed_actions = self.actions.get_allowed_actions_for_relationship(new_score)
             context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
@@ -300,6 +301,7 @@ class SimulationEngine:
                 relationship_score=new_score,
                 current_day=day,
                 daily_event=self.current_daily_event,
+                allowed_actions=allowed_actions,
             )                    
             
             raw_output = self.llm.generate_conversation(context)
