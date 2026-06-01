@@ -1,4 +1,12 @@
-def build_conversation_context(speaker, listener, location_id, relationship_label, relationship_score, daily_event=None):
+def build_conversation_context(
+    speaker,
+    listener,
+    location_id,
+    relationship_label,
+    relationship_score,
+    current_day: int,
+    daily_event=None,
+):
     return {
         "speaker": speaker.name,
         "listener": listener.name,
@@ -8,7 +16,12 @@ def build_conversation_context(speaker, listener, location_id, relationship_labe
         "relationship_score": relationship_score,
         "relevant_memories": [
             memory.description
-            for memory in speaker.get_relevant_memories(listener.name, limit=5)
+            for memory in speaker.get_relevant_memories(
+                listener.name,
+                current_day=current_day,
+                limit=3,
+                max_age_days=5,
+            )
         ],
         "goals" : speaker.goals,
         "needs" : speaker.needs, 

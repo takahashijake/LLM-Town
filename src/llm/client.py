@@ -114,6 +114,9 @@ class TransformersLLMClient:
     {daily_event_text}
 
     If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
+    Relevant memories are rcent context, not mandatory topics. 
+    Do not repeat the same topic unless it naturally follows 
+    from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
     Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
