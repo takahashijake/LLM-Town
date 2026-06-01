@@ -9,7 +9,7 @@ class Agent:
     name: str 
     personality: str 
     location_id: str 
-    memory: list[str] = field(default_factory=list)
+    memory: list[Memory] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
 
     def move(self, location_ids: list[str]) -> None: 
