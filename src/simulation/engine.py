@@ -10,7 +10,7 @@ from src.agents.relationships import RelationshipManager
 from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
-from src.llm.parser import clean_conversation_output
+from src.llm.parser import clean_conversation_output, infer_conversation_tags
 
 class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
@@ -269,7 +269,7 @@ class SimulationEngine:
                 conversation = speaker.speak_to(listener, relationship_label)
 
 
-
+            
             memory = self.create_conversation_memory(
                 day,
                 hour,

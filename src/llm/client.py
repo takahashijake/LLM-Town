@@ -16,7 +16,7 @@ class TransformersLLMClient:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
             device_map="auto",
         )
 
@@ -27,8 +27,12 @@ class TransformersLLMClient:
             {
                 "role": "system",
                 "content": (
-                    "You generate short, natural dialogue for a town simulation. "
-                    "Return only one sentence. No narration."
+                    "You generate dialogue for a town simulation. "
+                    "Return only one short line spoken by the speaker. "
+                    "Do not include narration. "
+                    "Do not include the speaker's name. "
+                    "Do not describe body language. "
+                    "Output only the dialogue text."
                 ),
             },
             {
@@ -62,24 +66,26 @@ class TransformersLLMClient:
 
     def _build_prompt(self, context: dict) -> str:
         memories = context.get("relevant_memories", [])
-
+    
         memory_text = "\n".join(
             f"- {memory}"
             for memory in memories
         )
-
+    
         if not memory_text:
             memory_text = "- No important memories."
-
+    
         return f"""
-            Speaker: {context["speaker"]}
-            Listener: {context["listener"]}
-            Speaker personality: {context["speaker_personality"]}
-            Location: {context["location"]}
-            Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
-            
-            Relevant memories:
-            {memory_text}
-            
-            Generate one short sentence that {context["speaker"]} says to {context["listener"]}.
-            """.strip()
+    Speaker: {context["speaker"]}
+    Listener: {context["listener"]}
+    Speaker personality: {context["speaker_personality"]}
+    Location: {context["location"]}
+    Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
+    
+    Relevant memories:
+    {memory_text}
+    
+    Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Do not include {context["speaker"]}'s name.
+    Do not include narration or actions.
+""".strip()
