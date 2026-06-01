@@ -25,3 +25,8 @@ class TownLogger:
 
     def timestamp(self):
         return datetime.now().isoformat()
+
+    def clear_logs(self): 
+        self.events_file.write_text("")
+        self.conversations_file.write_text("")
+        
