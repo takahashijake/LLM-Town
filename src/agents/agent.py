@@ -65,19 +65,30 @@ class Agent:
 
         return memories[-limit:]
 
-    def get_relevant_memories(self, other_name : str, limit: int = 5) -> list[Memory]: 
+    def get_relevant_memories(
+        self,
+        other_name: str,
+        current_day: int,
+        limit: int = 5,
+        max_age_days: int = 7,
+    ) -> list[Memory]:
         memories = [
-            memory 
+            memory
             for memory in self.memory
             if other_name in memory.participants
+            and current_day - memory.day <= max_age_days
         ]
-
+    
         memories.sort(
-            key=lambda memory: (memory.importance, memory.day, memory.hour),
-            reverse=True
+            key=lambda memory: (
+                memory.importance,
+                memory.day,
+                memory.hour,
+            ),
+            reverse=True,
         )
-
-        return memories[:limit]
+    
+    return memories[:limit]
 
     def initialize_needs(self) -> None:
         if not self.needs:
