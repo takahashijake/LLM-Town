@@ -1,15 +1,15 @@
 class ActionSystem:
     ACTION_EFFECTS = {
         "chat": 0,
-        "compliment": 1,
+        "compliment": 0,
         "apologize": 1,
-        "offer_help": 1,
+        "offer_help": 0,
         "ask_for_help": 0,
-        "argue": -1,
-        "insult": -2,
+        "argue": 0,
+        "insult": -1,
         "storm_off": -1,
-        "confess_feelings": 2,
-        "share_rumor": -1,
+        "confess_feelings": 1,
+        "share_rumor": 0,
     }
 
     def infer_action(self, conversation: str, tags: list[str]) -> str:
@@ -35,10 +35,7 @@ class ActionSystem:
 
         if "bye" in text or "done talking" in text:
             return "storm_off"
-
-        if "friendly" in tags or "close friends" in tags:
-            return "compliment"
-
+            
         return "chat"
 
     def get_relationship_effect(self, action: str) -> int:

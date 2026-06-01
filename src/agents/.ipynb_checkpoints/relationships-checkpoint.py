@@ -10,21 +10,25 @@ class RelationshipManager:
 
     def change_score(self, agent_a: str, agent_b: str, amount: int) -> int:
         key = self._key(agent_a, agent_b)
-        self.scores[key] = self.scores.get(key, 0) + amount
-        return self.scores[key]
-
+        new_score = self.scores.get(key, 0) + amount
+    
+        new_score = max(-10, min(10, new_score))
+    
+        self.scores[key] = new_score
+        return new_score
+        
     def describe_relationship(self, agent_a: str, agent_b: str) -> str:
         score = self.get_score(agent_a, agent_b)
-
-        if score >= 5:
+    
+        if score >= 7:
             return "close friends"
-        if score >= 2:
+        if score >= 3:
             return "friendly"
-        if score <= -5:
+        if score <= -7:
             return "enemies"
-        if score <= -2:
+        if score <= -3:
             return "tense"
-
+    
         return "neutral"
 
     def get_conversation_weight(self, agent_a: str, agent_b: str) -> int:

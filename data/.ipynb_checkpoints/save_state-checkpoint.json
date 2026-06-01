@@ -1,0 +1,6866 @@
+{
+  "current_day": 50,
+  "current_hour": 22,
+  "agents": [
+    {
+      "id": "agent_001",
+      "name": "Maya",
+      "personality": "curious",
+      "location_id": "town_square",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What brings you here today, Ethan?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you seen the new spice vendor over there?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about the new spice vendor?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about your business ventures, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "We need to discuss those profits, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, have you seen any interesting books around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, this book here on ancient runes... doesn't it seem a bit out of place in our section?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what's your favorite book here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, what brings you here this afternoon?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what's new around here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, have you read any interesting books here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why are you avoiding eye contact?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about your business venture. I think you could do with some support.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, have you seen anything interesting happening around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard there's a new business opportunity in town. Interested?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone here trying to sell me something today?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Are you interested in expanding your stall this year?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I've got some deals I need to discuss with you.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Maya, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What's new with the old clock tower over there?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What book are you reading there so intently?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey there, what're you up to? Need any help with anything?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What do you think about the new spice stall over there?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This place looks more dangerous than it is.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what brings you here today, Lena?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, do you know much about the old manuscripts here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I thought we agreed you'd pay this time.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with your research?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What do you think about those new spices from across the river?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I think we could do business together, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This is your turn to explain, not mine.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about those new spices in the corner stall?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 24,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Let's grab some tea while we chat.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 12,
+          "type": "conversation",
+          "description": "This place is way too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What brings you here this morning, Carlos?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, you've got those crates of apples again?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What have you been up to all day?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Maya, I heard your project got approved. Congrats.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I need your help with this project, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you always come here at this hour?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you read any interesting books here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Why do you always avoid eye contact?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why do you always keep your books so organized?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in from the south?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 22,
+          "type": "conversation",
+          "description": "You're overreacting, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard you got into an argument with your supplier last week.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is way too quiet for your taste, isn't it?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What's new with the spices today, Carlos?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 18,
+          "type": "conversation",
+          "description": "You brought this up again? Fine.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 33,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I've got a big project I need your help with.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 34,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you know about these new spices they brought in from the south?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Sorry if I came across as grumpy. Just had a rough morning.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you've been here before, huh?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Why do you keep avoiding me?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you read any good books lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I heard you arguing with your mom again.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 38,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why are you reading about ancient runes again?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard there's something you want to tell me.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Maya, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I think we need to talk about this, Ethan.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you're always here early in the morning, huh?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This price is too high, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you read this book before?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 12,
+          "type": "conversation",
+          "description": "You brought this up again? I thought we agreed this wasn't an issue.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is worse than I remembered.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Maybe you should join me on this project, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 22,
+          "type": "conversation",
+          "description": "You shouldn't trust those rumors, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "enemies"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 8,
+          "type": "conversation",
+          "description": "You're still here?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "enemies"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I thought we were done talking about this.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, have you read this book on ancient languages yet?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 12,
+          "type": "conversation",
+          "description": "This place is way too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This is all very suspicious.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about this book, shall we?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Let's grab some coffee sometime and talk more.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What's new with the new bakery over there?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What have you been up to lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This place is too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What do you think about the new spice vendor over there?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Maya, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        }
+      ],
+      "relationships": {
+        "Ethan": -4,
+        "Lena": -1,
+        "Carlos": 3
+      }
+    },
+    {
+      "id": "agent_002",
+      "name": "Ethan",
+      "personality": "skeptical",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What brings you here today, Ethan?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I hear your stall is doing well.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Ethan, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, I heard you're looking to expand your business. Might there be room for cooperation?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Have you tried the new coffee here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you found anything useful here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's grab some coffee after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is eerily quiet today.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book seems more interesting than your stories.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's grab some ice cream after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, this book here on ancient runes... doesn't it seem a bit out of place in our section?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, what're you doing here so early?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 6,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Isn't everyone here just as lost as I am today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, I think we should check out those new gardens.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what's your favorite book here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, any updates on the new tech startup?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you're reading about ancient civilizations again?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, what brings you here this afternoon?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything useful yet?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what's new around here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think those pastries are from space?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Isn't everyone always saying it's going to be sunny today?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, how was your day at work?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Isn't everyone saying the peppers are the best this season?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone here trying to sell me something today?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you tried the new spices from the south yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think the new park will work?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What's new with the old clock tower over there?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place feels too quiet.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This book seems dated.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, what's next on your big project?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think we're going to find a buyer for this old barn?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, I heard they're getting a new section on science next month. Might be worth checking out.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What do you think about the new spice stall over there?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't this place getting a bit too cozy?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you tried this new spice blend yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This place looks more dangerous than it is.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, I heard your new shop is doing well. How do you manage it?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Isn't everything always about profit here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, do you know much about the old manuscripts here?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I thought we agreed you'd pay this time.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, did you see that new book on economics? It looks promising.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have we met before?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This is your turn to explain, not mine.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 24,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, look what I scored today!",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 12,
+          "type": "conversation",
+          "description": "This place is way too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, did you hear about the new tech startup in town? It might be our next big thing.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What have you been up to all day?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything useful today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everything always happening here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Why do you always avoid eye contact?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why do you always keep your books so organized?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Ethan, what book are you reading this time?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, heard your stall had some new arrivals today.",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about expanding our stall space.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 22,
+          "type": "conversation",
+          "description": "You're overreacting, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, you really are reading too much into this, aren't you?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard you got into an argument with your supplier last week.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is way too quiet for your taste, isn't it?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I heard your new startup got some traction. Congrats!",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about my startup. I think we're ready.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 18,
+          "type": "conversation",
+          "description": "You brought this up again? Fine.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 33,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything interesting today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 34,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I need your help with this project. It could make all the difference.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Ethan, seen anything interesting around here lately?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Why do you keep avoiding me?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about my new business idea.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I heard you arguing with your mom again.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 22,
+          "type": "conversation",
+          "description": "How's your day been so far, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 38,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Carlos, you're not making much sense today.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard there's something you want to tell me.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about that new business venture.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's your day going so far, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Carlos, you're not making much sense tonight.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone here acting a bit too friendly today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Are you really planning to buy that much sugar?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I think we need to talk about this, Ethan.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about expanding our stall this season.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 18,
+          "type": "conversation",
+          "description": "How's your day going, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This price is too high, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 12,
+          "type": "conversation",
+          "description": "You brought this up again? I thought we agreed this wasn't an issue.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is worse than I remembered.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you even tried the muffins here? Again?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's grab some ice cream after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 22,
+          "type": "conversation",
+          "description": "You shouldn't trust those rumors, Maya.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "enemies"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 8,
+          "type": "conversation",
+          "description": "You're still here?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "enemies"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Ethan, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I thought we were done talking about this.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I got an idea for a new business plan.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone always so positive today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, you're not keeping up with the latest tech trends.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 12,
+          "type": "conversation",
+          "description": "This place is way too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This is all very suspicious.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, you're getting way ahead of yourself with those new investments.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's the latest batch of herbs coming along?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you finished your research yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen that new shop over there? Seems legit.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, I think you're overestimating the weather app again.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This place is too quiet for my taste.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Ethan, I found this great book on ancient languages. You should check it out sometime.",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        }
+      ],
+      "relationships": {
+        "Maya": -4,
+        "Carlos": 10,
+        "Lena": 3
+      }
+    },
+    {
+      "id": "agent_003",
+      "name": "Lena",
+      "personality": "friendly",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Ethan, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you seen the new spice vendor over there?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Have you tried the new coffee here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you found anything useful here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with your project?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's grab some coffee after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place is eerily quiet today.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Maybe we should discuss this further later?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's grab some ice cream after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with that new bench over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Lena, I heard you're organizing a festival this summer. Interested in teaming up?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 6,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Isn't everyone here just as lost as I am today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 6,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with that puzzle over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Lena, I heard your new business is booming. How do you keep it going?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you're reading about ancient civilizations again?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Carlos, this book looks interesting. Need any help finding something?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, have you read any interesting books here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Let's grab some tea and talk more.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with that puzzle over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, how was your day at work?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I heard your project got funded. Congrats.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you tried the new spices from the south yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I have a new project I'm eager to discuss.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I've got an idea for a new business plan. Want to hear it?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Maya, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I need some quiet time here, if you don't mind.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book on ancient civilizations could be useful for my project.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 18,
+          "type": "conversation",
+          "description": "This place feels too quiet.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 22,
+          "type": "conversation",
+          "description": "This book seems dated.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey there, what're you up to? Need any help with anything?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book on market strategies might be interesting.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you tried this new spice blend yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Maybe we should meet again sometime?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 18,
+          "type": "conversation",
+          "description": "So, what brings you here today, Lena?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Isn't everything always about profit here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with your research?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 20,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I see you're reading about ancient civilizations. Might I join you?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have we met before?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Carlos, looking for something interesting to read?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about those new spices in the corner stall?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 24,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Let's grab some tea while we chat.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, you're reading about ancient texts again?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, what are your plans for the weekend?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything useful today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you always come here at this hour?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everything always happening here?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Carlos, found this book on gardening you might like.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's your day going so far, Carlos?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Ethan, what book are you reading this time?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Ethan, heard your stall had some new arrivals today.",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about those new spices they brought in from the south?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Lena, I heard your new shop is doing well.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 33,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything interesting today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Sorry if I came across as grumpy. Just had a rough morning.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Lena, I heard your new business idea could use some market analysis. How about we talk about it?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you've been here before, huh?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Ethan, seen anything interesting around here lately?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you read any good books lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 22,
+          "type": "conversation",
+          "description": "How's your day been so far, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 38,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why are you reading about ancient runes again?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, what do you think about starting a new business here?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's your day going so far, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Maya, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone here acting a bit too friendly today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, you finished your book?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, you're always here early in the morning, huh?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, how's your day been so far?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 18,
+          "type": "conversation",
+          "description": "How's your day going, Ethan?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I hear your project is getting some serious funding.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's grab some ice cream after this, yeah?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with that basket?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Ethan, seen anything interesting today?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't everyone always so positive today?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's grab some snacks before we head home, okay?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard you had some good news about the renovations.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about this book, shall we?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's the latest batch of herbs coming along?",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you finished your research yet?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen that new shop over there? Seems legit.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What's new with the new bakery over there?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What have you been up to lately?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Hey Maya, how's your day so far?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Maya, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Ethan, I found this great book on ancient languages. You should check it out sometime.",
+          "participants": [
+            "Lena",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        }
+      ],
+      "relationships": {
+        "Ethan": 3,
+        "Maya": -1,
+        "Carlos": -3
+      }
+    },
+    {
+      "id": "agent_004",
+      "name": "Carlos",
+      "personality": "ambitious",
+      "location_id": "market",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I hear your stall is doing well.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, I heard you're looking to expand your business. Might there be room for cooperation?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What do you think about the new spice vendor?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about your business ventures, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with your project?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "We need to discuss those profits, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book seems more interesting than your stories.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, have you seen any interesting books around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 4,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Maybe we should discuss this further later?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with that new bench over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Lena, I heard you're organizing a festival this summer. Interested in teaming up?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, what're you doing here so early?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 6,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with that puzzle over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with your stall?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, I think we should check out those new gardens.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Lena, I heard your new business is booming. How do you keep it going?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 7,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, any updates on the new tech startup?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 8,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you found anything useful yet?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Carlos, this book looks interesting. Need any help finding something?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 9,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think those pastries are from space?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Let's grab some tea and talk more.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Why are you avoiding eye contact?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey there, need any help with that puzzle over there?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 10,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk about your business venture. I think you could do with some support.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Isn't everyone always saying it's going to be sunny today?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Carlos, have you seen anything interesting happening around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I heard your project got funded. Congrats.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 11,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Isn't everyone saying the peppers are the best this season?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard there's a new business opportunity in town. Interested?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Are you interested in expanding your stall this year?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 12,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I've got some deals I need to discuss with you.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I have a new project I'm eager to discuss.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 13,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I've got an idea for a new business plan. Want to hear it?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I need some quiet time here, if you don't mind.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 14,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think the new park will work?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book on ancient civilizations could be useful for my project.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 15,
+          "hour": 18,
+          "type": "conversation",
+          "description": "What book are you reading there so intently?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, what's next on your big project?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 16,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, you really think we're going to find a buyer for this old barn?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 17,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, I heard they're getting a new section on science next month. Might be worth checking out.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 8,
+          "type": "conversation",
+          "description": "This book on market strategies might be interesting.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 18,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Isn't this place getting a bit too cozy?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Maybe we should meet again sometime?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 19,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, I heard your new shop is doing well. How do you manage it?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What do you think about those new spices from across the river?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I think we could do business together, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 21,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, did you see that new book on economics? It looks promising.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 22,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I see you're reading about ancient civilizations. Might I join you?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 23,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey Carlos, looking for something interesting to read?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 24,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, look what I scored today!",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, you're reading about ancient texts again?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, did you hear about the new tech startup in town? It might be our next big thing.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 25,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What brings you here this morning, Carlos?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, what are your plans for the weekend?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, you've got those crates of apples again?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 26,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Why are you avoiding me today?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Maya, I heard your project got approved. Congrats.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 27,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I need your help with this project, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Hey Carlos, found this book on gardening you might like.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 28,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you read any interesting books here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 12,
+          "type": "conversation",
+          "description": "How's your day going so far, Carlos?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 29,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about expanding our stall space.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 30,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Lena, I heard your new shop is doing well.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, you really are reading too much into this, aren't you?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 31,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What's new with the spices today, Carlos?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I heard your new startup got some traction. Congrats!",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about my startup. I think we're ready.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 32,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Have you seen anything interesting around here lately?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 33,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I've got a big project I need your help with.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I need your help with this project. It could make all the difference.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you know about these new spices they brought in from the south?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 35,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Lena, I heard your new business idea could use some market analysis. How about we talk about it?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 36,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about my new business idea.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with those groceries?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 37,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 38,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Carlos, you're not making much sense today.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 8,
+          "type": "conversation",
+          "description": "So, what do you think about starting a new business here?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 39,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about that new business venture.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Carlos, you're not making much sense tonight.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 40,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's talk business, shall we?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Are you really planning to buy that much sugar?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 41,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, you finished your book?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, we need to talk about expanding our stall this season.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 42,
+          "hour": 12,
+          "type": "conversation",
+          "description": "So, how's your day been so far?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you read this book before?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I hear your project is getting some serious funding.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 43,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Maybe you should join me on this project, Maya.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 44,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Have you even tried the muffins here? Again?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Hey there, need any help with that basket?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 45,
+          "hour": 22,
+          "type": "conversation",
+          "description": "So, have you read this book on ancient languages yet?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, I got an idea for a new business plan.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Ethan, you're not keeping up with the latest tech trends.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 46,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's grab some snacks before we head home, okay?",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral"
+          ]
+        },
+        {
+          "day": 47,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard you had some good news about the renovations.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "tense"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Ethan, you're getting way ahead of yourself with those new investments.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 48,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Let's grab some coffee sometime and talk more.",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        },
+        {
+          "day": 49,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, I think you're overestimating the weather app again.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "close friends"
+          ]
+        },
+        {
+          "day": 50,
+          "hour": 8,
+          "type": "conversation",
+          "description": "What do you think about the new spice vendor over there?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "friendly"
+          ]
+        }
+      ],
+      "relationships": {
+        "Ethan": 10,
+        "Maya": 3,
+        "Lena": -3
+      }
+    }
+  ],
+  "relationship_scores": {
+    "Ethan|Maya": -4,
+    "Carlos|Ethan": 10,
+    "Ethan|Lena": 3,
+    "Lena|Maya": -1,
+    "Carlos|Maya": 3,
+    "Carlos|Lena": -3
+  }
+}
