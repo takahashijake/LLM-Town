@@ -6,16 +6,52 @@ from src.agents.agent import Agent
 from src.town.location import Location
 from src.utils.logger import TownLogger
 from src.agents.relationships import RelationshipManager
+from src.simulation.state import SimulationState
 
 class SimulationEngine:
-    def __init__(self, agents_path: str, locations_path: str):
-        self.agents = self.load_agents(agents_path)
+    def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger()
         self.logger.clear_logs()
         self.relationships = RelationshipManager()
+        self.state = SimulationState()
+    
+        saved_state = self.state.load() if load_state else None
+    
+        if saved_state:
+            self.agents = self.load_agents_from_state(saved_state)
+            self.load_relationships_from_state(saved_state)
+            self.start_day = saved_state["current_day"]
+            self.start_hour = saved_state["current_hour"]
+        else:
+            self.agents = self.load_agents(agents_path)
+            self.start_day = 1
+            self.start_hour = 0
+
+    def load_agents_from_state(self, saved_state: dict) -> list[Agent]:
+        agents = []
+    
+        for agent_data in saved_state["agents"]:
+            agent = Agent(
+                id=agent_data["id"],
+                name=agent_data["name"],
+                personality=agent_data["personality"],
+                location_id=agent_data["location_id"],
+                memory=agent_data.get("memory", []),
+                relationships=agent_data.get("relationships", {}),
+            )
+            agents.append(agent)
+    
+        return agents
 
 
+    def load_relationships_from_state(self, saved_state: dict) -> None:
+        relationship_scores = saved_state.get("relationship_scores", {})
+    
+        for pair_key, score in relationship_scores.items():
+            agent_a, agent_b = pair_key.split("|")
+            self.relationships.scores[(agent_a, agent_b)] = score
+        
     def load_agents(self, path: str) -> list[Agent]:
         with open(path, "r") as f:
             data = json.load(f)
@@ -37,7 +73,8 @@ class SimulationEngine:
             for hour in hours:
                 print(f"\n--- {hour}:00 ---")
                 self.run_tick(day, hour)
-
+                self.state.save(self, day, hour)
+        self.print_relationships()
         print("\nSimulation finished.")
 
     def run_tick(self, day: int, hour: int) -> None:
@@ -48,6 +85,24 @@ class SimulationEngine:
 
         self.generate_conversations(day, hour)
 
+    def get_relationship_change(self, relationship_label: str) -> int:
+        if relationship_label == "close friends":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        if relationship_label == "friendly":
+            return random.choice([-1, 0, 0, 1, 1])
+    
+        if relationship_label == "neutral":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        if relationship_label == "tense":
+            return random.choice([-1, 0, 0, 1])
+    
+        if relationship_label == "enemies":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        return random.choice([-1, 0, 0, 0, 1])
+        
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = {}
 
@@ -75,13 +130,19 @@ class SimulationEngine:
                 weights=weights,
                 k=1
             )[0]
-            relationship_change = random.choice([-1, 0, 1, 1])
+            old_relationship_label = self.relationships.describe_relationship(
+                speaker.name,
+                listener.name,
+            )
+            
+            relationship_change = self.get_relationship_change(old_relationship_label)
             new_score = self.relationships.change_score(
                 speaker.name,
                 listener.name,
                 relationship_change,
             )
-            
+            speaker.update_relationship(listener.name, new_score)
+            listener.update_relationship(speaker.name, new_score)
             relationship_label = self.relationships.describe_relationship(
                 speaker.name,
                 listener.name,
@@ -124,3 +185,12 @@ class SimulationEngine:
             self.logger.log_event(event_record)
             
             print(event)
+
+    def print_relationships(self):
+        print("\n=== Final Relationships ===")
+
+        for agent in self.agents:
+            print(f"\n{agent.name}:")
+            for other_name, score in agent.relationships.items():
+                label = self.relationships.describe_relationship(agent.name, other_name)
+                print(f"  {other_name}: {label} ({score:+d})")
