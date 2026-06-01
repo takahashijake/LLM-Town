@@ -17,7 +17,7 @@ class SimulationState:
                     "name": agent.name,
                     "personality": agent.personality,
                     "location_id": agent.location_id,
-                    "memory": agent.memory,
+                    "memory": [memory.to_dict() for memory in agent.memory],
                     "relationships": agent.relationships,
                 }
                 for agent in engine.agents

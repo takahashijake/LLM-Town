@@ -15,8 +15,8 @@ class Agent:
     def move(self, location_ids: list[str]) -> None: 
         self.location_id = random.choice(location_ids)
 
-    def remember(self, event: str) -> None: 
-        self.memory.append(event)
+    def remember(self, memory: Memory) -> None:
+        self.memory.append(memory)
 
     def speak_to(self, other: "Agent", relationship_label: str) -> str:
         if relationship_label == "close friends":
@@ -50,4 +50,16 @@ class Agent:
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
-    
+
+    def get_recent_memories(self, limit: int = 5): 
+        return self.memory[-limit:]
+
+    def get_memories_about(self, other_name: str, limit: int = 5):
+        memories = [
+            memory for memory in self.memory
+            if other_name in memory.participants 
+        ]
+
+        return memories[-limit:]
+
+        
