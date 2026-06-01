@@ -10,7 +10,7 @@ from src.agents.relationships import RelationshipManager
 from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
-from src.llm.parser import clean_conversation_output, infer_conversation_tags
+from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
 from src.actions.action_system import ActionSystem 
 
 class SimulationEngine:
@@ -268,16 +268,20 @@ class SimulationEngine:
                 relationship_score=new_score,
             )
             
-            conversation = self.llm.generate_conversation(context)
-            conversation = clean_conversation_output(conversation)
+            raw_output = self.llm.generate_conversation(context)
+            parsed_output = parse_llm_conversation_output(raw_output)
+            
+            conversation = parsed_output["dialogue"]
+            action = parsed_output["action"]
             
             if not conversation:
                 conversation = speaker.speak_to(listener, relationship_label)
-
+                action = "chat"
+            
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.append(relationship_label)
-
-            action = self.actions.infer_action(conversation, conversation_tags) 
+            conversation_tags.append(action)
+            
             action_relationship_effect = self.actions.get_relationship_effect(action)
 
             if action_relationship_effect != 0: 

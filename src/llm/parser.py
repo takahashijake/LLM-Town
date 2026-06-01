@@ -1,6 +1,18 @@
 import json 
 
 ALLOWED_ACTIONS = {
+    "chat",
+    "compliment",
+    "apologize",
+    "offer_help",
+    "ask_for_help",
+    "argue",
+    "insult",
+    "storm_off",
+    "confess_feelings",
+    "share_rumor",
+}
+
 def clean_conversation_output(text: str) -> str:
     text = text.strip()
 
@@ -29,3 +41,23 @@ def infer_conversation_tags(text: str) -> list[str]:
         tags.append("conflict")
 
     return tags
+
+def parse_llm_conversation_output(text: str) -> dict:
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return {
+            "dialogue": clean_conversation_output(text),
+            "action": "chat",
+        }
+
+    dialogue = clean_conversation_output(data.get("dialogue", ""))
+    action = data.get("action", "chat")
+
+    if action not in ALLOWED_ACTIONS:
+        action = "chat"
+
+    return {
+        "dialogue": dialogue,
+        "action": action,
+    }
