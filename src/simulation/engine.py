@@ -203,6 +203,7 @@ class SimulationEngine:
         relationship_change: int,
         new_score: int,
         relationship_label: str,
+        action: str,
     ) -> None:
         conversation_record = {
             "day": day,
@@ -214,6 +215,7 @@ class SimulationEngine:
             "relationship_change": relationship_change,
             "relationship_score": new_score,
             "relationship_label": relationship_label,
+            "action" : action,
         }
     
         self.logger.log_conversation(conversation_record)
@@ -239,11 +241,13 @@ class SimulationEngine:
         conversation: str,
         relationship_label: str,
         new_score: int,
+        action: str,
     ) -> None:
         print(
             f"Day {day}, {hour}:00 at {location_id}: {conversation} "
             f"Relationship is now {relationship_label} "
             f"({new_score:+d})."
+            f"Action: {action}. "
         )
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = self.group_agents_by_location()
@@ -318,6 +322,7 @@ class SimulationEngine:
                 relationship_change,
                 new_score,
                 relationship_label,
+                action,
             )
             self.print_conversation_event(
                 day,
@@ -326,6 +331,7 @@ class SimulationEngine:
                 conversation,
                 relationship_label,
                 new_score,
+                action,
             )
 
     def print_relationships(self):
