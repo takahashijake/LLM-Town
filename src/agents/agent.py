@@ -15,8 +15,39 @@ class Agent:
     memory: list[Memory] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
 
+    def satisfy_need(self, need: str, amount: int) -> None:
+        self.initialize_needs()
+
+        if need not in self.needs:
+            return 
+
+        self.needs[need] = min(100, self.needs[need] + amount)
+        
+    def choose_location_by_need(self, location_id: list[str]) -> str:
+        self.initialize_needs()
+        primary_need = self.get_primary_need()
+
+        need_location_preferences = {
+            "social": ["cafe", "town_square", "market"],
+            "wealth": ["market", "cafe", "town_square"],
+            "knowledge": ["library", "town_square"],
+        }
+
+        preferred_locations = need_location_preferences.get(primary_need, location_id)
+
+        valid_preferred_locations = [
+            location_id 
+            for location_id in preferred_locations
+            if location_id in location_id
+        ]
+
+        if valid_preferred_locations and random.random() < 0.75:
+            return random.choice(valid_preferred_locations)
+
+        return random.choice(location_id)
+        
     def move(self, location_ids: list[str]) -> None: 
-        self.location_id = random.choice(location_ids)
+        self.location_id = self.choose_location_by_need(location_ids)
 
     def remember(self, memory: Memory) -> None:
         self.memory.append(memory)
@@ -53,7 +84,7 @@ class Agent:
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
-
+        
     def get_recent_memories(self, limit: int = 5): 
         return self.memory[-limit:]
 

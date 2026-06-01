@@ -119,8 +119,11 @@ class SimulationEngine:
         location_ids = [location.id for location in self.locations]
 
         for agent in self.agents:
-            agent.decay_needs()
-            agent.move(location_ids)
+    
+            if self.current_daily_event and random.random() < 0.35:
+                agent.location_id = self.current_daily_event.location_id
+            else:
+                agent.move(location_ids)
 
         self.generate_conversations(day, hour)
 
@@ -315,6 +318,10 @@ class SimulationEngine:
             
             action_relationship_effect = self.actions.get_relationship_effect(action)
 
+            need_effects = self.actions.get_need_effects(action)
+            for need, amount in need_effects.items():
+                speaker.satisfy_need(need, amount)
+                
             if action_relationship_effect != 0: 
                 new_score = self.relationships.change_score(
                     speaker.name,

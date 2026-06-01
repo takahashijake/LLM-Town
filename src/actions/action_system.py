@@ -12,6 +12,22 @@ class ActionSystem:
         "share_rumor": 0,
     }
 
+    ACTION_NEED_EFFECTS = {
+        "chat": {"social": 1},
+        "compliment": {"social": 2},
+        "apologize": {"social": 2},
+        "offer_help": {"social": 1},
+        "ask_for_help": {"knowledge": 2},
+        "argue": {},
+        "insult": {},
+        "storm_off": {},
+        "confess_feelings": {"social": 3},
+        "share_rumor": {"knowledge": 1},
+    }
+
+    def get_need_effects(self, action: str) -> dict[str, int]:
+        return self.ACTION_NEED_EFFECTS.get(action, {})
+    
     def infer_action(self, conversation: str, tags: list[str]) -> str:
         text = conversation.lower()
 
