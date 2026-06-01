@@ -267,7 +267,7 @@ class SimulationEngine:
                 location_id=location_id,
                 relationship_label=relationship_label,
                 relationship_score=new_score,
-            )
+            )                       
             
             raw_output = self.llm.generate_conversation(context)
             parsed_output = parse_llm_conversation_output(raw_output)
