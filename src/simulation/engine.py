@@ -176,7 +176,7 @@ class SimulationEngine:
         listener: Agent,
         conversation: str,
         relationship_change: int,
-        relationship_label: str,
+        tags: list[str],
     ) -> Memory:
         return Memory(
             day=day,
@@ -187,7 +187,7 @@ class SimulationEngine:
             location=location_id,
             importance=2,
             sentiment=relationship_change,
-            tags=["conversation", relationship_label],
+            tags=tags,
     )
 
     def log_conversation_event(
@@ -268,8 +268,10 @@ class SimulationEngine:
             if not conversation:
                 conversation = speaker.speak_to(listener, relationship_label)
 
-
+            conversation_tags = infer_conversation_tags(conversation)
+            conversation_tags.append(relationship_label)
             
+        
             memory = self.create_conversation_memory(
                 day,
                 hour,
@@ -278,7 +280,7 @@ class SimulationEngine:
                 listener,
                 conversation,
                 relationship_change,
-                relationship_label,
+                conversation_tags,
             )
             
             speaker.remember(memory)
