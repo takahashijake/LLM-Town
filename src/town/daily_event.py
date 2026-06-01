@@ -4,6 +4,7 @@ import random
 
 @dataclass
 class DailyEvent:
+    id: str
     name: str
     description: str
     location_id: str
