@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field 
 import random 
 
+from src.agents.memory import Memory
+
 @dataclass
 class Agent:
     id: str 
@@ -8,6 +10,7 @@ class Agent:
     personality: str 
     location_id: str 
     memory: list[str] = field(default_factory=list)
+    relationships: dict[str, int] = field(default_factory=dict)
 
     def move(self, location_ids: list[str]) -> None: 
         self.location_id = random.choice(location_ids)
@@ -44,4 +47,7 @@ class Agent:
             f"{self.name} talks with {other.name}. "
             f"{self.name} is feeling {self.personality}."
         )
+
+    def update_relationship(self, other_name: str, score: int) -> None:
+        self.relationships[other_name] = score
     
