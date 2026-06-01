@@ -92,6 +92,10 @@ class TransformersLLMClient:
     chat, compliment, apologize, offer_help, ask_for_help, argue, insult, storm_off, confess_feelings, share_rumor
     
     Choose exactly one action from the allowed actions.
-    Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Prefer "chat" for ordinary conversation. 
+    Use "argue" only when the dialogue is clearly hostile.
+    Use "insult" only for direct personal attacks. 
+    Do not choose "argue" for rumors, questions, or mild disagreement.
+        Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
 Return only JSON.
 """.strip()

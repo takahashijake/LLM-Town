@@ -109,7 +109,7 @@ class SimulationEngine:
             return random.choice([-1, 0, 0, 0, 1])
     
         if relationship_label == "enemies":
-            return random.choice([0, 0, 0, 1])
+            return random.choice([0, 0, 1, 1])
     
         return random.choice([-1, 0, 0, 0, 1])
 

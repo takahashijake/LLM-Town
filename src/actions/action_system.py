@@ -5,11 +5,11 @@ class ActionSystem:
         "apologize": 1,
         "offer_help": 0,
         "ask_for_help": 0,
-        "argue": -1,
-        "insult": -2,
+        "argue": 0,
+        "insult": -1,
         "storm_off": -1,
         "confess_feelings": 1,
-        "share_rumor": -1,
+        "share_rumor": 0,
     }
 
     def infer_action(self, conversation: str, tags: list[str]) -> str:
