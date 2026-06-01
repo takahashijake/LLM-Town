@@ -10,4 +10,5 @@ def build_conversation_context(speaker, listener, location_id, relationship_labe
             memory.description
             for memory in speaker.get_relevant_memories(listener.name, limit=5)
         ],
+        "goals" : speaker.goals,
     }

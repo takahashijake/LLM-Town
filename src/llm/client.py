@@ -65,7 +65,16 @@ class TransformersLLMClient:
 
     def _build_prompt(self, context: dict) -> str:
         memories = context.get("relevant_memories", [])
-    
+        goals = context.get("goals", [])
+
+        goal_text = "\n".join(f"- {goal}"
+            f"- {goal}"
+            for goal in goals
+        )
+
+        if not goal_text:
+            goal_text = "- No specific goals."
+            
         memory_text = "\n".join(
             f"- {memory}"
             for memory in memories
@@ -97,5 +106,6 @@ class TransformersLLMClient:
     Use "insult" only for direct personal attacks. 
     Do not choose "argue" for rumors, questions, or mild disagreement.
         Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Speaker goals: {goal_text}
 Return only JSON.
 """.strip()

@@ -47,6 +47,7 @@ class SimulationEngine:
                 name=agent_data["name"],
                 personality=agent_data["personality"],
                 location_id=agent_data["location_id"],
+                goals=agent_data.get("goals", []),
                 memory=memories,
                 relationships=agent_data.get("relationships", {}),
             )
