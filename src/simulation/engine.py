@@ -11,6 +11,7 @@ from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
 from src.llm.parser import clean_conversation_output, infer_conversation_tags
+from src.actions.action_system import ActionSystem 
 
 class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
@@ -20,6 +21,7 @@ class SimulationEngine:
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.llm = TransformersLLMClient()
+        self.actions = ActionSystem()
         saved_state = self.state.load() if load_state else None
     
         if saved_state:
@@ -270,8 +272,27 @@ class SimulationEngine:
 
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.append(relationship_label)
-            
-        
+
+            action = self.actions.infer_action(conversation, conversation_tags) 
+            action_relationship_effect = self.actions.get_relationship_effect(action)
+
+            if action_relationship_effect != 0: 
+                new_score = self.relationships.change_score(
+                    speaker.name,
+                    listener.name, 
+                    action_relationship_effect,
+                )
+
+                speaker.update_relationship(listener.name, new_score)
+                listener.update_relationship(speaker.name, new_score) 
+
+                relationship_label = self.relationships.describe_relationship(
+                    speaker.name, 
+                    listener.name,
+                )
+
+                conversation_tags.append(action)
+                
             memory = self.create_conversation_memory(
                 day,
                 hour,
