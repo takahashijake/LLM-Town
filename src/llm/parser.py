@@ -1,3 +1,6 @@
+import json 
+
+ALLOWED_ACTIONS = {
 def clean_conversation_output(text: str) -> str:
     text = text.strip()
 
