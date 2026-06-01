@@ -6,9 +6,9 @@ def main():
         locations_path="data/locations.json",
     )
 
-    engine.run(days=3, hours=[8,12,18,22])
+    engine.run(days=10, hours=[8, 12, 18, 22])
 
-if __name__== "__main__"
+if __name__== "__main__":
     main()
 
 
