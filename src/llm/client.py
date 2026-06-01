@@ -28,11 +28,10 @@ class TransformersLLMClient:
                 "role": "system",
                 "content": (
                     "You generate dialogue for a town simulation. "
-                    "Return only one short line spoken by the speaker. "
-                    "Do not include narration. "
-                    "Do not include the speaker's name. "
-                    "Do not describe body language. "
-                    "Output only the dialogue text."
+                    "Return only valid JSON." 
+                    "Use exactly this format: " 
+                    '{"dialogue": "short line of dialogue", "action": "chat"}. '
+                    "No narration. No markdown." 
                 ),
             },
             {
@@ -88,4 +87,11 @@ class TransformersLLMClient:
     Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
+
+    Allowed actions:
+    chat, compliment, apologize, offer_help, ask_for_help, argue, insult, storm_off, confess_feelings, share_rumor
+    
+    Choose exactly one action from the allowed actions.
+    Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+Return only JSON.
 """.strip()
