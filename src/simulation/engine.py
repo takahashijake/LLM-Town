@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.agents.agent import Agent
 from src.town.location import Location
-
+from src.utils.logger import TownLogger
 
 class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str):
