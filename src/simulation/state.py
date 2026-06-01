@@ -19,6 +19,7 @@ class SimulationState:
                     "location_id": agent.location_id,
                     "memory": [memory.to_dict() for memory in agent.memory],
                     "goals" : agent.goals,
+                    "needs" : agent.needs,
                     "relationships": agent.relationships,
                 }
                 for agent in engine.agents

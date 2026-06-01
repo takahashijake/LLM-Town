@@ -17,7 +17,6 @@ class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger()
-        self.logger.clear_logs()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.llm = TransformersLLMClient()
@@ -48,6 +47,7 @@ class SimulationEngine:
                 personality=agent_data["personality"],
                 location_id=agent_data["location_id"],
                 goals=agent_data.get("goals", []),
+                needs=agent_data.get("needs", {}),
                 memory=memories,
                 relationships=agent_data.get("relationships", {}),
             )
@@ -66,8 +66,12 @@ class SimulationEngine:
     def load_agents(self, path: str) -> list[Agent]:
         with open(path, "r") as f:
             data = json.load(f)
+        agents = [Agent(**agent_data) for agent_data in data]
 
-        return [Agent(**agent_data) for agent_data in data]
+        for agent in agents:
+            agent.initialize_needs()
+        
+        return agents
 
     def load_locations(self, path: str) -> list[Location]:
         with open(path, "r") as f:
@@ -92,6 +96,7 @@ class SimulationEngine:
         location_ids = [location.id for location in self.locations]
 
         for agent in self.agents:
+            agent.decay_needs()
             agent.move(location_ids)
 
         self.generate_conversations(day, hour)

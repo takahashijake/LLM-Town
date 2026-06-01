@@ -66,7 +66,17 @@ class TransformersLLMClient:
     def _build_prompt(self, context: dict) -> str:
         memories = context.get("relevant_memories", [])
         goals = context.get("goals", [])
-
+        needs = context.get("needs", {})
+        primary_need = context.get("primary_need", "social")
+        
+        need_text = "\n".join(
+            f"- {need}: {value}"
+            for need, value in needs.items()
+        )
+        
+        if not need_text:
+            need_text = "- No needs available."
+            
         goal_text = "\n".join(f"- {goal}"
             f"- {goal}"
             for goal in goals
@@ -105,7 +115,13 @@ class TransformersLLMClient:
     Use "argue" only when the dialogue is clearly hostile.
     Use "insult" only for direct personal attacks. 
     Do not choose "argue" for rumors, questions, or mild disagreement.
+    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. 
         Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Speaker goals: {goal_text}
+    Current needs: {need_text} 
+    Primary need: {primary_need}
+    If you determine that you hold significant hatred toward an individual, you may 
+    commit minor acts of violence on that individual, but never violent acts of murder,
+    and only after considering the reprocussions.
 Return only JSON.
 """.strip()
