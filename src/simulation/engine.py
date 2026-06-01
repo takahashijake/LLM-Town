@@ -97,19 +97,19 @@ class SimulationEngine:
 
     def get_relationship_change(self, relationship_label: str) -> int:
         if relationship_label == "close friends":
-            return random.choice([-1, 0, 0, 0, 1])
+            return random.choice([-1, 0, 0, 0, 0])
     
         if relationship_label == "friendly":
-            return random.choice([-1, 0, 0, 1, 1])
+            return random.choice([-1, 0, 0, 0, 1])
     
         if relationship_label == "neutral":
             return random.choice([-1, 0, 0, 0, 1])
     
         if relationship_label == "tense":
-            return random.choice([-1, 0, 0, 1])
+            return random.choice([-1, 0, 0, 0, 1])
     
         if relationship_label == "enemies":
-            return random.choice([-1, 0, 0, 0, 1])
+            return random.choice([0, 0, 0, 1])
     
         return random.choice([-1, 0, 0, 0, 1])
 
