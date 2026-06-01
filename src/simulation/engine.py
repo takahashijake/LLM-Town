@@ -277,8 +277,6 @@ class SimulationEngine:
             raw_output = self.llm.generate_conversation(context)
             parsed_output = parse_llm_conversation_output(raw_output)
 
-            print("RAW OUTPUT:", raw_output) 
-            print("PARSED OUTPUT:", parsed_output)
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
             
