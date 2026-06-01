@@ -11,6 +11,7 @@ from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
 from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
+from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
 
 class SimulationEngine:
@@ -21,6 +22,7 @@ class SimulationEngine:
         self.state = SimulationState()
         self.llm = TransformersLLMClient()
         self.actions = ActionSystem()
+        self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
     
         if saved_state:
@@ -49,6 +51,7 @@ class SimulationEngine:
                 goals=agent_data.get("goals", []),
                 needs=agent_data.get("needs", {}),
                 memory=memories,
+                occupation=agent_data.get("occupation", "unemployed"),
                 relationships=agent_data.get("relationships", {}),
             )
             agents.append(agent)
@@ -84,7 +87,11 @@ class SimulationEngine:
 
         for day in range(1, days + 1):
             print(f"\n=== Day {day} ===")
-
+            self.current_daily_event = choose_daily_event() 
+            print(
+                f"Daily Event: {self.current_daily_event.name} - "
+                f"{self.current_daily_event.description}"
+            )
             for hour in hours:
                 print(f"\n--- {hour}:00 ---")
                 self.run_tick(day, hour)
@@ -272,6 +279,7 @@ class SimulationEngine:
                 location_id=location_id,
                 relationship_label=relationship_label,
                 relationship_score=new_score,
+                daily_event=self.current_daily_event,
             )                       
             
             raw_output = self.llm.generate_conversation(context)

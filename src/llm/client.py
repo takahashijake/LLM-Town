@@ -51,9 +51,9 @@ class TransformersLLMClient:
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=40,
+                max_new_tokens=150,
                 do_sample=True,
-                temperature=0.7,
+                temperature=0.4,
                 top_p=0.9,
                 pad_token_id=self.tokenizer.eos_token_id,
             )
@@ -68,7 +68,14 @@ class TransformersLLMClient:
         goals = context.get("goals", [])
         needs = context.get("needs", {})
         primary_need = context.get("primary_need", "social")
-        
+        daily_event = context.get("daily_event") 
+        if daily_event:
+            daily_event_text = (
+                f"{daily_event['name']}: {daily_event['description']} "
+                f"Location: {daily_event['location_id']}"
+            )
+        else:
+            daily_event_text = "No major town event today."
         need_text = "\n".join(
             f"- {need}: {value}"
             for need, value in needs.items()
@@ -77,7 +84,7 @@ class TransformersLLMClient:
         if not need_text:
             need_text = "- No needs available."
             
-        goal_text = "\n".join(f"- {goal}"
+        goal_text = "\n".join(
             f"- {goal}"
             for goal in goals
         )
@@ -98,11 +105,15 @@ class TransformersLLMClient:
     Listener: {context["listener"]}
     Speaker personality: {context["speaker_personality"]}
     Location: {context["location"]}
+    Speaker occupation: {context["occupation"]}
     Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
     
     Relevant memories:
     {memory_text}
-    
+    Today's town event:
+    {daily_event_text}
+
+    If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
     Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
@@ -115,13 +126,12 @@ class TransformersLLMClient:
     Use "argue" only when the dialogue is clearly hostile.
     Use "insult" only for direct personal attacks. 
     Do not choose "argue" for rumors, questions, or mild disagreement.
-    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. 
+    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. Use the speaker's occupation to create ordinary, grounded conversation.
+Prefer topics about work, errands, relationships, local events, hobbies, or daily life. 
+Avoid making every conversation about mysteries, secrets, haunted places, clocks, hidden treasures, or shady dealings.
         Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Speaker goals: {goal_text}
     Current needs: {need_text} 
     Primary need: {primary_need}
-    If you determine that you hold significant hatred toward an individual, you may 
-    commit minor acts of violence on that individual, but never violent acts of murder,
-    and only after considering the reprocussions.
 Return only JSON.
 """.strip()

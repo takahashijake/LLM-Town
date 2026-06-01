@@ -9,6 +9,7 @@ class Agent:
     name: str 
     personality: str 
     location_id: str 
+    occupation: str = "unemployed"
     goals : list[str] = field(default_factory=list)
     needs: dict[str, int] = field(default_factory=dict)
     memory: list[Memory] = field(default_factory=list)
@@ -78,5 +79,23 @@ class Agent:
 
         return memories[:limit]
 
+    def initialize_needs(self) -> None:
+        if not self.needs:
+            self.needs = {
+                "social" : 50, 
+                "wealth" : 50, 
+                "knowledge" : 50,
+            }
+
+    def decay_needs(self) -> None: 
+        self.needs["social"] = max(0, self.needs["social"] - 1) 
+        self.needs["wealth"] = max(0, self.needs["wealth"] - 1) 
+        self.needs["knowledge"] = max(0, self.needs["knowledge"] - 1) 
+
+    def get_primary_need(self) -> str: 
+        self.initialize_needs()
+        return min(self.needs, key=self.needs.get)
+
+    
         
         

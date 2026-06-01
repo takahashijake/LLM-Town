@@ -47,7 +47,7 @@ def parse_llm_conversation_output(text: str) -> dict:
         data = json.loads(text)
     except json.JSONDecodeError:
         return {
-            "dialogue": clean_conversation_output(text),
+            "dialogue": "They exchange a brief comment.",
             "action": "chat",
         }
 
