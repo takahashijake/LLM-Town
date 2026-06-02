@@ -113,12 +113,13 @@ class TransformersLLMClient:
     Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
     Recently used topics: {recent_topic_text}
     Avoid repeating recently used topics unless directly relevant. PRefer a fresh topic based on today's event, location, occupation, primary need, or relationship
-    Relationship behavior:
-- close friends: warm, comfortable, cooperative
-- friendly: positive, open, helpful
-- neutral: ordinary, polite, casual
-- tense: guarded, skeptical, cautious
-- enemies: distrustful, cold, unwilling to cooperate
+Relationship behavior rules:
+- close friends: warm, relaxed, trusting, cooperative.
+- friendly: positive, kind, open, casually helpful.
+- neutral: polite, casual, ordinary.
+- tense: guarded, skeptical, reluctant, cautious. Do not suggest teaming up, hanging out, or helping unless the line is clearly hesitant.
+- enemies: cold, distrustful, dismissive, avoidant. Do not invite, compliment, collaborate, or offer help.
+The dialogue tone must match the relationship label. If relationship is tense or enemies, the spekaer should not sound friendly. 
     Relevant memories:
     {memory_text}
     Today's town event:

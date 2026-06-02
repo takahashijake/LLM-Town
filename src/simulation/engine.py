@@ -310,7 +310,13 @@ class SimulationEngine:
 
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
-            
+
+            if relationship_label in ["tense", "enemies"] and action in [
+                "compliment", 
+                "offer_help", 
+                "confess_feelings",
+            ]:
+                action = "chat"
             if not conversation:
                 conversation = speaker.speak_to(listener, relationship_label)
                 action = "chat"
