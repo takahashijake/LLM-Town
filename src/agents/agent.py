@@ -13,6 +13,7 @@ class Agent:
     goals : list[str] = field(default_factory=list)
     needs: dict[str, int] = field(default_factory=dict)
     memory: list[Memory] = field(default_factory=list)
+    recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
 
     def satisfy_need(self, need: str, amount: int) -> None:
@@ -22,6 +23,23 @@ class Agent:
             return 
 
         self.needs[need] = min(100, self.needs[need] + amount)
+        
+    def remember_topics(self, tags: list[str], limit: int = 10) -> None:
+        ignored_tags = {
+            "conversation", 
+            "neutral", 
+            "friendly", 
+            "tense",
+            "enemies",
+            "close friends", 
+            "chat",
+        }
+
+        for tag in tags:
+            if tag not in ignored_tags:
+                self.recent_topics.append(tag)
+
+        self.recent_topics = self.recent_topics[-limit:]
         
     def choose_location_by_need(self, location_id: list[str]) -> str:
         self.initialize_needs()

@@ -14,6 +14,7 @@ def build_conversation_context(
         "speaker_personality": speaker.personality,
         "location": location_id,
         "relationship_label": relationship_label,
+        "recent_topics" : speaker.recent_topics,
         "relationship_score": relationship_score,
         "relevant_memories": [
             memory.description

@@ -21,7 +21,8 @@ class SimulationState:
                     "goals" : agent.goals,
                     "needs" : agent.needs,
                     "relationships": agent.relationships,
-                    "occupation" : agent.occupation
+                    "occupation" : agent.occupation,
+                    "recent_topics" : agent.recent_topics
                 }
                 for agent in engine.agents
             ],

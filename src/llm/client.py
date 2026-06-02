@@ -67,6 +67,8 @@ class TransformersLLMClient:
         memories = context.get("relevant_memories", [])
         goals = context.get("goals", [])
         needs = context.get("needs", {})
+        recent_topics = context.get("recent_topics", [])
+        recent_topic_text = ", ".join(recent_topics[-5:]) if recent_topics else "None"
         primary_need = context.get("primary_need", "social")
         daily_event = context.get("daily_event") 
         allowed_actions = context.get("allowed_actions", ["chat"])
@@ -109,6 +111,8 @@ class TransformersLLMClient:
     Location: {context["location"]}
     Speaker occupation: {context["occupation"]}
     Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
+    Recently used topics: {recent_topic_text}
+    Avoid repeating recently used topics unless directly relevant. PRefer a fresh topic based on today's event, location, occupation, primary need, or relationship
     Relationship behavior:
 - close friends: warm, comfortable, cooperative
 - friendly: positive, open, helpful

@@ -52,6 +52,7 @@ class SimulationEngine:
                 needs=agent_data.get("needs", {}),
                 memory=memories,
                 occupation=agent_data.get("occupation", "unemployed"),
+                recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
             )
             agents.append(agent)
@@ -340,7 +341,10 @@ class SimulationEngine:
                 )
 
                 conversation_tags.append(action)
-                
+
+            speaker.remember_topics(conversation_tags)
+            listener.remember_topics(conversation_tags)
+            
             memory = self.create_conversation_memory(
                 day,
                 hour,
