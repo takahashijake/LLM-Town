@@ -27,9 +27,9 @@ class ActionSystem:
     def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
         if relationship_score <= -6:
             return ["chat", "argue", "insult", "storm_off"]
-
+    
         if relationship_score <= -3:
-            return ["chat", "argue", "storm_off", "ask_for_help"]
+            return ["chat", "argue", "storm_off"]
     
         if relationship_score >= 6:
             return ["chat", "compliment", "offer_help", "ask_for_help", "confess_feelings"]
