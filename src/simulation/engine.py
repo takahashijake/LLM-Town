@@ -73,7 +73,7 @@ class SimulationEngine:
         agents = [Agent(**agent_data) for agent_data in data]
 
         for agent in agents:
-            agent.initfialize_needs()
+            agent.initialize_needs()
         
         return agents
 
@@ -310,23 +310,26 @@ class SimulationEngine:
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
 
-            if relationship_label in ["tense", "enemies"] and action in [
+            if old_relationship_label in ["tense", "enemies"] and action in [
                 "compliment", 
                 "offer_help", 
                 "confess_feelings",
             ]:
                 action = "chat"
             if not conversation:
-                conversation = speaker.speak_to(listener, relationship_label)
+                conversation = speaker.speak_to(listener, old_relationship_label)
                 action = "chat"
             
             conversation_tags = infer_conversation_tags(conversation) 
             conversation_tags.append(old_relationship_label) 
             conversation_tags.append(action) 
 
-            random_relationship_effect = self.get_relationship_change(old_Relationship_label) 
-            action_relationship_effect = selfactions.get_relationship_effect(action) 
-            relationship_change = random_relationship_effect + action_relationship_effect 
+            #NOTE: THIS IS A TEMPORARY COMMENTING 
+            #random_relationship_effect = self.get_relationship_change(old_relationship_label) 
+            #action_relationship_effect = self.actions.get_relationship_effect(action) 
+            #relationship_change = random_relationship_effect + action_relationship_effect 
+
+            relationship_change = self.actions.get_relationship_effect(action)
 
             new_score, relationship_label = self.apply_relationship_change(
                 speaker,
@@ -340,8 +343,10 @@ class SimulationEngine:
                 speaker.satisfy_need(need, amount)
                 
 
-            speaker.remember_topics(conversation_tags)
-            listener.remember_topics(conversation_tags)
+            topic_memory = conversation_tags + [conversation[:80]]
+
+            speaker.remember_topics(topic_memory) 
+            listener.remember_topics(topic_memory)
             
             memory = self.create_conversation_memory(
                 day,
