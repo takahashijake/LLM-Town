@@ -174,33 +174,27 @@ class SimulationEngine:
 
         return speaker, listener
 
-    def update_relationship_after_conversation(
-        self,
-        speaker : Agent, 
-        listener : Agent, 
-    ) -> tuple[int, int, str]:
-        old_relationship_label = self.relationships.describe_relationship(
-            speaker.name,
-            listener.name,
-        )
-
-        relationship_change = self.get_relationship_change(old_relationship_label)
-
+    def apply_relationship_change(
+    self,
+    speaker: Agent,
+    listener: Agent,
+    relationship_change: int,
+    ) -> tuple[int, str]:
         new_score = self.relationships.change_score(
             speaker.name,
             listener.name,
             relationship_change,
         )
-
+    
         speaker.update_relationship(listener.name, new_score)
-        listener.update_relationship(speaker.name, new_score) 
-
+        listener.update_relationship(speaker.name, new_score)
+    
         relationship_label = self.relationships.describe_relationship(
             speaker.name,
             listener.name,
         )
-
-        return relationship_change, new_score, relationship_label
+    
+        return new_score, relationship_label
 
     def create_conversation_memory(
         self,
