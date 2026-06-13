@@ -73,7 +73,7 @@ class SimulationEngine:
         agents = [Agent(**agent_data) for agent_data in data]
 
         for agent in agents:
-            agent.initialize_needs()
+            agent.initfialize_needs()
         
         return agents
 
@@ -120,7 +120,7 @@ class SimulationEngine:
         location_ids = [location.id for location in self.locations]
 
         for agent in self.agents:
-    
+            agent.decay_needs()
             if self.current_daily_event and random.random() < 0.35:
                 agent.location_id = self.current_daily_event.location_id
             else:
