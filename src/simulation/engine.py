@@ -278,11 +278,11 @@ class SimulationEngine:
         )
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = self.group_agents_by_location()
-
+        conversation_created = 0 
         for location_id, agents_here in agents_by_location.items():
             if len(agents_here) < 2:
                 continue
-
+            conversations_created += 1 
             speaker, listener = self.choose_conversation_pair(agents_here) 
 
             old_score = self.relationships.get_score(speaker.name, listener.name) 
@@ -329,7 +329,12 @@ class SimulationEngine:
             #action_relationship_effect = self.actions.get_relationship_effect(action) 
             #relationship_change = random_relationship_effect + action_relationship_effect 
 
-            relationship_change = self.actions.get_relationship_effect(action)
+            action_relationship_effect = self.actions.get_relationship_effect(action)
+
+            if action_relationship_effect != 0:
+                relationship_change = action_relationship_effect
+            else:
+                relationship_change = self.get_relationship_change(old_relationship_label)
 
             new_score, relationship_label = self.apply_relationship_change(
                 speaker,
@@ -384,6 +389,8 @@ class SimulationEngine:
                 new_score,
                 action,
             )
+        if conversations_created == 0: 
+            print("No conversations this tick") 
 
     def print_relationships(self):
         print("\n=== Final Relationships ===")
