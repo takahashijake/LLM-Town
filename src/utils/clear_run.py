@@ -12,6 +12,6 @@ def clear_run() -> None:
         if path.exists():
             path.write_text("")
 
-        print("Previous run data cleared.")
+    print("Previous run data cleared.")
 
         
