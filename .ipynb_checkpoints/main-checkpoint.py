@@ -1,6 +1,9 @@
 from src.simulation.engine import SimulationEngine 
+from src.utils.clear_run import clear_run 
 
 def main():
+    clear_run()
+    
     engine = SimulationEngine(
         agents_path="data/agents.json",
         locations_path="data/locations.json",

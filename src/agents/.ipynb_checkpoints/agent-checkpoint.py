@@ -9,11 +9,63 @@ class Agent:
     name: str 
     personality: str 
     location_id: str 
+    occupation: str = "unemployed"
+    goals : list[str] = field(default_factory=list)
+    needs: dict[str, int] = field(default_factory=dict)
     memory: list[Memory] = field(default_factory=list)
+    recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
 
+    def satisfy_need(self, need: str, amount: int) -> None:
+        self.initialize_needs()
+
+        if need not in self.needs:
+            return 
+
+        self.needs[need] = min(100, self.needs[need] + amount)
+        
+    def remember_topics(self, tags: list[str], limit: int = 10) -> None:
+        ignored_tags = {
+            "conversation", 
+            "neutral", 
+            "friendly", 
+            "tense",
+            "enemies",
+            "close friends", 
+            "chat",
+        }
+
+        for tag in tags:
+            if tag not in ignored_tags:
+                self.recent_topics.append(tag)
+
+        self.recent_topics = self.recent_topics[-limit:]
+        
+    def choose_location_by_need(self, location_ids: list[str]) -> str:
+        self.initialize_needs()
+        primary_need = self.get_primary_need()
+
+        need_location_preferences = {
+            "social": ["cafe", "town_square", "market"],
+            "wealth": ["market", "cafe", "town_square"],
+            "knowledge": ["library", "town_square"],
+        }
+
+        preferred_locations = need_location_preferences.get(primary_need, location_ids)
+
+        valid_preferred_locations = [
+            preferred_location 
+            for preferred_location in preferred_locations 
+            if preferred_location in location_ids
+        ]
+
+        if valid_preferred_locations and random.random() < 0.75:
+            return random.choice(valid_preferred_locations)
+
+        return random.choice(location_ids)
+        
     def move(self, location_ids: list[str]) -> None: 
-        self.location_id = random.choice(location_ids)
+        self.location_id = self.choose_location_by_need(location_ids)
 
     def remember(self, memory: Memory) -> None:
         self.memory.append(memory)
@@ -50,7 +102,7 @@ class Agent:
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
-
+        
     def get_recent_memories(self, limit: int = 5): 
         return self.memory[-limit:]
 
@@ -62,19 +114,48 @@ class Agent:
 
         return memories[-limit:]
 
-    def get_relevant_memories(self, other_name : str, limit: int = 5) -> list[Memory]: 
+    def get_relevant_memories(
+        self,
+        other_name: str,
+        current_day: int,
+        limit: int = 5,
+        max_age_days: int = 7,
+    ) -> list[Memory]:
         memories = [
-            memory 
+            memory
             for memory in self.memory
             if other_name in memory.participants
+            and current_day - memory.day <= max_age_days
         ]
-
+    
         memories.sort(
-            key=lambda memory: (memory.importance, memory.day, memory.hour),
-            reverse=True
+            key=lambda memory: (
+                memory.importance,
+                memory.day,
+                memory.hour,
+            ),
+            reverse=True,
         )
-
+    
         return memories[:limit]
 
+    def initialize_needs(self) -> None:
+        if not self.needs:
+            self.needs = {
+                "social" : 50, 
+                "wealth" : 50, 
+                "knowledge" : 50,
+            }
+
+    def decay_needs(self) -> None: 
+        self.needs["social"] = max(0, self.needs["social"] - 1) 
+        self.needs["wealth"] = max(0, self.needs["wealth"] - 1) 
+        self.needs["knowledge"] = max(0, self.needs["knowledge"] - 1) 
+
+    def get_primary_need(self) -> str: 
+        self.initialize_needs()
+        return min(self.needs, key=self.needs.get)
+
+    
         
         

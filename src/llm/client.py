@@ -119,6 +119,7 @@ Relationship behavior rules:
 - neutral: polite, casual, ordinary.
 - tense: guarded, skeptical, reluctant, cautious. Do not suggest teaming up, hanging out, or helping unless the line is clearly hesitant.
 - enemies: cold, distrustful, dismissive, avoidant. Do not invite, compliment, collaborate, or offer help.
+If relationship is tense or enemies, do not use phrases like: "want to check it out together", "grab coffe", "team up", "join me", "go together"
 The dialogue tone must match the relationship label. If relationship is tense or enemies, the spekaer should not sound friendly. 
     Relevant memories:
     {memory_text}
@@ -129,7 +130,6 @@ The dialogue tone must match the relationship label. If relationship is tense or
     Relevant memories are rcent context, not mandatory topics. 
     Do not repeat the same topic unless it naturally follows 
     from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
-    Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
 

@@ -51,9 +51,9 @@ class TransformersLLMClient:
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=40,
+                max_new_tokens=150,
                 do_sample=True,
-                temperature=0.7,
+                temperature=0.4,
                 top_p=0.9,
                 pad_token_id=self.tokenizer.eos_token_id,
             )
@@ -65,7 +65,37 @@ class TransformersLLMClient:
 
     def _build_prompt(self, context: dict) -> str:
         memories = context.get("relevant_memories", [])
-    
+        goals = context.get("goals", [])
+        needs = context.get("needs", {})
+        recent_topics = context.get("recent_topics", [])
+        recent_topic_text = ", ".join(recent_topics[-5:]) if recent_topics else "None"
+        primary_need = context.get("primary_need", "social")
+        daily_event = context.get("daily_event") 
+        allowed_actions = context.get("allowed_actions", ["chat"])
+        allowed_action_text = ", ".join(allowed_actions)
+        if daily_event:
+            daily_event_text = (
+                f"{daily_event['name']}: {daily_event['description']} "
+                f"Location: {daily_event['location_id']}"
+            )
+        else:
+            daily_event_text = "No major town event today."
+        need_text = "\n".join(
+            f"- {need}: {value}"
+            for need, value in needs.items()
+        )
+        
+        if not need_text:
+            need_text = "- No needs available."
+            
+        goal_text = "\n".join(
+            f"- {goal}"
+            for goal in goals
+        )
+
+        if not goal_text:
+            goal_text = "- No specific goals."
+            
         memory_text = "\n".join(
             f"- {memory}"
             for memory in memories
@@ -79,23 +109,44 @@ class TransformersLLMClient:
     Listener: {context["listener"]}
     Speaker personality: {context["speaker_personality"]}
     Location: {context["location"]}
+    Speaker occupation: {context["occupation"]}
     Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
-    
+    Recently used topics: {recent_topic_text}
+    Avoid repeating recently used topics unless directly relevant. PRefer a fresh topic based on today's event, location, occupation, primary need, or relationship
+Relationship behavior rules:
+- close friends: warm, relaxed, trusting, cooperative.
+- friendly: positive, kind, open, casually helpful.
+- neutral: polite, casual, ordinary.
+- tense: guarded, skeptical, reluctant, cautious. Do not suggest teaming up, hanging out, or helping unless the line is clearly hesitant.
+- enemies: cold, distrustful, dismissive, avoidant. Do not invite, compliment, collaborate, or offer help.
+If relationship is tense or enemies, do not use phrases like: "want to check it out together", "grab coffe", "team up", "join me", "go together"
+The dialogue tone must match the relationship label. If relationship is tense or enemies, the spekaer should not sound friendly. 
     Relevant memories:
     {memory_text}
-    
-    Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Today's town event:
+    {daily_event_text}
+
+    If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
+    Relevant memories are rcent context, not mandatory topics. 
+    Do not repeat the same topic unless it naturally follows 
+    from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
     Do not include {context["speaker"]}'s name.
     Do not include narration or actions.
 
-    Allowed actions:
-    chat, compliment, apologize, offer_help, ask_for_help, argue, insult, storm_off, confess_feelings, share_rumor
+    Allowed actions: 
+    {allowed_action_text}
     
     Choose exactly one action from the allowed actions.
     Prefer "chat" for ordinary conversation. 
     Use "argue" only when the dialogue is clearly hostile.
     Use "insult" only for direct personal attacks. 
     Do not choose "argue" for rumors, questions, or mild disagreement.
+    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. Use the speaker's occupation to create ordinary, grounded conversation.
+Prefer topics about work, errands, relationships, local events, hobbies, or daily life. 
+Avoid making every conversation about mysteries, secrets, haunted places, clocks, hidden treasures, or shady dealings.
         Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Speaker goals: {goal_text}
+    Current needs: {need_text} 
+    Primary need: {primary_need}
 Return only JSON.
 """.strip()

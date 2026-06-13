@@ -11,17 +11,18 @@ from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
 from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
+from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
 
 class SimulationEngine:
     def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger()
-        self.logger.clear_logs()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.llm = TransformersLLMClient()
         self.actions = ActionSystem()
+        self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
     
         if saved_state:
@@ -47,7 +48,11 @@ class SimulationEngine:
                 name=agent_data["name"],
                 personality=agent_data["personality"],
                 location_id=agent_data["location_id"],
+                goals=agent_data.get("goals", []),
+                needs=agent_data.get("needs", {}),
                 memory=memories,
+                occupation=agent_data.get("occupation", "unemployed"),
+                recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
             )
             agents.append(agent)
@@ -65,9 +70,25 @@ class SimulationEngine:
     def load_agents(self, path: str) -> list[Agent]:
         with open(path, "r") as f:
             data = json.load(f)
+        agents = [Agent(**agent_data) for agent_data in data]
 
-        return [Agent(**agent_data) for agent_data in data]
+        for agent in agents:
+            agent.initialize_needs()
+        
+        return agents
 
+    def create_daily_event_memory(self, day: int, event) -> Memory:
+        return Memory(
+            day=day,
+            hour=0,
+            type="daily_event",
+            description=f"Town event today: {event.name}. {event.description}",
+            participants=[],
+            location=event.location_id,
+            importance=3,
+            sentiment=0,
+            tags=["event", event.id] + event.tags,
+        )
     def load_locations(self, path: str) -> list[Location]:
         with open(path, "r") as f:
             data = json.load(f)
@@ -79,7 +100,15 @@ class SimulationEngine:
 
         for day in range(1, days + 1):
             print(f"\n=== Day {day} ===")
-
+            self.current_daily_event = choose_daily_event() 
+            event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
+            for agent in self.agents:
+                agent.remember(event_memory)
+                
+            print(
+                f"Daily Event: {self.current_daily_event.name} - "
+                f"{self.current_daily_event.description}"
+            )
             for hour in hours:
                 print(f"\n--- {hour}:00 ---")
                 self.run_tick(day, hour)
@@ -91,7 +120,11 @@ class SimulationEngine:
         location_ids = [location.id for location in self.locations]
 
         for agent in self.agents:
-            agent.move(location_ids)
+    
+            if self.current_daily_event and random.random() < 0.35:
+                agent.location_id = self.current_daily_event.location_id
+            else:
+                agent.move(location_ids)
 
         self.generate_conversations(day, hour)
 
@@ -260,20 +293,30 @@ class SimulationEngine:
             relationship_change, new_score, relationship_label = (
                 self.update_relationship_after_conversation(speaker, listener)
             )
+            allowed_actions = self.actions.get_allowed_actions_for_relationship(new_score)
             context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
                 location_id=location_id,
                 relationship_label=relationship_label,
                 relationship_score=new_score,
-            )
+                current_day=day,
+                daily_event=self.current_daily_event,
+                allowed_actions=allowed_actions,
+            )                    
             
             raw_output = self.llm.generate_conversation(context)
             parsed_output = parse_llm_conversation_output(raw_output)
-            
+
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
-            
+
+            if relationship_label in ["tense", "enemies"] and action in [
+                "compliment", 
+                "offer_help", 
+                "confess_feelings",
+            ]:
+                action = "chat"
             if not conversation:
                 conversation = speaker.speak_to(listener, relationship_label)
                 action = "chat"
@@ -284,6 +327,10 @@ class SimulationEngine:
             
             action_relationship_effect = self.actions.get_relationship_effect(action)
 
+            need_effects = self.actions.get_need_effects(action)
+            for need, amount in need_effects.items():
+                speaker.satisfy_need(need, amount)
+                
             if action_relationship_effect != 0: 
                 new_score = self.relationships.change_score(
                     speaker.name,
@@ -300,7 +347,10 @@ class SimulationEngine:
                 )
 
                 conversation_tags.append(action)
-                
+
+            speaker.remember_topics(conversation_tags)
+            listener.remember_topics(conversation_tags)
+            
             memory = self.create_conversation_memory(
                 day,
                 hour,

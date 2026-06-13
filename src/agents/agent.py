@@ -41,7 +41,7 @@ class Agent:
 
         self.recent_topics = self.recent_topics[-limit:]
         
-    def choose_location_by_need(self, location_id: list[str]) -> str:
+    def choose_location_by_need(self, location_ids: list[str]) -> str:
         self.initialize_needs()
         primary_need = self.get_primary_need()
 
@@ -51,18 +51,18 @@ class Agent:
             "knowledge": ["library", "town_square"],
         }
 
-        preferred_locations = need_location_preferences.get(primary_need, location_id)
+        preferred_locations = need_location_preferences.get(primary_need, location_ids)
 
         valid_preferred_locations = [
-            location_id 
-            for location_id in preferred_locations
-            if location_id in location_id
+            preferred_location 
+            for preferred_location in preferred_locations 
+            if preferred_location in location_ids
         ]
 
         if valid_preferred_locations and random.random() < 0.75:
             return random.choice(valid_preferred_locations)
 
-        return random.choice(location_id)
+        return random.choice(location_ids)
         
     def move(self, location_ids: list[str]) -> None: 
         self.location_id = self.choose_location_by_need(location_ids)
