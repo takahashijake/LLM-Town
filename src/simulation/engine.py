@@ -261,21 +261,23 @@ class SimulationEngine:
         self.logger.log_event(event_record)
 
     def print_conversation_event(
-        self,
-        day: int,
-        hour: int,
-        location_id: str,
-        conversation: str,
-        relationship_label: str,
-        new_score: int,
-        action: str,
+    self,
+    day: int,
+    hour: int,
+    location_id: str,
+    conversation: str,
+    relationship_label: str,
+    new_score: int,
+    relationship_change: int,
+    action: str,
     ) -> None:
         print(
             f"Day {day}, {hour}:00 at {location_id}: {conversation} "
             f"Relationship is now {relationship_label} "
-            f"({new_score:+d})."
-            f"Action: {action}. "
+            f"(score {new_score:+d}, change {relationship_change:+d}). "
+            f"Action: {action}."
         )
+        
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = self.group_agents_by_location()
         conversation_created = 0 
