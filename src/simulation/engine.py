@@ -283,17 +283,22 @@ class SimulationEngine:
             if len(agents_here) < 2:
                 continue
 
-            speaker, listener = self.choose_conversation_pair(agents_here)
-            relationship_change, new_score, relationship_label = (
-                self.update_relationship_after_conversation(speaker, listener)
+            speaker, listener = self.choose_conversation_pair(agents_here) 
+
+            old_score = self.relationships.get_score(speaker.name, listener.name) 
+            old_relationship_label = self.relationships.describe_relationship(
+                speaker.name,
+                listener.name,
             )
-            allowed_actions = self.actions.get_allowed_actions_for_relationship(new_score)
+
+            allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
+            
             context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
                 location_id=location_id,
-                relationship_label=relationship_label,
-                relationship_score=new_score,
+                relationship_label=old_relationship_label,
+                relationship_score=old_score,
                 current_day=day,
                 daily_event=self.current_daily_event,
                 allowed_actions=allowed_actions,
@@ -315,32 +320,25 @@ class SimulationEngine:
                 conversation = speaker.speak_to(listener, relationship_label)
                 action = "chat"
             
-            conversation_tags = infer_conversation_tags(conversation)
-            conversation_tags.append(relationship_label)
-            conversation_tags.append(action)
+            conversation_tags = infer_conversation_tags(conversation) 
+            conversation_tags.append(old_relationship_label) 
+            conversation_tags.append(action) 
+
+            random_relationship_effect = self.get_relationship_change(old_Relationship_label) 
+            action_relationship_effect = selfactions.get_relationship_effect(action) 
+            relationship_change = random_relationship_effect + action_relationship_effect 
+
+            new_score, relationship_label = self.apply_relationship_change(
+                speaker,
+                listener,
+                relationship_change, 
+            )
             
-            action_relationship_effect = self.actions.get_relationship_effect(action)
 
             need_effects = self.actions.get_need_effects(action)
             for need, amount in need_effects.items():
                 speaker.satisfy_need(need, amount)
                 
-            if action_relationship_effect != 0: 
-                new_score = self.relationships.change_score(
-                    speaker.name,
-                    listener.name, 
-                    action_relationship_effect,
-                )
-
-                speaker.update_relationship(listener.name, new_score)
-                listener.update_relationship(speaker.name, new_score) 
-
-                relationship_label = self.relationships.describe_relationship(
-                    speaker.name, 
-                    listener.name,
-                )
-
-                conversation_tags.append(action)
 
             speaker.remember_topics(conversation_tags)
             listener.remember_topics(conversation_tags)
