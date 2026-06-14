@@ -312,6 +312,11 @@ class SimulationEngine:
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
 
+            inferred_action = self.actions.infer_action(conversation, conversation_tags=[])
+            if action == "chat" and inferred_action != "chat": 
+                action = inferred_action 
+                                        
+
             if old_relationship_label in ["tense", "enemies"] and action in [
                 "compliment", 
                 "offer_help", 
@@ -345,7 +350,7 @@ class SimulationEngine:
                 speaker.satisfy_need(need, amount)
                 
 
-            topic_memory = conversation_tags + [conversation[:80]]
+            topic_memory = conversation_tags
 
             speaker.remember_topics(topic_memory) 
             listener.remember_topics(topic_memory)
