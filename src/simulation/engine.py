@@ -280,11 +280,11 @@ class SimulationEngine:
         
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = self.group_agents_by_location()
-        conversation_created = 0 
+        conversations_created = 0 
         for location_id, agents_here in agents_by_location.items():
             if len(agents_here) < 2:
                 continue
-            conversations_created += 1 
+            conversations_created = conversations_created + 1 
             speaker, listener = self.choose_conversation_pair(agents_here) 
 
             old_score = self.relationships.get_score(speaker.name, listener.name) 
@@ -389,6 +389,7 @@ class SimulationEngine:
                 conversation,
                 relationship_label,
                 new_score,
+                relationship_change,
                 action,
             )
         if conversations_created == 0: 
