@@ -124,8 +124,11 @@ class Agent:
         memories = [
             memory
             for memory in self.memory
-            if other_name in memory.participants
-            and current_day - memory.day <= max_age_days
+            if current_day - memory.day <= max_age_days
+            and (
+                other_name in memory.participants
+                or memory.type == "daily_event"
+            )
         ]
     
         memories.sort(

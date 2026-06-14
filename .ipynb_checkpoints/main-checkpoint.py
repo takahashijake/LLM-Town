@@ -10,7 +10,7 @@ def main():
         load_state=False,
     )
 
-    engine.run(days=50, hours=[8, 12, 18, 22])
+    engine.run(days=25, hours=[8, 12, 18, 22])
 
 if __name__== "__main__":
     main()

@@ -120,7 +120,7 @@ class SimulationEngine:
         location_ids = [location.id for location in self.locations]
 
         for agent in self.agents:
-    
+            agent.decay_needs()
             if self.current_daily_event and random.random() < 0.35:
                 agent.location_id = self.current_daily_event.location_id
             else:
@@ -174,33 +174,27 @@ class SimulationEngine:
 
         return speaker, listener
 
-    def update_relationship_after_conversation(
-        self,
-        speaker : Agent, 
-        listener : Agent, 
-    ) -> tuple[int, int, str]:
-        old_relationship_label = self.relationships.describe_relationship(
-            speaker.name,
-            listener.name,
-        )
-
-        relationship_change = self.get_relationship_change(old_relationship_label)
-
+    def apply_relationship_change(
+    self,
+    speaker: Agent,
+    listener: Agent,
+    relationship_change: int,
+    ) -> tuple[int, str]:
         new_score = self.relationships.change_score(
             speaker.name,
             listener.name,
             relationship_change,
         )
-
+    
         speaker.update_relationship(listener.name, new_score)
-        listener.update_relationship(speaker.name, new_score) 
-
+        listener.update_relationship(speaker.name, new_score)
+    
         relationship_label = self.relationships.describe_relationship(
             speaker.name,
             listener.name,
         )
-
-        return relationship_change, new_score, relationship_label
+    
+        return new_score, relationship_label
 
     def create_conversation_memory(
         self,
@@ -267,39 +261,46 @@ class SimulationEngine:
         self.logger.log_event(event_record)
 
     def print_conversation_event(
-        self,
-        day: int,
-        hour: int,
-        location_id: str,
-        conversation: str,
-        relationship_label: str,
-        new_score: int,
-        action: str,
+    self,
+    day: int,
+    hour: int,
+    location_id: str,
+    conversation: str,
+    relationship_label: str,
+    new_score: int,
+    relationship_change: int,
+    action: str,
     ) -> None:
         print(
             f"Day {day}, {hour}:00 at {location_id}: {conversation} "
             f"Relationship is now {relationship_label} "
-            f"({new_score:+d})."
-            f"Action: {action}. "
+            f"(score {new_score:+d}, change {relationship_change:+d}). "
+            f"Action: {action}."
         )
+        
     def generate_conversations(self, day: int, hour: int) -> None:
         agents_by_location = self.group_agents_by_location()
-
+        conversations_created = 0 
         for location_id, agents_here in agents_by_location.items():
             if len(agents_here) < 2:
                 continue
+            conversations_created = conversations_created + 1 
+            speaker, listener = self.choose_conversation_pair(agents_here) 
 
-            speaker, listener = self.choose_conversation_pair(agents_here)
-            relationship_change, new_score, relationship_label = (
-                self.update_relationship_after_conversation(speaker, listener)
+            old_score = self.relationships.get_score(speaker.name, listener.name) 
+            old_relationship_label = self.relationships.describe_relationship(
+                speaker.name,
+                listener.name,
             )
-            allowed_actions = self.actions.get_allowed_actions_for_relationship(new_score)
+
+            allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
+            
             context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
                 location_id=location_id,
-                relationship_label=relationship_label,
-                relationship_score=new_score,
+                relationship_label=old_relationship_label,
+                relationship_score=old_score,
                 current_day=day,
                 daily_event=self.current_daily_event,
                 allowed_actions=allowed_actions,
@@ -311,45 +312,48 @@ class SimulationEngine:
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
 
-            if relationship_label in ["tense", "enemies"] and action in [
+            inferred_action = self.actions.infer_action(conversation, [])
+            if action == "chat" and inferred_action != "chat": 
+                action = inferred_action 
+                                        
+
+            if old_relationship_label in ["tense", "enemies"] and action in [
                 "compliment", 
                 "offer_help", 
                 "confess_feelings",
             ]:
                 action = "chat"
             if not conversation:
-                conversation = speaker.speak_to(listener, relationship_label)
+                conversation = speaker.speak_to(listener, old_relationship_label)
                 action = "chat"
             
-            conversation_tags = infer_conversation_tags(conversation)
-            conversation_tags.append(relationship_label)
-            conversation_tags.append(action)
+            conversation_tags = infer_conversation_tags(conversation) 
+            conversation_tags.append(old_relationship_label) 
+            conversation_tags.append(action) 
+
+            #NOTE: THIS IS A TEMPORARY COMMENTING 
+            #random_relationship_effect = self.get_relationship_change(old_relationship_label) 
+            #action_relationship_effect = self.actions.get_relationship_effect(action) 
+            #relationship_change = random_relationship_effect + action_relationship_effect 
+
+            relationship_change = self.actions.get_relationship_effect(action)
             
-            action_relationship_effect = self.actions.get_relationship_effect(action)
+            new_score, relationship_label = self.apply_relationship_change(
+                speaker,
+                listener,
+                relationship_change, 
+            )
+            
 
             need_effects = self.actions.get_need_effects(action)
             for need, amount in need_effects.items():
                 speaker.satisfy_need(need, amount)
                 
-            if action_relationship_effect != 0: 
-                new_score = self.relationships.change_score(
-                    speaker.name,
-                    listener.name, 
-                    action_relationship_effect,
-                )
 
-                speaker.update_relationship(listener.name, new_score)
-                listener.update_relationship(speaker.name, new_score) 
+            topic_memory = conversation_tags
 
-                relationship_label = self.relationships.describe_relationship(
-                    speaker.name, 
-                    listener.name,
-                )
-
-                conversation_tags.append(action)
-
-            speaker.remember_topics(conversation_tags)
-            listener.remember_topics(conversation_tags)
+            speaker.remember_topics(topic_memory) 
+            listener.remember_topics(topic_memory)
             
             memory = self.create_conversation_memory(
                 day,
@@ -385,8 +389,11 @@ class SimulationEngine:
                 conversation,
                 relationship_label,
                 new_score,
+                relationship_change,
                 action,
             )
+        if conversations_created == 0: 
+            print("No conversations this tick") 
 
     def print_relationships(self):
         print("\n=== Final Relationships ===")

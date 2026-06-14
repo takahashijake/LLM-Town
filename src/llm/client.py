@@ -105,53 +105,256 @@ class TransformersLLMClient:
             memory_text = "- No important memories."
     
         return f"""
-    Speaker: {context["speaker"]}
-    Listener: {context["listener"]}
-    Speaker personality: {context["speaker_personality"]}
-    Location: {context["location"]}
-    Speaker occupation: {context["occupation"]}
-    Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
-    Recently used topics: {recent_topic_text}
-    Avoid repeating recently used topics unless directly relevant. PRefer a fresh topic based on today's event, location, occupation, primary need, or relationship
+Speaker: {context["speaker"]}
+Listener: {context["listener"]}
+Speaker personality: {context["speaker_personality"]}
+Location: {context["location"]}
+Speaker occupation: {context["occupation"]}
+Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
+
+Recently used topics:
+{recent_topic_text}
+
+Relevant memories:
+{memory_text}
+
+Today's town event:
+{daily_event_text}
+
+Speaker goals:
+{goal_text}
+
+Current needs:
+{need_text}
+
+Primary need:
+{primary_need}
+
+Allowed actions:
+{allowed_action_text}
+
+IMPORTANT CONVERSATION RULES
+
+Recently used topics are context only.
+Avoid repeating recently used topics unless they are highly relevant.
+
+The daily event is only ONE possible topic.
+The conversation may also be about:
+
+* work
+* hobbies
+* family
+* friendships
+* local town life
+* recent experiences
+* errands
+* goals
+* current needs
+* personal interests
+* occupations
+* observations about the location
+
+Do not force the daily event into every conversation.
+The daily event should be mentioned in fewer than half of conversations. Many conversations should ignore the daily event completely. 
+
+A small percentage of conversations should naturally:
+- offer assistance
+- compliment someone
+- ask for advice
+- share concerns
+- discuss cooperation on a task
+
+Not every conversation should be ordinary chat.
+Today's event is happening today.
+Do not refer to today's event as:
+
+* tomorrow
+* next week
+* last night
+* yesterday
+
 Relationship behavior rules:
-- close friends: warm, relaxed, trusting, cooperative.
-- friendly: positive, kind, open, casually helpful.
-- neutral: polite, casual, ordinary.
-- tense: guarded, skeptical, reluctant, cautious. Do not suggest teaming up, hanging out, or helping unless the line is clearly hesitant.
-- enemies: cold, distrustful, dismissive, avoidant. Do not invite, compliment, collaborate, or offer help.
-If relationship is tense or enemies, do not use phrases like: "want to check it out together", "grab coffe", "team up", "join me", "go together"
-The dialogue tone must match the relationship label. If relationship is tense or enemies, the spekaer should not sound friendly. 
-    Relevant memories:
-    {memory_text}
-    Today's town event:
-    {daily_event_text}
 
-    If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
-Today's event is happening today. Do not refer to today's event as tomorrow, next week, or last night.
-    Relevant memories are rcent context, not mandatory topics. 
-    Do not repeat the same topic unless it naturally follows 
-    from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
-    Do not include {context["speaker"]}'s name.
-    Do not include narration or actions.
+close friends:
 
-    Allowed actions: 
-    {allowed_action_text}
-    
-    Choose exactly one action from the allowed actions.
-    Prefer "chat" for ordinary neutral conversation. 
-    Choose "offer_help" when the speaker offers to help. 
-    Choose "ask_for_help" when the speaker asks for advice, help, 
-    Choose "share_rumor" only when spreading uncertain information
-    Choose "compliment" when prasing the listener 
-    Use "argue" only when the dialogue is clearly hostile.
-    Use "insult" only for direct personal attacks. 
-    Do not choose "argue" for rumors, questions, or mild disagreement.
-    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. Use the speaker's occupation to create ordinary, grounded conversation.
-Prefer topics about work, errands, relationships, local events, hobbies, or daily life. 
-Avoid making every conversation about mysteries, secrets, haunted places, clocks, hidden treasures, or shady dealings.
-        Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
-    Speaker goals: {goal_text}
-    Current needs: {need_text} 
-    Primary need: {primary_need}
-Return only JSON.
+* warm
+* trusting
+* cooperative
+* comfortable sharing personal thoughts
+
+friendly:
+
+* positive
+* kind
+* casually helpful
+
+neutral:
+
+* polite
+* ordinary
+* casual
+
+tense:
+
+* guarded
+* skeptical
+* cautious
+* reluctant
+
+enemies:
+
+* cold
+* dismissive
+* distrustful
+* avoidant
+
+If relationship is tense or enemies:
+
+* do not invite the listener to activities
+* do not offer help
+* do not compliment
+* do not suggest working together
+
+Avoid phrases like:
+
+* "want to check it out together"
+* "join me"
+* "grab coffee together"
+* "team up"
+
+The dialogue tone must match the relationship.
+
+TOPIC DIVERSITY RULES
+
+Many conversations should be simple statements.
+
+Examples:
+
+* observations
+* opinions
+* reactions
+* comments about work
+* comments about the current location
+* sharing news
+* discussing goals
+* discussing needs
+
+Do not end every conversation with a question.
+
+Questions should appear in less than half of conversations.
+
+Many conversations should simply share information or make an observation.
+
+ACTION SELECTION RULES
+
+Most conversations should be "chat".
+
+Choose "chat" for:
+
+* observations
+* opinions
+* invitations
+* greetings
+* casual discussion
+* sharing information
+* discussing events
+* asking someone if they want to attend something
+* asking what they think about something
+
+Choose "ask_for_help" ONLY when the speaker genuinely needs:
+
+* assistance
+* advice
+* directions
+* expertise
+* information required to solve a problem
+
+Do NOT use "ask_for_help" for:
+
+* invitations
+* casual questions
+* social conversation
+* asking if someone wants to join an activity
+
+Choose "offer_help" when the speaker offers assistance or useful help.
+
+Choose "compliment" when praising the listener.
+
+Choose "share_rumor" only when discussing uncertain, unverified, or suspicious information.
+
+Choose "argue" only when hostile.
+
+Choose "insult" only for direct personal attacks.
+
+Choose exactly one action from the allowed actions.
+
+CONTENT RULES
+
+Do not overuse:
+
+* rumors
+* secrets
+* haunted places
+* hidden treasure
+* conspiracies
+* shady dealings
+
+Most conversations should focus on:
+
+* daily life
+* work
+* occupations
+* hobbies
+* errands
+* friendships
+* local events
+
+Conversation style:
+
+Randomly choose ONE style:
+
+- observation
+- opinion
+- personal experience
+- work discussion
+- local news
+- recommendation
+- complaint
+- joke
+- question
+
+Do not use the same style every conversation.
+
+Examples of good chat:
+
+Observation:
+"The market seems busier than usual today."
+
+Opinion:
+"I think the new bakery will do well."
+
+Personal experience:
+"I tried that recipe yesterday and it turned out surprisingly good."
+
+Work discussion:
+"I've had three customers ask about that today."
+
+Recommendation:
+"The gardening workshop was actually more useful than I expected."
+
+Complaint:
+"The rain has made deliveries a nightmare this week."
+Use the speaker's occupation when appropriate.
+
+Do not include the speaker's name.
+
+Do not include narration.
+
+Do not include stage directions.
+
+Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+
+Return ONLY valid JSON in this format:
+
+{{"dialogue": "text here", "action": "chat"}}
 """.strip()

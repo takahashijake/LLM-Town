@@ -1,0 +1,901 @@
+class ActionSystem:
+    ACTION_EFFECTS = {
+        "chat": 0,
+        "compliment": 1,
+        "apologize": 2,
+        "offer_help": 1,
+        "ask_for_help": 0,
+        "argue": -1,
+        "insult": -2,
+        "storm_off": -2,
+        "confess_feelings": 1,
+        "share_rumor": -1,
+    }
+    ACTION_NEED_EFFECTS = {
+        "chat": {"social": 1},
+        "compliment": {"social": 2},
+        "apologize": {"social": 2},
+        "offer_help": {"social": 1},
+        "ask_for_help": {"knowledge": 2},
+        "argue": {},
+        "insult": {},
+        "storm_off": {},
+        "confess_feelings": {"social": 3},
+        "share_rumor": {"knowledge": 1},
+    }
+    def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
+        if relationship_score <= -6:
+            return ["chat", "argue", "insult", "storm_off"]
+    
+        if relationship_score <= -3:
+            return ["chat", "argue", "storm_off"]
+    
+        if relationship_score >= 6:
+            return ["chat", "compliment", "offer_help", "ask_for_help", "confess_feelings"]
+    
+        if relationship_score >= 3:
+            return ["chat", "compliment", "offer_help", "ask_for_help"]
+    
+        return ["chat", "compliment", "offer_help", "ask_for_help", "share_rumor"]
+        
+    def get_need_effects(self, action: str) -> dict[str, int]:
+        return self.ACTION_NEED_EFFECTS.get(action, {})
+    
+    def infer_action(self, conversation: str, tags: list[str]) -> str:
+        text = conversation.lower()
+    
+        if "sorry" in text or "apologize" in text:
+            return "apologize"
+    
+        if (
+            "can you help" in text
+            or "could you help" in text
+            or "would you help" in text
+            or "do you know" in text
+            or "have you heard" in text
+            or "any advice" in text
+            or "what do you think" in text
+            or "would you consider" in text
+        ):
+            return "ask_for_help"
+    
+        if (
+            "i can help" in text
+            or "let me help" in text
+            or "we could help" in text
+            or "lend a hand" in text
+            or "pitching in" in text
+        ):
+            return "offer_help"
+    
+        if "love" in text or "feelings" in text:
+            return "confess_feelings"
+    
+        if (
+            "rumor" in text
+            or "gossip" in text
+            or "suspicious" in text
+            or "secretive" in text
+            or "strange" in text
+        ):
+            return "share_rumor"
+    
+        if "why are you" in text or "argue" in text or "issue" in text:
+            return "argue"
+    
+        if "stupid" in text or "idiot" in text:
+            return "insult"
+    
+        if "bye" in text or "done talking" in text:
+            return "storm_off"
+    
+        return "chat"
+
+    def get_relationship_effect(self, action: str) -> int:
+        return self.ACTION_EFFECTS.get(action, 0)import json
+import random
+from pathlib import Path
+
+from src.agents.memory import Memory
+from src.agents.agent import Agent
+from src.town.location import Location
+from src.utils.logger import TownLogger
+from src.agents.relationships import RelationshipManager
+from src.simulation.state import SimulationState
+from src.llm.client import FakeLLMClient, TransformersLLMClient
+from src.llm.context import build_conversation_context 
+from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
+from src.town.daily_event import choose_daily_event
+from src.actions.action_system import ActionSystem 
+
+class SimulationEngine:
+    def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
+        self.locations = self.load_locations(locations_path)
+        self.logger = TownLogger()
+        self.relationships = RelationshipManager()
+        self.state = SimulationState()
+        self.llm = TransformersLLMClient()
+        self.actions = ActionSystem()
+        self.current_daily_event = None
+        saved_state = self.state.load() if load_state else None
+    
+        if saved_state:
+            self.agents = self.load_agents_from_state(saved_state)
+            self.load_relationships_from_state(saved_state)
+            self.start_day = saved_state["current_day"]
+            self.start_hour = saved_state["current_hour"]
+        else:
+            self.agents = self.load_agents(agents_path)
+            self.start_day = 1
+            self.start_hour = 0
+
+    def load_agents_from_state(self, saved_state: dict) -> list[Agent]:
+        agents = []
+    
+        for agent_data in saved_state["agents"]:
+            memories = [
+                Memory(**memory_data)
+                for memory_data in agent_data.get("memory", [])
+            ]
+            agent = Agent(
+                id=agent_data["id"],
+                name=agent_data["name"],
+                personality=agent_data["personality"],
+                location_id=agent_data["location_id"],
+                goals=agent_data.get("goals", []),
+                needs=agent_data.get("needs", {}),
+                memory=memories,
+                occupation=agent_data.get("occupation", "unemployed"),
+                recent_topics=agent_data.get("recent_topics", []),
+                relationships=agent_data.get("relationships", {}),
+            )
+            agents.append(agent)
+    
+        return agents
+
+
+    def load_relationships_from_state(self, saved_state: dict) -> None:
+        relationship_scores = saved_state.get("relationship_scores", {})
+    
+        for pair_key, score in relationship_scores.items():
+            agent_a, agent_b = pair_key.split("|")
+            self.relationships.scores[(agent_a, agent_b)] = score
+        
+    def load_agents(self, path: str) -> list[Agent]:
+        with open(path, "r") as f:
+            data = json.load(f)
+        agents = [Agent(**agent_data) for agent_data in data]
+
+        for agent in agents:
+            agent.initialize_needs()
+        
+        return agents
+
+    def create_daily_event_memory(self, day: int, event) -> Memory:
+        return Memory(
+            day=day,
+            hour=0,
+            type="daily_event",
+            description=f"Town event today: {event.name}. {event.description}",
+            participants=[],
+            location=event.location_id,
+            importance=3,
+            sentiment=0,
+            tags=["event", event.id] + event.tags,
+        )
+    def load_locations(self, path: str) -> list[Location]:
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        return [Location(**location_data) for location_data in data]
+
+    def run(self, days: int, hours: list[int]) -> None:
+        print("Starting town simulation...")
+
+        for day in range(1, days + 1):
+            print(f"\n=== Day {day} ===")
+            self.current_daily_event = choose_daily_event() 
+            event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
+            for agent in self.agents:
+                agent.remember(event_memory)
+                
+            print(
+                f"Daily Event: {self.current_daily_event.name} - "
+                f"{self.current_daily_event.description}"
+            )
+            for hour in hours:
+                print(f"\n--- {hour}:00 ---")
+                self.run_tick(day, hour)
+                self.state.save(self, day, hour)
+        self.print_relationships()
+        print("\nSimulation finished.")
+
+    def run_tick(self, day: int, hour: int) -> None:
+        location_ids = [location.id for location in self.locations]
+
+        for agent in self.agents:
+            agent.decay_needs()
+            if self.current_daily_event and random.random() < 0.35:
+                agent.location_id = self.current_daily_event.location_id
+            else:
+                agent.move(location_ids)
+
+        self.generate_conversations(day, hour)
+
+    def get_relationship_change(self, relationship_label: str) -> int:
+        if relationship_label == "close friends":
+            return random.choice([-1, 0, 0, 0, 0])
+    
+        if relationship_label == "friendly":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        if relationship_label == "neutral":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        if relationship_label == "tense":
+            return random.choice([-1, 0, 0, 0, 1])
+    
+        if relationship_label == "enemies":
+            return random.choice([0, 0, 1, 1])
+    
+        return random.choice([-1, 0, 0, 0, 1])
+
+    def group_agents_by_location(self) -> dict[str, list[Agent]]:
+        agents_by_location = {}
+        
+        for agent in self.agents:
+            agents_by_location.setdefault(agent.location_id, []).append(agent)
+
+        return agents_by_location
+
+    def choose_conversation_pair(self, agents_here: list[Agent]) -> tuple[Agent, Agent]: 
+        speaker = random.choice(agents_here) 
+        possible_listeners = [ 
+            agent for agent in agents_here
+            if agent.name != speaker.name
+        ]
+
+        weights = [
+            self.relationships.get_conversation_weight(speaker.name, listener.name)
+            for listener in possible_listeners
+        ]
+
+        listener = random.choices(
+            possible_listeners,
+            weights=weights,
+            k=1,
+        )[0]
+
+        return speaker, listener
+
+    def apply_relationship_change(
+    self,
+    speaker: Agent,
+    listener: Agent,
+    relationship_change: int,
+    ) -> tuple[int, str]:
+        new_score = self.relationships.change_score(
+            speaker.name,
+            listener.name,
+            relationship_change,
+        )
+    
+        speaker.update_relationship(listener.name, new_score)
+        listener.update_relationship(speaker.name, new_score)
+    
+        relationship_label = self.relationships.describe_relationship(
+            speaker.name,
+            listener.name,
+        )
+    
+        return new_score, relationship_label
+
+    def create_conversation_memory(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        conversation: str,
+        relationship_change: int,
+        tags: list[str],
+    ) -> Memory:
+        return Memory(
+            day=day,
+            hour=hour,
+            type="conversation",
+            description=conversation,
+            participants=[speaker.name, listener.name],
+            location=location_id,
+            importance=2,
+            sentiment=relationship_change,
+            tags=tags,
+    )
+
+    def log_conversation_event(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        conversation: str,
+        relationship_change: int,
+        new_score: int,
+        relationship_label: str,
+        action: str,
+    ) -> None:
+        conversation_record = {
+            "day": day,
+            "hour": hour,
+            "location": location_id,
+            "speaker": speaker.name,
+            "listener": listener.name,
+            "conversation": conversation,
+            "relationship_change": relationship_change,
+            "relationship_score": new_score,
+            "relationship_label": relationship_label,
+            "action" : action,
+        }
+    
+        self.logger.log_conversation(conversation_record)
+    
+        event_record = {
+            "type": "conversation",
+            "day": day,
+            "hour": hour,
+            "location": location_id,
+            "participants": [
+                speaker.name,
+                listener.name,
+            ],
+        }
+    
+        self.logger.log_event(event_record)
+
+    def print_conversation_event(
+    self,
+    day: int,
+    hour: int,
+    location_id: str,
+    conversation: str,
+    relationship_label: str,
+    new_score: int,
+    relationship_change: int,
+    action: str,
+    ) -> None:
+        print(
+            f"Day {day}, {hour}:00 at {location_id}: {conversation} "
+            f"Relationship is now {relationship_label} "
+            f"(score {new_score:+d}, change {relationship_change:+d}). "
+            f"Action: {action}."
+        )
+        
+    def generate_conversations(self, day: int, hour: int) -> None:
+        agents_by_location = self.group_agents_by_location()
+        conversations_created = 0 
+        for location_id, agents_here in agents_by_location.items():
+            if len(agents_here) < 2:
+                continue
+            conversations_created = conversations_created + 1 
+            speaker, listener = self.choose_conversation_pair(agents_here) 
+
+            old_score = self.relationships.get_score(speaker.name, listener.name) 
+            old_relationship_label = self.relationships.describe_relationship(
+                speaker.name,
+                listener.name,
+            )
+
+            allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
+            
+            context = build_conversation_context(
+                speaker=speaker,
+                listener=listener,
+                location_id=location_id,
+                relationship_label=old_relationship_label,
+                relationship_score=old_score,
+                current_day=day,
+                daily_event=self.current_daily_event,
+                allowed_actions=allowed_actions,
+            )                    
+            
+            raw_output = self.llm.generate_conversation(context)
+            parsed_output = parse_llm_conversation_output(raw_output)
+
+            conversation = parsed_output["dialogue"]
+            action = parsed_output["action"]
+
+            inferred_action = self.actions.infer_action(conversation, [])
+            if action == "chat" and inferred_action != "chat": 
+                action = inferred_action 
+                                        
+
+            if old_relationship_label in ["tense", "enemies"] and action in [
+                "compliment", 
+                "offer_help", 
+                "confess_feelings",
+            ]:
+                action = "chat"
+            if not conversation:
+                conversation = speaker.speak_to(listener, old_relationship_label)
+                action = "chat"
+            
+            conversation_tags = infer_conversation_tags(conversation) 
+            conversation_tags.append(old_relationship_label) 
+            conversation_tags.append(action) 
+
+            #NOTE: THIS IS A TEMPORARY COMMENTING 
+            #random_relationship_effect = self.get_relationship_change(old_relationship_label) 
+            #action_relationship_effect = self.actions.get_relationship_effect(action) 
+            #relationship_change = random_relationship_effect + action_relationship_effect 
+
+            relationship_change = self.actions.get_relationship_effect(action)
+            
+            new_score, relationship_label = self.apply_relationship_change(
+                speaker,
+                listener,
+                relationship_change, 
+            )
+            
+
+            need_effects = self.actions.get_need_effects(action)
+            for need, amount in need_effects.items():
+                speaker.satisfy_need(need, amount)
+                
+
+            topic_memory = conversation_tags
+
+            speaker.remember_topics(topic_memory) 
+            listener.remember_topics(topic_memory)
+            
+            memory = self.create_conversation_memory(
+                day,
+                hour,
+                location_id,
+                speaker,
+                listener,
+                conversation,
+                relationship_change,
+                conversation_tags,
+            )
+            
+            speaker.remember(memory)
+            listener.remember(memory)
+            
+            
+            self.log_conversation_event(
+                day,
+                hour,
+                location_id,
+                speaker,
+                listener,
+                conversation,
+                relationship_change,
+                new_score,
+                relationship_label,
+                action,
+            )
+            self.print_conversation_event(
+                day,
+                hour,
+                location_id,
+                conversation,
+                relationship_label,
+                new_score,
+                relationship_change,
+                action,
+            )
+        if conversations_created == 0: 
+            print("No conversations this tick") 
+
+    def print_relationships(self):
+        print("\n=== Final Relationships ===")
+
+        for agent in self.agents:
+            print(f"\n{agent.name}:")
+            for other_name, score in agent.relationships.items():
+                label = self.relationships.describe_relationship(agent.name, other_name)
+                print(f"  {other_name}: {label} ({score:+d})")
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+class FakeLLMClient:
+    def generate_conversation(self, context: dict) -> str:
+        return (
+            f"{context['speaker']} talks with {context['listener']} "
+            f"at {context['location']}."
+        )
+
+class TransformersLLMClient:
+    def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
+        self.model_name = model_name
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            device_map="auto",
+        )
+
+    def generate_conversation(self, context: dict) -> str:
+        prompt = self._build_prompt(context)
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You generate dialogue for a town simulation. "
+                    "Return only valid JSON." 
+                    "Use exactly this format: " 
+                    '{"dialogue": "short line of dialogue", "action": "chat"}. '
+                    "No narration. No markdown." 
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ]
+
+        text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=150,
+                do_sample=True,
+                temperature=0.4,
+                top_p=0.9,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+
+        generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
+        response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+
+        return response.strip()
+
+    def _build_prompt(self, context: dict) -> str:
+        memories = context.get("relevant_memories", [])
+        goals = context.get("goals", [])
+        needs = context.get("needs", {})
+        recent_topics = context.get("recent_topics", [])
+        recent_topic_text = ", ".join(recent_topics[-5:]) if recent_topics else "None"
+        primary_need = context.get("primary_need", "social")
+        daily_event = context.get("daily_event") 
+        allowed_actions = context.get("allowed_actions", ["chat"])
+        allowed_action_text = ", ".join(allowed_actions)
+        if daily_event:
+            daily_event_text = (
+                f"{daily_event['name']}: {daily_event['description']} "
+                f"Location: {daily_event['location_id']}"
+            )
+        else:
+            daily_event_text = "No major town event today."
+        need_text = "\n".join(
+            f"- {need}: {value}"
+            for need, value in needs.items()
+        )
+        
+        if not need_text:
+            need_text = "- No needs available."
+            
+        goal_text = "\n".join(
+            f"- {goal}"
+            for goal in goals
+        )
+
+        if not goal_text:
+            goal_text = "- No specific goals."
+            
+        memory_text = "\n".join(
+            f"- {memory}"
+            for memory in memories
+        )
+    
+        if not memory_text:
+            memory_text = "- No important memories."
+    
+        return f"""
+    Speaker: {context["speaker"]}
+    Listener: {context["listener"]}
+    Speaker personality: {context["speaker_personality"]}
+    Location: {context["location"]}
+    Speaker occupation: {context["occupation"]}
+    Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
+    Recently used topics: {recent_topic_text}
+    Avoid repeating recently used topics unless directly relevant. PRefer a fresh topic based on today's event, location, occupation, primary need, or relationship
+Relationship behavior rules:
+- close friends: warm, relaxed, trusting, cooperative.
+- friendly: positive, kind, open, casually helpful.
+- neutral: polite, casual, ordinary.
+- tense: guarded, skeptical, reluctant, cautious. Do not suggest teaming up, hanging out, or helping unless the line is clearly hesitant.
+- enemies: cold, distrustful, dismissive, avoidant. Do not invite, compliment, collaborate, or offer help.
+If relationship is tense or enemies, do not use phrases like: "want to check it out together", "grab coffe", "team up", "join me", "go together"
+The dialogue tone must match the relationship label. If relationship is tense or enemies, the spekaer should not sound friendly. 
+    Relevant memories:
+    {memory_text}
+    Today's town event:
+    {daily_event_text}
+
+    If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
+Today's event is happening today. Do not refer to today's event as tomorrow, next week, or last night.
+    Relevant memories are rcent context, not mandatory topics. 
+    Do not repeat the same topic unless it naturally follows 
+    from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
+    Do not include {context["speaker"]}'s name.
+    Do not include narration or actions.
+
+    Allowed actions: 
+    {allowed_action_text}
+    
+    Choose exactly one action from the allowed actions.
+    Prefer "chat" for ordinary neutral conversation. 
+    Choose "offer_help" when the speaker offers to help. 
+    Choose "ask_for_help" when the speaker asks for advice, help, 
+    Choose "share_rumor" only when spreading uncertain information
+    Choose "compliment" when prasing the listener 
+    Use "argue" only when the dialogue is clearly hostile.
+    Use "insult" only for direct personal attacks. 
+    Do not choose "argue" for rumors, questions, or mild disagreement.
+    Do not overuse rumors, secres, haunted places, shady dealings, or hidden treasure. Most conversations should be ordinary daily life, work, friendship, errands, or mild curiosity. Only use rumors occassionally. Use the speaker's occupation to create ordinary, grounded conversation.
+Prefer topics about work, errands, relationships, local events, hobbies, or daily life. 
+Avoid making every conversation about mysteries, secrets, haunted places, clocks, hidden treasures, or shady dealings.
+        Write exactly one short line of dialogue that {context["speaker"]} says to {context["listener"]}.
+    Speaker goals: {goal_text}
+    Current needs: {need_text} 
+    Primary need: {primary_need}
+Return only JSON.
+""".strip()from dataclasses import dataclass, field 
+import random 
+
+from src.agents.memory import Memory
+
+@dataclass
+class Agent:
+    id: str 
+    name: str 
+    personality: str 
+    location_id: str 
+    occupation: str = "unemployed"
+    goals : list[str] = field(default_factory=list)
+    needs: dict[str, int] = field(default_factory=dict)
+    memory: list[Memory] = field(default_factory=list)
+    recent_topics: list[str] = field(default_factory=list)
+    relationships: dict[str, int] = field(default_factory=dict)
+
+    def satisfy_need(self, need: str, amount: int) -> None:
+        self.initialize_needs()
+
+        if need not in self.needs:
+            return 
+
+        self.needs[need] = min(100, self.needs[need] + amount)
+        
+    def remember_topics(self, tags: list[str], limit: int = 10) -> None:
+        ignored_tags = {
+            "conversation", 
+            "neutral", 
+            "friendly", 
+            "tense",
+            "enemies",
+            "close friends", 
+            "chat",
+        }
+
+        for tag in tags:
+            if tag not in ignored_tags:
+                self.recent_topics.append(tag)
+
+        self.recent_topics = self.recent_topics[-limit:]
+        
+    def choose_location_by_need(self, location_ids: list[str]) -> str:
+        self.initialize_needs()
+        primary_need = self.get_primary_need()
+
+        need_location_preferences = {
+            "social": ["cafe", "town_square", "market"],
+            "wealth": ["market", "cafe", "town_square"],
+            "knowledge": ["library", "town_square"],
+        }
+
+        preferred_locations = need_location_preferences.get(primary_need, location_ids)
+
+        valid_preferred_locations = [
+            preferred_location 
+            for preferred_location in preferred_locations 
+            if preferred_location in location_ids
+        ]
+
+        if valid_preferred_locations and random.random() < 0.75:
+            return random.choice(valid_preferred_locations)
+
+        return random.choice(location_ids)
+        
+    def move(self, location_ids: list[str]) -> None: 
+        self.location_id = self.choose_location_by_need(location_ids)
+
+    def remember(self, memory: Memory) -> None:
+        self.memory.append(memory)
+
+    def speak_to(self, other: "Agent", relationship_label: str) -> str:
+        if relationship_label == "close friends":
+            return (
+                f"{self.name} happily catches up with {other.name}. "
+                f"They seem very comfortable around each other."
+            )
+    
+        if relationship_label == "friendly":
+            return (
+                f"{self.name} warmly chats with {other.name}. "
+                f"The conversation feels easy and positive."
+            )
+    
+        if relationship_label == "tense":
+            return (
+                f"{self.name} has an awkward conversation with {other.name}. "
+                f"There is some tension between them."
+            )
+    
+        if relationship_label == "enemies":
+            return (
+                f"{self.name} argues sharply with {other.name}. "
+                f"They clearly do not trust each other."
+            )
+    
+        return (
+            f"{self.name} talks with {other.name}. "
+            f"{self.name} is feeling {self.personality}."
+        )
+
+    def update_relationship(self, other_name: str, score: int) -> None:
+        self.relationships[other_name] = score
+        
+    def get_recent_memories(self, limit: int = 5): 
+        return self.memory[-limit:]
+
+    def get_memories_about(self, other_name: str, limit: int = 5):
+        memories = [
+            memory for memory in self.memory
+            if other_name in memory.participants 
+        ]
+
+        return memories[-limit:]
+
+    def get_relevant_memories(
+        self,
+        other_name: str,
+        current_day: int,
+        limit: int = 5,
+        max_age_days: int = 7,
+    ) -> list[Memory]:
+        memories = [
+            memory
+            for memory in self.memory
+            if current_day - memory.day <= max_age_days
+            and (
+                other_name in memory.participants
+                or memory.type == "daily_event"
+            )
+        ]
+    
+        memories.sort(
+            key=lambda memory: (
+                memory.importance,
+                memory.day,
+                memory.hour,
+            ),
+            reverse=True,
+        )
+    
+        return memories[:limit]
+
+    def initialize_needs(self) -> None:
+        if not self.needs:
+            self.needs = {
+                "social" : 50, 
+                "wealth" : 50, 
+                "knowledge" : 50,
+            }
+
+    def decay_needs(self) -> None: 
+        self.needs["social"] = max(0, self.needs["social"] - 1) 
+        self.needs["wealth"] = max(0, self.needs["wealth"] - 1) 
+        self.needs["knowledge"] = max(0, self.needs["knowledge"] - 1) 
+
+    def get_primary_need(self) -> str: 
+        self.initialize_needs()
+        return min(self.needs, key=self.needs.get)
+
+    
+        
+        import json
+import re
+
+ALLOWED_ACTIONS = {
+    "chat",
+    "compliment",
+    "apologize",
+    "offer_help",
+    "ask_for_help",
+    "argue",
+    "insult",
+    "storm_off",
+    "confess_feelings",
+    "share_rumor",
+}
+
+
+def clean_conversation_output(text: str) -> str:
+    text = text.strip()
+
+    if not text:
+        return "They exchange a brief comment."
+
+    return text
+
+
+def extract_json_object(text: str) -> str | None:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return None
+
+    return match.group(0)
+
+
+def infer_conversation_tags(text: str) -> list[str]:
+    text_lower = text.lower()
+    tags = ["conversation"]
+
+    if "project" in text_lower or "business" in text_lower or "stall" in text_lower:
+        tags.append("business")
+
+    if "rumor" in text_lower or "trust" in text_lower or "suspicious" in text_lower:
+        tags.append("rumor")
+
+    if "price" in text_lower or "market" in text_lower or "buy" in text_lower:
+        tags.append("market")
+
+    if "book" in text_lower or "read" in text_lower or "research" in text_lower:
+        tags.append("learning")
+
+    if "avoiding" in text_lower or "done talking" in text_lower or "issue" in text_lower:
+        tags.append("conflict")
+
+    return tags
+
+
+def parse_llm_conversation_output(text: str) -> dict:
+    json_text = extract_json_object(text)
+
+    if json_text is None:
+        return {
+            "dialogue": "They exchange a brief comment.",
+            "action": "chat",
+        }
+
+    try:
+        data = json.loads(json_text)
+    except json.JSONDecodeError:
+        return {
+            "dialogue": "They exchange a brief comment.",
+            "action": "chat",
+        }
+
+    dialogue = clean_conversation_output(str(data.get("dialogue", "")))
+    action = str(data.get("action", "chat")).strip()
+
+    if action not in ALLOWED_ACTIONS:
+        action = "chat"
+
+    return {
+        "dialogue": dialogue,
+        "action": action,
+    }

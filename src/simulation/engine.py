@@ -312,7 +312,7 @@ class SimulationEngine:
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
 
-            inferred_action = self.actions.infer_action(conversation, conversation_tags=[])
+            inferred_action = self.actions.infer_action(conversation, [])
             if action == "chat" and inferred_action != "chat": 
                 action = inferred_action 
                                         

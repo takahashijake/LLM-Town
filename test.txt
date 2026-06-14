@@ -1,0 +1,418 @@
+Previous run data cleared.
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights:   6%|▌         | 26/434 [00:00<00:01, 238.06it/s]Loading weights:  15%|█▍        | 64/434 [00:00<00:01, 309.71it/s]Loading weights:  23%|██▎       | 99/434 [00:00<00:01, 323.84it/s]Loading weights:  31%|███▏      | 136/434 [00:00<00:00, 337.50it/s]Loading weights:  39%|███▉      | 170/434 [00:00<00:00, 273.78it/s]Loading weights:  46%|████▌     | 199/434 [00:00<00:00, 240.39it/s]Loading weights:  54%|█████▎    | 233/434 [00:00<00:00, 266.24it/s]Loading weights:  62%|██████▏   | 269/434 [00:00<00:00, 289.54it/s]Loading weights:  69%|██████▉   | 300/434 [00:01<00:00, 252.69it/s]Loading weights:  77%|███████▋  | 333/434 [00:01<00:00, 270.81it/s]Loading weights:  86%|████████▌ | 373/434 [00:01<00:00, 296.96it/s]Loading weights:  93%|█████████▎| 405/434 [00:01<00:00, 302.93it/s]Loading weights: 100%|██████████| 434/434 [00:01<00:00, 288.74it/s]
+Starting town simulation...
+
+=== Day 1 ===
+Daily Event: Volunteer Drive - The town is looking for volunteers for upcoming community projects.
+
+--- 8:00 ---
+Day 1, 8:00 at market: Do you think you could volunteer at the next project? I could really use some extra hands. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 1, 8:00 at cafe: I heard there’s a volunteer spot opening up at the park. Interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 1, 12:00 at town_square: Carlos, have you heard about the new volunteer spots at the park? They're really looking for people to help with the community garden. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 1, 18:00 at town_square: I noticed you've been volunteering a lot lately. It must be really rewarding. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Day 1, 22:00 at market: I'm looking for some volunteers for my next shipment. Do you know anyone who might be interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 2 ===
+Daily Event: Town Hall Meeting - Residents are discussing future plans for the town.
+
+--- 8:00 ---
+Day 2, 8:00 at town_square: I heard there's going to be a new playground planned for the kids. What do you think? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Day 2, 12:00 at town_square: I heard there might be some new business opportunities coming up with the planned community projects. What do you think? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 2, 18:00 at town_square: I heard there might be a volunteer position for someone with your skills. Interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 2, 22:00 at town_square: I heard there might be a volunteer position for someone with your skills. Interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 3 ===
+Daily Event: Book Club - Residents are gathering to discuss a new book at the library.
+
+--- 8:00 ---
+Day 3, 8:00 at library: I heard they're talking about a new market strategy at the Book Club. Would you mind if I join in? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 3, 12:00 at market: I heard they're reading about leadership in the book tonight. You might find it interesting. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Day 3, 18:00 at cafe: I heard they're talking about a new book at the Book Club. Have you checked it out yet? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 3, 22:00 at cafe: I heard they're having a book club meeting at the library this afternoon. Would you like to join? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 4 ===
+Daily Event: Book Club - Residents are gathering to discuss a new book at the library.
+
+--- 8:00 ---
+Day 4, 8:00 at town_square: I heard they're talking about a mystery in the old library tonight. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 4, 12:00 at library: I heard they're going to have a book signing after the Book Club meeting. Want to join me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 4, 18:00 at library: I heard they're talking about the book 'The Great Gatsby' at the Book Club tonight. Have you read it? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Day 4, 22:00 at library: I heard they're reading a book called 'The Power of Now' at the Book Club tonight. Would you like to join? Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 5 ===
+Daily Event: Street Music Night - Musicians are performing near the town square in the evening.
+
+--- 8:00 ---
+Day 5, 8:00 at town_square: Have you heard any interesting gossip around here lately? Relationship is now neutral (score -1, change -1). Action: share_rumor.
+
+--- 12:00 ---
+Day 5, 12:00 at market: Have you heard anything interesting about the musicians who will be playing tonight? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 5, 12:00 at town_square: Carlos, have you heard about the new music theory being discussed at the Book Club tonight? It might be interesting to know more about it. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 5, 18:00 at town_square: Carlos, did you hear about the new band joining the Book Club tonight? I think they might bring some fresh energy to the discussions. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Day 5, 22:00 at market: Carlos, have you heard about the new street performer who just started playing guitar? His music is really catching everyone's attention. Relationship is now neutral (score -1, change +0). Action: chat.
+Day 5, 22:00 at town_square: I heard there’s a book club meeting tonight at the library. Would you want to join me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 6 ===
+Daily Event: Public Debate - Residents are debating a proposed change to town rules.
+
+--- 8:00 ---
+Day 6, 8:00 at town_square: I heard there might be some interesting insights from tonight's debate. Want to hear your take? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Day 6, 12:00 at town_square: I heard there might be some interesting insights at the debate tonight. What do you think? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 6, 18:00 at town_square: I heard there's going to be a town hall meeting next week to discuss the changes from the debate. Want to know what people think about it? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 6, 22:00 at market: I heard there was some talk about the proposed rule changes affecting small businesses. Do you think it might impact our corner store? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+Day 6, 22:00 at town_square: I heard there was a bit of confusion during the debate earlier. Do you think we might need more public meetings to clarify things? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 7 ===
+Daily Event: Farmers Market - Local vendors are setting up booths and selling fresh produce.
+
+--- 8:00 ---
+Day 7, 8:00 at market: I heard there might be some new buyers at the Farmers Market today. Do you think that could be good for our sales? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+No conversations this tick
+
+--- 18:00 ---
+Day 7, 18:00 at cafe: I heard there's a rumor about some extra cash being left at the old mill. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 7, 22:00 at cafe: I heard someone talking about a new investment opportunity at the market. Do you think it's worth checking out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 8 ===
+Daily Event: Merchant Inspection - Market stalls are being checked for fair prices and proper records.
+
+--- 8:00 ---
+Day 8, 8:00 at market: I heard there's a bit of tension at the market stall inspections today. Any idea why? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 8, 12:00 at town_square: I heard there might be some shady dealings with the new market vendor. You should keep an eye out. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 8, 12:00 at market: I heard there might be some discrepancies in the inspection today. Do you think anyone could use some extra help? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+No conversations this tick
+
+--- 22:00 ---
+Day 8, 22:00 at town_square: I heard there's been some talk about the new market inspector. He seems pretty strict. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 9 ===
+Daily Event: Gardening Workshop - Volunteers are teaching residents how to grow vegetables and herbs.
+
+--- 8:00 ---
+Day 9, 8:00 at town_square: I heard there's a new volunteer at the Gardening Workshop. Anyone know who it might be? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 9, 12:00 at town_square: Did you find anything interesting at the Farmers Market? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 9, 18:00 at town_square: I heard there's a gardening workshop happening later this afternoon. Would you want to join me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 9, 22:00 at cafe: I heard there's a volunteer opportunity at the Farmers Market tomorrow. Want to check it out together? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 9, 22:00 at town_square: I heard there’s a volunteer opportunity at the farmers market tomorrow. Would you be interested in helping out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 10 ===
+Daily Event: Book Club - Residents are gathering to discuss a new book at the library.
+
+--- 8:00 ---
+Day 10, 8:00 at library: I heard there's going to be a book signing at the market next weekend. Would you know anything about that? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 10, 12:00 at cafe: I heard there’s a book club meeting at the library tonight. Would you like to join? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 10, 18:00 at cafe: I heard there's going to be a gardening workshop today. Maybe we could both learn something useful. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 10, 22:00 at cafe: I heard there's a book club meeting at the library tonight. Would you want to join me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 11 ===
+Daily Event: Public Debate - Residents are debating a proposed change to town rules.
+
+--- 8:00 ---
+Day 11, 8:00 at town_square: I heard there's going to be another public debate tomorrow. Want to join in? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 11, 12:00 at cafe: I heard there might be some new business opportunities coming out of the Public Debate. What do you think? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 11, 18:00 at town_square: I heard someone mentioning you might know more about the proposed changes. Have you been following the debate? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 11, 22:00 at town_square: I heard someone mentioning they're looking to invest in stocks. Do you know anything about that? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 12 ===
+Daily Event: School Fair - Families are visiting booths, games, and small performances.
+
+--- 8:00 ---
+Day 12, 8:00 at town_square: I heard there's a rumor about some extra money in the town's savings account. Want to check it out? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 12, 12:00 at cafe: I heard there's a rumor about some money being hidden near the old mill. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 12, 12:00 at town_square: I heard there's a booth selling exotic spices. Do you know if they're worth trying? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 12, 18:00 at town_square: I heard there's a bit of confusion about the food stalls' opening times. Do you know if anyone's been able to clear that up? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 12, 22:00 at town_square: I noticed some stalls aren't getting many visitors. Do you think we could set up flyers around the square? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 13 ===
+Daily Event: Public Debate - Residents are debating a proposed change to town rules.
+
+--- 8:00 ---
+Day 13, 8:00 at town_square: I heard there might be some changes coming to our market hours. Do you think that could affect our sales? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 13, 12:00 at cafe: I heard someone mentioning you might know more about the new taxes. Have you heard anything? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 13, 12:00 at town_square: I heard there's a bit of confusion about who's leading the debate tonight. Do you think anyone stands out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 13, 18:00 at town_square: I heard there might be some shady dealings with the new market regulations. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 13, 22:00 at town_square: I heard there might be some new business opportunities at the school fair tonight. What do you think? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+=== Day 14 ===
+Daily Event: Repair Day - Residents are fixing benches, signs, and small public spaces.
+
+--- 8:00 ---
+Day 14, 8:00 at town_square: I heard there might be a volunteer spot at the school fair tonight. Would you want to join me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 14, 12:00 at town_square: I heard there's a bit of a crowd at the school fair today. Would you fancy joining me? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Day 14, 18:00 at town_square: Have you seen anyone around here looking for someone who might need help with their repairs? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 14, 22:00 at cafe: I heard there might be some leftover materials from the school fair. Would you know where I could find them? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+=== Day 15 ===
+Daily Event: Town Hall Meeting - Residents are discussing future plans for the town.
+
+--- 8:00 ---
+Day 15, 8:00 at town_square: I heard they're talking about expanding the market area. What do you think? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Day 15, 12:00 at town_square: I heard there might be some changes in the budget for next year. Do you think we'll see any cuts? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 15, 18:00 at town_square: I heard they're talking about expanding the library. What do you think? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Day 15, 22:00 at cafe: I heard there might be a new project for the community garden at the Town Hall Meeting. What do you think? Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 16 ===
+Daily Event: Supplier Visit - A traveling supplier is visiting the market with new goods.
+
+--- 8:00 ---
+Day 16, 8:00 at market: I heard they're bringing in some new fruits and veggies today. Do you know if we have space to display them? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 16, 8:00 at cafe: I heard they're bringing in some new products from Europe. Interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 16, 12:00 at market: Have you heard anything interesting about the new supplier's products? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 16, 18:00 at market: I heard they have some really nice fabrics for sewing at the supplier's stall. Do you think anyone could use them? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 16, 22:00 at market: I heard there might be some new fruits and veggies at the market today. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 17 ===
+Daily Event: Farmers Market - Local vendors are setting up booths and selling fresh produce.
+
+--- 8:00 ---
+Day 17, 8:00 at market: I heard there's a bit of confusion about the market hours this weekend. Do you know if anyone mentioned anything? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 17, 12:00 at market: I heard they're selling some exotic spices at the market today. Might be worth checking out. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Day 17, 18:00 at market: I heard there's a bit of confusion about the farmers market setup. Do you know if anyone's had any issues? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 17, 22:00 at library: I heard there might be some new fruits at the market today. Want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 17, 22:00 at town_square: I heard there's a new vendor at the Farmers Market with some exotic spices. Would you be interested in checking them out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 18 ===
+Daily Event: Book Club - Residents are gathering to discuss a new book at the library.
+
+--- 8:00 ---
+Day 18, 8:00 at market: I heard they're having a lively discussion about the impact of reading on community bonds tonight. Have you checked it out? Relationship is now neutral (score -1, change +0). Action: chat.
+
+--- 12:00 ---
+Day 18, 12:00 at library: I heard they're talking about a new book at the Book Club today. Interested? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 18, 18:00 at cafe: Have you heard anything interesting at the farmers market today? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+No conversations this tick
+
+=== Day 19 ===
+Daily Event: Cafe Discount - The cafe is offering a discount to first-time customers.
+
+--- 8:00 ---
+Day 19, 8:00 at cafe: I heard they're offering a discount for first-timers at the cafe today. Maybe you could try it out. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 19, 12:00 at cafe: Have you heard anything about the new book at the library? It sounds interesting. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 19, 18:00 at town_square: I heard there's a discount at the cafe today. Maybe you could try it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 19, 18:00 at cafe: I heard the cafe is having a big discount today. Maybe you could try it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 19, 22:00 at town_square: Have you heard anything interesting about the new book at the Book Club tonight? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 20 ===
+Daily Event: Town Hall Meeting - Residents are discussing future plans for the town.
+
+--- 8:00 ---
+Day 20, 8:00 at town_square: Have you heard anything interesting at the Town Hall Meeting? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 20, 12:00 at town_square: I heard they're talking about expanding the market at the Town Hall Meeting. Do you think that could benefit our business? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 20, 18:00 at town_square: I heard they're planning something big at the town hall tonight. You might want to listen in if you're interested. Relationship is now neutral (score +1, change +1). Action: offer_help.
+Day 20, 18:00 at cafe: I heard they're planning some new parks at the town square. What do you think? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Day 20, 22:00 at cafe: I heard they're planning some new projects at the town hall. Do you think that could benefit our business? Relationship is now neutral (score -1, change +0). Action: ask_for_help.
+Day 20, 22:00 at town_square: I heard there might be some changes in the budget for the upcoming projects. What do you think? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 21 ===
+Daily Event: School Fair - Families are visiting booths, games, and small performances.
+
+--- 8:00 ---
+Day 21, 8:00 at town_square: I heard there's a contest for best booth at the fair. Maybe you could help with some decorations? Relationship is now neutral (score +2, change +1). Action: offer_help.
+
+--- 12:00 ---
+Day 21, 12:00 at town_square: Carlos, you seem to know a lot about the school fair. Did you help organize anything? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 21, 18:00 at town_square: I heard there's a new game booth at the fair. Do you know anything about it? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 21, 22:00 at town_square: I heard they're giving away some free samples at the bakery stall. You should check it out. Relationship is now neutral (score +0, change +1). Action: offer_help.
+Day 21, 22:00 at cafe: I heard they're having a contest for best booth at the school fair. Would you want to check it out? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 22 ===
+Daily Event: Cafe Discount - The cafe is offering a discount to first-time customers.
+
+--- 8:00 ---
+Day 22, 8:00 at cafe: I heard there's a discount at the cafe today. Maybe we could grab a coffee there? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Day 22, 12:00 at cafe: Have you heard about the new discount at the cafe? It seems like a nice promotion for first-time visitors. Relationship is now neutral (score +2, change +0). Action: chat.
+Day 22, 12:00 at market: I heard the cafe is offering a discount today. Maybe you could try it out with me? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 22, 18:00 at cafe: I heard they're offering a discount at the cafe today. Might be worth checking it out. Relationship is now neutral (score +2, change +0). Action: chat.
+
+--- 22:00 ---
+Day 22, 22:00 at town_square: Have you heard about the cafe discount? It might be a good idea to try it out with someone new. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 23 ===
+Daily Event: New Bakery Opening - A bakery is opening nearby and giving out samples.
+
+--- 8:00 ---
+Day 23, 8:00 at cafe: I heard they're giving away free samples at the new bakery. Might be worth checking out. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Day 23, 12:00 at cafe: I heard they're giving away free samples at the new bakery. You might want to check it out. Relationship is now neutral (score +1, change +1). Action: offer_help.
+
+--- 18:00 ---
+Day 23, 18:00 at cafe: I heard the new bakery is giving away samples. Should I grab some? Relationship is now neutral (score +1, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 23, 22:00 at market: Did you hear they're giving away free samples at the new bakery? It sounds like a good opportunity to try some new treats. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 24 ===
+Daily Event: Local Sports Match - Residents are gathering to watch a friendly local sports match.
+
+--- 8:00 ---
+Day 24, 8:00 at cafe: Have you heard any interesting gossip about the new baker at the opening? I'm curious to know what they're all talking about. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 24, 8:00 at town_square: I heard they're having a great time at the new bakery. Maybe you should check it out sometime. Relationship is now neutral (score +1, change +1). Action: offer_help.
+
+--- 12:00 ---
+Day 24, 12:00 at cafe: I heard there's a great deal of excitement building around the new bakery. Would you want to grab a sample? Relationship is now neutral (score +1, change +1). Action: offer_help.
+
+--- 18:00 ---
+Day 24, 18:00 at town_square: Have you heard anything interesting about the new bakery? Their samples were amazing! Relationship is now neutral (score +2, change +0). Action: chat.
+
+--- 22:00 ---
+Day 24, 22:00 at town_square: I heard there might be some good deals at the new bakery. Want to grab a bite after the game? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Day 25 ===
+Daily Event: Library Fundraiser - The library is raising money for new books and repairs.
+
+--- 8:00 ---
+Day 25, 8:00 at market: I heard there's a new bakery opening nearby. Would you want to check it out together? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 12:00 ---
+Day 25, 12:00 at library: I heard there might be a discount on books at the fundraiser tonight. Want to check it out together? Relationship is now neutral (score +1, change +0). Action: ask_for_help.
+
+--- 18:00 ---
+Day 25, 18:00 at cafe: I heard they're selling samples from the new bakery. Want to check it out together? Relationship is now neutral (score +1, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Day 25, 22:00 at library: I heard there might be a discount on books at the fundraiser tonight. Do you think it could help us save some money? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+=== Final Relationships ===
+
+Maya:
+  Lena: neutral (+0)
+  Carlos: neutral (+0)
+  Ethan: neutral (+2)
+
+Ethan:
+  Carlos: neutral (+1)
+  Maya: neutral (+2)
+  Lena: neutral (+1)
+
+Lena:
+  Maya: neutral (+0)
+  Carlos: neutral (+1)
+  Ethan: neutral (+1)
+
+Carlos:
+  Ethan: neutral (+1)
+  Maya: neutral (+0)
+  Lena: neutral (+1)
+
+Simulation finished.
