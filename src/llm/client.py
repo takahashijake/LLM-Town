@@ -127,6 +127,7 @@ The dialogue tone must match the relationship label. If relationship is tense or
     {daily_event_text}
 
     If the daily event is relevant to the speaker, listener, or location, naturally mention it. Do not force the daily event into every conversation.
+Today's event is happening today. Do not refer to today's event as tomorrow, next week, or last night.
     Relevant memories are rcent context, not mandatory topics. 
     Do not repeat the same topic unless it naturally follows 
     from the current conversation. Prefer today's event, current location, occupation, and primary need over old memories.
