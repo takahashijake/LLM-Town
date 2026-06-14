@@ -68,6 +68,10 @@ class TransformersLLMClient:
         goals = context.get("goals", [])
         needs = context.get("needs", {})
         recent_topics = context.get("recent_topics", [])
+        speaker_activity = context.get("speaker_activity", "idle")
+        speaker_activity_reason = context.get("speaker_activity_reason", "")
+        speaker_activity_tags = context.get("speaker_activity_tags", [])
+        speaker_activity_tag_text = ", ".join(speaker_activity_tags) if speaker_activity_tags else "None"
         recent_topic_text = ", ".join(recent_topics[-5:]) if recent_topics else "None"
         primary_need = context.get("primary_need", "social")
         daily_event = context.get("daily_event") 
@@ -110,6 +114,9 @@ Listener: {context["listener"]}
 Speaker personality: {context["speaker_personality"]}
 Location: {context["location"]}
 Speaker occupation: {context["occupation"]}
+Current activity: {speaker_activity}
+Activity reason: {speaker_activity_reason}
+Activity tags: {speaker_activity_tag_text}
 Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
 
 Recently used topics:
@@ -132,6 +139,13 @@ Primary need:
 
 Allowed actions:
 {allowed_action_text}
+
+The speaker's current activity is the most important context.
+The dialogue should usually relate to the current activity or the listener's presence at the same location.
+Do not ignore the current activity unless another context item is clearly more relevant.
+
+Avoid starting with "Have you heard" unless the speaker is investigating, reporting news, or sharing a rumor.
+Prefer concrete activity-grounded lines.
 
 IMPORTANT CONVERSATION RULES
 

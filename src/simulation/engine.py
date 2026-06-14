@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.behavior.planner import ActivityPlanner
 from src.agents.memory import Memory
 from src.agents.agent import Agent
 from src.town.location import Location
@@ -22,6 +23,7 @@ class SimulationEngine:
         self.state = SimulationState()
         self.llm = TransformersLLMClient()
         self.actions = ActionSystem()
+        self.activity_planner = ActivityPlanner()
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
     
@@ -54,6 +56,9 @@ class SimulationEngine:
                 occupation=agent_data.get("occupation", "unemployed"),
                 recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
+                current_activity=agent_data.get("current_activity", "idle"),
+                current_activity_reason=agent_data.get("current_activity_reason", ""),
+                current_activity_tags=agent_data.get("current_activity_tags", []),
             )
             agents.append(agent)
     
@@ -118,14 +123,25 @@ class SimulationEngine:
 
     def run_tick(self, day: int, hour: int) -> None:
         location_ids = [location.id for location in self.locations]
-
+    
         for agent in self.agents:
             agent.decay_needs()
-            if self.current_daily_event and random.random() < 0.35:
-                agent.location_id = self.current_daily_event.location_id
-            else:
-                agent.move(location_ids)
-
+    
+            activity = self.activity_planner.choose_activity(
+                agent=agent,
+                location_ids=location_ids,
+                current_day=day,
+                hour=hour,
+                daily_event=self.current_daily_event,
+            )
+    
+            agent.set_activity(activity)
+    
+            print(
+                f"{agent.name} chooses activity: {activity.name} "
+                f"at {activity.location_id} ({activity.reason})"
+            )
+    
         self.generate_conversations(day, hour)
 
     def get_relationship_change(self, relationship_label: str) -> int:

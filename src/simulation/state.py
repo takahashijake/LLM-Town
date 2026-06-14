@@ -22,7 +22,10 @@ class SimulationState:
                     "needs" : agent.needs,
                     "relationships": agent.relationships,
                     "occupation" : agent.occupation,
-                    "recent_topics" : agent.recent_topics
+                    "recent_topics" : agent.recent_topics,
+                    "current_activity": agent.current_activity,
+                    "current_activity_reason": agent.current_activity_reason,
+                    "current_activity_tags": agent.current_activity_tags,
                 }
                 for agent in engine.agents
             ],

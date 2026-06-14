@@ -15,7 +15,16 @@ class Agent:
     memory: list[Memory] = field(default_factory=list)
     recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
+    current_activity: str = "idle" 
+    current_activity_reason: str = ""
+    current_activity_tags: list[str] = field(default_factory=list)
 
+    def set_activity(self, activity) -> None: 
+        self.current_activity = activity.name 
+        self.current_activity_reason = activity.reason 
+        self.current_activity_tags = activity.tags 
+        self.location_id = activity.location_id 
+        
     def satisfy_need(self, need: str, amount: int) -> None:
         self.initialize_needs()
 

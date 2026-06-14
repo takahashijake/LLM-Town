@@ -28,6 +28,10 @@ def build_conversation_context(
         "goals" : speaker.goals,
         "needs" : speaker.needs, 
         "occupation" : speaker.occupation,
+        "speaker_activity": speaker.current_activity, 
+        "speaker_activity_reason": speaker.current_activity_reason,
+        "speaker_activity_tags": speaker.current_activity_tags, 
+        "primary_need": speaker.get_primary_need(),
         "primary_need" : speaker.get_primary_need(),
         "allowed_actions" : allowed_actions or ["chat"],
         "daily_event": {
