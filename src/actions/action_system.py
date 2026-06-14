@@ -11,7 +11,6 @@ class ActionSystem:
         "confess_feelings": 1,
         "share_rumor": -1,
     }
-
     ACTION_NEED_EFFECTS = {
         "chat": {"social": 1},
         "compliment": {"social": 2},

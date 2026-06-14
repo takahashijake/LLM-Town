@@ -138,7 +138,11 @@ Today's event is happening today. Do not refer to today's event as tomorrow, nex
     {allowed_action_text}
     
     Choose exactly one action from the allowed actions.
-    Prefer "chat" for ordinary conversation. 
+    Prefer "chat" for ordinary neutral conversation. 
+    Choose "offer_help" when the speaker offers to help. 
+    Choose "ask_for_help" when the speaker asks for advice, help, 
+    Choose "share_rumor" only when spreading uncertain information
+    Choose "compliment" when prasing the listener 
     Use "argue" only when the dialogue is clearly hostile.
     Use "insult" only for direct personal attacks. 
     Do not choose "argue" for rumors, questions, or mild disagreement.
