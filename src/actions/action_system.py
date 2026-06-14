@@ -1,15 +1,15 @@
 class ActionSystem:
     ACTION_EFFECTS = {
         "chat": 0,
-        "compliment": 0,
-        "apologize": 1,
-        "offer_help": 0,
+        "compliment": 1,
+        "apologize": 2,
+        "offer_help": 1,
         "ask_for_help": 0,
-        "argue": 0,
-        "insult": -1,
-        "storm_off": -1,
+        "argue": -1,
+        "insult": -2,
+        "storm_off": -2,
         "confess_feelings": 1,
-        "share_rumor": 0,
+        "share_rumor": -1,
     }
 
     ACTION_NEED_EFFECTS = {

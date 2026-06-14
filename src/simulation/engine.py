@@ -331,13 +331,8 @@ class SimulationEngine:
             #action_relationship_effect = self.actions.get_relationship_effect(action) 
             #relationship_change = random_relationship_effect + action_relationship_effect 
 
-            action_relationship_effect = self.actions.get_relationship_effect(action)
-
-            if action_relationship_effect != 0:
-                relationship_change = action_relationship_effect
-            else:
-                relationship_change = self.get_relationship_change(old_relationship_label)
-
+            relationship_change = self.actions.get_relationship_effect(action)
+            
             new_score, relationship_label = self.apply_relationship_change(
                 speaker,
                 listener,
