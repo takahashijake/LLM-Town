@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+data/save_state.json
+logs/
+debug_bundle*.txt
+.env
+.venv/
