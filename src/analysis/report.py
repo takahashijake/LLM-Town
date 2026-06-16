@@ -60,6 +60,12 @@ class SimulationReporter:
         else:
             print("Most common action: none")
 
+        if action_counts: 
+            print("Action distribution:") 
+            for action, count in action_counts.most_common(): 
+                print(f" {action}: {count}")
+                
+
     def print_relationship_summary(self, engine) -> None:
         if not engine.relationships.scores:
             print("No relationship changes recorded.")

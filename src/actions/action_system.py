@@ -87,6 +87,14 @@ class ActionSystem:
             or "that was thoughtful" in text
             or "that was kind" in text
             or "that was smart" in text
+            or "thanks for" in text
+            or "thank you for" in text
+            or "i appreciate" in text
+            or "glad you came" in text
+            or "great to see" in text
+            or "good to see" in text
+            or "this is really helpful" in text
+            or "that helps a lot" in text
         ):
             return "compliment"
         # Explicit offers of help or recommendations

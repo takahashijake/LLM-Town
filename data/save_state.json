@@ -28,7 +28,7 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "Looks like everyone's really getting into cleaning up the square today.",
+          "description": "Have you seen the progress they've made so far?",
           "participants": [
             "Maya",
             "Lena"
@@ -46,7 +46,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "This cleanup is really bringing the community together.",
+          "description": "Have you noticed any improvements since we started cleaning?",
           "participants": [
             "Maya",
             "Lena"
@@ -64,7 +64,7 @@
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "This cleanup is really making the place look great!",
+          "description": "Hey Maya, how's the cleanup going?",
           "participants": [
             "Lena",
             "Maya"
@@ -82,7 +82,7 @@
           "day": 1,
           "hour": 22,
           "type": "conversation",
-          "description": "The fluctuation in vegetable prices this week is quite interesting.",
+          "description": "I noticed the volunteers gathering for the cleanup. Do you think it will affect business?",
           "participants": [
             "Ethan",
             "Maya"
@@ -92,7 +92,7 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "market",
+            "business",
             "neutral",
             "chat"
           ]
@@ -135,7 +135,7 @@
           "day": 3,
           "hour": 8,
           "type": "conversation",
-          "description": "This fundraiser is a great way to support our community.",
+          "description": "Have you noticed any changes in the number of visitors lately?",
           "participants": [
             "Maya",
             "Ethan"
@@ -153,7 +153,7 @@
           "day": 3,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the fundraiser is to get new books and fix up the place.",
+          "description": "Have you heard about the new reading challenge they're promoting?",
           "participants": [
             "Maya",
             "Lena"
@@ -184,7 +184,7 @@
       },
       "occupation": "local journalist",
       "recent_topics": [
-        "market",
+        "business",
         "learning"
       ],
       "current_activity": "Attend Library Fundraiser",
@@ -223,7 +223,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard there's a cleanup today, but I'm not sure I want to get my hands dirty.",
+          "description": "Have you heard anything interesting about the cleanup today?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -241,7 +241,7 @@
           "day": 1,
           "hour": 22,
           "type": "conversation",
-          "description": "The fluctuation in vegetable prices this week is quite interesting.",
+          "description": "I noticed the volunteers gathering for the cleanup. Do you think it will affect business?",
           "participants": [
             "Ethan",
             "Maya"
@@ -251,7 +251,7 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "market",
+            "business",
             "neutral",
             "chat"
           ]
@@ -277,7 +277,7 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "This new bakery smells amazing!",
+          "description": "Hey Ethan, the new bakery sounds interesting. Have you tried any of their samples yet?",
           "participants": [
             "Lena",
             "Ethan"
@@ -312,7 +312,7 @@
           "day": 3,
           "hour": 8,
           "type": "conversation",
-          "description": "This fundraiser is a great way to support our community.",
+          "description": "Have you noticed any changes in the number of visitors lately?",
           "participants": [
             "Maya",
             "Ethan"
@@ -330,7 +330,7 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "I wonder how much they need to raise for those repairs.",
+          "description": "I heard they're selling tickets for the fundraiser tonight. Would you like to come?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -348,7 +348,7 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Thanks for coming to support the fundraiser, Ethan.",
+          "description": "Have you noticed the new sign outside the bakery? It looks inviting.",
           "participants": [
             "Lena",
             "Ethan"
@@ -379,7 +379,7 @@
       },
       "occupation": "accountant",
       "recent_topics": [
-        "market"
+        "business"
       ],
       "current_activity": "Attend Library Fundraiser",
       "current_activity_reason": "Ethan is interested in today's event: Library Fundraiser.",
@@ -417,7 +417,7 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "Looks like everyone's really getting into cleaning up the square today.",
+          "description": "Have you seen the progress they've made so far?",
           "participants": [
             "Maya",
             "Lena"
@@ -435,7 +435,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "This cleanup is really bringing the community together.",
+          "description": "Have you noticed any improvements since we started cleaning?",
           "participants": [
             "Maya",
             "Lena"
@@ -453,7 +453,7 @@
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "This cleanup is really making the place look great!",
+          "description": "Hey Maya, how's the cleanup going?",
           "participants": [
             "Lena",
             "Maya"
@@ -488,7 +488,7 @@
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "Hey Carlos, have you thought about joining the cleanup today?",
+          "description": "Did you get a chance to try the samples from the new bakery?",
           "participants": [
             "Lena",
             "Carlos"
@@ -506,7 +506,7 @@
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the new bakery is giving out free samples today.",
+          "description": "Have you tried the chocolate croissants yet?",
           "participants": [
             "Carlos",
             "Lena"
@@ -524,7 +524,7 @@
           "day": 2,
           "hour": 18,
           "type": "conversation",
-          "description": "This new bakery could be a great opportunity for some sweet deals.",
+          "description": "Did you get a chance to try their chocolate croissants?",
           "participants": [
             "Carlos",
             "Lena"
@@ -542,7 +542,7 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "This new bakery smells amazing!",
+          "description": "Hey Ethan, the new bakery sounds interesting. Have you tried any of their samples yet?",
           "participants": [
             "Lena",
             "Ethan"
@@ -577,7 +577,7 @@
           "day": 3,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the fundraiser is to get new books and fix up the place.",
+          "description": "Have you heard about the new reading challenge they're promoting?",
           "participants": [
             "Maya",
             "Lena"
@@ -596,7 +596,7 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Thanks for coming to support the fundraiser, Ethan.",
+          "description": "Have you noticed the new sign outside the bakery? It looks inviting.",
           "participants": [
             "Lena",
             "Ethan"
@@ -665,7 +665,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard there's a cleanup today, but I'm not sure I want to get my hands dirty.",
+          "description": "Have you heard anything interesting about the cleanup today?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -700,7 +700,7 @@
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "Hey Carlos, have you thought about joining the cleanup today?",
+          "description": "Did you get a chance to try the samples from the new bakery?",
           "participants": [
             "Lena",
             "Carlos"
@@ -718,7 +718,7 @@
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the new bakery is giving out free samples today.",
+          "description": "Have you tried the chocolate croissants yet?",
           "participants": [
             "Carlos",
             "Lena"
@@ -736,7 +736,7 @@
           "day": 2,
           "hour": 18,
           "type": "conversation",
-          "description": "This new bakery could be a great opportunity for some sweet deals.",
+          "description": "Did you get a chance to try their chocolate croissants?",
           "participants": [
             "Carlos",
             "Lena"
@@ -771,7 +771,7 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "I wonder how much they need to raise for those repairs.",
+          "description": "I heard they're selling tickets for the fundraiser tonight. Would you like to come?",
           "participants": [
             "Ethan",
             "Carlos"
