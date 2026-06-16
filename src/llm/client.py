@@ -263,7 +263,17 @@ Many conversations should simply share information or make an observation.
 
 ACTION SELECTION RULES
 
-Most conversations should be "chat".
+Most conversations should be "chat", but some conversations should use a specific non-chat action when the dialogue clearly performs that action.
+
+Across many conversations, around 20-30% should use a non-chat action when context supports it.
+
+Prefer a non-chat action when the speaker is clearly:
+- praising the listener
+- offering help
+- asking for help or advice
+- apologizing
+- sharing uncertain information or a rumor
+- challenging or arguing with the listener
 
 Choose "chat" for:
 
@@ -293,16 +303,47 @@ Do NOT use "ask_for_help" for:
 * asking if someone wants to join an activity
 
 Choose "offer_help" when the speaker offers assistance or useful help.
+Examples:
+- "I can help you with that."
+- "Let me lend a hand."
+- "I could help organize that."
+- "I can show you where to start."
 
-Choose "compliment" when praising the listener.
+Choose "compliment" when praising the listener's skill, work, effort, personality, or judgment.
+Examples:
+- "You did a good job organizing that."
+- "You always know how to bring people together."
+- "That was impressive work."
+- "You're good at this."
 
-Choose "share_rumor" only when discussing uncertain, unverified, or suspicious information.
+Choose "ask_for_help" when the speaker genuinely asks the listener for assistance, advice, expertise, directions, or information needed to solve a problem.
+Examples:
+- "Can you help me figure this out?"
+- "Do you know where I should start?"
+- "Could you give me advice?"
+- "Can you show me how to do that?"
 
-Choose "argue" only when hostile.
+Choose "apologize" when the speaker expresses regret or says sorry.
+Examples:
+- "I'm sorry about earlier."
+- "I should have handled that better."
+- "I apologize for what I said."
+
+Choose "share_rumor" when discussing uncertain, unverified, suspicious, or secondhand information.
+Examples:
+- "I heard something strange about the market."
+- "There is a rumor going around."
+- "Someone said the supplier might be unreliable."
+- "I am not sure it is true, but people are talking."
+
+Choose "argue" when the speaker disagrees sharply, challenges, criticizes, or confronts the listener.
+Examples:
+- "I do not think you handled that well."
+- "Why are you making this harder?"
+- "That plan does not make sense."
+- "You are wrong about this."
 
 Choose "insult" only for direct personal attacks.
-
-Choose exactly one action from the allowed actions.
 
 CONTENT RULES
 
