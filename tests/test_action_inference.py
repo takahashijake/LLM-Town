@@ -47,3 +47,18 @@ def test_infer_argue_from_disagreement():
     assert actions.infer_action(
         "I disagree. That plan does not make sense.", []
     ) == "argue"
+
+def test_infer_compliment_from_gratitude():
+    actions = ActionSystem()
+
+    assert actions.infer_action(
+        "Thanks for coming to support the fundraiser, Ethan.", []
+    ) == "compliment"
+
+
+def test_infer_compliment_from_appreciation():
+    actions = ActionSystem()
+
+    assert actions.infer_action(
+        "I appreciate you helping with the cleanup.", []
+    ) == "compliment"
