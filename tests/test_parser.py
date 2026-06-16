@@ -1,14 +1,36 @@
-from src.llm.parser import infer_conversation_tags 
-
-def test_tags(text: str):
-    print(text)
-    print(infer_conversation_tags(text))
-    print()
+from src.llm.parser import infer_conversation_tags
 
 
-test_tags("I need your help with my new business project.")
-test_tags("You should not trust those rumors.")
-test_tags("This price is too high.")
-test_tags("Have you read any good books lately?")
-test_tags("Why are you avoiding me?")
-test_tags("How's your day going?")
+def test_infer_business_tag():
+    tags = infer_conversation_tags("The market stall has a new business project.")
+
+    assert "conversation" in tags
+    assert "business" in tags
+
+
+def test_infer_rumor_tag():
+    tags = infer_conversation_tags("I heard a suspicious rumor about trust issues.")
+
+    assert "conversation" in tags
+    assert "rumor" in tags
+
+
+def test_infer_market_tag():
+    tags = infer_conversation_tags("The market price is too high.")
+
+    assert "conversation" in tags
+    assert "market" in tags
+
+
+def test_infer_learning_tag():
+    tags = infer_conversation_tags("I want to read a book for research.")
+
+    assert "conversation" in tags
+    assert "learning" in tags
+
+
+def test_infer_conflict_tag():
+    tags = infer_conversation_tags("I am done talking about this issue.")
+
+    assert "conversation" in tags
+    assert "conflict" in tags
