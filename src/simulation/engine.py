@@ -183,24 +183,51 @@ class SimulationEngine:
     
             return max(-3, min(3, relationship_change))
         
-    def choose_suggested_action(self, allowed_actions: list[str]) -> str:
+    def choose_suggested_action(
+        self,
+        allowed_actions: list[str],
+        relationship_label: str,
+    ) -> str:
         if not allowed_actions:
             return "chat"
 
-        non_chat_actions = [
-            action for action in allowed_actions
-            if action != "chat"
-        ]
+        allowed = set(allowed_actions)
 
-        if not non_chat_actions:
-            return "chat"
+        if relationship_label in ["tense", "enemies"]:
+            preferred_weights = {
+                "chat": 8,
+                "apologize": 3,
+                "argue": 2,
+                "storm_off": 1,
+                "insult": 1,
+            }
+        elif relationship_label in ["friendly", "close friends"]:
+            preferred_weights = {
+                "chat": 7,
+                "compliment": 3,
+                "cooperate": 3,
+                "offer_help": 2,
+                "ask_for_help": 1,
+                "confess_feelings": 1,
+            }
+        else:
+            preferred_weights = {
+                "chat": 8,
+                "cooperate": 3,
+                "offer_help": 2,
+                "ask_for_help": 2,
+                "compliment": 1,
+                "share_rumor": 1,
+            }
 
         weighted_actions = []
 
-        weighted_actions.extend(["chat"] * 7)
+        for action, weight in preferred_weights.items():
+            if action in allowed:
+                weighted_actions.extend([action] * weight)
 
-        for action in non_chat_actions:
-            weighted_actions.extend([action] * 2)
+        if not weighted_actions:
+            return "chat"
 
         return random.choice(weighted_actions)
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
@@ -350,7 +377,10 @@ class SimulationEngine:
                 listener.name,
             )
             allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
-            suggested_action = self.choose_suggested_action(allowed_actions)
+            suggested_action = self.choose_suggested_action(
+                allowed_actions,
+                old_relationship_label,
+            )
             
             context = build_conversation_context(
                 speaker=speaker,

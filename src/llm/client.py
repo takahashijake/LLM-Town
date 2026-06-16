@@ -286,7 +286,7 @@ Examples:
 - If suggested action is "apologize", the dialogue should clearly express regret.
 - If suggested action is "share_rumor", the dialogue should clearly mention uncertain or secondhand information.
 - If suggested action is "argue", the dialogue should clearly disagree or challenge the listener.
-
+- If suggested action is "cooperate", the dialogue should clearly suggest working together on a shared task.
 Across many conversations, around 20-30% should use a non-chat action when context supports it.
 
 Prefer a non-chat action when the speaker is clearly:
@@ -350,6 +350,13 @@ Examples:
 - "I'm sorry about earlier."
 - "I should have handled that better."
 - "I apologize for what I said."
+
+Choose "cooperate" when the speaker suggests working together on a shared task.
+Examples:
+- "Want to team up for the cleanup?"
+- "We could work together on this."
+- "Let's coordinate with the volunteers."
+- "Want to pitch in together?"
 
 Choose "share_rumor" when discussing uncertain, unverified, suspicious, or secondhand information.
 Examples:

@@ -6,6 +6,278 @@
       "id": "agent_001",
       "name": "Maya",
       "personality": "curious",
+      "location_id": "town_square",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_cleanup",
+            "community",
+            "social"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "It looks like we have a lot to clean up today!",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "It looks like we have a lot to clean up today!",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It looks like we have a lot to clean up today!",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "It looks like we have a lot to clean up today!",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "offer_help"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "ask_for_help"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard the Town Hall Meeting is shaping up some exciting plans for the square.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "The town hall meeting sounds interesting. What\u2019s on the agenda?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "compliment"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 2,
+          "tags": [
+            "conversation",
+            "neutral",
+            "compliment"
+          ]
+        }
+      ],
+      "goals": [
+        "learn town secrets",
+        "build close friendships"
+      ],
+      "needs": {
+        "social": 44,
+        "wealth": 38,
+        "knowledge": 38
+      },
+      "relationships": {
+        "Lena": 1,
+        "Ethan": 1,
+        "Carlos": 0
+      },
+      "occupation": "local journalist",
+      "recent_topics": [
+        "market",
+        "offer_help",
+        "market",
+        "ask_for_help",
+        "compliment",
+        "compliment"
+      ],
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Maya is interested in today's event: Town Hall Meeting.",
+      "current_activity_tags": [
+        "event",
+        "town_hall_meeting",
+        "community",
+        "planning",
+        "social"
+      ]
+    },
+    {
+      "id": "agent_002",
+      "name": "Ethan",
+      "personality": "skeptical",
       "location_id": "market",
       "memory": [
         {
@@ -26,253 +298,9 @@
         },
         {
           "day": 1,
-          "hour": 8,
-          "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 1,
-          "hour": 18,
-          "type": "conversation",
-          "description": "It looks like we have a lot to clean up today! Want to team up?",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "ask_for_help"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "public_debate",
-            "community",
-            "rules",
-            "social"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 8,
-          "type": "conversation",
-          "description": "The debate today is quite interesting, don't you think?",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 12,
-          "type": "conversation",
-          "description": "It's interesting to see how everyone feels about these new rules.",
-          "participants": [
-            "Maya",
-            "Carlos"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "The numbers in the ledger aren't adding up right. Any idea why?",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Volunteer Drive. The town is looking for volunteers for upcoming community projects.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "volunteer_drive",
-            "community",
-            "social"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I heard we need more volunteers for the town cleanup. Interested?",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 12,
-          "type": "conversation",
-          "description": "I heard the Volunteer Drive is looking for more hands. You ever volunteer before?",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "tense",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 18,
-          "type": "conversation",
-          "description": "Why are you so negative about the Volunteer Drive?",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "tense",
-            "argue"
-          ]
-        }
-      ],
-      "goals": [
-        "learn town secrets",
-        "build close friendships"
-      ],
-      "needs": {
-        "social": 44,
-        "wealth": 38,
-        "knowledge": 38
-      },
-      "relationships": {
-        "Lena": -4,
-        "Ethan": 1,
-        "Carlos": 0
-      },
-      "occupation": "local journalist",
-      "recent_topics": [
-        "ask_for_help",
-        "argue"
-      ],
-      "current_activity": "Look for work or business opportunities",
-      "current_activity_reason": "Maya wants to improve wealth.",
-      "current_activity_tags": [
-        "wealth",
-        "business"
-      ]
-    },
-    {
-      "id": "agent_002",
-      "name": "Ethan",
-      "personality": "skeptical",
-      "location_id": "library",
-      "memory": [
-        {
-          "day": 1,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "town_cleanup",
-            "community",
-            "social"
-          ]
-        },
-        {
-          "day": 1,
-          "hour": 12,
-          "type": "conversation",
-          "description": "The cleanup sounds like a good way to get the town looking nice.",
+          "description": "The cleanup sounds like a good way to meet some neighbors.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -290,33 +318,53 @@
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
           "participants": [],
-          "location": "town_square",
+          "location": "market",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "public_debate",
-            "community",
-            "rules",
-            "social"
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
           ]
         },
         {
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "The debate today is quite interesting, don't you think?",
+          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
           "participants": [
-            "Maya",
-            "Ethan"
+            "Ethan",
+            "Maya"
           ],
-          "location": "town_square",
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "offer_help"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It\u2019s important to keep an eye on those prices during the inspection.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "market",
             "neutral",
             "chat"
           ]
@@ -325,50 +373,72 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "The numbers in the ledger aren't adding up right. Any idea why?",
+          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
           "participants": [
             "Ethan",
             "Maya"
           ],
-          "location": "library",
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "market",
             "neutral",
-            "chat"
+            "ask_for_help"
           ]
         },
         {
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Volunteer Drive. The town is looking for volunteers for upcoming community projects.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "volunteer_drive",
+            "town_hall_meeting",
             "community",
+            "planning",
             "social"
           ]
         },
         {
           "day": 3,
-          "hour": 8,
+          "hour": 18,
           "type": "conversation",
-          "description": "I heard we need more volunteers for the town cleanup. Interested?",
+          "description": "The market's getting lively. Any ideas on what's driving the interest?",
           "participants": [
-            "Maya",
-            "Ethan"
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "The market's financials seem to be improving. Any ideas why?",
+          "participants": [
+            "Ethan",
+            "Carlos"
           ],
           "location": "market",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
+            "market",
             "neutral",
             "chat"
           ]
@@ -379,21 +449,29 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 40,
+        "social": 43,
         "wealth": 38,
-        "knowledge": 38
+        "knowledge": 40
       },
       "relationships": {
-        "Carlos": 0,
+        "Carlos": 1,
         "Maya": 1
       },
       "occupation": "accountant",
-      "recent_topics": [],
-      "current_activity": "Review records and numbers",
-      "current_activity_reason": "Ethan wants reliable information before trusting others.",
+      "recent_topics": [
+        "market",
+        "offer_help",
+        "market",
+        "market",
+        "ask_for_help",
+        "market",
+        "market"
+      ],
+      "current_activity": "Observe business activity",
+      "current_activity_reason": "Ethan is watching for financial opportunities or risks.",
       "current_activity_tags": [
         "accounting",
-        "knowledge"
+        "business"
       ]
     },
     {
@@ -458,7 +536,25 @@
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today! Want to team up?",
+          "description": "It looks like we have a lot to clean up today!",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "It looks like we have a lot to clean up today!",
           "participants": [
             "Lena",
             "Maya"
@@ -469,131 +565,113 @@
           "tags": [
             "conversation",
             "neutral",
-            "ask_for_help"
+            "chat"
           ]
         },
         {
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
           "participants": [],
-          "location": "town_square",
+          "location": "market",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "public_debate",
-            "community",
-            "rules",
-            "social"
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
           ]
         },
         {
           "day": 2,
-          "hour": 18,
+          "hour": 12,
           "type": "conversation",
-          "description": "The debate today is quite interesting. What do you think about the proposed changes?",
+          "description": "It's good to see everyone taking part in the Merchant Inspection today.",
           "participants": [
             "Carlos",
             "Lena"
           ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "The market could use some fresh produce. Want to team up on that?",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
+          "location": "market",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
-            "market",
             "neutral",
-            "chat"
+            "compliment"
           ]
         },
         {
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Volunteer Drive. The town is looking for volunteers for upcoming community projects.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "volunteer_drive",
+            "town_hall_meeting",
             "community",
+            "planning",
             "social"
           ]
         },
         {
           "day": 3,
-          "hour": 12,
+          "hour": 8,
           "type": "conversation",
-          "description": "I heard the Volunteer Drive is looking for more hands. You ever volunteer before?",
+          "description": "I heard the Town Hall Meeting is shaping up some exciting plans for the square.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 1,
           "tags": [
             "conversation",
-            "tense",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 18,
-          "type": "conversation",
-          "description": "Why are you so negative about the Volunteer Drive?",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "tense",
-            "argue"
+            "neutral",
+            "compliment"
           ]
         },
         {
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Did you hear about the Volunteer Drive today?",
+          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
           "participants": [
-            "Lena",
-            "Carlos"
+            "Maya",
+            "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 2,
           "tags": [
             "conversation",
             "neutral",
-            "chat"
+            "compliment"
           ]
         }
       ],
@@ -602,32 +680,35 @@
         "help the town community"
       ],
       "needs": {
-        "social": 39,
+        "social": 41,
         "wealth": 38,
-        "knowledge": 40
+        "knowledge": 38
       },
       "relationships": {
-        "Maya": -4,
-        "Carlos": 2
+        "Maya": 1,
+        "Carlos": 1
       },
       "occupation": "community organizer",
       "recent_topics": [
-        "ask_for_help",
-        "market",
-        "argue"
+        "compliment",
+        "compliment",
+        "compliment"
       ],
-      "current_activity": "Talk with people in the town square",
-      "current_activity_reason": "Lena wants to be around people.",
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Lena is interested in today's event: Town Hall Meeting.",
       "current_activity_tags": [
-        "social",
-        "town_life"
+        "event",
+        "town_hall_meeting",
+        "community",
+        "planning",
+        "social"
       ]
     },
     {
       "id": "agent_004",
       "name": "Carlos",
       "personality": "ambitious",
-      "location_id": "town_square",
+      "location_id": "market",
       "memory": [
         {
           "day": 1,
@@ -649,7 +730,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "The cleanup sounds like a good way to get the town looking nice.",
+          "description": "The cleanup sounds like a good way to meet some neighbors.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -667,67 +748,49 @@
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
           "participants": [],
-          "location": "town_square",
+          "location": "market",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "public_debate",
-            "community",
-            "rules",
-            "social"
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
           ]
         },
         {
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "It's interesting to see how everyone feels about these new rules.",
+          "description": "It's good to see everyone taking part in the Merchant Inspection today.",
           "participants": [
-            "Maya",
-            "Carlos"
+            "Carlos",
+            "Lena"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 1,
           "tags": [
             "conversation",
             "neutral",
-            "chat"
+            "compliment"
           ]
         },
         {
           "day": 2,
           "hour": 18,
           "type": "conversation",
-          "description": "The debate today is quite interesting. What do you think about the proposed changes?",
+          "description": "It\u2019s important to keep an eye on those prices during the inspection.",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Ethan",
+            "Carlos"
           ],
-          "location": "cafe",
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "The market could use some fresh produce. Want to team up on that?",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 1,
           "tags": [
             "conversation",
             "market",
@@ -739,32 +802,71 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Volunteer Drive. The town is looking for volunteers for upcoming community projects.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "volunteer_drive",
+            "town_hall_meeting",
             "community",
+            "planning",
             "social"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "The town hall meeting sounds interesting. What\u2019s on the agenda?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "The market's getting lively. Any ideas on what's driving the interest?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "chat"
           ]
         },
         {
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Did you hear about the Volunteer Drive today?",
+          "description": "The market's financials seem to be improving. Any ideas why?",
           "participants": [
-            "Lena",
+            "Ethan",
             "Carlos"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
+            "market",
             "neutral",
             "chat"
           ]
@@ -775,34 +877,35 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 40,
+        "social": 41,
         "wealth": 38,
         "knowledge": 38
       },
       "relationships": {
-        "Ethan": 0,
-        "Maya": 0,
-        "Lena": 2
+        "Ethan": 1,
+        "Lena": 1,
+        "Maya": 0
       },
       "occupation": "merchant",
       "recent_topics": [
+        "compliment",
+        "market",
+        "market",
         "market"
       ],
-      "current_activity": "Attend Volunteer Drive",
-      "current_activity_reason": "Carlos is interested in today's event: Volunteer Drive.",
+      "current_activity": "Look for work or business opportunities",
+      "current_activity_reason": "Carlos wants to improve wealth.",
       "current_activity_tags": [
-        "event",
-        "volunteer_drive",
-        "community",
-        "social"
+        "wealth",
+        "business"
       ]
     }
   ],
   "relationship_scores": {
-    "Lena|Maya": -4,
-    "Carlos|Ethan": 0,
+    "Lena|Maya": 1,
+    "Carlos|Ethan": 1,
     "Ethan|Maya": 1,
-    "Carlos|Maya": 0,
-    "Carlos|Lena": 2
+    "Carlos|Lena": 1,
+    "Carlos|Maya": 0
   }
 }

@@ -10,6 +10,7 @@ class ActionSystem:
         "storm_off": -2,
         "confess_feelings": 1,
         "share_rumor": -1,
+        "cooperate": 1, 
     }
     ACTION_NEED_EFFECTS = {
         "chat": {"social": 1},
@@ -22,6 +23,7 @@ class ActionSystem:
         "storm_off": {},
         "confess_feelings": {"social": 3},
         "share_rumor": {"knowledge": 1},
+        "cooperate": {"social": 2},
     }
     def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
         if relationship_score <= -6:
@@ -31,12 +33,12 @@ class ActionSystem:
             return ["chat", "argue", "storm_off"]
     
         if relationship_score >= 6:
-            return ["chat", "apologize", "argue", "insult", "storm_off"]
+            return ["chat", "apologize", "argue", "insult", "storm_off", "cooperate"]
     
         if relationship_score >= 3:
-            return ["chat", "apologize", "argue", "storm_off"]
+            return ["chat", "apologize", "argue", "storm_off", "cooperate"]
     
-        return ["chat", "compliment", "offer_help", "ask_for_help", "share_rumor"]
+        return ["chat", "compliment", "offer_help", "cooperate", "ask_for_help", "share_rumor"]
         
     def get_need_effects(self, action: str) -> dict[str, int]:
         return self.ACTION_NEED_EFFECTS.get(action, {})
@@ -163,6 +165,20 @@ class ActionSystem:
             or "what do you think" in text
         ):
             return "chat"
+        if (
+            "team up" in text
+            or "work together" in text
+            or "do this together" in text
+            or "pitch in together" in text
+            or "join forces" in text
+            or "coordinate" in text
+            or "let's work" in text
+            or "we could work" in text
+            or "we should work" in text
+            or "want to team" in text
+            or "want to pitch in" in text
+        ):
+            return "cooperate"
     
         # Genuine requests for help, advice, or information
         if (
