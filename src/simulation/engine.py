@@ -14,6 +14,7 @@ from src.llm.context import build_conversation_context
 from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
 from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
+from src.analysis.report import SimulationReporter
 
 class SimulationEngine:
     def __init__(
@@ -32,7 +33,8 @@ class SimulationEngine:
         self.activity_planner = ActivityPlanner()
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
-    
+        self.reporter = SimulationReporter()
+        
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
@@ -125,6 +127,7 @@ class SimulationEngine:
                 self.run_tick(day, hour)
                 self.state.save(self, day, hour)
         self.print_relationships()
+        self.reporter.summarize(self)
         print("\nSimulation finished.")
 
     def run_tick(self, day: int, hour: int) -> None:

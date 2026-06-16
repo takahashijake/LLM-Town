@@ -1,0 +1,225 @@
+{
+  "current_day": 1,
+  "current_hour": 12,
+  "agents": [
+    {
+      "id": "agent_001",
+      "name": "Maya",
+      "personality": "curious",
+      "location_id": "town_square",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "public_debate",
+            "community",
+            "rules",
+            "social"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about the proposed changes to our town rules?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        }
+      ],
+      "goals": [
+        "learn town secrets",
+        "build close friendships"
+      ],
+      "needs": {
+        "social": 49,
+        "wealth": 49,
+        "knowledge": 49
+      },
+      "relationships": {
+        "Lena": 0
+      },
+      "occupation": "local journalist",
+      "recent_topics": [],
+      "current_activity": "Attend Public Debate",
+      "current_activity_reason": "Maya is interested in today's event: Public Debate.",
+      "current_activity_tags": [
+        "event",
+        "public_debate",
+        "community",
+        "rules",
+        "social"
+      ]
+    },
+    {
+      "id": "agent_002",
+      "name": "Ethan",
+      "personality": "skeptical",
+      "location_id": "town_square",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "public_debate",
+            "community",
+            "rules",
+            "social"
+          ]
+        }
+      ],
+      "goals": [
+        "protect himself from betrayal",
+        "find reliable allies"
+      ],
+      "needs": {
+        "social": 49,
+        "wealth": 49,
+        "knowledge": 49
+      },
+      "relationships": {},
+      "occupation": "accountant",
+      "recent_topics": [],
+      "current_activity": "Talk with people in the town square",
+      "current_activity_reason": "Ethan wants to be around people.",
+      "current_activity_tags": [
+        "social",
+        "town_life"
+      ]
+    },
+    {
+      "id": "agent_003",
+      "name": "Lena",
+      "personality": "friendly",
+      "location_id": "town_square",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "public_debate",
+            "community",
+            "rules",
+            "social"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "What do you think about the proposed changes to our town rules?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        }
+      ],
+      "goals": [
+        "be liked by others",
+        "help the town community"
+      ],
+      "needs": {
+        "social": 50,
+        "wealth": 49,
+        "knowledge": 49
+      },
+      "relationships": {
+        "Maya": 0
+      },
+      "occupation": "community organizer",
+      "recent_topics": [],
+      "current_activity": "Organize community support",
+      "current_activity_reason": "Lena wants to help the town community.",
+      "current_activity_tags": [
+        "community",
+        "volunteer",
+        "social"
+      ]
+    },
+    {
+      "id": "agent_004",
+      "name": "Carlos",
+      "personality": "ambitious",
+      "location_id": "cafe",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Public Debate. Residents are debating a proposed change to town rules.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "public_debate",
+            "community",
+            "rules",
+            "social"
+          ]
+        }
+      ],
+      "goals": [
+        "grow his influence",
+        "find business opportunities"
+      ],
+      "needs": {
+        "social": 49,
+        "wealth": 49,
+        "knowledge": 49
+      },
+      "relationships": {},
+      "occupation": "merchant",
+      "recent_topics": [],
+      "current_activity": "Network with townspeople",
+      "current_activity_reason": "Carlos wants to grow influence through relationships.",
+      "current_activity_tags": [
+        "business",
+        "social"
+      ]
+    }
+  ],
+  "relationship_scores": {
+    "Lena|Maya": 0
+  }
+}
