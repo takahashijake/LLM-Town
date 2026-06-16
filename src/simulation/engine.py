@@ -16,16 +16,18 @@ from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
 
 class SimulationEngine:
-    def __init__(self, agents_path: str, locations_path: str, load_state: bool = False):
+    def __init__(
+        self,
+        agents_path: str,
+        locations_path: str,
+        load_state: bool = False,
+        llm_client=None,
+    ):
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
-        self.llm = TransformersLLMClient()
-        self.actions = ActionSystem()
-        self.activity_planner = ActivityPlanner()
-        self.current_daily_event = None
-        saved_state = self.state.load() if load_state else None
+        self.llm = llm_client or TransformersLLMClient()
     
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
