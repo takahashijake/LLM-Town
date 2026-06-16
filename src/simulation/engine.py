@@ -107,7 +107,7 @@ class SimulationEngine:
             data = json.load(f)
 
         return [Location(**location_data) for location_data in data]
-
+    
     def run(self, days: int, hours: list[int]) -> None:
         print("Starting town simulation...")
 
@@ -182,7 +182,27 @@ class SimulationEngine:
             relationship_change = action_effect + relationship_drift
     
             return max(-3, min(3, relationship_change))
+        
+    def choose_suggested_action(self, allowed_actions: list[str]) -> str:
+        if not allowed_actions:
+            return "chat"
 
+        non_chat_actions = [
+            action for action in allowed_actions
+            if action != "chat"
+        ]
+
+        if not non_chat_actions:
+            return "chat"
+
+        weighted_actions = []
+
+        weighted_actions.extend(["chat"] * 7)
+
+        for action in non_chat_actions:
+            weighted_actions.extend([action] * 2)
+
+        return random.choice(weighted_actions)
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
         agents_by_location = {}
         
