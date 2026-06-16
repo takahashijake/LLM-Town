@@ -1,4 +1,0 @@
-./test.txt:1:./src/llm/client.py:12:    def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
-./test.txt:2:./src/llm/.ipynb_checkpoints/client-checkpoint.py:12:    def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
-./src/llm/client.py:12:    def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
-./src/llm/.ipynb_checkpoints/client-checkpoint.py:12:    def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
