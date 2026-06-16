@@ -31,10 +31,10 @@ class ActionSystem:
             return ["chat", "argue", "storm_off"]
     
         if relationship_score >= 6:
-            return ["chat", "compliment", "offer_help", "ask_for_help", "confess_feelings"]
+            return ["chat", "apologize", "argue", "insult", "storm_off"]
     
         if relationship_score >= 3:
-            return ["chat", "compliment", "offer_help", "ask_for_help"]
+            return ["chat", "apologize", "argue", "storm_off"]
     
         return ["chat", "compliment", "offer_help", "ask_for_help", "share_rumor"]
         
@@ -45,16 +45,30 @@ class ActionSystem:
         text = conversation.lower()
     
         # Apologies
-        if "sorry" in text or "apologize" in text:
+        if (
+            "sorry" in text
+            or "apologize" in text
+            or "i should have handled" in text
+            or "i should've handled" in text
+            or "my mistake" in text
+            or "i regret" in text
+            or "i was wrong" in text
+        ):
             return "apologize"
         if (
-            "shady dealings" in text
-            or "scandal" in text
-            or "cut corners" in text
-            or "questionable" in text
-            or "unreliable" in text
-            or "selling fake goods" in text
-            or "seems a bit off" in text
+            "rumor" in text
+            or "gossip" in text
+            or "suspicious" in text
+            or "secretive" in text
+            or "strange" in text
+            or "i heard something" in text
+            or "people are saying" in text
+            or "someone said" in text
+            or "not sure it's true" in text
+            or "not sure it is true" in text
+            or "might be unreliable" in text
+            or "seems unreliable" in text
+            or "unverified" in text
         ):
             return "share_rumor"
         if (
@@ -65,6 +79,14 @@ class ActionSystem:
             or "you're good at" in text
             or "you are good at" in text
             or "impressive" in text
+            or "great work" in text
+            or "well done" in text
+            or "you always know how" in text
+            or "you're really good" in text
+            or "you are really good" in text
+            or "that was thoughtful" in text
+            or "that was kind" in text
+            or "that was smart" in text
         ):
             return "compliment"
         # Explicit offers of help or recommendations
@@ -95,7 +117,21 @@ class ActionSystem:
             or "seems like a good chance" in text
             or "good opportunity" in text
             or "it could be a good way" in text
-or "thought you might enjoy" in text
+            or "thought you might enjoy" in text
+            or "i can show you" in text
+            or "i could show you" in text
+            or "i can give you a hand" in text
+            or "i could give you a hand" in text
+            or "i can lend a hand" in text
+            or "i could lend a hand" in text
+            or "i can help you" in text
+            or "i could help you" in text
+            or "let me help you" in text
+            or "let me take care of" in text
+            or "i can organize" in text
+            or "i could organize" in text
+            or "i can pitch in" in text
+            or "i could pitch in" in text
         ):
             return "offer_help"
     
@@ -137,6 +173,17 @@ or "thought you might enjoy" in text
             or "would you know where" in text
             or "any chance you could tell me" in text
             or "i'm trying to find out" in text
+            or "could you give me advice" in text
+            or "can you give me advice" in text
+            or "what should i do" in text
+            or "where should i start" in text
+            or "can you explain" in text
+            or "could you explain" in text
+            or "can you teach me" in text
+            or "could you teach me" in text
+            or "would you mind helping" in text
+            or "i need advice" in text
+            or "i need help figuring" in text
         ):
             return "ask_for_help"
     
@@ -164,6 +211,15 @@ or "thought you might enjoy" in text
             "why are you" in text
             or "argue" in text
             or "issue" in text
+            or "you are wrong" in text
+            or "you're wrong" in text
+            or "that makes no sense" in text
+            or "that does not make sense" in text
+            or "i disagree" in text
+            or "i do not agree" in text
+            or "i don't agree" in text
+            or "you handled that poorly" in text
+            or "you made this harder" in text
         ):
             return "argue"
     
