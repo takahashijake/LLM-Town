@@ -1,6 +1,6 @@
 {
-  "current_day": 1,
-  "current_hour": 12,
+  "current_day": 2,
+  "current_hour": 22,
   "agents": [
     {
       "id": "agent_001",
@@ -27,9 +27,80 @@
         },
         {
           "day": 1,
-          "hour": 12,
+          "hour": 8,
           "type": "conversation",
-          "description": "What do you think about the proposed changes to our town rules?",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
           "participants": [
             "Lena",
             "Maya"
@@ -49,22 +120,23 @@
         "build close friendships"
       ],
       "needs": {
-        "social": 49,
-        "wealth": 49,
-        "knowledge": 49
+        "social": 44,
+        "wealth": 42,
+        "knowledge": 42
       },
       "relationships": {
+        "Ethan": 0,
         "Lena": 0
       },
       "occupation": "local journalist",
       "recent_topics": [],
-      "current_activity": "Attend Public Debate",
-      "current_activity_reason": "Maya is interested in today's event: Public Debate.",
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Maya is interested in today's event: Town Hall Meeting.",
       "current_activity_tags": [
         "event",
-        "public_debate",
+        "town_hall_meeting",
         "community",
-        "rules",
+        "planning",
         "social"
       ]
     },
@@ -72,7 +144,7 @@
       "id": "agent_002",
       "name": "Ethan",
       "personality": "skeptical",
-      "location_id": "town_square",
+      "location_id": "library",
       "memory": [
         {
           "day": 1,
@@ -90,6 +162,113 @@
             "rules",
             "social"
           ]
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
         }
       ],
       "goals": [
@@ -97,18 +276,22 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 49,
-        "wealth": 49,
-        "knowledge": 49
+        "social": 46,
+        "wealth": 42,
+        "knowledge": 42
       },
-      "relationships": {},
+      "relationships": {
+        "Maya": 0,
+        "Lena": 0,
+        "Carlos": 0
+      },
       "occupation": "accountant",
       "recent_topics": [],
-      "current_activity": "Talk with people in the town square",
-      "current_activity_reason": "Ethan wants to be around people.",
+      "current_activity": "Review records and numbers",
+      "current_activity_reason": "Ethan wants reliable information before trusting others.",
       "current_activity_tags": [
-        "social",
-        "town_life"
+        "accounting",
+        "knowledge"
       ]
     },
     {
@@ -136,9 +319,116 @@
         },
         {
           "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "What do you think about the proposed changes to our town rules?",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 12,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
           "participants": [
             "Lena",
             "Maya"
@@ -158,20 +448,24 @@
         "help the town community"
       ],
       "needs": {
-        "social": 50,
-        "wealth": 49,
-        "knowledge": 49
+        "social": 44,
+        "wealth": 42,
+        "knowledge": 42
       },
       "relationships": {
+        "Carlos": 0,
+        "Ethan": 0,
         "Maya": 0
       },
       "occupation": "community organizer",
       "recent_topics": [],
-      "current_activity": "Organize community support",
-      "current_activity_reason": "Lena wants to help the town community.",
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Lena is interested in today's event: Town Hall Meeting.",
       "current_activity_tags": [
+        "event",
+        "town_hall_meeting",
         "community",
-        "volunteer",
+        "planning",
         "social"
       ]
     },
@@ -197,6 +491,77 @@
             "rules",
             "social"
           ]
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 12,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "They exchange a brief comment.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
         }
       ],
       "goals": [
@@ -204,11 +569,14 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 49,
-        "wealth": 49,
-        "knowledge": 49
+        "social": 43,
+        "wealth": 42,
+        "knowledge": 42
       },
-      "relationships": {},
+      "relationships": {
+        "Lena": 0,
+        "Ethan": 0
+      },
       "occupation": "merchant",
       "recent_topics": [],
       "current_activity": "Network with townspeople",
@@ -220,6 +588,10 @@
     }
   ],
   "relationship_scores": {
-    "Lena|Maya": 0
+    "Ethan|Maya": 0,
+    "Carlos|Lena": 0,
+    "Ethan|Lena": 0,
+    "Lena|Maya": 0,
+    "Carlos|Ethan": 0
   }
 }
