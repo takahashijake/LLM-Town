@@ -10,6 +10,8 @@ class TransformersLLMClient:
     def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        self.torch = torch
         self.model_name = model_name
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -48,7 +50,7 @@ class TransformersLLMClient:
 
         inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
 
-        with torch.no_grad():
+        with self.torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
                 max_new_tokens=150,

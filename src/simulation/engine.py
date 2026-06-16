@@ -171,6 +171,18 @@ class SimulationEngine:
     
         return random.choice([-1, 0, 0, 0, 1])
 
+    def calculate_relationship_change(
+        self,
+        action: str,
+        old_relationship_label: str,
+        ) -> int:
+            action_effect = self.actions.get_relationship_effect(action)
+            relationship_drift = self.get_relationship_change(old_relationship_label)
+    
+            relationship_change = action_effect + relationship_drift
+    
+            return max(-3, min(3, relationship_change))
+
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
         agents_by_location = {}
         
@@ -340,13 +352,8 @@ class SimulationEngine:
             inferred_action = self.actions.infer_action(conversation, [])
             if action == "chat" and inferred_action != "chat": 
                 action = inferred_action 
-                                        
 
-            if old_relationship_label in ["tense", "enemies"] and action in [
-                "compliment", 
-                "offer_help", 
-                "confess_feelings",
-            ]:
+            if action not in allowed_actions:
                 action = "chat"
             if not conversation:
                 conversation = speaker.speak_to(listener, old_relationship_label)
@@ -356,12 +363,12 @@ class SimulationEngine:
             conversation_tags.append(old_relationship_label) 
             conversation_tags.append(action) 
 
-            #NOTE: THIS IS A TEMPORARY COMMENTING 
-            #random_relationship_effect = self.get_relationship_change(old_relationship_label) 
-            #action_relationship_effect = self.actions.get_relationship_effect(action) 
-            #relationship_change = random_relationship_effect + action_relationship_effect 
+           
 
-            relationship_change = self.actions.get_relationship_effect(action)
+            relationship_change = self.calculate_relationship_change(
+                action,
+                old_relationship_label,
+            )
             
             new_score, relationship_label = self.apply_relationship_change(
                 speaker,
