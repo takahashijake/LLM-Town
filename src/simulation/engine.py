@@ -349,8 +349,8 @@ class SimulationEngine:
                 speaker.name,
                 listener.name,
             )
-
             allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
+            suggested_action = self.choose_suggested_action(allowed_actions)
             
             context = build_conversation_context(
                 speaker=speaker,
@@ -361,7 +361,8 @@ class SimulationEngine:
                 current_day=day,
                 daily_event=self.current_daily_event,
                 allowed_actions=allowed_actions,
-            )                    
+                suggested_action=suggested_action,
+            )            
             
             raw_output = self.llm.generate_conversation(context)
             parsed_output = parse_llm_conversation_output(raw_output)

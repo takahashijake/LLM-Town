@@ -79,6 +79,11 @@ class TransformersLLMClient:
         daily_event = context.get("daily_event") 
         allowed_actions = context.get("allowed_actions", ["chat"])
         allowed_action_text = ", ".join(allowed_actions)
+
+        suggested_action = context.get("suggested_action", "chat") 
+
+        if suggested_action not in allowed_actions: 
+            suggested_action = "chat"
         if daily_event:
             daily_event_text = (
                 f"{daily_event['name']}: {daily_event['description']} "
@@ -141,6 +146,13 @@ Primary need:
 
 Allowed actions:
 {allowed_action_text}
+
+Suggested action:
+{suggested_action}
+
+The suggested action is a soft nudge, not an absolute command.
+Try to use the suggested action if it naturally fits the speaker, listener, relationship, location, and current activity.
+If the suggested action does not fit naturally, use "chat".
 
 The speaker's current activity is the most important context.
 The dialogue should usually relate to the current activity or the listener's presence at the same location.
@@ -263,7 +275,17 @@ Many conversations should simply share information or make an observation.
 
 ACTION SELECTION RULES
 
-Most conversations should be "chat", but some conversations should use a specific non-chat action when the dialogue clearly performs that action.
+Most conversations should be "chat", but the simulation may suggest a non-chat action to create social variety.
+
+When the suggested action is non-chat, try to write dialogue that clearly matches that action.
+
+Examples:
+- If suggested action is "compliment", the dialogue should clearly praise the listener.
+- If suggested action is "offer_help", the dialogue should clearly offer assistance.
+- If suggested action is "ask_for_help", the dialogue should clearly ask for advice, information, or assistance.
+- If suggested action is "apologize", the dialogue should clearly express regret.
+- If suggested action is "share_rumor", the dialogue should clearly mention uncertain or secondhand information.
+- If suggested action is "argue", the dialogue should clearly disagree or challenge the listener.
 
 Across many conversations, around 20-30% should use a non-chat action when context supports it.
 
@@ -344,7 +366,7 @@ Examples:
 - "You are wrong about this."
 
 Choose "insult" only for direct personal attacks.
-
+Also, you must only choose exactly one action from the allowed actions. 
 CONTENT RULES
 
 Do not overuse:

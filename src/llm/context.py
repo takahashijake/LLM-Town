@@ -7,6 +7,7 @@ def build_conversation_context(
     current_day: int,
     daily_event=None,
     allowed_actions=None,
+    suggested_action=None,
 ):
     return {
         "speaker": speaker.name,
@@ -32,8 +33,8 @@ def build_conversation_context(
         "speaker_activity_reason": speaker.current_activity_reason,
         "speaker_activity_tags": speaker.current_activity_tags, 
         "primary_need": speaker.get_primary_need(),
-        "primary_need" : speaker.get_primary_need(),
-        "allowed_actions" : allowed_actions or ["chat"],
+        "allowed_actions": allowed_actions or ["chat"],
+        "suggested_action": suggested_action or "chat",
         "daily_event": {
             "id" : daily_event.id,
             "name": daily_event.name,
