@@ -12,6 +12,7 @@ ALLOWED_ACTIONS = {
     "storm_off",
     "confess_feelings",
     "share_rumor",
+    "cooperate",
 }
 
 
