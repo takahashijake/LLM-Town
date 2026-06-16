@@ -142,6 +142,14 @@ class ActionSystem:
             or "i could organize" in text
             or "i can pitch in" in text
             or "i could pitch in" in text
+            or "need any help" in text
+            or "do you need help" in text
+            or "want me to help" in text
+            or "would you like help" in text
+            or "could i help" in text
+            or "can i help" in text
+            or "need a hand" in text
+            or "want a hand" in text
         ):
             return "offer_help"
     

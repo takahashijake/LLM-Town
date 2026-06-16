@@ -28,7 +28,7 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Did you hear there are some old stories about the town's history being uncovered?",
           "participants": [
             "Maya",
             "Lena"
@@ -46,25 +46,45 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Hey Lena, the cleanup crew is ready to start. Want to pitch in?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -1,
+          "sentiment": 0,
           "tags": [
             "conversation",
+            "learning",
             "neutral",
-            "chat"
+            "cooperate"
           ]
         },
         {
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Hey Maya, great to see you! Ready to get started?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "compliment"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Maya, great to see you! Ready to get started?",
           "participants": [
             "Lena",
             "Maya"
@@ -74,26 +94,9 @@
           "sentiment": 0,
           "tags": [
             "conversation",
+            "learning",
             "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
+            "compliment"
           ]
         },
         {
@@ -117,26 +120,7 @@
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "offer_help"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
+          "description": "I noticed your stall has been selling well lately.",
           "participants": [
             "Ethan",
             "Maya"
@@ -146,9 +130,28 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "market",
+            "business",
             "neutral",
-            "ask_for_help"
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed your stall has been selling well lately.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "neutral",
+            "chat"
           ]
         },
         {
@@ -172,7 +175,7 @@
           "day": 3,
           "hour": 8,
           "type": "conversation",
-          "description": "I heard the Town Hall Meeting is shaping up some exciting plans for the square.",
+          "description": "It looks like everyone is buzzing about the new community garden project.",
           "participants": [
             "Lena",
             "Maya"
@@ -182,7 +185,8 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "tense",
+            "business",
+            "neutral",
             "chat"
           ]
         },
@@ -190,7 +194,7 @@
           "day": 3,
           "hour": 12,
           "type": "conversation",
-          "description": "The town hall meeting sounds interesting. What\u2019s on the agenda?",
+          "description": "I noticed the market stalls are looking a bit worn out. Do you think we could look into getting some repairs?",
           "participants": [
             "Carlos",
             "Maya"
@@ -200,6 +204,8 @@
           "sentiment": 0,
           "tags": [
             "conversation",
+            "business",
+            "market",
             "neutral",
             "chat"
           ]
@@ -208,7 +214,26 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
+          "description": "Did you hear about the new playground equipment being installed?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed the volunteers seem a bit scattered. Want to see if we can get everyone organized?",
           "participants": [
             "Maya",
             "Lena"
@@ -219,25 +244,7 @@
           "tags": [
             "conversation",
             "neutral",
-            "compliment"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 2,
-          "tags": [
-            "conversation",
-            "neutral",
-            "compliment"
+            "chat"
           ]
         }
       ],
@@ -246,23 +253,27 @@
         "build close friendships"
       ],
       "needs": {
-        "social": 44,
+        "social": 43,
         "wealth": 38,
         "knowledge": 38
       },
       "relationships": {
-        "Lena": 1,
-        "Ethan": 1,
+        "Lena": 2,
+        "Ethan": 0,
         "Carlos": 0
       },
       "occupation": "local journalist",
       "recent_topics": [
-        "market",
-        "offer_help",
-        "market",
-        "ask_for_help",
+        "learning",
         "compliment",
-        "compliment"
+        "learning",
+        "compliment",
+        "business",
+        "business",
+        "business",
+        "business",
+        "market",
+        "business"
       ],
       "current_activity": "Attend Town Hall Meeting",
       "current_activity_reason": "Maya is interested in today's event: Town Hall Meeting.",
@@ -300,7 +311,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "The cleanup sounds like a good way to meet some neighbors.",
+          "description": "Sounds like a lot of hard work for the cleanup. How do you plan to divide the tasks?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -335,45 +346,44 @@
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
+          "description": "I noticed your stall has been selling well lately.",
           "participants": [
             "Ethan",
             "Maya"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "offer_help"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 18,
-          "type": "conversation",
-          "description": "It\u2019s important to keep an eye on those prices during the inspection.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "market",
-          "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
-            "market",
+            "business",
             "neutral",
             "chat"
           ]
         },
         {
           "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Sounds like a lot of work for the cleanup. Want to team up for the merchant inspection?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ]
+        },
+        {
+          "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "I noticed the Merchant Inspection today. Need any help checking your prices?",
+          "description": "I noticed your stall has been selling well lately.",
           "participants": [
             "Ethan",
             "Maya"
@@ -383,9 +393,9 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "market",
+            "business",
             "neutral",
-            "ask_for_help"
+            "chat"
           ]
         },
         {
@@ -409,7 +419,7 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "The market's getting lively. Any ideas on what's driving the interest?",
+          "description": "It looks like the market is buzzing with activity today.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -428,7 +438,7 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "The market's financials seem to be improving. Any ideas why?",
+          "description": "Have you noticed any unusual transactions lately?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -438,7 +448,6 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "market",
             "neutral",
             "chat"
           ]
@@ -449,22 +458,19 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 43,
+        "social": 45,
         "wealth": 38,
-        "knowledge": 40
+        "knowledge": 38
       },
       "relationships": {
-        "Carlos": 1,
-        "Maya": 1
+        "Carlos": 2,
+        "Maya": 0
       },
       "occupation": "accountant",
       "recent_topics": [
-        "market",
-        "offer_help",
-        "market",
-        "market",
-        "ask_for_help",
-        "market",
+        "business",
+        "cooperate",
+        "business",
         "market"
       ],
       "current_activity": "Observe business activity",
@@ -500,7 +506,7 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Did you hear there are some old stories about the town's history being uncovered?",
           "participants": [
             "Maya",
             "Lena"
@@ -518,25 +524,45 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Hey Lena, the cleanup crew is ready to start. Want to pitch in?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -1,
+          "sentiment": 0,
           "tags": [
             "conversation",
+            "learning",
             "neutral",
-            "chat"
+            "cooperate"
           ]
         },
         {
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
+          "description": "Hey Maya, great to see you! Ready to get started?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "compliment"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Hey Maya, great to see you! Ready to get started?",
           "participants": [
             "Lena",
             "Maya"
@@ -546,26 +572,9 @@
           "sentiment": 0,
           "tags": [
             "conversation",
+            "learning",
             "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It looks like we have a lot to clean up today!",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
+            "compliment"
           ]
         },
         {
@@ -589,18 +598,18 @@
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "It's good to see everyone taking part in the Merchant Inspection today.",
+          "description": "It looks like things are running smoothly so far.",
           "participants": [
             "Carlos",
             "Lena"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "neutral",
-            "compliment"
+            "chat"
           ]
         },
         {
@@ -624,7 +633,7 @@
           "day": 3,
           "hour": 8,
           "type": "conversation",
-          "description": "I heard the Town Hall Meeting is shaping up some exciting plans for the square.",
+          "description": "It looks like everyone is buzzing about the new community garden project.",
           "participants": [
             "Lena",
             "Maya"
@@ -634,7 +643,8 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "tense",
+            "business",
+            "neutral",
             "chat"
           ]
         },
@@ -642,7 +652,26 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
+          "description": "Did you hear about the new playground equipment being installed?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed the volunteers seem a bit scattered. Want to see if we can get everyone organized?",
           "participants": [
             "Maya",
             "Lena"
@@ -653,25 +682,7 @@
           "tags": [
             "conversation",
             "neutral",
-            "compliment"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It's great to see so many ideas coming up at the Town Hall Meeting.",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 2,
-          "tags": [
-            "conversation",
-            "neutral",
-            "compliment"
+            "chat"
           ]
         }
       ],
@@ -680,19 +691,24 @@
         "help the town community"
       ],
       "needs": {
-        "social": 41,
+        "social": 43,
         "wealth": 38,
         "knowledge": 38
       },
       "relationships": {
-        "Maya": 1,
-        "Carlos": 1
+        "Maya": 2,
+        "Carlos": 0
       },
       "occupation": "community organizer",
       "recent_topics": [
+        "learning",
+        "cooperate",
+        "learning",
         "compliment",
+        "learning",
         "compliment",
-        "compliment"
+        "business",
+        "business"
       ],
       "current_activity": "Attend Town Hall Meeting",
       "current_activity_reason": "Lena is interested in today's event: Town Hall Meeting.",
@@ -730,7 +746,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "The cleanup sounds like a good way to meet some neighbors.",
+          "description": "Sounds like a lot of hard work for the cleanup. How do you plan to divide the tasks?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -765,10 +781,28 @@
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "It's good to see everyone taking part in the Merchant Inspection today.",
+          "description": "It looks like things are running smoothly so far.",
           "participants": [
             "Carlos",
             "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Sounds like a lot of work for the cleanup. Want to team up for the merchant inspection?",
+          "participants": [
+            "Ethan",
+            "Carlos"
           ],
           "location": "market",
           "importance": 2,
@@ -776,26 +810,7 @@
           "tags": [
             "conversation",
             "neutral",
-            "compliment"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 18,
-          "type": "conversation",
-          "description": "It\u2019s important to keep an eye on those prices during the inspection.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
+            "cooperate"
           ]
         },
         {
@@ -819,7 +834,7 @@
           "day": 3,
           "hour": 12,
           "type": "conversation",
-          "description": "The town hall meeting sounds interesting. What\u2019s on the agenda?",
+          "description": "I noticed the market stalls are looking a bit worn out. Do you think we could look into getting some repairs?",
           "participants": [
             "Carlos",
             "Maya"
@@ -829,6 +844,8 @@
           "sentiment": 0,
           "tags": [
             "conversation",
+            "business",
+            "market",
             "neutral",
             "chat"
           ]
@@ -837,7 +854,7 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "The market's getting lively. Any ideas on what's driving the interest?",
+          "description": "It looks like the market is buzzing with activity today.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -856,7 +873,7 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "The market's financials seem to be improving. Any ideas why?",
+          "description": "Have you noticed any unusual transactions lately?",
           "participants": [
             "Ethan",
             "Carlos"
@@ -866,7 +883,6 @@
           "sentiment": 1,
           "tags": [
             "conversation",
-            "market",
             "neutral",
             "chat"
           ]
@@ -877,19 +893,19 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 41,
+        "social": 40,
         "wealth": 38,
         "knowledge": 38
       },
       "relationships": {
-        "Ethan": 1,
-        "Lena": 1,
+        "Ethan": 2,
+        "Lena": 0,
         "Maya": 0
       },
       "occupation": "merchant",
       "recent_topics": [
-        "compliment",
-        "market",
+        "cooperate",
+        "business",
         "market",
         "market"
       ],
@@ -902,10 +918,10 @@
     }
   ],
   "relationship_scores": {
-    "Lena|Maya": 1,
-    "Carlos|Ethan": 1,
-    "Ethan|Maya": 1,
-    "Carlos|Lena": 1,
+    "Lena|Maya": 2,
+    "Carlos|Ethan": 2,
+    "Ethan|Maya": 0,
+    "Carlos|Lena": 0,
     "Carlos|Maya": 0
   }
 }
