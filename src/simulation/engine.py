@@ -28,6 +28,10 @@ class SimulationEngine:
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.llm = llm_client or TransformersLLMClient()
+        self.actions = ActionSystem()
+        self.activity_planner = ActivityPlanner()
+        self.current_daily_event = None
+        saved_state = self.state.load() if load_state else None
     
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
