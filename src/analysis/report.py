@@ -51,6 +51,7 @@ class SimulationReporter:
                     "storm_off",
                     "confess_feelings",
                     "share_rumor",
+                    "cooperate",
                 }:
                     action_counts[tag] += 1
 
