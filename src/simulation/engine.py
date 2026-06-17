@@ -41,6 +41,7 @@ class SimulationEngine:
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
+            self.sync_agent_relationships_from_manager()
             self.start_day = saved_state["current_day"]
             self.start_hour = saved_state["current_hour"]
         else:
@@ -48,6 +49,18 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def sync_agent_relationships_from_manager(self) -> None:
+        agents_by_name = {
+            agent.name: agent
+            for agent in self.agents
+        }
+
+        for (agent_a, agent_b), score in self.relationships.scores.items():
+            if agent_a not in agents_by_name or agent_b not in agents_by_name:
+                continue
+
+            agents_by_name[agent_a].update_relationship(agent_b, score)
+            agents_by_name[agent_b].update_relationship(agent_a, score)
     def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
         text = conversation.strip().lower()
     
@@ -352,6 +365,8 @@ class SimulationEngine:
         self.generate_conversations(day, hour)
         self.maintain_agent_memories()
         self.relationships.decay_all_relationships(probability=0.03)
+        self.sync_agent_relationships_from_manager() 
+        
 
     def get_relationship_change(self, relationship_label: str) -> int:
         if relationship_label == "close friends":
