@@ -1,0 +1,275 @@
+Starting town simulation...
+
+=== Day 1 ===
+Daily Event: Town Cleanup - Volunteers are meeting to clean up the town square.
+
+--- 8:00 ---
+Maya chooses activity: Attend Town Cleanup at town_square (Maya is interested in today's event: Town Cleanup.)
+Ethan chooses activity: Talk with people in the town square at town_square (Ethan wants to be around people.)
+Lena chooses activity: Attend Town Cleanup at town_square (Lena is interested in today's event: Town Cleanup.)
+Carlos chooses activity: Attend Town Cleanup at town_square (Carlos is interested in today's event: Town Cleanup.)
+Day 1, 8:00 at town_square: I noticed you've been leading the cleanup efforts so far. Relationship is now neutral (score +0, change +0). Action: compliment.
+
+--- 12:00 ---
+Maya chooses activity: Attend Town Cleanup at town_square (Maya is interested in today's event: Town Cleanup.)
+Ethan chooses activity: Socialize with townspeople at cafe (Ethan wants more social contact.)
+Lena chooses activity: Attend Town Cleanup at town_square (Lena is interested in today's event: Town Cleanup.)
+Carlos chooses activity: Network with townspeople at cafe (Carlos wants to grow influence through relationships.)
+Day 1, 12:00 at town_square: Great job organizing the cleanup today! Relationship is now neutral (score +0, change +0). Action: compliment.
+Day 1, 12:00 at cafe: Carlos, you really know your way around here. Relationship is now neutral (score +1, change +1). Action: compliment.
+
+--- 18:00 ---
+Maya chooses activity: Investigate a possible story at town_square (Maya is looking for town stories or rumors.)
+Ethan chooses activity: Attend Town Cleanup at town_square (Ethan is interested in today's event: Town Cleanup.)
+Lena chooses activity: Attend Town Cleanup at town_square (Lena is interested in today's event: Town Cleanup.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 1, 18:00 at town_square: Great teamwork today, everyone is doing a fantastic job! Relationship is now neutral (score +2, change +2). Action: compliment.
+
+--- 22:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Observe business activity at market (Ethan is watching for financial opportunities or risks.)
+Lena chooses activity: Attend Town Cleanup at town_square (Lena is interested in today's event: Town Cleanup.)
+Carlos chooses activity: Talk with people in the town square at town_square (Carlos wants to be around people.)
+Day 1, 22:00 at market: It looks like a lot of folks are involved in the cleanup today. Relationship is now neutral (score +0, change +0). Action: chat.
+Day 1, 22:00 at town_square: Great teamwork so far, Carlos! Relationship is now neutral (score +0, change +0). Action: compliment.
+
+=== Day 2 ===
+Daily Event: New Bakery Opening - A bakery is opening nearby and giving out samples.
+
+--- 8:00 ---
+Maya chooses activity: Attend New Bakery Opening at cafe (Maya is interested in today's event: New Bakery Opening.)
+Ethan chooses activity: Attend New Bakery Opening at cafe (Ethan is interested in today's event: New Bakery Opening.)
+Lena chooses activity: Meet residents at cafe (Lena wants to build goodwill with residents.)
+Carlos chooses activity: Socialize with townspeople at cafe (Carlos wants more social contact.)
+Day 2, 8:00 at cafe: I noticed the samples are quite popular today. Relationship is now neutral (score -1, change -1). Action: share_rumor.
+
+--- 12:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Attend New Bakery Opening at cafe (Ethan is interested in today's event: New Bakery Opening.)
+Lena chooses activity: Look for work or business opportunities at market (Lena wants to improve wealth.)
+Carlos chooses activity: Attend New Bakery Opening at cafe (Carlos is interested in today's event: New Bakery Opening.)
+Day 2, 12:00 at market: I noticed you've been leading the cleanup efforts so far. Relationship is now friendly (score +3, change +1). Action: compliment.
+Day 2, 12:00 at cafe: Carlos, you really know your way around here. Relationship is now friendly (score +3, change +2). Action: compliment.
+
+--- 18:00 ---
+Maya chooses activity: Investigate a possible story at town_square (Maya is looking for town stories or rumors.)
+Ethan chooses activity: Attend New Bakery Opening at cafe (Ethan is interested in today's event: New Bakery Opening.)
+Lena chooses activity: Attend New Bakery Opening at cafe (Lena is interested in today's event: New Bakery Opening.)
+Carlos chooses activity: Attend New Bakery Opening at cafe (Carlos is interested in today's event: New Bakery Opening.)
+Day 2, 18:00 at cafe: Carlos nodded appreciatively at the delicious pastries Ethan was sampling. Relationship is now friendly (score +4, change +1). Action: compliment.
+
+--- 22:00 ---
+Maya chooses activity: Check records for leads at library (Maya is looking for background information.)
+Ethan chooses activity: Attend New Bakery Opening at cafe (Ethan is interested in today's event: New Bakery Opening.)
+Lena chooses activity: Look for work or business opportunities at market (Lena wants to improve wealth.)
+Carlos chooses activity: Attend New Bakery Opening at cafe (Carlos is interested in today's event: New Bakery Opening.)
+Day 2, 22:00 at cafe: Carlos, you really know how to handle these situations. Relationship is now friendly (score +5, change +1). Action: compliment.
+
+=== Day 3 ===
+Daily Event: Poetry Night - Residents are sharing poems and short stories at the library.
+
+--- 8:00 ---
+Maya chooses activity: Attend Poetry Night at library (Maya is interested in today's event: Poetry Night.)
+Ethan chooses activity: Look for work or business opportunities at market (Ethan wants to improve wealth.)
+Lena chooses activity: Look for work or business opportunities at market (Lena wants to improve wealth.)
+Carlos chooses activity: Network with townspeople at cafe (Carlos wants to grow influence through relationships.)
+Day 3, 8:00 at market: It looks like a lot of people are enjoying the new bakery's samples. Relationship is now neutral (score -2, change -1). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Attend Poetry Night at library (Maya is interested in today's event: Poetry Night.)
+Ethan chooses activity: Observe business activity at market (Ethan is watching for financial opportunities or risks.)
+Lena chooses activity: Meet residents at cafe (Lena wants to build goodwill with residents.)
+Carlos chooses activity: Network with townspeople at cafe (Carlos wants to grow influence through relationships.)
+Day 3, 12:00 at cafe: Carlos nodded appreciatively at Lena's poem. Relationship is now neutral (score +1, change +1). Action: compliment.
+
+--- 18:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Review records and numbers at library (Ethan wants reliable information before trusting others.)
+Lena chooses activity: Attend Poetry Night at library (Lena is interested in today's event: Poetry Night.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 3, 18:00 at market: I heard they are having a poetry reading tonight at the library. Relationship is now neutral (score -1, change -1). Action: share_rumor.
+Day 3, 18:00 at library: I noticed the volunteers are getting ready for the cleanup today. Relationship is now neutral (score -2, change -1). Action: chat.
+
+--- 22:00 ---
+Maya chooses activity: Attend Poetry Night at library (Maya is interested in today's event: Poetry Night.)
+Ethan chooses activity: Observe business activity at market (Ethan is watching for financial opportunities or risks.)
+Lena chooses activity: Look for work or business opportunities at market (Lena wants to improve wealth.)
+Carlos chooses activity: Network with townspeople at cafe (Carlos wants to grow influence through relationships.)
+Day 3, 22:00 at market: It looks like quite a few people are enjoying the bakery's samples. Relationship is now neutral (score -1, change +1). Action: chat.
+
+=== Day 4 ===
+Daily Event: Library Fundraiser - The library is raising money for new books and repairs.
+
+--- 8:00 ---
+Maya chooses activity: Attend Library Fundraiser at library (Maya is interested in today's event: Library Fundraiser.)
+Ethan chooses activity: Attend Library Fundraiser at library (Ethan is interested in today's event: Library Fundraiser.)
+Lena chooses activity: Attend Library Fundraiser at library (Lena is interested in today's event: Library Fundraiser.)
+Carlos chooses activity: Attend Library Fundraiser at library (Carlos is interested in today's event: Library Fundraiser.)
+Day 4, 8:00 at library: I heard there's a secret recipe for the new bakery's pastries. Relationship is now neutral (score -2, change -2). Action: share_rumor.
+
+--- 12:00 ---
+Maya chooses activity: Check records for leads at library (Maya is looking for background information.)
+Ethan chooses activity: Attend Library Fundraiser at library (Ethan is interested in today's event: Library Fundraiser.)
+Lena chooses activity: Attend Library Fundraiser at library (Lena is interested in today's event: Library Fundraiser.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 4, 12:00 at library: I noticed more people coming to the library today for the fundraiser. Relationship is now tense (score -3, change -1). Action: share_rumor.
+
+--- 18:00 ---
+Maya chooses activity: Attend Library Fundraiser at library (Maya is interested in today's event: Library Fundraiser.)
+Ethan chooses activity: Attend Library Fundraiser at library (Ethan is interested in today's event: Library Fundraiser.)
+Lena chooses activity: Look for work or business opportunities at market (Lena wants to improve wealth.)
+Carlos chooses activity: Look for work or business opportunities at market (Carlos wants to improve wealth.)
+Day 4, 18:00 at library: Ethan nodded, acknowledging Maya's efforts. Relationship is now tense (score -3, change +0). Action: chat.
+Day 4, 18:00 at market: Did you hear about the new bakery opening? They're giving away samples today. Relationship is now neutral (score -1, change -2). Action: share_rumor.
+
+--- 22:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Attend Library Fundraiser at library (Ethan is interested in today's event: Library Fundraiser.)
+Lena chooses activity: Attend Library Fundraiser at library (Lena is interested in today's event: Library Fundraiser.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 4, 22:00 at market: I heard the new bakery is doing great sales. Relationship is now neutral (score -2, change -1). Action: share_rumor.
+Day 4, 22:00 at library: I noticed you've been helping so many people today at the library. Relationship is now neutral (score +0, change +1). Action: compliment.
+
+=== Day 5 ===
+Daily Event: School Fair - Families are visiting booths, games, and small performances.
+
+--- 8:00 ---
+Maya chooses activity: Attend School Fair at town_square (Maya is interested in today's event: School Fair.)
+Ethan chooses activity: Look for work or business opportunities at market (Ethan wants to improve wealth.)
+Lena chooses activity: Attend School Fair at town_square (Lena is interested in today's event: School Fair.)
+Carlos chooses activity: Attend School Fair at town_square (Carlos is interested in today's event: School Fair.)
+Day 5, 8:00 at town_square: Carlos noticed Maya smiling while watching the children play. He smiled back. Relationship is now neutral (score -2, change +0). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Observe business activity at market (Ethan is watching for financial opportunities or risks.)
+Lena chooses activity: Organize community support at town_square (Lena wants to help the town community.)
+Carlos chooses activity: Attend School Fair at town_square (Carlos is interested in today's event: School Fair.)
+Day 5, 12:00 at market: I heard they are having a poetry reading tonight at the library. Relationship is now tense (score -4, change -1). Action: share_rumor.
+Day 5, 12:00 at town_square: Carlos, your coordination at the poetry night was really appreciated. Relationship is now neutral (score +0, change +1). Action: compliment.
+
+--- 18:00 ---
+Maya chooses activity: Investigate a possible story at town_square (Maya is looking for town stories or rumors.)
+Ethan chooses activity: Attend School Fair at town_square (Ethan is interested in today's event: School Fair.)
+Lena chooses activity: Attend School Fair at town_square (Lena is interested in today's event: School Fair.)
+Carlos chooses activity: Attend School Fair at town_square (Carlos is interested in today's event: School Fair.)
+Day 5, 18:00 at town_square: I heard there's a bit of gossip about the new bakery owner. Relationship is now tense (score -5, change -1). Action: share_rumor.
+
+--- 22:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Review records and numbers at library (Ethan wants reliable information before trusting others.)
+Lena chooses activity: Attend School Fair at town_square (Lena is interested in today's event: School Fair.)
+Carlos chooses activity: Attend School Fair at town_square (Carlos is interested in today's event: School Fair.)
+Day 5, 22:00 at town_square: Carlos nodded towards the game booth and asked, 'Lena, do you fancy joining me for a game?' Relationship is now neutral (score +2, change +2). Action: cooperate.
+
+=== Final Relationships ===
+
+Maya:
+  Lena: friendly (+3)
+  Ethan: tense (-5)
+  Carlos: neutral (-2)
+
+Ethan:
+  Carlos: friendly (+5)
+  Maya: tense (-5)
+  Lena: neutral (+0)
+
+Lena:
+  Maya: friendly (+3)
+  Carlos: neutral (+2)
+  Ethan: neutral (+0)
+
+Carlos:
+  Ethan: friendly (+5)
+  Lena: neutral (+2)
+  Maya: neutral (-2)
+
+=== Town Summary ===
+
+Total conversations: 27
+Most common action: compliment (12)
+
+Action distribution:
+  compliment: 12 (44.4%)
+  share_rumor: 8 (29.6%)
+  chat: 6 (22.2%)
+  cooperate: 1 (3.7%)
+
+Conversations by day:
+  Day 1: 6
+  Day 2: 5
+  Day 3: 5
+  Day 4: 6
+  Day 5: 5
+
+Activity distribution:
+  Look for work or business opportunities: 14
+  Attend Library Fundraiser: 10
+  Attend New Bakery Opening: 9
+  Attend School Fair: 9
+  Attend Town Cleanup: 8
+  Network with townspeople: 4
+  Look for business opportunities: 4
+  Observe business activity: 4
+  Attend Poetry Night: 4
+  Investigate a possible story: 3
+  Talk with people in the town square: 2
+  Socialize with townspeople: 2
+  Meet residents: 2
+  Check records for leads: 2
+  Review records and numbers: 2
+  Organize community support: 1
+
+Location distribution:
+  town_square: 23
+  market: 22
+  library: 18
+  cafe: 17
+
+Relationship summary:
+  Average relationship score: +0.50
+  Strongest relationship: Carlos <-> Ethan (+5, friendly)
+  Weakest relationship: Ethan <-> Maya (-5, tense)
+
+Relationship distribution:
+  close friends: 0
+  friendly: 2
+  neutral: 3
+  tense: 1
+  enemies: 0
+
+Average needs:
+  knowledge: 32.0
+  social: 38.0
+  wealth: 30.0
+
+Memory summary:
+  Total memories: 74
+  Average memories per agent: 18.5
+  Most memories: Ethan (20)
+
+Topic summary:
+  Unique topic tags: 9
+  Most common topics:
+    conversation: 27
+    event: 6
+    town_cleanup: 3
+    learning: 3
+    library_fundraiser: 2
+    poetry_night: 1
+    new_bakery_opening: 1
+    food: 1
+    community: 1
+
+Repetition summary:
+  Repeated dialogue rate: 11.1%
+  Most repeated dialogue:
+    2x: i noticed you've been leading the cleanup efforts so far.
+    2x: i heard they are having a poetry reading tonight at the library.
+    2x: carlos, you really know your way around here.
+
+Daily event usage:
+  Event-related conversations: 6
+  Daily event mention rate: 22.2%
+
+Simulation finished.

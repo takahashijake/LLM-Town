@@ -379,7 +379,23 @@ Examples:
 - "Let's coordinate with the volunteers."
 - "Want to pitch in together?"
 
-Choose "share_rumor" when discussing uncertain, unverified, suspicious, or secondhand information.
+Choose "share_rumor" ONLY when the speaker is sharing information that is uncertain, unverified, suspicious, secretive, or potentially reputation-damaging.
+
+Use "share_rumor" for:
+- "I heard something strange about the market."
+- "Someone said the supplier might be unreliable."
+- "There is a rumor going around, but I do not know if it is true."
+- "People are saying the new vendor may be hiding something."
+
+Do NOT use "share_rumor" for ordinary public information, event announcements, observations, or local news.
+
+Use "chat" instead for:
+- "Did you hear about the bakery opening?"
+- "The samples are popular today."
+- "There are extra trash bins around town."
+- "A lot of people came to the cleanup."
+- "The book club is meeting at the library."
+
 Examples:
 - "I heard something strange about the market."
 - "There is a rumor going around."
