@@ -16,6 +16,15 @@ class RelationshipManager:
     
         self.scores[key] = new_score
         return new_score
+
+    def decay_all_relationships(self, probability: float = 0.05) -> None: 
+        import random 
+
+        for key, score in list(self.scores.items()): 
+            if score > 0 and random.random() < probability: 
+                self.scores[key] = score - 1 
+            elif score < 0 and random.random() < probability: 
+                self.scores[key] = score + 1 
         
     def describe_relationship(self, agent_a: str, agent_b: str) -> str:
         score = self.get_score(agent_a, agent_b)

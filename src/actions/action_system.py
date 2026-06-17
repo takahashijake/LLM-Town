@@ -26,19 +26,56 @@ class ActionSystem:
         "cooperate": {"social": 2},
     }
     def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
-        if relationship_score <= -6:
-            return ["chat", "argue", "insult", "storm_off"]
+        if relationship_score <= -7:
+            return [
+                "chat",
+                "argue",
+                "insult",
+                "storm_off",
+                "apologize",
+            ]
     
         if relationship_score <= -3:
-            return ["chat", "argue", "storm_off"]
+            return [
+                "chat",
+                "argue",
+                "storm_off",
+                "apologize",
+                "share_rumor",
+            ]
     
-        if relationship_score >= 6:
-            return ["chat", "apologize", "argue", "insult", "storm_off", "cooperate"]
+        if relationship_score >= 7:
+            return [
+                "chat",
+                "compliment",
+                "offer_help",
+                "ask_for_help",
+                "cooperate",
+                "apologize",
+                "argue",
+            ]
     
         if relationship_score >= 3:
-            return ["chat", "apologize", "argue", "storm_off", "cooperate"]
+            return [
+                "chat",
+                "compliment",
+                "offer_help",
+                "ask_for_help",
+                "cooperate",
+                "apologize",
+                "argue",
+                "share_rumor",
+            ]
     
-        return ["chat", "compliment", "offer_help", "cooperate", "ask_for_help", "share_rumor"]
+        return [
+            "chat",
+            "compliment",
+            "offer_help",
+            "ask_for_help",
+            "cooperate",
+            "share_rumor",
+            "argue",
+        ]
         
     def get_need_effects(self, action: str) -> dict[str, int]:
         return self.ACTION_NEED_EFFECTS.get(action, {})

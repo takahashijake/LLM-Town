@@ -182,36 +182,45 @@ class SimulationEngine:
     
         self.generate_conversations(day, hour)
         self.maintain_agent_memories()
+        self.relationships.decay_all_relationships(probability=0.03)
 
     def get_relationship_change(self, relationship_label: str) -> int:
         if relationship_label == "close friends":
-            return random.choice([-1, 0, 0, 0, 0])
+            return random.choice([-1, 0, 0, 0, 0, 0])
     
         if relationship_label == "friendly":
-            return random.choice([-1, 0, 0, 0, 1])
+            return random.choice([-1, 0, 0, 0, 0])
     
         if relationship_label == "neutral":
-            return random.choice([-1, 0, 0, 0, 1])
+            return random.choice([-1, 0, 0, 0, 0, 1])
     
         if relationship_label == "tense":
-            return random.choice([-1, 0, 0, 0, 1])
+            return random.choice([-1, -1, 0, 0, 0])
     
         if relationship_label == "enemies":
-            return random.choice([0, 0, 1, 1])
+            return random.choice([-1, 0, 0, 0])
     
-        return random.choice([-1, 0, 0, 0, 1])
+        return random.choice([-1, 0, 0, 0])
 
     def calculate_relationship_change(
-        self,
-        action: str,
-        old_relationship_label: str,
-        ) -> int:
-            action_effect = self.actions.get_relationship_effect(action)
-            relationship_drift = self.get_relationship_change(old_relationship_label)
+    self,
+    action: str,
+    old_relationship_label: str,
+    old_relationship_score: int,
+    ) -> int:
+        action_effect = self.actions.get_relationship_effect(action)
+        relationship_drift = self.get_relationship_change(old_relationship_label)
+        relationship_change = action_effect + relationship_drift
     
-            relationship_change = action_effect + relationship_drift
+        # Saturation: close relationships are harder to improve.
+        if old_relationship_score >= 7 and relationship_change > 0:
+            relationship_change = 0
     
-            return max(-3, min(3, relationship_change))
+        # Very bad relationships are harder to repair casually.
+        if old_relationship_score <= -7 and relationship_change > 0 and action == "chat":
+            relationship_change = 0
+    
+        return max(-3, min(3, relationship_change))
         
     def choose_suggested_action(
         self,
@@ -235,7 +244,7 @@ class SimulationEngine:
             preferred_weights = {
                 "chat": 7,
                 "compliment": 3,
-                "cooperate": 3,
+                "cooperate": 1,
                 "offer_help": 2,
                 "ask_for_help": 1,
                 "confess_feelings": 1,
@@ -243,7 +252,7 @@ class SimulationEngine:
         else:
             preferred_weights = {
                 "chat": 8,
-                "cooperate": 3,
+                "cooperate": 1,
                 "offer_help": 2,
                 "ask_for_help": 2,
                 "compliment": 1,
@@ -449,6 +458,7 @@ class SimulationEngine:
             relationship_change = self.calculate_relationship_change(
                 action,
                 old_relationship_label,
+                old_score,
             )
             
             new_score, relationship_label = self.apply_relationship_change(
