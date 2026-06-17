@@ -21,6 +21,46 @@ class Agent:
     current_activity_reason: str = ""
     current_activity_tags: list[str] = field(default_factory=list)
 
+    def summarize_archived_memories(self, max_archive_size: int = 500) -> None:
+        if len(self.memory_archive) <= max_archive_size:
+            return
+    
+        oldest_memories = self.memory_archive[:-max_archive_size]
+        self.memory_archive = self.memory_archive[-max_archive_size:]
+    
+        conversation_count = sum(
+            1 for memory in oldest_memories
+            if memory.type == "conversation"
+        )
+    
+        event_count = sum(
+            1 for memory in oldest_memories
+            if memory.type == "daily_event"
+        )
+    
+        positive_count = sum(
+            1 for memory in oldest_memories
+            if memory.sentiment > 0
+        )
+    
+        negative_count = sum(
+            1 for memory in oldest_memories
+            if memory.sentiment < 0
+        )
+    
+        summary_piece = (
+            f"Archived {len(oldest_memories)} older memories: "
+            f"{conversation_count} conversations, "
+            f"{event_count} town events, "
+            f"{positive_count} positive interactions, "
+            f"{negative_count} negative interactions."
+        )
+    
+        if self.memory_summary:
+            self.memory_summary += " " + summary_piece
+        else:
+            self.memory_summary = summary_piece
+    
     def prune_memory(self, active_memory_limit: int = 200) -> None:
         if len(self.memory) <= active_memory_limit:
             return
