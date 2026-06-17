@@ -69,6 +69,11 @@ class SimulationEngine:
                 Memory(**memory_data)
                 for memory_data in agent_data.get("memory", [])
             ]
+
+            memory_archive = [
+                Memory(**memory_data) 
+                for memory_data in agent_data.get("memory", [])
+            ]
             agent = Agent(
                 id=agent_data["id"],
                 name=agent_data["name"],
