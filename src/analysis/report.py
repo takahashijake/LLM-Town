@@ -5,6 +5,7 @@ class SimulationReporter:
     def summarize(self, engine) -> None:
         print("\n=== Town Summary ===")
         self.print_conversation_summary(engine)
+        self.print_activity_summary(engine)
         self.print_relationship_summary(engine)
         self.print_need_summary(engine)
         self.print_memory_summary(engine)
@@ -30,7 +31,32 @@ class SimulationReporter:
             unique[key] = memory
 
         return list(unique.values())
+        
+    def print_activity_summary(self, engine) -> None:
+        activity_records = getattr(engine, "activity_records", [])
 
+        if not activity_records:
+            print("No activity data available.")
+            return
+
+        activity_counts = Counter(
+            record["activity_name"]
+            for record in activity_records
+        )
+
+        location_counts = Counter(
+            record["location"]
+            for record in activity_records
+        )
+
+        print("Activity distribution:")
+        for activity_name, count in activity_counts.most_common():
+            print(f"  {activity_name}: {count}")
+
+        print("Location distribution:")
+        for location, count in location_counts.most_common():
+            print(f"  {location}: {count}")
+            
     def print_conversation_summary(self, engine) -> None:
         conversations = self.get_all_conversation_memories(engine)
 

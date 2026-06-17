@@ -34,7 +34,7 @@ class SimulationEngine:
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
-        
+        self.activity_records = []
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
@@ -44,7 +44,23 @@ class SimulationEngine:
             self.agents = self.load_agents(agents_path)
             self.start_day = 1
             self.start_hour = 0
+            
+    def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
+        activity_record = {
+            "type": "activity",
+            "day": day,
+            "hour": hour,
+            "agent": agent.name,
+            "activity_id": activity.id,
+            "activity_name": activity.name,
+            "location": activity.location_id,
+            "reason": activity.reason,
+            "tags": activity.tags,
+        }
 
+        self.activity_records.append(activity_record)
+        self.logger.log_event(activity_record)
+        
     def load_agents_from_state(self, saved_state: dict) -> list[Agent]:
         agents = []
     
@@ -145,7 +161,7 @@ class SimulationEngine:
             )
     
             agent.set_activity(activity)
-    
+            self.log_activity_event(day, hour, agent, activity)
             print(
                 f"{agent.name} chooses activity: {activity.name} "
                 f"at {activity.location_id} ({activity.reason})"

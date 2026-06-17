@@ -1,5 +1,5 @@
 from src.llm.parser import infer_conversation_tags
-
+from src.llm.parser import parse_llm_conversation_output
 
 def test_infer_business_tag():
     tags = infer_conversation_tags("The market stall has a new business project.")
@@ -34,3 +34,20 @@ def test_infer_conflict_tag():
 
     assert "conversation" in tags
     assert "conflict" in tags
+
+def test_parse_cooperate_action():
+    output = '{"dialogue": "We could work together on the cleanup.", "action": "cooperate"}'
+
+    parsed = parse_llm_conversation_output(output)
+
+    assert parsed["dialogue"] == "We could work together on the cleanup."
+    assert parsed["action"] == "cooperate"
+
+
+def test_parse_unknown_action_falls_back_to_chat():
+    output = '{"dialogue": "Let us do something unusual.", "action": "dance"}'
+
+    parsed = parse_llm_conversation_output(output)
+
+    assert parsed["dialogue"] == "Let us do something unusual."
+    assert parsed["action"] == "chat"

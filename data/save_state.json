@@ -6,7 +6,7 @@
       "id": "agent_001",
       "name": "Maya",
       "personality": "curious",
-      "location_id": "market",
+      "location_id": "town_square",
       "memory": [
         {
           "day": 1,
@@ -28,44 +28,43 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "Did you hear there's a rumor about some old boxes being moved under the town hall?",
+          "description": "Did you hear about the new recycling program they're launching?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": -1,
           "tags": [
             "conversation",
-            "rumor",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         },
         {
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "Did you notice anyone acting strange during the cleanup?",
+          "description": "Hey Lena, the cleanup looks like it's going well so far. Do you think we'll finish before lunchtime?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": -1,
           "tags": [
             "conversation",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         },
         {
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "Hey Maya, glad to see you're here for the cleanup. Any tips on how we can make this go smoother?",
+          "description": "Hey Maya, glad to see everyone's already hard at work.",
           "participants": [
             "Lena",
             "Maya"
@@ -75,7 +74,26 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "tense",
+            "learning",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Great teamwork so far, everyone!",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
             "chat"
           ]
         },
@@ -83,34 +101,35 @@
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
           "participants": [],
-          "location": "town_square",
+          "location": "market",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "gardening_workshop",
-            "community",
-            "food",
-            "learning"
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
           ]
         },
         {
           "day": 2,
           "hour": 8,
           "type": "conversation",
-          "description": "Did you find the gardening workshop helpful?",
+          "description": "I noticed your stall seems to be doing well today.",
           "participants": [
-            "Maya",
-            "Lena"
+            "Ethan",
+            "Maya"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
-            "tense",
+            "business",
+            "neutral",
             "chat"
           ]
         },
@@ -118,14 +137,14 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "Did you hear about the new community garden project starting next month?",
+          "description": "I noticed your stall seems to be doing well today.",
           "participants": [
-            "Maya",
-            "Ethan"
+            "Ethan",
+            "Maya"
           ],
-          "location": "library",
+          "location": "market",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "business",
@@ -137,29 +156,86 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Supplier Visit. A traveling supplier is visiting the market with new goods.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "supplier_visit",
-            "market",
-            "wealth",
-            "business"
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard there's a great idea for a new park we could discuss at the meeting.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense",
+            "chat"
           ]
         },
         {
           "day": 3,
           "hour": 12,
           "type": "conversation",
-          "description": "Have you heard anything interesting from the supplier?",
+          "description": "I noticed the market stalls looking a bit worn out. Do you think we could get some new supplies?",
           "participants": [
-            "Ethan",
+            "Carlos",
             "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It looks like everyone is excited about the new projects we're planning.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "What do you think about the new park proposal?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
           "importance": 2,
           "sentiment": 1,
           "tags": [
@@ -174,26 +250,32 @@
         "build close friendships"
       ],
       "needs": {
-        "social": 40,
+        "social": 42,
         "wealth": 38,
-        "knowledge": 40
+        "knowledge": 38
       },
       "relationships": {
-        "Lena": -4,
-        "Ethan": 2
+        "Lena": -1,
+        "Ethan": 0,
+        "Carlos": 0
       },
       "occupation": "local journalist",
       "recent_topics": [
-        "rumor",
-        "share_rumor",
-        "share_rumor",
+        "learning",
+        "business",
+        "business",
+        "business",
+        "market",
         "business"
       ],
-      "current_activity": "Look for work or business opportunities",
-      "current_activity_reason": "Maya wants to improve wealth.",
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Maya is interested in today's event: Town Hall Meeting.",
       "current_activity_tags": [
-        "wealth",
-        "business"
+        "event",
+        "town_hall_meeting",
+        "community",
+        "planning",
+        "social"
       ]
     },
     {
@@ -222,7 +304,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "It looks like there's a volunteer meeting for the town cleanup today. Want to check it out together?",
+          "description": "It looks like there's a volunteer meeting for the town cleanup today.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -237,52 +319,73 @@
           ]
         },
         {
-          "day": 1,
-          "hour": 22,
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 8,
           "type": "conversation",
-          "description": "I noticed you've been leading the cleanup efforts so far. What do you think about the progress?",
+          "description": "I noticed your stall seems to be doing well today.",
           "participants": [
             "Ethan",
-            "Lena"
+            "Maya"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "business",
             "neutral",
             "chat"
           ]
         },
         {
           "day": 2,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It looks like the market stalls are getting inspected today. Would you like to join me?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "market",
+          "importance": 2,
           "sentiment": 0,
           "tags": [
-            "event",
-            "gardening_workshop",
-            "community",
-            "food",
-            "learning"
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
           ]
         },
         {
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "Did you hear about the new community garden project starting next month?",
+          "description": "I noticed your stall seems to be doing well today.",
           "participants": [
-            "Maya",
-            "Ethan"
+            "Ethan",
+            "Maya"
           ],
-          "location": "library",
+          "location": "market",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "business",
@@ -294,50 +397,31 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Supplier Visit. A traveling supplier is visiting the market with new goods.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "supplier_visit",
-            "market",
-            "wealth",
-            "business"
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
           ]
         },
         {
           "day": 3,
-          "hour": 8,
+          "hour": 18,
           "type": "conversation",
-          "description": "I've noticed the new supplier's prices are a bit higher than usual.",
+          "description": "I noticed the new vendor seems a bit off.",
           "participants": [
             "Ethan",
             "Carlos"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 12,
-          "type": "conversation",
-          "description": "Have you heard anything interesting from the supplier?",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "neutral",
@@ -348,20 +432,19 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Have you heard about the rumors about the supplier's prices?",
+          "description": "Have you noticed any unusual patterns in the market prices lately?",
           "participants": [
-            "Carlos",
-            "Ethan"
+            "Ethan",
+            "Carlos"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": 1,
           "tags": [
             "conversation",
-            "rumor",
             "market",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         }
       ],
@@ -370,30 +453,26 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 42,
+        "social": 44,
         "wealth": 38,
         "knowledge": 38
       },
       "relationships": {
-        "Carlos": -3,
-        "Lena": 0,
-        "Maya": 2
+        "Carlos": 1,
+        "Maya": 0
       },
       "occupation": "accountant",
       "recent_topics": [
         "business",
+        "business",
         "market",
-        "rumor",
-        "market",
-        "share_rumor"
+        "business",
+        "market"
       ],
-      "current_activity": "Attend Supplier Visit",
-      "current_activity_reason": "Ethan is interested in today's event: Supplier Visit.",
+      "current_activity": "Observe business activity",
+      "current_activity_reason": "Ethan is watching for financial opportunities or risks.",
       "current_activity_tags": [
-        "event",
-        "supplier_visit",
-        "market",
-        "wealth",
+        "accounting",
         "business"
       ]
     },
@@ -401,7 +480,7 @@
       "id": "agent_003",
       "name": "Lena",
       "personality": "friendly",
-      "location_id": "cafe",
+      "location_id": "town_square",
       "memory": [
         {
           "day": 1,
@@ -423,44 +502,43 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "Did you hear there's a rumor about some old boxes being moved under the town hall?",
+          "description": "Did you hear about the new recycling program they're launching?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": -1,
           "tags": [
             "conversation",
-            "rumor",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         },
         {
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "Did you notice anyone acting strange during the cleanup?",
+          "description": "Hey Lena, the cleanup looks like it's going well so far. Do you think we'll finish before lunchtime?",
           "participants": [
             "Maya",
             "Lena"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": -1,
           "tags": [
             "conversation",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         },
         {
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "Hey Maya, glad to see you're here for the cleanup. Any tips on how we can make this go smoother?",
+          "description": "Hey Maya, glad to see everyone's already hard at work.",
           "participants": [
             "Lena",
             "Maya"
@@ -470,7 +548,8 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "tense",
+            "learning",
+            "neutral",
             "chat"
           ]
         },
@@ -478,14 +557,14 @@
           "day": 1,
           "hour": 22,
           "type": "conversation",
-          "description": "I noticed you've been leading the cleanup efforts so far. What do you think about the progress?",
+          "description": "Great teamwork so far, everyone!",
           "participants": [
-            "Ethan",
-            "Lena"
+            "Lena",
+            "Maya"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": -1,
           "tags": [
             "conversation",
             "neutral",
@@ -496,24 +575,77 @@
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ]
+        },
+        {
+          "day": 2,
+          "hour": 12,
+          "type": "conversation",
+          "description": "It looks like everyone is busy today. Have you noticed anything interesting?",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "gardening_workshop",
+            "town_hall_meeting",
             "community",
-            "food",
-            "learning"
+            "planning",
+            "social"
           ]
         },
         {
-          "day": 2,
+          "day": 3,
           "hour": 8,
           "type": "conversation",
-          "description": "Did you find the gardening workshop helpful?",
+          "description": "I heard there's a great idea for a new park we could discuss at the meeting.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "tense",
+            "chat"
+          ]
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It looks like everyone is excited about the new projects we're planning.",
           "participants": [
             "Maya",
             "Lena"
@@ -523,75 +655,23 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "tense",
+            "business",
+            "neutral",
             "chat"
           ]
         },
         {
-          "day": 2,
-          "hour": 12,
+          "day": 3,
+          "hour": 22,
           "type": "conversation",
-          "description": "The workshop looks great, doesn't it?",
+          "description": "What do you think about the new park proposal?",
           "participants": [
-            "Lena",
-            "Carlos"
+            "Maya",
+            "Lena"
           ],
           "location": "town_square",
           "importance": 2,
           "sentiment": 1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 2,
-          "hour": 18,
-          "type": "conversation",
-          "description": "The workshop looks great, doesn't it?",
-          "participants": [
-            "Lena",
-            "Carlos"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Supplier Visit. A traveling supplier is visiting the market with new goods.",
-          "participants": [],
-          "location": "market",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "supplier_visit",
-            "market",
-            "wealth",
-            "business"
-          ]
-        },
-        {
-          "day": 3,
-          "hour": 18,
-          "type": "conversation",
-          "description": "Did you hear about the new spices they brought? They seem very interesting.",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": -1,
           "tags": [
             "conversation",
             "neutral",
@@ -609,20 +689,21 @@
         "knowledge": 38
       },
       "relationships": {
-        "Maya": -4,
-        "Ethan": 0,
+        "Maya": -1,
         "Carlos": 0
       },
       "occupation": "community organizer",
       "recent_topics": [
-        "rumor",
-        "share_rumor",
-        "share_rumor"
+        "learning",
+        "business"
       ],
-      "current_activity": "Meet residents",
-      "current_activity_reason": "Lena wants to build goodwill with residents.",
+      "current_activity": "Attend Town Hall Meeting",
+      "current_activity_reason": "Lena is interested in today's event: Town Hall Meeting.",
       "current_activity_tags": [
+        "event",
+        "town_hall_meeting",
         "community",
+        "planning",
         "social"
       ]
     },
@@ -652,7 +733,7 @@
           "day": 1,
           "hour": 12,
           "type": "conversation",
-          "description": "It looks like there's a volunteer meeting for the town cleanup today. Want to check it out together?",
+          "description": "It looks like there's a volunteer meeting for the town cleanup today.",
           "participants": [
             "Ethan",
             "Carlos"
@@ -670,31 +751,31 @@
           "day": 2,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
           "participants": [],
-          "location": "town_square",
+          "location": "market",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "gardening_workshop",
-            "community",
-            "food",
-            "learning"
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
           ]
         },
         {
           "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "The workshop looks great, doesn't it?",
+          "description": "It looks like everyone is busy today. Have you noticed anything interesting?",
           "participants": [
-            "Lena",
-            "Carlos"
+            "Carlos",
+            "Lena"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "neutral",
@@ -705,16 +786,18 @@
           "day": 2,
           "hour": 18,
           "type": "conversation",
-          "description": "The workshop looks great, doesn't it?",
+          "description": "It looks like the market stalls are getting inspected today. Would you like to join me?",
           "participants": [
-            "Lena",
+            "Ethan",
             "Carlos"
           ],
-          "location": "town_square",
+          "location": "market",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "business",
+            "market",
             "neutral",
             "chat"
           ]
@@ -723,33 +806,34 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Supplier Visit. A traveling supplier is visiting the market with new goods.",
+          "description": "Town event today: Town Hall Meeting. Residents are discussing future plans for the town.",
           "participants": [],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "supplier_visit",
-            "market",
-            "wealth",
-            "business"
+            "town_hall_meeting",
+            "community",
+            "planning",
+            "social"
           ]
         },
         {
           "day": 3,
-          "hour": 8,
+          "hour": 12,
           "type": "conversation",
-          "description": "I've noticed the new supplier's prices are a bit higher than usual.",
+          "description": "I noticed the market stalls looking a bit worn out. Do you think we could get some new supplies?",
           "participants": [
-            "Ethan",
-            "Carlos"
+            "Carlos",
+            "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
           "importance": 2,
-          "sentiment": -1,
+          "sentiment": 0,
           "tags": [
             "conversation",
+            "business",
             "market",
             "neutral",
             "chat"
@@ -759,14 +843,14 @@
           "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "Did you hear about the new spices they brought? They seem very interesting.",
+          "description": "I noticed the new vendor seems a bit off.",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Ethan",
+            "Carlos"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -1,
+          "sentiment": 0,
           "tags": [
             "conversation",
             "neutral",
@@ -777,20 +861,19 @@
           "day": 3,
           "hour": 22,
           "type": "conversation",
-          "description": "Have you heard about the rumors about the supplier's prices?",
+          "description": "Have you noticed any unusual patterns in the market prices lately?",
           "participants": [
-            "Carlos",
-            "Ethan"
+            "Ethan",
+            "Carlos"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -2,
+          "sentiment": 1,
           "tags": [
             "conversation",
-            "rumor",
             "market",
             "neutral",
-            "share_rumor"
+            "chat"
           ]
         }
       ],
@@ -799,37 +882,36 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 39,
+        "social": 40,
         "wealth": 38,
-        "knowledge": 39
+        "knowledge": 38
       },
       "relationships": {
-        "Ethan": -3,
-        "Lena": 0
+        "Ethan": 1,
+        "Lena": 0,
+        "Maya": 0
       },
       "occupation": "merchant",
       "recent_topics": [
+        "business",
         "market",
-        "rumor",
+        "business",
         "market",
-        "share_rumor"
+        "market"
       ],
-      "current_activity": "Attend Supplier Visit",
-      "current_activity_reason": "Carlos is interested in today's event: Supplier Visit.",
+      "current_activity": "Look for work or business opportunities",
+      "current_activity_reason": "Carlos wants to improve wealth.",
       "current_activity_tags": [
-        "event",
-        "supplier_visit",
-        "market",
         "wealth",
         "business"
       ]
     }
   ],
   "relationship_scores": {
-    "Lena|Maya": -4,
-    "Carlos|Ethan": -3,
-    "Ethan|Lena": 0,
+    "Lena|Maya": -1,
+    "Carlos|Ethan": 1,
+    "Ethan|Maya": 0,
     "Carlos|Lena": 0,
-    "Ethan|Maya": 2
+    "Carlos|Maya": 0
   }
 }
