@@ -189,11 +189,11 @@ class Agent:
         return memories[-limit:]
 
     def get_relevant_memories(
-        self,
-        other_name: str,
-        current_day: int,
-        limit: int = 5,
-        max_age_days: int = 7,
+    self,
+    other_name: str,
+    current_day: int,
+    limit: int = 5,
+    max_age_days: int = 7,
     ) -> list[Memory]:
         memories = [
             memory
@@ -208,13 +208,20 @@ class Agent:
         memories.sort(
             key=lambda memory: (
                 memory.importance,
+                memory.strength,
                 memory.day,
                 memory.hour,
             ),
             reverse=True,
         )
     
-        return memories[:limit]
+        selected = memories[:limit]
+    
+        for memory in selected:
+            memory.last_accessed_day = current_day
+            memory.strength = min(10, memory.strength + 1)
+    
+        return selected
 
     def initialize_needs(self) -> None:
         if not self.needs:
