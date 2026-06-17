@@ -127,7 +127,8 @@ class SimulationEngine:
     def run(self, days: int, hours: list[int]) -> None:
         print("Starting town simulation...")
 
-        for day in range(1, days + 1):
+        end_day = self.start_day + days - 1 
+        for day in range(self.start_day, end_day + 1):
             print(f"\n=== Day {day} ===")
             self.current_daily_event = choose_daily_event() 
             event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
