@@ -35,6 +35,9 @@ class SimulationEngine:
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
         self.activity_records = []
+        self.recent_dialogues = [] 
+        self.recent_actions = []
+        self.daily_event_history = []
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
@@ -45,11 +48,136 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+        def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
+            text = conversation.strip().lower()
+    
+            narration_patterns = [
+                f"{speaker.name.lower()} noticed",
+                f"{listener.name.lower()} noticed",
+                f"{speaker.name.lower()} nodded",
+                f"{listener.name.lower()} nodded",
+                f"{speaker.name.lower()} looked",
+                f"{listener.name.lower()} looked",
+                f"{speaker.name.lower()} smiled",
+                f"{listener.name.lower()} smiled",
+            ]
+
+        return any(pattern in text for pattern in narration_patterns)
     def maintain_agent_memories(self) -> None:
         for agent in self.agents:
             agent.prune_memory(active_memory_limit=200)
             agent.summarize_archived_memories(max_archive_size=500)
-            
+    def remember_dialogue(self, conversation: str, limit: int = 50) -> None:
+        normalized = conversation.strip().lower()
+
+        if not normalized:
+            return
+
+        self.recent_dialogues.append(normalized)
+        self.recent_dialogues = self.recent_dialogues[-limit:]
+
+
+    def is_repeated_dialogue(self, conversation: str) -> bool:
+        normalized = conversation.strip().lower()
+
+        if not normalized:
+            return False
+
+        return normalized in self.recent_dialogues
+
+
+    def remember_action(self, action: str, limit: int = 50) -> None:
+        self.recent_actions.append(action)
+        self.recent_actions = self.recent_actions[-limit:]
+
+
+    def should_cap_action(self, action: str) -> bool:
+        if action == "chat":
+            return False
+
+        recent_window = self.recent_actions[-20:]
+
+        if len(recent_window) < 5:
+            return False
+
+        action_count = recent_window.count(action)
+        action_rate = action_count / len(recent_window)
+
+        if action == "share_rumor" and action_rate >= 0.20:
+            return True
+
+        non_chat_count = sum(
+            1 for recent_action in recent_window
+            if recent_action != "chat"
+        )
+        non_chat_rate = non_chat_count / len(recent_window)
+
+        if action != "chat" and non_chat_rate >= 0.40:
+            return True
+
+        return False
+
+
+    def choose_final_action(
+        self,
+        conversation: str,
+        parsed_action: str,
+        conversation_tags: list[str],
+        allowed_actions: list[str],
+    ) -> str:
+        inferred_action = self.actions.infer_action(
+            conversation,
+            conversation_tags,
+        )
+
+        if inferred_action in allowed_actions:
+            final_action = inferred_action
+        elif parsed_action in allowed_actions:
+            final_action = parsed_action
+        else:
+            final_action = "chat"
+
+        if self.should_cap_action(final_action):
+            return "chat"
+
+        return final_action
+
+
+    def get_previous_event_names(self, current_day: int) -> list[str]:
+        return [
+            event["name"]
+            for event in self.daily_event_history
+            if event["day"] < current_day
+        ]
+
+
+    def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
+        if not self.current_daily_event:
+            return conversation
+
+        current_event_name = self.current_daily_event.name.lower()
+        previous_event_names = self.get_previous_event_names(current_day)
+
+        fixed_conversation = conversation
+
+        for previous_event_name in previous_event_names:
+            previous_event_lower = previous_event_name.lower()
+
+            if previous_event_lower == current_event_name:
+                continue
+
+            if previous_event_lower in fixed_conversation.lower():
+                fixed_conversation = fixed_conversation.replace(
+                    " today",
+                    " recently",
+                )
+                fixed_conversation = fixed_conversation.replace(
+                    " Today",
+                    " Recently",
+                )
+
+        return fixed_conversation
+        
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         activity_record = {
             "type": "activity",
@@ -143,6 +271,12 @@ class SimulationEngine:
         for day in range(self.start_day, end_day + 1):
             print(f"\n=== Day {day} ===")
             self.current_daily_event = choose_daily_event() 
+
+            self.daily_event_history.append({
+                "day" : day, 
+                "id" : self.current_daily_event.id, 
+                "name" : self.current_daily_event.name,
+            })
             event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
             for agent in self.agents:
                 agent.remember(event_memory)
@@ -447,18 +581,27 @@ class SimulationEngine:
             )
             
             conversation = parsed_output["dialogue"]
-            action = parsed_output["action"]
+            parsed_action = parsed_output["action"]
             
             if not conversation:
                 conversation = speaker.speak_to(listener, old_relationship_label)
-                action = "chat"
-                
-            if not conversation:
-                conversation = speaker.speak_to(listener, old_relationship_label)
-                action = "chat"
+                parsed_action = "chat"
+            
+            conversation = self.fix_stale_event_reference(
+                conversation,
+                current_day=day,
+            )
+            
             
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.extend(parsed_output.get("tags", []))
+            
+            action = self.choose_final_action(
+                conversation=conversation,
+                parsed_action=parsed_action,
+                conversation_tags=conversation_tags,
+                allowed_actions=allowed_actions,
+            )
             
             if self.current_daily_event:
                 dialogue_lower = conversation.lower()
@@ -517,6 +660,11 @@ class SimulationEngine:
             
             speaker.remember(memory)
             listener.remember(memory)
+
+            self.remember_dialogue(conversation)
+            self.remember_action(action)
+
+            
             
             
             self.log_conversation_event(
