@@ -1,14 +1,41 @@
 from collections import Counter
 
 
+ACTION_TAGS = {
+    "chat",
+    "compliment",
+    "apologize",
+    "offer_help",
+    "ask_for_help",
+    "argue",
+    "insult",
+    "storm_off",
+    "confess_feelings",
+    "share_rumor",
+    "cooperate",
+}
+
+RELATIONSHIP_LABELS = {
+    "close friends",
+    "friendly",
+    "neutral",
+    "tense",
+    "enemies",
+}
+
+
 class SimulationReporter:
     def summarize(self, engine) -> None:
         print("\n=== Town Summary ===")
         self.print_conversation_summary(engine)
         self.print_activity_summary(engine)
         self.print_relationship_summary(engine)
+        self.print_relationship_distribution(engine)
         self.print_need_summary(engine)
         self.print_memory_summary(engine)
+        self.print_topic_summary(engine)
+        self.print_repetition_summary(engine)
+        self.print_daily_event_usage(engine)
 
     def get_all_conversation_memories(self, engine):
         memories = []
@@ -31,7 +58,7 @@ class SimulationReporter:
             unique[key] = memory
 
         return list(unique.values())
-        
+
     def print_activity_summary(self, engine) -> None:
         activity_records = getattr(engine, "activity_records", [])
 
@@ -49,36 +76,27 @@ class SimulationReporter:
             for record in activity_records
         )
 
-        print("Activity distribution:")
+        print("\nActivity distribution:")
         for activity_name, count in activity_counts.most_common():
             print(f"  {activity_name}: {count}")
 
-        print("Location distribution:")
+        print("\nLocation distribution:")
         for location, count in location_counts.most_common():
             print(f"  {location}: {count}")
-            
+
     def print_conversation_summary(self, engine) -> None:
         conversations = self.get_all_conversation_memories(engine)
 
-        print(f"Total conversations: {len(conversations)}")
+        print(f"\nTotal conversations: {len(conversations)}")
 
         action_counts = Counter()
+        conversations_by_day = Counter()
 
         for memory in conversations:
+            conversations_by_day[memory.day] += 1
+
             for tag in memory.tags:
-                if tag in {
-                    "chat",
-                    "compliment",
-                    "apologize",
-                    "offer_help",
-                    "ask_for_help",
-                    "argue",
-                    "insult",
-                    "storm_off",
-                    "confess_feelings",
-                    "share_rumor",
-                    "cooperate",
-                }:
+                if tag in ACTION_TAGS:
                     action_counts[tag] += 1
 
         if action_counts:
@@ -87,15 +105,22 @@ class SimulationReporter:
         else:
             print("Most common action: none")
 
-        if action_counts: 
-            print("Action distribution:") 
-            for action, count in action_counts.most_common(): 
-                print(f" {action}: {count}")
-                
+        if action_counts:
+            print("\nAction distribution:")
+            total_actions = sum(action_counts.values())
+
+            for action, count in action_counts.most_common():
+                percentage = count / total_actions
+                print(f"  {action}: {count} ({percentage:.1%})")
+
+        if conversations_by_day:
+            print("\nConversations by day:")
+            for day in sorted(conversations_by_day):
+                print(f"  Day {day}: {conversations_by_day[day]}")
 
     def print_relationship_summary(self, engine) -> None:
         if not engine.relationships.scores:
-            print("No relationship changes recorded.")
+            print("\nNo relationship changes recorded.")
             return
 
         strongest_pair = max(
@@ -121,17 +146,47 @@ class SimulationReporter:
             weakest_agents[1],
         )
 
+        scores = list(engine.relationships.scores.values())
+        average_score = sum(scores) / len(scores)
+
+        print("\nRelationship summary:")
+        print(f"  Average relationship score: {average_score:+.2f}")
+
         print(
-            "Strongest relationship: "
+            "  Strongest relationship: "
             f"{strongest_agents[0]} <-> {strongest_agents[1]} "
             f"({strongest_score:+d}, {strongest_label})"
         )
 
         print(
-            "Weakest relationship: "
+            "  Weakest relationship: "
             f"{weakest_agents[0]} <-> {weakest_agents[1]} "
             f"({weakest_score:+d}, {weakest_label})"
         )
+
+    def print_relationship_distribution(self, engine) -> None:
+        if not engine.relationships.scores:
+            return
+
+        label_counts = Counter()
+
+        for (agent_a, agent_b) in engine.relationships.scores:
+            label = engine.relationships.describe_relationship(
+                agent_a,
+                agent_b,
+            )
+            label_counts[label] += 1
+
+        print("\nRelationship distribution:")
+
+        for label in [
+            "close friends",
+            "friendly",
+            "neutral",
+            "tense",
+            "enemies",
+        ]:
+            print(f"  {label}: {label_counts[label]}")
 
     def print_need_summary(self, engine) -> None:
         need_totals = Counter()
@@ -143,10 +198,10 @@ class SimulationReporter:
                 need_counts[need] += 1
 
         if not need_totals:
-            print("No need data available.")
+            print("\nNo need data available.")
             return
 
-        print("Average needs:")
+        print("\nAverage needs:")
 
         for need in sorted(need_totals):
             average = need_totals[need] / need_counts[need]
@@ -159,7 +214,7 @@ class SimulationReporter:
         }
 
         if not memory_counts:
-            print("No memories recorded.")
+            print("\nNo memories recorded.")
             return
 
         most_memories_agent = max(
@@ -167,7 +222,86 @@ class SimulationReporter:
             key=lambda item: item[1],
         )
 
+        total_memories = sum(memory_counts.values())
+        average_memories = total_memories / len(memory_counts)
+
+        print("\nMemory summary:")
+        print(f"  Total memories: {total_memories}")
+        print(f"  Average memories per agent: {average_memories:.1f}")
         print(
-            "Most memories: "
+            "  Most memories: "
             f"{most_memories_agent[0]} ({most_memories_agent[1]})"
         )
+
+    def print_topic_summary(self, engine) -> None:
+        conversations = self.get_all_conversation_memories(engine)
+        topic_counts = Counter()
+
+        for memory in conversations:
+            for tag in memory.tags:
+                if tag not in ACTION_TAGS and tag not in RELATIONSHIP_LABELS:
+                    topic_counts[tag] += 1
+
+        if not topic_counts:
+            print("\nNo topic data available.")
+            return
+
+        print("\nTopic summary:")
+        print(f"  Unique topic tags: {len(topic_counts)}")
+
+        print("  Most common topics:")
+        for topic, count in topic_counts.most_common(10):
+            print(f"    {topic}: {count}")
+
+    def print_repetition_summary(self, engine) -> None:
+        conversations = self.get_all_conversation_memories(engine)
+
+        if not conversations:
+            print("\nRepeated dialogue rate: 0.0%")
+            return
+
+        dialogue_counts = Counter(
+            memory.description.strip().lower()
+            for memory in conversations
+        )
+
+        repeated_dialogues = sum(
+            count - 1
+            for count in dialogue_counts.values()
+            if count > 1
+        )
+
+        repetition_rate = repeated_dialogues / len(conversations)
+
+        print("\nRepetition summary:")
+        print(f"  Repeated dialogue rate: {repetition_rate:.1%}")
+
+        repeated_examples = [
+            (dialogue, count)
+            for dialogue, count in dialogue_counts.most_common()
+            if count > 1
+        ]
+
+        if repeated_examples:
+            print("  Most repeated dialogue:")
+            for dialogue, count in repeated_examples[:5]:
+                print(f"    {count}x: {dialogue}")
+
+    def print_daily_event_usage(self, engine) -> None:
+        conversations = self.get_all_conversation_memories(engine)
+
+        if not conversations:
+            print("\nDaily event mention rate: 0.0%")
+            return
+
+        event_related = 0
+
+        for memory in conversations:
+            if "event" in memory.tags:
+                event_related += 1
+
+        rate = event_related / len(conversations)
+
+        print("\nDaily event usage:")
+        print(f"  Event-related conversations: {event_related}")
+        print(f"  Daily event mention rate: {rate:.1%}")
