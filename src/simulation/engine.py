@@ -44,6 +44,11 @@ class SimulationEngine:
             self.agents = self.load_agents(agents_path)
             self.start_day = 1
             self.start_hour = 0
+
+    def maintain_agent_memories(self) -> None:
+        for agent in self.agents:
+            agent.prune_memory(active_memory_limit=200)
+            agent.summarize_archived_memories(max_archive_size=500)
             
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         activity_record = {
@@ -82,6 +87,8 @@ class SimulationEngine:
                 goals=agent_data.get("goals", []),
                 needs=agent_data.get("needs", {}),
                 memory=memories,
+                memory_archive=memory_archive, 
+                memory_summary=agent_data.get("memory_summary", ""),
                 occupation=agent_data.get("occupation", "unemployed"),
                 recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
@@ -174,6 +181,7 @@ class SimulationEngine:
             )
     
         self.generate_conversations(day, hour)
+        self.maintain_agent_memories()
 
     def get_relationship_change(self, relationship_label: str) -> int:
         if relationship_label == "close friends":

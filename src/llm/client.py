@@ -95,7 +95,7 @@ class TransformersLLMClient:
         allowed_action_text = ", ".join(allowed_actions)
 
         suggested_action = context.get("suggested_action", "chat") 
-
+        memory_summary = context.get("memory_summary", "")
         if suggested_action not in allowed_actions: 
             suggested_action = "chat"
         if daily_event:
@@ -145,6 +145,9 @@ Recently used topics:
 
 Relevant memories:
 {memory_text}
+
+Long-term memory summary:
+{memory_summary if memory_summary else "No long-term summary yet."}
 
 Today's town event:
 {daily_event_text}
