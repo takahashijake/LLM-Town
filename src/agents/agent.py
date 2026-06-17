@@ -13,12 +13,36 @@ class Agent:
     goals : list[str] = field(default_factory=list)
     needs: dict[str, int] = field(default_factory=dict)
     memory: list[Memory] = field(default_factory=list)
+    memory_archive: list[Memory] = field(default_factory=list) 
+    memory_summary: str = ""
     recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
     current_activity: str = "idle" 
     current_activity_reason: str = ""
     current_activity_tags: list[str] = field(default_factory=list)
 
+    def prune_memory(self, active_memory_limit: int = 200) -> None:
+        if len(self.memory) <= active_memory_limit:
+            return
+    
+        # Sort memories so the most useful ones survive:
+        # high importance first, then stronger memories, then newer memories.
+        self.memory.sort(
+            key=lambda memory: (
+                memory.importance,
+                memory.strength,
+                memory.day,
+                memory.hour,
+            ),
+            reverse=True,
+        )
+    
+        active_memories = self.memory[:active_memory_limit]
+        archived_memories = self.memory[active_memory_limit:]
+    
+        self.memory = active_memories
+        self.memory_archive.extend(archived_memories)
+    
     def set_activity(self, activity) -> None: 
         self.current_activity = activity.name 
         self.current_activity_reason = activity.reason 
@@ -76,8 +100,9 @@ class Agent:
     def move(self, location_ids: list[str]) -> None: 
         self.location_id = self.choose_location_by_need(location_ids)
 
-    def remember(self, memory: Memory) -> None:
+    def remember(self, memory: Memory, active_memory_limit: int = 200) -> None:
         self.memory.append(memory)
+        self.prune_memory(active_memory_limit=active_memory_limit)
 
     def speak_to(self, other: "Agent", relationship_label: str) -> str:
         if relationship_label == "close friends":
