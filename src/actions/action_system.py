@@ -82,7 +82,22 @@ class ActionSystem:
     
     def infer_action(self, conversation: str, tags: list[str]) -> str:
         text = conversation.lower()
-    
+        rumor_markers = [
+            "rumor",
+            "gossip",
+            "suspicious",
+            "shady",
+            "secret",
+            "mystery",
+            "not sure",
+            "people are saying",
+            "someone said",
+            "unverified",
+            "might be hiding",
+            "might be unreliable",
+        ]
+        if any(marker in text for marker in rumor_markers):
+            return "share_rumor"
         # Apologies
         if (
             "sorry" in text
@@ -134,6 +149,12 @@ class ActionSystem:
             or "good to see" in text
             or "this is really helpful" in text
             or "that helps a lot" in text
+            or "great job" in text
+            or "good work" in text
+            or "really come in handy" in text
+            or "come in handy" in text
+            or "organization skills" in text
+            or "organizing the volunteers" in text
         ):
             return "compliment"
         # Explicit offers of help or recommendations
@@ -222,6 +243,10 @@ class ActionSystem:
             or "we should work" in text
             or "want to team" in text
             or "want to pitch in" in text
+            or "coordinate our efforts" in text
+            or "coordinate our work" in text
+            or "work on this together" in text
+            or "plan this together" in text
         ):
             return "cooperate"
     

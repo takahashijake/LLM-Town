@@ -48,21 +48,22 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
-        def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
-            text = conversation.strip().lower()
+    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
+        text = conversation.strip().lower()
     
-            narration_patterns = [
-                f"{speaker.name.lower()} noticed",
-                f"{listener.name.lower()} noticed",
-                f"{speaker.name.lower()} nodded",
-                f"{listener.name.lower()} nodded",
-                f"{speaker.name.lower()} looked",
-                f"{listener.name.lower()} looked",
-                f"{speaker.name.lower()} smiled",
-                f"{listener.name.lower()} smiled",
-            ]
+        narration_patterns = [
+            f"{speaker.name.lower()} noticed",
+            f"{listener.name.lower()} noticed",
+            f"{speaker.name.lower()} nodded",
+            f"{listener.name.lower()} nodded",
+            f"{speaker.name.lower()} looked",
+            f"{listener.name.lower()} looked",
+            f"{speaker.name.lower()} smiled",
+            f"{listener.name.lower()} smiled",
+        ]
 
         return any(pattern in text for pattern in narration_patterns)
+        
     def maintain_agent_memories(self) -> None:
         for agent in self.agents:
             agent.prune_memory(active_memory_limit=200)
@@ -112,34 +113,36 @@ class SimulationEngine:
         )
         non_chat_rate = non_chat_count / len(recent_window)
 
-        if action != "chat" and non_chat_rate >= 0.40:
+        if action != "chat" and non_chat_rate >= 0.50:
             return True
 
         return False
 
 
     def choose_final_action(
-        self,
-        conversation: str,
-        parsed_action: str,
-        conversation_tags: list[str],
-        allowed_actions: list[str],
+    self,
+    conversation: str,
+    parsed_action: str,
+    conversation_tags: list[str],
+    allowed_actions: list[str],
     ) -> str:
         inferred_action = self.actions.infer_action(
             conversation,
             conversation_tags,
         )
-
-        if inferred_action in allowed_actions:
+    
+        if parsed_action == "share_rumor" and inferred_action == "chat":
+            final_action = "chat"
+        elif inferred_action != "chat" and inferred_action in allowed_actions:
             final_action = inferred_action
         elif parsed_action in allowed_actions:
             final_action = parsed_action
         else:
             final_action = "chat"
-
+    
         if self.should_cap_action(final_action):
             return "chat"
-
+    
         return final_action
 
 
@@ -151,30 +154,62 @@ class SimulationEngine:
         ]
 
 
+    def get_previous_event_keywords(self, current_day: int) -> list[str]:
+        keywords = []
+
+        for event in self.daily_event_history:
+            if event["day"] >= current_day:
+                continue
+
+            name = event["name"].lower()
+            keywords.append(name)
+
+            for word in name.split():
+                if len(word) >= 5:
+                    keywords.append(word)
+
+        return list(dict.fromkeys(keywords))
+
+
     def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
         if not self.current_daily_event:
             return conversation
 
         current_event_name = self.current_daily_event.name.lower()
-        previous_event_names = self.get_previous_event_names(current_day)
+        current_event_words = {
+            word
+            for word in current_event_name.split()
+            if len(word) >= 5
+        }
 
+        previous_keywords = self.get_previous_event_keywords(current_day)
         fixed_conversation = conversation
+        fixed_lower = fixed_conversation.lower()
 
-        for previous_event_name in previous_event_names:
-            previous_event_lower = previous_event_name.lower()
+        mentions_today = (
+            "today" in fixed_lower
+            or "tonight" in fixed_lower
+            or "this morning" in fixed_lower
+            or "this afternoon" in fixed_lower
+            or "this evening" in fixed_lower
+        )
 
-            if previous_event_lower == current_event_name:
+        if not mentions_today:
+            return fixed_conversation
+
+        for keyword in previous_keywords:
+            if keyword in current_event_words:
                 continue
 
-            if previous_event_lower in fixed_conversation.lower():
-                fixed_conversation = fixed_conversation.replace(
-                    " today",
-                    " recently",
-                )
-                fixed_conversation = fixed_conversation.replace(
-                    " Today",
-                    " Recently",
-                )
+            if keyword in fixed_lower and keyword not in current_event_name:
+                fixed_conversation = fixed_conversation.replace(" today", " recently")
+                fixed_conversation = fixed_conversation.replace(" Today", " Recently")
+                fixed_conversation = fixed_conversation.replace(" tonight", " recently")
+                fixed_conversation = fixed_conversation.replace(" Tonight", " Recently")
+                fixed_conversation = fixed_conversation.replace(" this morning", " recently")
+                fixed_conversation = fixed_conversation.replace(" this afternoon", " recently")
+                fixed_conversation = fixed_conversation.replace(" this evening", " recently")
+                return fixed_conversation
 
         return fixed_conversation
         

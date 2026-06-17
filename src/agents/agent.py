@@ -157,7 +157,13 @@ class Agent:
         if relationship_label == "enemies":
             return "I would rather keep this conversation short."
 
-        return "The town feels busy today."
+        return random.choice([
+            "There is a lot happening around town today.",
+            "This place feels more active than usual.",
+            "I have been trying to keep up with everything going on.",
+            "It seems like everyone has something to do today.",
+            "The town has felt lively lately.",
+        ])
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
@@ -186,7 +192,10 @@ class Agent:
             if current_day - memory.day <= max_age_days
             and (
                 other_name in memory.participants
-                or memory.type == "daily_event"
+                or (
+                    memory.type == "daily_event"
+                    and current_day == memory.day
+                )
             )
         ]
     
