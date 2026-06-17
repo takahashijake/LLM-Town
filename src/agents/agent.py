@@ -146,33 +146,18 @@ class Agent:
 
     def speak_to(self, other: "Agent", relationship_label: str) -> str:
         if relationship_label == "close friends":
-            return (
-                f"{self.name} happily catches up with {other.name}. "
-                f"They seem very comfortable around each other."
-            )
-    
+            return "It is good to catch up with you again."
+
         if relationship_label == "friendly":
-            return (
-                f"{self.name} warmly chats with {other.name}. "
-                f"The conversation feels easy and positive."
-            )
-    
+            return "I am glad we ran into each other today."
+
         if relationship_label == "tense":
-            return (
-                f"{self.name} has an awkward conversation with {other.name}. "
-                f"There is some tension between them."
-            )
-    
+            return "I am not sure we see this the same way."
+
         if relationship_label == "enemies":
-            return (
-                f"{self.name} argues sharply with {other.name}. "
-                f"They clearly do not trust each other."
-            )
-    
-        return (
-            f"{self.name} talks with {other.name}. "
-            f"{self.name} is feeling {self.personality}."
-        )
+            return "I would rather keep this conversation short."
+
+        return "The town feels busy today."
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score

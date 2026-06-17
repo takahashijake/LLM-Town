@@ -215,6 +215,14 @@ A small percentage of conversations should naturally:
 
 Not every conversation should be ordinary chat.
 Today's event is happening today.
+Memory timing rules:
+
+* Relevant memories may be from previous days.
+* If a memory says it happened days ago, treat it as a past event.
+* Do not describe old memories as happening today.
+* Only today's town event is happening today.
+* If mentioning a past event, use wording like "recently", "earlier this week", or "the other day".
+
 Do not refer to today's event as:
 
 * tomorrow

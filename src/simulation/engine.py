@@ -591,6 +591,10 @@ class SimulationEngine:
                 conversation,
                 current_day=day,
             )
+
+            if self.is_narration(conversation, speaker, listener): 
+                conversation = speaker.speak_to(listener, old_relationship_label) 
+                parsed_action = "chat"
             
             
             conversation_tags = infer_conversation_tags(conversation)

@@ -18,7 +18,11 @@ def build_conversation_context(
         "recent_topics" : speaker.recent_topics,
         "relationship_score": relationship_score,
         "relevant_memories": [
-            memory.description
+            (
+                f"Day {memory.day}, {memory.hour}:00 "
+                f"({current_day - memory.day} days ago): "
+                f"{memory.description}"
+            )
             for memory in speaker.get_relevant_memories(
                 listener.name,
                 current_day=current_day,
