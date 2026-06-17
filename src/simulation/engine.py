@@ -354,6 +354,9 @@ class SimulationEngine:
         new_score: int,
         relationship_label: str,
         action: str,
+        action_source: str = "",
+        action_reason: str = "",
+        tags: list[str] | None = None,
     ) -> None:
         conversation_record = {
             "day": day,
@@ -365,7 +368,10 @@ class SimulationEngine:
             "relationship_change": relationship_change,
             "relationship_score": new_score,
             "relationship_label": relationship_label,
-            "action" : action,
+            "action": action,
+            "action_source": action_source,
+            "action_reason": action_reason,
+            "tags": tags or [],
         }
     
         self.logger.log_conversation(conversation_record)
@@ -434,24 +440,44 @@ class SimulationEngine:
             )            
             
             raw_output = self.llm.generate_conversation(context)
-            parsed_output = parse_llm_conversation_output(raw_output)
 
+            parsed_output = parse_llm_conversation_output(
+                raw_output,
+                allowed_actions=allowed_actions,
+            )
+            
             conversation = parsed_output["dialogue"]
             action = parsed_output["action"]
-
-            inferred_action = self.actions.infer_action(conversation, [])
-            if action == "chat" and inferred_action != "chat": 
-                action = inferred_action 
-
-            if action not in allowed_actions:
+            
+            if not conversation:
+                conversation = speaker.speak_to(listener, old_relationship_label)
                 action = "chat"
+                
             if not conversation:
                 conversation = speaker.speak_to(listener, old_relationship_label)
                 action = "chat"
             
-            conversation_tags = infer_conversation_tags(conversation) 
-            conversation_tags.append(old_relationship_label) 
-            conversation_tags.append(action) 
+            conversation_tags = infer_conversation_tags(conversation)
+            conversation_tags.extend(parsed_output.get("tags", []))
+            
+            if self.current_daily_event:
+                dialogue_lower = conversation.lower()
+                event_name_words = [
+                    word
+                    for word in self.current_daily_event.name.lower().split()
+                    if len(word) >= 4
+                ]
+            
+                mentions_event = any(word in dialogue_lower for word in event_name_words)
+            
+                if mentions_event or "event" in conversation_tags:
+                    conversation_tags.append("event")
+                    conversation_tags.append(self.current_daily_event.id)
+            
+            conversation_tags.append(old_relationship_label)
+            conversation_tags.append(action)
+            
+            conversation_tags = list(dict.fromkeys(conversation_tags))
 
            
 
@@ -504,6 +530,9 @@ class SimulationEngine:
                 new_score,
                 relationship_label,
                 action,
+                parsed_output.get("action_source", ""),
+                parsed_output.get("reason", ""),
+                conversation_tags,
             )
             self.print_conversation_event(
                 day,

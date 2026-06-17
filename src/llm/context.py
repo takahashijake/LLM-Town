@@ -26,7 +26,7 @@ def build_conversation_context(
                 max_age_days=5,
             )
         ],
-        "memory_sumary": speaker.memory_summary,
+        "memory_summary": speaker.memory_summary,
         "goals" : speaker.goals,
         "needs" : speaker.needs, 
         "occupation" : speaker.occupation,

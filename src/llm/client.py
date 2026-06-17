@@ -44,10 +44,14 @@ class TransformersLLMClient:
                 "role": "system",
                 "content": (
                     "You generate dialogue for a town simulation. "
-                    "Return only valid JSON." 
-                    "Use exactly this format: " 
-                    '{"dialogue": "short line of dialogue", "action": "chat"}. '
-                    "No narration. No markdown." 
+                    "Return only valid JSON. "
+                    "Use exactly this JSON format: "
+                    '{"dialogue": "short line of dialogue", '
+                    '"action": "one allowed action", '
+                    '"tags": [], '
+                    '"reason": "why this action fits"}. '
+                    "The action must be the best semantic label for the dialogue, not always chat. "
+                    "No narration. No markdown."
                 ),
             },
             {
@@ -459,5 +463,13 @@ Write exactly one short line of dialogue that {context["speaker"]} says to {cont
 
 Return ONLY valid JSON in this format:
 
-{{"dialogue": "text here", "action": "chat"}}
+{{"dialogue": "text here", "action": "one of the allowed actions", "tags": ["conversation"], "reason": "short explanation"}}
+
+The "action" must describe the intent of the dialogue.
+If the dialogue praises the listener, use "compliment".
+If the dialogue offers assistance, use "offer_help".
+If the dialogue asks for assistance, advice, expertise, or information needed to solve a problem, use "ask_for_help".
+If the dialogue shares uncertain or secondhand information, use "share_rumor".
+If the dialogue suggests working together on a shared task, use "cooperate".
+Use "chat" only when none of the more specific allowed actions fit."
 """.strip()

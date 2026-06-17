@@ -55,13 +55,57 @@ def infer_conversation_tags(text: str) -> list[str]:
     return tags
 
 
-def parse_llm_conversation_output(text: str) -> dict:
+def normalize_action(action: str) -> str:
+    action = str(action).strip().lower().replace("-", "_").replace(" ", "_")
+
+    aliases = {
+        "praise": "compliment",
+        "thank": "compliment",
+        "thanks": "compliment",
+        "help": "offer_help",
+        "request_help": "ask_for_help",
+        "ask_help": "ask_for_help",
+        "gossip": "share_rumor",
+        "rumor": "share_rumor",
+        "collaborate": "cooperate",
+        "work_together": "cooperate",
+        "disagree": "argue",
+        "confront": "argue",
+        "leave": "storm_off",
+        "walk_away": "storm_off",
+    }
+
+    return aliases.get(action, action)
+
+
+def clean_tags(tags) -> list[str]:
+    if not isinstance(tags, list):
+        return []
+
+    cleaned = []
+
+    for tag in tags:
+        tag = str(tag).strip().lower().replace(" ", "_")
+        if tag and tag not in cleaned:
+            cleaned.append(tag)
+
+    return cleaned
+
+
+def parse_llm_conversation_output(
+    text: str,
+    allowed_actions: list[str] | None = None,
+) -> dict:
     json_text = extract_json_object(text)
 
     if json_text is None:
         return {
             "dialogue": "They exchange a brief comment.",
             "action": "chat",
+            "tags": [],
+            "reason": "",
+            "raw_action": "",
+            "action_source": "fallback_no_json",
         }
 
     try:
@@ -70,15 +114,46 @@ def parse_llm_conversation_output(text: str) -> dict:
         return {
             "dialogue": "They exchange a brief comment.",
             "action": "chat",
+            "tags": [],
+            "reason": "",
+            "raw_action": "",
+            "action_source": "fallback_bad_json",
         }
 
     dialogue = clean_conversation_output(str(data.get("dialogue", "")))
-    action = str(data.get("action", "chat")).strip()
+    raw_action = str(data.get("action", "chat")).strip()
+    action = normalize_action(raw_action)
+
+    allowed = set(allowed_actions or ALLOWED_ACTIONS)
+
+    if "chat" not in allowed:
+        allowed.add("chat")
 
     if action not in ALLOWED_ACTIONS:
-        action = "chat"
+        return {
+            "dialogue": dialogue,
+            "action": "chat",
+            "tags": clean_tags(data.get("tags", [])),
+            "reason": str(data.get("reason", "")),
+            "raw_action": raw_action,
+            "action_source": "fallback_unknown_action",
+        }
+
+    if action not in allowed:
+        return {
+            "dialogue": dialogue,
+            "action": "chat",
+            "tags": clean_tags(data.get("tags", [])),
+            "reason": str(data.get("reason", "")),
+            "raw_action": raw_action,
+            "action_source": "fallback_disallowed_action",
+        }
 
     return {
         "dialogue": dialogue,
         "action": action,
+        "tags": clean_tags(data.get("tags", [])),
+        "reason": str(data.get("reason", "")),
+        "raw_action": raw_action,
+        "action_source": "llm",
     }

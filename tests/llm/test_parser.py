@@ -51,3 +51,68 @@ def test_parse_unknown_action_falls_back_to_chat():
 
     assert parsed["dialogue"] == "Let us do something unusual."
     assert parsed["action"] == "chat"
+
+def test_parse_uses_llm_action_when_allowed():
+    output = (
+        '{"dialogue": "Carlos, your presentation was really engaging.", '
+        '"action": "compliment", '
+        '"tags": ["event"], '
+        '"reason": "The speaker praises Carlos."}'
+    )
+
+    parsed = parse_llm_conversation_output(
+        output,
+        allowed_actions=["chat", "compliment"],
+    )
+
+    assert parsed["dialogue"] == "Carlos, your presentation was really engaging."
+    assert parsed["action"] == "compliment"
+    assert parsed["tags"] == ["event"]
+    assert parsed["reason"] == "The speaker praises Carlos."
+    assert parsed["action_source"] == "llm"
+
+
+def test_parse_disallowed_action_falls_back_to_chat():
+    output = (
+        '{"dialogue": "You handled that well.", '
+        '"action": "compliment"}'
+    )
+
+    parsed = parse_llm_conversation_output(
+        output,
+        allowed_actions=["chat", "argue"],
+    )
+
+    assert parsed["action"] == "chat"
+    assert parsed["raw_action"] == "compliment"
+    assert parsed["action_source"] == "fallback_disallowed_action"
+
+
+def test_parse_action_alias_normalizes_to_known_action():
+    output = (
+        '{"dialogue": "You handled that well.", '
+        '"action": "praise"}'
+    )
+
+    parsed = parse_llm_conversation_output(
+        output,
+        allowed_actions=["chat", "compliment"],
+    )
+
+    assert parsed["action"] == "compliment"
+    assert parsed["action_source"] == "llm"
+
+
+def test_parse_keeps_chat_when_chat_is_allowed():
+    output = (
+        '{"dialogue": "The market seems busier than usual today.", '
+        '"action": "chat"}'
+    )
+
+    parsed = parse_llm_conversation_output(
+        output,
+        allowed_actions=["chat", "compliment"],
+    )
+
+    assert parsed["action"] == "chat"
+    assert parsed["action_source"] == "llm"
