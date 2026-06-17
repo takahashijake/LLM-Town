@@ -1,11 +1,25 @@
 
 class FakeLLMClient:
     def generate_conversation(self, context: dict) -> str:
-        return (
-            f"{context['speaker']} talks with {context['listener']} "
-            f"at {context['location']}."
-        )
+        action = context.get("suggested_action", "chat")
 
+        dialogue_by_action = {
+            "chat": "The town feels busy today.",
+            "compliment": "You handled that really well.",
+            "apologize": "I'm sorry about earlier.",
+            "offer_help": "I can help you with that.",
+            "ask_for_help": "Could you give me advice on where to start?",
+            "argue": "I disagree. That plan does not make sense.",
+            "insult": "That was a foolish way to handle it.",
+            "storm_off": "I'm done talking about this.",
+            "confess_feelings": "I have feelings for you.",
+            "share_rumor": "I heard something strange about the market.",
+            "cooperate": "We could work together on this.",
+        }
+
+        dialogue = dialogue_by_action.get(action, dialogue_by_action["chat"])
+
+        return f'{{"dialogue": "{dialogue}", "action": "{action}"}}'
 class TransformersLLMClient:
     def __init__(self, model_name: str = "Qwen/Qwen2.5-3B-Instruct"):
         import torch
