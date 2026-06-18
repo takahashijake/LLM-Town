@@ -727,17 +727,17 @@ class SimulationEngine:
             )
 
             context = build_conversation_context(
-    speaker=speaker,
-    listener=listener,
-    location_id=location_id,
-    relationship_label=old_relationship_label,
-    relationship_score=old_score,
-    current_day=day,
-    daily_event=self.current_daily_event,
-    allowed_actions=allowed_actions,
-    suggested_action=suggested_action,
-    relationship_history=relationship_history,
-)           
+                speaker=speaker,
+                listener=listener,
+                location_id=location_id,
+                relationship_label=old_relationship_label,
+                relationship_score=old_score,
+                current_day=day,
+                daily_event=self.current_daily_event,
+                allowed_actions=allowed_actions,
+                suggested_action=suggested_action,
+                relationship_history=relationship_history,
+            )           
             
             raw_output = self.llm.generate_conversation(context)
 
@@ -786,6 +786,26 @@ class SimulationEngine:
                 if mentions_event or "event" in conversation_tags:
                     conversation_tags.append("event")
                     conversation_tags.append(self.current_daily_event.id)
+            
+            action_tags = {
+                "chat",
+                "compliment",
+                "apologize",
+                "offer_help",
+                "ask_for_help",
+                "argue",
+                "insult",
+                "storm_off",
+                "confess_feelings",
+                "share_rumor",
+                "cooperate",
+            }
+            
+            conversation_tags = [
+                tag
+                for tag in conversation_tags
+                if tag not in action_tags
+            ]
             
             conversation_tags.append(old_relationship_label)
             conversation_tags.append(action)
