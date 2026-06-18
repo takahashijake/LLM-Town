@@ -12,6 +12,7 @@ class ActivityPlanner:
         current_day: int,
         hour: int,
         daily_event=None,
+        current_intent=None,
     ) -> Activity:
         agent.initialize_needs()
 
@@ -24,7 +25,16 @@ class ActivityPlanner:
                 reason=f"{agent.name} is interested in today's event: {daily_event.name}.",
                 tags=["event", daily_event.id] + daily_event.tags,
             )
-
+        if current_intent and current_intent.target_location:
+            if current_intent.target_location in location_ids and random.random() < 0.60:
+                return Activity(
+                    id=f"intent_{current_intent.intent_type}",
+                    name=f"Work on intent: {current_intent.intent_type}",
+                    location_id=current_intent.target_location,
+                    reason=current_intent.description,
+                    tags=["intent", current_intent.intent_type],
+                )
+        
         # Otherwise choose based on goals, occupation, and needs.
         candidates = self.get_candidate_activities(agent, location_ids)
 

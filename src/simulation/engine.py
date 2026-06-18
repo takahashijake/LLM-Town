@@ -60,6 +60,29 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def get_activity_need_effects(self, activity) -> dict[str, int]:
+        effects_by_tag = {
+            "wealth": {"wealth": 3},
+            "business": {"wealth": 2},
+            "market": {"wealth": 1},
+            "social": {"social": 2},
+            "relationship": {"social": 2},
+            "community": {"social": 1},
+            "volunteer": {"social": 1},
+            "knowledge": {"knowledge": 2},
+            "learning": {"knowledge": 2},
+            "jousrnalism": {"knowledge": 2},
+            "accounting": {"knowledge": 2},
+        }
+    
+        effects = {}
+    
+        for tag in activity.tags:
+            for need, amount in effects_by_tag.get(tag, {}).items():
+                effects[need] = effects.get(need, 0) + amount
+    
+        return effects
+    
     def get_intent_listener_weight_bonus(
     self,
     speaker: Agent,
@@ -526,10 +549,17 @@ class SimulationEngine:
                 current_day=day,
                 hour=hour,
                 daily_event=self.current_daily_event,
+                current_intent=self.agent_intents.get(agent.name),
             )
     
             agent.set_activity(activity)
             self.log_activity_event(day, hour, agent, activity)
+
+            activity_need_effects = self.get_activity_need_effects(activity)
+
+            for need, amount in activity_need_effects.items():
+                agent.satisfy_need(need, amount)
+                
             print(
                 f"{agent.name} chooses activity: {activity.name} "
                 f"at {activity.location_id} ({activity.reason})"
@@ -632,12 +662,12 @@ class SimulationEngine:
     
         elif intent.intent_type == "seek_work":
             if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 2
+                adjusted["ask_for_help"] += 1
             if "cooperate" in adjusted:
-                adjusted["cooperate"] += 2
+                adjusted["cooperate"] += 1
             if "chat" in adjusted:
-                adjusted["chat"] += 1
-    
+                adjusted["chat"] += 2
+            
         return adjusted
     
 

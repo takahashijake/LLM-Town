@@ -1,8 +1,48 @@
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
-
+import random 
 
 class IntentPlanner:
+    def create_occupation_intent(
+    self,
+    agent: Agent,
+    current_day: int,
+    ) -> AgentIntent | None:
+        occupation = agent.occupation.lower()
+        text = " ".join(
+            [
+                agent.occupation,
+                agent.personality,
+                " ".join(agent.goals),
+            ]
+        ).lower()
+    
+        if "journalist" in occupation or "secrets" in text:
+            return self.create_investigate_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+    
+        if "community organizer" in occupation or "help the town" in text:
+            return self.create_socialize_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+    
+        if "merchant" in occupation or "business opportunities" in text:
+            return self.create_work_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+    
+        if "accountant" in occupation or "reliable allies" in text:
+            return self.create_investigate_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+    
+        return None
+    
     def create_intent_for_agent(
         self,
         agent: Agent,
@@ -26,27 +66,37 @@ class IntentPlanner:
                 current_day=current_day,
             )
 
+        occupation_intent = self.create_occupation_intent(
+            agent=agent,
+            current_day=current_day,
+        )
+        
+        if occupation_intent and random.random() < 0.45:
+            return occupation_intent
+        
         primary_need = agent.get_primary_need()
-
+        
         if primary_need == "knowledge":
             return self.create_investigate_intent(
                 agent_name=agent.name,
                 current_day=current_day,
             )
-
+        
         if primary_need == "social":
             return self.create_socialize_intent(
                 agent_name=agent.name,
                 current_day=current_day,
             )
-
+        
         if primary_need == "wealth":
             return self.create_work_intent(
                 agent_name=agent.name,
                 current_day=current_day,
             )
+        
+        return occupation_intent
 
-        return None
+        
 
     def get_weakest_relationship(
         self,
