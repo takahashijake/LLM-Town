@@ -31,12 +31,50 @@ class SimulationReporter:
         self.print_activity_summary(engine)
         self.print_relationship_summary(engine)
         self.print_relationship_distribution(engine)
+        self.print_relationship_event_summary(engine)
         self.print_need_summary(engine)
         self.print_memory_summary(engine)
         self.print_topic_summary(engine)
         self.print_repetition_summary(engine)
         self.print_daily_event_usage(engine)
 
+    def print_relationship_event_summary(self, engine) -> None:
+        relationship_events = getattr(engine, "relationship_events", [])
+    
+        if not relationship_events:
+            print("\nNo relationship events recorded.")
+            return
+    
+        action_counts = Counter(
+            event.action
+            for event in relationship_events
+        )
+    
+        positive_events = sum(
+            1 for event in relationship_events
+            if event.relationship_change > 0
+        )
+    
+        negative_events = sum(
+            1 for event in relationship_events
+            if event.relationship_change < 0
+        )
+    
+        neutral_events = sum(
+            1 for event in relationship_events
+            if event.relationship_change == 0
+        )
+    
+        print("\nRelationship event summary:")
+        print(f"  Total relationship events: {len(relationship_events)}")
+        print(f"  Positive events: {positive_events}")
+        print(f"  Negative events: {negative_events}")
+        print(f"  Neutral events: {neutral_events}")
+    
+        print("  Events by action:")
+        for action, count in action_counts.most_common():
+            print(f"    {action}: {count}")
+        
     def get_all_conversation_memories(self, engine):
         memories = []
 

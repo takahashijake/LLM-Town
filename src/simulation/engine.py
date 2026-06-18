@@ -15,6 +15,7 @@ from src.llm.parser import clean_conversation_output, parse_llm_conversation_out
 from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
 from src.analysis.report import SimulationReporter
+from src.agents.relationship_event import RelationshipEvent 
 
 class SimulationEngine:
     def __init__(
@@ -38,9 +39,11 @@ class SimulationEngine:
         self.recent_dialogues = [] 
         self.recent_actions = []
         self.daily_event_history = []
+        self.relationship_events = []
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
+            self.load_relationship_events_from_state(saved_state)
             self.sync_agent_relationships_from_manager()
             self.start_day = saved_state["current_day"]
             self.start_hour = saved_state["current_hour"]
@@ -49,6 +52,113 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def load_relationship_events_from_state(self, saved_state: dict) -> None:
+        self.relationship_events = [
+            RelationshipEvent(**event_data)
+            for event_data in saved_state.get("relationship_events", [])
+        ]
+    def should_record_relationship_event(
+    self,
+    action: str,
+    relationship_change: int,
+    ) -> bool:
+        return action != "chat" or relationship_change != 0
+
+    
+    def create_relationship_event(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        relationship_change: int,
+        new_score: int,
+        relationship_label: str,
+        conversation: str,
+        tags: list[str],
+    ) -> RelationshipEvent:
+        if relationship_change > 0:
+            direction = "improved"
+        elif relationship_change < 0:
+            direction = "worsened"
+        else:
+            direction = "stayed the same"
+    
+        description = (
+            f"{speaker.name} used action '{action}' with {listener.name}. "
+            f"Their relationship {direction} by {relationship_change:+d}; "
+            f"score is now {new_score:+d} ({relationship_label})."
+        )
+    
+        return RelationshipEvent(
+            day=day,
+            hour=hour,
+            agent_a=speaker.name,
+            agent_b=listener.name,
+            action=action,
+            relationship_change=relationship_change,
+            relationship_score=new_score,
+            relationship_label=relationship_label,
+            description=description,
+            location=location_id,
+            tags=tags,
+            conversation=conversation,
+        )
+
+
+    def record_relationship_event(
+        self,
+        relationship_event: RelationshipEvent,
+    ) -> None:
+        self.relationship_events.append(relationship_event)
+
+
+    def get_recent_relationship_events(
+        self,
+        agent_a: str,
+        agent_b: str,
+        limit: int = 3,
+    ) -> list[RelationshipEvent]:
+        matching_events = [
+            event
+            for event in self.relationship_events
+            if event.involves_pair(agent_a, agent_b)
+        ]
+    
+        matching_events.sort(
+            key=lambda event: (
+                event.day,
+                event.hour,
+            ),
+            reverse=True,
+        )
+    
+        return matching_events[:limit]
+    
+    
+    def format_relationship_history_for_prompt(
+        self,
+        agent_a: str,
+        agent_b: str,
+        limit: int = 3,
+    ) -> list[str]:
+        events = self.get_recent_relationship_events(
+            agent_a,
+            agent_b,
+            limit=limit,
+        )
+    
+        return [
+            (
+                f"Day {event.day}, {event.hour}:00: "
+                f"{event.description} "
+                f"Conversation: \"{event.conversation}\""
+            )
+            for event in events
+        ]
+        
     def sync_agent_relationships_from_manager(self) -> None:
         agents_by_name = {
             agent.name: agent
@@ -610,18 +720,24 @@ class SimulationEngine:
                 allowed_actions,
                 old_relationship_label,
             )
-            
+            relationship_history = self.format_relationship_history_for_prompt(
+                speaker.name,
+                listener.name,
+                limit=3,
+            )
+
             context = build_conversation_context(
-                speaker=speaker,
-                listener=listener,
-                location_id=location_id,
-                relationship_label=old_relationship_label,
-                relationship_score=old_score,
-                current_day=day,
-                daily_event=self.current_daily_event,
-                allowed_actions=allowed_actions,
-                suggested_action=suggested_action,
-            )            
+    speaker=speaker,
+    listener=listener,
+    location_id=location_id,
+    relationship_label=old_relationship_label,
+    relationship_score=old_score,
+    current_day=day,
+    daily_event=self.current_daily_event,
+    allowed_actions=allowed_actions,
+    suggested_action=suggested_action,
+    relationship_history=relationship_history,
+)           
             
             raw_output = self.llm.generate_conversation(context)
 
@@ -689,8 +805,22 @@ class SimulationEngine:
                 listener,
                 relationship_change, 
             )
-            
 
+            if self.should_record_relationship_event(action, relationship_change):
+                relationship_event = self.create_relationship_event(
+                    day=day,
+                    hour=hour,
+                    location_id=location_id,
+                    speaker=speaker,
+                    listener=listener,
+                    action=action,
+                    relationship_change=relationship_change,
+                    new_score=new_score,
+                    relationship_label=relationship_label,
+                    conversation=conversation,
+                    tags=conversation_tags,
+                )
+                self.record_relationship_event(relationship_event)
             need_effects = self.actions.get_need_effects(action)
             for need, amount in need_effects.items():
                 speaker.satisfy_need(need, amount)

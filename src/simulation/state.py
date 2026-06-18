@@ -38,6 +38,10 @@ class SimulationState:
                 f"{a}|{b}": score
                 for (a, b), score in engine.relationships.scores.items()
             },
+            "relationship_events": [
+                event.to_dict() 
+                for event in getattr(engine, "relationship_events", [])
+            ],
         }
 
         self.path.write_text(json.dumps(state, indent=2))

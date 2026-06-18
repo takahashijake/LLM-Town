@@ -132,7 +132,15 @@ class TransformersLLMClient:
     
         if not memory_text:
             memory_text = "- No important memories."
-    
+
+        relationship_history = context.get("relationship_history", [])
+        relationship_history_text = "\n".join(
+            f"- {event}"
+            for event in relationship_history
+        )
+        
+        if not relationship_history_text:
+            relationship_history_text = "- No major relationship history between these two yet."
         return f"""
 Speaker: {context["speaker"]}
 Listener: {context["listener"]}
@@ -143,6 +151,9 @@ Current activity: {speaker_activity}
 Activity reason: {speaker_activity_reason}
 Activity tags: {speaker_activity_tag_text}
 Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d})
+
+Recent relationship history:
+{relationship_history_text}
 
 Recently used topics:
 {recent_topic_text}

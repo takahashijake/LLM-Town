@@ -8,6 +8,7 @@ def build_conversation_context(
     daily_event=None,
     allowed_actions=None,
     suggested_action=None,
+    relationship_history=None,
 ):
     return {
         "speaker": speaker.name,
@@ -17,6 +18,7 @@ def build_conversation_context(
         "relationship_label": relationship_label,
         "recent_topics" : speaker.recent_topics,
         "relationship_score": relationship_score,
+        "relationship_history": relationship_history or [],
         "relevant_memories": [
             (
                 f"Day {memory.day}, {memory.hour}:00 "

@@ -192,10 +192,7 @@ class Agent:
             if current_day - memory.day <= max_age_days
             and (
                 other_name in memory.participants
-                or (
-                    memory.type == "daily_event"
-                    and current_day == memory.day
-                )
+                or memory.type == "daily_event"
             )
         ]
     
