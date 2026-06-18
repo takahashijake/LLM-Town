@@ -74,6 +74,31 @@ class SimulationReporter:
         print("  Events by action:")
         for action, count in action_counts.most_common():
             print(f"    {action}: {count}")
+
+        positive_followup_actions = 0
+        negative_followup_actions = 0
+        
+        for event in relationship_events:
+            if event.relationship_change > 0 and event.action in {
+                "compliment",
+                "offer_help",
+                "cooperate",
+                "ask_for_help",
+                "chat",
+            }:
+                positive_followup_actions += 1
+        
+            if event.relationship_change < 0 and event.action in {
+                "apologize",
+                "argue",
+                "storm_off",
+                "insult",
+                "chat",
+            }:
+                negative_followup_actions += 1
+        
+        print(f"  Positive/repair social actions: {positive_followup_actions}")
+        print(f"  Negative/guarded social actions: {negative_followup_actions}")
         
     def get_all_conversation_memories(self, engine):
         memories = []

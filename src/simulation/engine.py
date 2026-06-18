@@ -16,6 +16,7 @@ from src.town.daily_event import choose_daily_event
 from src.actions.action_system import ActionSystem 
 from src.analysis.report import SimulationReporter
 from src.agents.relationship_event import RelationshipEvent 
+from src.behavior.social_policy import SocialBehaviorPolicy 
 
 class SimulationEngine:
     def __init__(
@@ -32,6 +33,7 @@ class SimulationEngine:
         self.llm = llm_client or TransformersLLMClient()
         self.actions = ActionSystem()
         self.activity_planner = ActivityPlanner()
+        self.social_policy = SocialBehaviorPolicy()
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
@@ -516,53 +518,45 @@ class SimulationEngine:
     
         return max(-3, min(3, relationship_change))
         
+
+    def get_suggested_action_weights(
+        self,
+        allowed_actions: list[str],
+        relationship_label: str,
+        recent_relationship_events=None,
+    ) -> dict[str, int]:
+        return self.social_policy.get_action_weights(
+            allowed_actions=allowed_actions,
+            relationship_label=relationship_label,
+            recent_events=recent_relationship_events,
+        )
+
+
     def choose_suggested_action(
         self,
         allowed_actions: list[str],
         relationship_label: str,
+        recent_relationship_events=None,
     ) -> str:
         if not allowed_actions:
             return "chat"
-
-        allowed = set(allowed_actions)
-
-        if relationship_label in ["tense", "enemies"]:
-            preferred_weights = {
-                "chat": 8,
-                "apologize": 3,
-                "argue": 2,
-                "storm_off": 1,
-                "insult": 1,
-            }
-        elif relationship_label in ["friendly", "close friends"]:
-            preferred_weights = {
-                "chat": 7,
-                "compliment": 3,
-                "cooperate": 1,
-                "offer_help": 2,
-                "ask_for_help": 1,
-                "confess_feelings": 1,
-            }
-        else:
-            preferred_weights = {
-                "chat": 8,
-                "cooperate": 1,
-                "offer_help": 2,
-                "ask_for_help": 2,
-                "compliment": 1,
-                "share_rumor": 1,
-            }
-
+    
+        weights = self.get_suggested_action_weights(
+            allowed_actions=allowed_actions,
+            relationship_label=relationship_label,
+            recent_relationship_events=recent_relationship_events,
+        )
+    
         weighted_actions = []
-
-        for action, weight in preferred_weights.items():
-            if action in allowed:
-                weighted_actions.extend([action] * weight)
-
+    
+        for action, weight in weights.items():
+            weighted_actions.extend([action] * weight)
+    
         if not weighted_actions:
             return "chat"
-
+    
         return random.choice(weighted_actions)
+        
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
         agents_by_location = {}
         
@@ -716,10 +710,19 @@ class SimulationEngine:
                 listener.name,
             )
             allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
+
+            recent_relationship_events = self.get_recent_relationship_events(
+                speaker.name,
+                listener.name,
+                limit=5,
+            )
+            
             suggested_action = self.choose_suggested_action(
                 allowed_actions,
                 old_relationship_label,
+                recent_relationship_events=recent_relationship_events,
             )
+
             relationship_history = self.format_relationship_history_for_prompt(
                 speaker.name,
                 listener.name,
