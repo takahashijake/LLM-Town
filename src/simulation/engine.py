@@ -60,6 +60,27 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def get_intent_listener_weight_bonus(
+    self,
+    speaker: Agent,
+    listener: Agent,
+    ) -> int:
+        intent = self.agent_intents.get(speaker.name)
+    
+        if not intent:
+            return 0
+    
+        if intent.target_agent != listener.name:
+            return 0
+    
+        if intent.intent_type == "repair_relationship":
+            return 5
+    
+        if intent.intent_type == "build_friendship":
+            return 4
+    
+        return 2
+    
     def load_agent_intents_from_state(self, saved_state: dict) -> None:
         self.agent_intents = {
             agent_name: AgentIntent(**intent_data)
@@ -667,6 +688,7 @@ class SimulationEngine:
 
         weights = [
             self.relationships.get_conversation_weight(speaker.name, listener.name)
+            + self.get_intent_listener_weight_bonus(speaker, listener)
             for listener in possible_listeners
         ]
 
