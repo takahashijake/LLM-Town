@@ -82,12 +82,11 @@ class SocialBehaviorPolicy:
         history_score = self.score_relationship_history(recent_events)
 
         if history_score >= 2:
-            self._increase(weights, allowed, "compliment", 2)
-            self._increase(weights, allowed, "offer_help", 2)
-            self._increase(weights, allowed, "cooperate", 2)
+            self._increase(weights, allowed, "compliment", 1)
+            self._increase(weights, allowed, "offer_help", 1)
+            self._increase(weights, allowed, "cooperate", 1)
             self._increase(weights, allowed, "ask_for_help", 1)
             self._decrease(weights, "argue", 1)
-            self._decrease(weights, "share_rumor", 1)
 
         elif history_score <= -2:
             self._increase(weights, allowed, "apologize", 3)
