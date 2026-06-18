@@ -1,0 +1,186 @@
+from src.agents.agent import Agent
+from src.agents.intent import AgentIntent
+
+
+class IntentPlanner:
+    def create_intent_for_agent(
+        self,
+        agent: Agent,
+        engine,
+        current_day: int,
+    ) -> AgentIntent | None:
+        weakest = self.get_weakest_relationship(agent, engine)
+        strongest = self.get_strongest_relationship(agent, engine)
+
+        if weakest and weakest[1] <= -2:
+            return self.create_repair_relationship_intent(
+                agent_name=agent.name,
+                target_agent=weakest[0],
+                current_day=current_day,
+            )
+
+        if strongest and strongest[1] >= 3:
+            return self.create_build_friendship_intent(
+                agent_name=agent.name,
+                target_agent=strongest[0],
+                current_day=current_day,
+            )
+
+        primary_need = agent.get_primary_need()
+
+        if primary_need == "knowledge":
+            return self.create_investigate_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+
+        if primary_need == "social":
+            return self.create_socialize_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+
+        if primary_need == "wealth":
+            return self.create_work_intent(
+                agent_name=agent.name,
+                current_day=current_day,
+            )
+
+        return None
+
+    def get_weakest_relationship(
+        self,
+        agent: Agent,
+        engine,
+    ) -> tuple[str, int] | None:
+        relationships = []
+
+        for other_agent in engine.agents:
+            if other_agent.name == agent.name:
+                continue
+
+            score = engine.relationships.get_score(
+                agent.name,
+                other_agent.name,
+            )
+
+            relationships.append((other_agent.name, score))
+
+        if not relationships:
+            return None
+
+        return min(relationships, key=lambda item: item[1])
+
+    def get_strongest_relationship(
+        self,
+        agent: Agent,
+        engine,
+    ) -> tuple[str, int] | None:
+        relationships = []
+
+        for other_agent in engine.agents:
+            if other_agent.name == agent.name:
+                continue
+
+            score = engine.relationships.get_score(
+                agent.name,
+                other_agent.name,
+            )
+
+            relationships.append((other_agent.name, score))
+
+        if not relationships:
+            return None
+
+        return max(relationships, key=lambda item: item[1])
+
+    def create_repair_relationship_intent(
+        self,
+        agent_name: str,
+        target_agent: str,
+        current_day: int,
+    ) -> AgentIntent:
+        return AgentIntent(
+            agent_name=agent_name,
+            intent_type="repair_relationship",
+            target_agent=target_agent,
+            target_location=None,
+            description=(
+                f"{agent_name} wants to repair their relationship "
+                f"with {target_agent}."
+            ),
+            created_day=current_day,
+            expires_day=current_day + 2,
+            priority=5,
+        )
+
+    def create_build_friendship_intent(
+        self,
+        agent_name: str,
+        target_agent: str,
+        current_day: int,
+    ) -> AgentIntent:
+        return AgentIntent(
+            agent_name=agent_name,
+            intent_type="build_friendship",
+            target_agent=target_agent,
+            target_location=None,
+            description=(
+                f"{agent_name} wants to strengthen their bond "
+                f"with {target_agent}."
+            ),
+            created_day=current_day,
+            expires_day=current_day + 2,
+            priority=4,
+        )
+
+    def create_investigate_intent(
+        self,
+        agent_name: str,
+        current_day: int,
+    ) -> AgentIntent:
+        return AgentIntent(
+            agent_name=agent_name,
+            intent_type="investigate",
+            target_agent=None,
+            target_location="library",
+            description=(
+                f"{agent_name} wants to gather information "
+                "about recent town activity."
+            ),
+            created_day=current_day,
+            expires_day=current_day + 1,
+            priority=3,
+        )
+
+    def create_socialize_intent(
+        self,
+        agent_name: str,
+        current_day: int,
+    ) -> AgentIntent:
+        return AgentIntent(
+            agent_name=agent_name,
+            intent_type="socialize",
+            target_agent=None,
+            target_location="cafe",
+            description=f"{agent_name} wants to spend time with other residents.",
+            created_day=current_day,
+            expires_day=current_day + 1,
+            priority=2,
+        )
+
+    def create_work_intent(
+        self,
+        agent_name: str,
+        current_day: int,
+    ) -> AgentIntent:
+        return AgentIntent(
+            agent_name=agent_name,
+            intent_type="seek_work",
+            target_agent=None,
+            target_location="market",
+            description=f"{agent_name} wants to find work or business opportunities.",
+            created_day=current_day,
+            expires_day=current_day + 1,
+            priority=2,
+        )

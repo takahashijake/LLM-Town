@@ -6,7 +6,7 @@ from src.agents.relationships import RelationshipManager
 from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
 from src.simulation.state import SimulationState
-
+from src.agents.intent import AgentIntent
 
 def test_load_returns_none_when_state_file_does_not_exist(tmp_path):
     state = SimulationState(path=str(tmp_path / "missing_state.json"))
@@ -184,3 +184,31 @@ def test_engine_reconstructs_relationship_scores_from_saved_state():
 
     assert engine.relationships.get_score("Maya", "Ethan") == 5
     assert engine.relationships.describe_relationship("Maya", "Ethan") == "friendly"
+
+def test_save_preserves_agent_intents(tmp_path):
+    state = SimulationState(path=str(tmp_path / "save_state.json"))
+
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="build_friendship",
+        target_agent="Lena",
+        target_location=None,
+        description="Maya wants to strengthen her bond with Lena.",
+        created_day=1,
+        expires_day=3,
+        priority=4,
+    )
+
+    fake_engine = SimpleNamespace(
+        agents=[],
+        relationships=RelationshipManager(),
+        relationship_events=[],
+        agent_intents={"Maya": intent},
+    )
+
+    state.save(fake_engine, current_day=1, current_hour=8)
+    loaded = state.load()
+
+    assert loaded["agent_intents"]["Maya"]["intent_type"] == "build_friendship"
+    assert loaded["agent_intents"]["Maya"]["target_agent"] == "Lena"
+    

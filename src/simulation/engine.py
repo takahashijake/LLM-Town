@@ -17,6 +17,9 @@ from src.actions.action_system import ActionSystem
 from src.analysis.report import SimulationReporter
 from src.agents.relationship_event import RelationshipEvent 
 from src.behavior.social_policy import SocialBehaviorPolicy 
+from src.agents.intent import AgentIntent 
+from src.behavior.intent_planner import IntentPlanner 
+
 
 class SimulationEngine:
     def __init__(
@@ -34,6 +37,8 @@ class SimulationEngine:
         self.actions = ActionSystem()
         self.activity_planner = ActivityPlanner()
         self.social_policy = SocialBehaviorPolicy()
+        self.intent_planner = IntentPlanner() 
+        self.agent_intents = {}
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
@@ -45,6 +50,7 @@ class SimulationEngine:
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
+            self.load_agent_intents_from_state(saved_state)
             self.load_relationship_events_from_state(saved_state)
             self.sync_agent_relationships_from_manager()
             self.start_day = saved_state["current_day"]
@@ -54,6 +60,38 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def load_agent_intents_from_state(self, saved_state: dict) -> None:
+        self.agent_intents = {
+            agent_name: AgentIntent(**intent_data)
+            for agent_name, intent_data in saved_state.get("agent_intents", {}).items()
+        }
+
+
+    def update_agent_intents(self, current_day: int) -> None:
+        for agent in self.agents:
+            current_intent = self.agent_intents.get(agent.name)
+    
+            if current_intent and not current_intent.is_expired(current_day):
+                continue
+    
+            new_intent = self.intent_planner.create_intent_for_agent(
+                agent=agent,
+                engine=self,
+                current_day=current_day,
+            )
+    
+            if new_intent:
+                self.agent_intents[agent.name] = new_intent
+
+
+    def get_agent_intent_text(self, agent_name: str) -> str:
+        intent = self.agent_intents.get(agent_name)
+    
+        if not intent:
+            return "No active intent."
+    
+        return intent.description
+    
     def load_relationship_events_from_state(self, saved_state: dict) -> None:
         self.relationship_events = [
             RelationshipEvent(**event_data)
@@ -440,6 +478,8 @@ class SimulationEngine:
             event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
             for agent in self.agents:
                 agent.remember(event_memory)
+
+            self.update_agent_intents(day)
                 
             print(
                 f"Daily Event: {self.current_daily_event.name} - "
@@ -517,7 +557,68 @@ class SimulationEngine:
             relationship_change = 0
     
         return max(-3, min(3, relationship_change))
-        
+
+    def adjust_action_weights_for_intent(
+    self,
+    weights: dict[str, int],
+    intent: AgentIntent | None,
+    listener_name: str,
+    ) -> dict[str, int]:
+        adjusted = dict(weights)
+    
+        if not intent:
+            return adjusted
+    
+        target_matches = (
+            intent.target_agent is None
+            or intent.target_agent == listener_name
+        )
+    
+        if not target_matches:
+            return adjusted
+    
+        if intent.intent_type == "repair_relationship":
+            if "apologize" in adjusted:
+                adjusted["apologize"] += 4
+            if "offer_help" in adjusted:
+                adjusted["offer_help"] += 2
+            if "chat" in adjusted:
+                adjusted["chat"] += 1
+            if "argue" in adjusted:
+                adjusted["argue"] = max(1, adjusted["argue"] - 2)
+    
+        elif intent.intent_type == "build_friendship":
+            if "compliment" in adjusted:
+                adjusted["compliment"] += 2
+            if "offer_help" in adjusted:
+                adjusted["offer_help"] += 2
+            if "cooperate" in adjusted:
+                adjusted["cooperate"] += 2
+    
+        elif intent.intent_type == "investigate":
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 3
+            if "share_rumor" in adjusted:
+                adjusted["share_rumor"] += 1
+            if "chat" in adjusted:
+                adjusted["chat"] += 1
+    
+        elif intent.intent_type == "socialize":
+            if "chat" in adjusted:
+                adjusted["chat"] += 2
+            if "compliment" in adjusted:
+                adjusted["compliment"] += 1
+    
+        elif intent.intent_type == "seek_work":
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 2
+            if "cooperate" in adjusted:
+                adjusted["cooperate"] += 2
+            if "chat" in adjusted:
+                adjusted["chat"] += 1
+    
+        return adjusted
+    
 
     def get_suggested_action_weights(
         self,
@@ -533,10 +634,10 @@ class SimulationEngine:
 
 
     def choose_suggested_action(
-        self,
-        allowed_actions: list[str],
-        relationship_label: str,
-        recent_relationship_events=None,
+    self,
+    allowed_actions: list[str],
+    relationship_label: str,
+    recent_relationship_events=None,
     ) -> str:
         if not allowed_actions:
             return "chat"
@@ -547,15 +648,7 @@ class SimulationEngine:
             recent_relationship_events=recent_relationship_events,
         )
     
-        weighted_actions = []
-    
-        for action, weight in weights.items():
-            weighted_actions.extend([action] * weight)
-    
-        if not weighted_actions:
-            return "chat"
-    
-        return random.choice(weighted_actions)
+        return self.choose_weighted_action(weights)
         
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
         agents_by_location = {}
@@ -630,6 +723,17 @@ class SimulationEngine:
             tags=tags,
     )
 
+    def choose_weighted_action(self, weights: dict[str, int]) -> str:
+        weighted_actions = []
+    
+        for action, weight in weights.items():
+            weighted_actions.extend([action] * weight)
+    
+        if not weighted_actions:
+            return "chat"
+    
+        return random.choice(weighted_actions)
+        
     def log_conversation_event(
         self,
         day: int,
@@ -645,6 +749,8 @@ class SimulationEngine:
         action_source: str = "",
         action_reason: str = "",
         tags: list[str] | None = None,
+        speaker_intent: AgentIntent | None = None,
+        listener_intent: AgentIntent | None = None,
     ) -> None:
         conversation_record = {
             "day": day,
@@ -660,6 +766,11 @@ class SimulationEngine:
             "action_source": action_source,
             "action_reason": action_reason,
             "tags": tags or [],
+            "speaker_intent_type": speaker_intent.intent_type if speaker_intent else "",
+            "speaker_intent_target_agent": speaker_intent.target_agent if speaker_intent else "",
+            "speaker_intent_target_location": speaker_intent.target_location if speaker_intent else "",
+            "speaker_intent_description": speaker_intent.description if speaker_intent else "",
+            "listener_intent_type": listener_intent.intent_type if listener_intent else "",
         }
     
         self.logger.log_conversation(conversation_record)
@@ -717,11 +828,22 @@ class SimulationEngine:
                 limit=5,
             )
             
-            suggested_action = self.choose_suggested_action(
-                allowed_actions,
-                old_relationship_label,
+            speaker_intent = self.agent_intents.get(speaker.name)
+            listener_intent = self.agent_intents.get(listener.name)
+            
+            base_action_weights = self.get_suggested_action_weights(
+                allowed_actions=allowed_actions,
+                relationship_label=old_relationship_label,
                 recent_relationship_events=recent_relationship_events,
             )
+            
+            intent_adjusted_weights = self.adjust_action_weights_for_intent(
+                weights=base_action_weights,
+                intent=speaker_intent,
+                listener_name=listener.name,
+            )
+            
+            suggested_action = self.choose_weighted_action(intent_adjusted_weights)
 
             relationship_history = self.format_relationship_history_for_prompt(
                 speaker.name,
@@ -729,6 +851,9 @@ class SimulationEngine:
                 limit=3,
             )
 
+            speaker_intent = self.agent_intents.get(speaker.name) 
+            listener_intent = self.agent_intents.get(listener.name)
+            
             context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
@@ -740,7 +865,9 @@ class SimulationEngine:
                 allowed_actions=allowed_actions,
                 suggested_action=suggested_action,
                 relationship_history=relationship_history,
-            )           
+                speaker_intent=speaker_intent.to_dict() if speaker_intent else None,
+                listener_intent=listener_intent.to_dict() if listener_intent else None,
+            )     
             
             raw_output = self.llm.generate_conversation(context)
 
@@ -888,6 +1015,8 @@ class SimulationEngine:
                 parsed_output.get("action_source", ""),
                 parsed_output.get("reason", ""),
                 conversation_tags,
+                speaker_intent=speaker_intent,
+                listener_intent=listener_intent,
             )
             self.print_conversation_event(
                 day,

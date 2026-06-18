@@ -1,6 +1,6 @@
 from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
-
+from src.agents.intent import AgentIntent
 
 def build_engine():
     return SimulationEngine(
@@ -81,3 +81,64 @@ def test_choose_suggested_action_does_not_suggest_cooperate_when_tense_if_not_al
 
         assert suggested_action in allowed_actions
         assert suggested_action != "cooperate"
+
+def test_repair_intent_increases_apology_weight_for_target():
+    engine = build_engine()
+
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="repair_relationship",
+        target_agent="Carlos",
+        target_location=None,
+        description="Maya wants to repair her relationship with Carlos.",
+        created_day=1,
+        expires_day=3,
+        priority=5,
+    )
+
+    base_weights = {
+        "chat": 8,
+        "apologize": 1,
+        "argue": 2,
+        "offer_help": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_intent(
+        weights=base_weights,
+        intent=intent,
+        listener_name="Carlos",
+    )
+
+    assert adjusted["apologize"] > base_weights["apologize"]
+    assert adjusted["offer_help"] > base_weights["offer_help"]
+    assert adjusted["argue"] < base_weights["argue"]
+
+
+def test_targeted_intent_does_not_affect_non_target_listener():
+    engine = build_engine()
+
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="repair_relationship",
+        target_agent="Carlos",
+        target_location=None,
+        description="Maya wants to repair her relationship with Carlos.",
+        created_day=1,
+        expires_day=3,
+        priority=5,
+    )
+
+    base_weights = {
+        "chat": 8,
+        "apologize": 1,
+        "argue": 2,
+        "offer_help": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_intent(
+        weights=base_weights,
+        intent=intent,
+        listener_name="Lena",
+    )
+
+    assert adjusted == base_weights

@@ -32,12 +32,39 @@ class SimulationReporter:
         self.print_relationship_summary(engine)
         self.print_relationship_distribution(engine)
         self.print_relationship_event_summary(engine)
+        self.print_intent_summary(engine)
         self.print_need_summary(engine)
         self.print_memory_summary(engine)
         self.print_topic_summary(engine)
         self.print_repetition_summary(engine)
         self.print_daily_event_usage(engine)
 
+    def print_intent_summary(self, engine) -> None:
+        agent_intents = getattr(engine, "agent_intents", {})
+
+        if not agent_intents:
+            print("\nNo active agent intents.")
+            return
+
+        intent_counts = Counter(
+            intent.intent_type
+            for intent in agent_intents.values()
+        )
+
+        print("\nAgent intent summary:")
+        print(f"  Active intents: {len(agent_intents)}")
+
+        print("  Intents by type:")
+        for intent_type, count in intent_counts.most_common():
+            print(f"    {intent_type}: {count}")
+
+        print("  Current intents:")
+        for agent_name, intent in sorted(agent_intents.items()):
+            target = intent.target_agent or intent.target_location or "general"
+            print(
+                f"    {agent_name}: {intent.intent_type} -> {target} "
+                f"(expires day {intent.expires_day})"
+            )
     def print_relationship_event_summary(self, engine) -> None:
         relationship_events = getattr(engine, "relationship_events", [])
     

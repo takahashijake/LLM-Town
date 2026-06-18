@@ -134,6 +134,25 @@ class TransformersLLMClient:
             memory_text = "- No important memories."
 
         relationship_history = context.get("relationship_history", [])
+        speaker_intent = context.get("speaker_intent")
+        listener_intent = context.get("listener_intent")
+        
+        if speaker_intent:
+            speaker_intent_text = (
+                f"{speaker_intent['intent_type']}: "
+                f"{speaker_intent['description']}"
+            )
+        else:
+            speaker_intent_text = "No active intent."
+        
+        if listener_intent:
+            listener_intent_text = (
+                f"{listener_intent['intent_type']}: "
+                f"{listener_intent['description']}"
+            )
+        else:
+            listener_intent_text = "No active intent."
+    
         relationship_history_text = "\n".join(
             f"- {event}"
             for event in relationship_history
@@ -154,6 +173,12 @@ Relationship: {context["relationship_label"]} ({context["relationship_score"]:+d
 
 Recent relationship history:
 {relationship_history_text}
+
+Speaker current intent:
+{speaker_intent_text}
+
+Listener current intent:
+{listener_intent_text}
 
 Recently used topics:
 {recent_topic_text}
@@ -181,6 +206,12 @@ Allowed actions:
 
 Suggested action:
 {suggested_action}
+
+Intent rules:
+- The speaker's intent is a soft goal, not a command.
+- If the intent naturally fits the location, listener, relationship, and current activity, reflect it in the dialogue.
+- Do not force the intent if it would feel unnatural.
+- If the speaker has a target agent intent and the listener is that target, the dialogue may more directly support that intent.
 
 The suggested action is a soft nudge, not an absolute command.
 Try to use the suggested action if it naturally fits the speaker, listener, relationship, location, and current activity.

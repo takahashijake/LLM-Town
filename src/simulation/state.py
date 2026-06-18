@@ -42,6 +42,10 @@ class SimulationState:
                 event.to_dict() 
                 for event in getattr(engine, "relationship_events", [])
             ],
+            "agent_intents": {
+                agent_name: intent.to_dict()
+                for agent_name, intent in getattr(engine, "agent_intents", {}).items()
+            },
         }
 
         self.path.write_text(json.dumps(state, indent=2))
