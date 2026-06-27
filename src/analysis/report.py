@@ -1,6 +1,5 @@
 from collections import Counter
 
-
 ACTION_TAGS = {
     "chat",
     "compliment",
@@ -57,6 +56,14 @@ class SimulationReporter:
         print(f"  Total arcs: {len(town_arcs)}")
         print(f"  Active arcs: {len(active_arcs)}")
 
+        arc_name_counts = Counter(
+            arc.name
+            for arc in town_arcs
+        )
+
+        print("  Arcs by type:")
+        for arc_name, count in arc_name_counts.most_common():
+            print(f"    {arc_name}: {count}")
         for arc in town_arcs:
             print(
                 f"  {arc.name}: {arc.status}, "
@@ -344,6 +351,13 @@ class SimulationReporter:
 
         memory_type_counts = Counter()
 
+        archived_memory_counts = {
+            agent.name: len(getattr(agent, "memory_archive", []))
+            for agent in engine.agents
+        }
+
+        total_archived_memories = sum(archived_memory_counts.values())
+
         for agent in engine.agents:
             for memory in agent.memory:
                 memory_type_counts[memory.type] += 1
@@ -352,7 +366,7 @@ class SimulationReporter:
         print(f"  Total memories: {total_memories}")
         print(f"  Average memories per agent: {average_memories:.1f}")
         print(f"  Most memories: {most_memory_agent[0]} ({most_memory_agent[1]})")
-
+        print(f"  Archived memories: {total_archived_memories}")
         print("  Memories by type:")
         for memory_type, count in memory_type_counts.most_common():
             print(f"    {memory_type}: {count}")
@@ -381,34 +395,34 @@ class SimulationReporter:
         conversations = self.get_all_conversation_memories(engine)
 
         if not conversations:
-            print("\nRepeated dialogue rate: 0.0%")
+            print("\nRepetition summary:")
+            print("  Repeated dialogue rate: 0.0%")
             return
 
         dialogue_counts = Counter(
-            memory.description.strip().lower()
+            memory.description.strip()
             for memory in conversations
         )
 
-        repeated_dialogues = sum(
-            count - 1
-            for count in dialogue_counts.values()
+        repeated_dialogues = {
+            dialogue: count
+            for dialogue, count in dialogue_counts.items()
             if count > 1
+        }
+
+        repeated_total = sum(
+            count - 1
+            for count in repeated_dialogues.values()
         )
 
-        repetition_rate = repeated_dialogues / len(conversations)
+        repeated_rate = repeated_total / len(conversations)
 
         print("\nRepetition summary:")
-        print(f"  Repeated dialogue rate: {repetition_rate:.1%}")
+        print(f"  Repeated dialogue rate: {repeated_rate:.1%}")
 
-        repeated_examples = [
-            (dialogue, count)
-            for dialogue, count in dialogue_counts.most_common()
-            if count > 1
-        ]
-
-        if repeated_examples:
-            print("  Most repeated dialogue:")
-            for dialogue, count in repeated_examples[:5]:
+        if repeated_dialogues:
+            print("  Most repeated dialogue lines:")
+            for dialogue, count in Counter(repeated_dialogues).most_common(5):
                 print(f"    {count}x: {dialogue}")
 
     def print_daily_event_usage(self, engine) -> None:
