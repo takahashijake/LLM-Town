@@ -5,6 +5,31 @@ from src.behavior.activity import Activity
 
 
 class ActivityPlanner:
+    def create_intent_activity(self, current_intent) -> Activity:
+        return Activity(
+            id=f"intent_{current_intent.intent_type}",
+            name=f"Work on intent: {current_intent.intent_type}",
+            location_id=current_intent.target_location,
+            reason=current_intent.description,
+            tags=self.get_intent_activity_tags(current_intent),
+        )
+    
+    def should_prioritize_intent_before_event(self, current_intent) -> bool:
+        if not current_intent:
+            return False
+
+        priority_by_intent = {
+            "repair_relationship": 0.55,
+            "build_friendship": 0.45,
+            "socialize": 0.45,
+            "investigate": 0.30,
+            "seek_work": 0.25,
+        }
+
+        probability = priority_by_intent.get(current_intent.intent_type, 0.30)
+
+        return random.random() < probability
+    
     def get_intent_activity_probability(self, intent) -> float:
         if not intent:
             return 0.0
@@ -42,6 +67,14 @@ class ActivityPlanner:
     ) -> Activity:
         agent.initialize_needs()
 
+        if (
+            current_intent
+            and current_intent.target_location
+            and current_intent.target_location in location_ids
+            and self.should_prioritize_intent_before_event(current_intent)
+        ):
+            return self.create_intent_activity(current_intent)
+
         # Sometimes attend the daily event if it is relevant.
         if daily_event and self.should_attend_daily_event(agent, daily_event):
             return Activity(
@@ -51,6 +84,7 @@ class ActivityPlanner:
                 reason=f"{agent.name} is interested in today's event: {daily_event.name}.",
                 tags=["event", daily_event.id] + daily_event.tags,
             )
+
         if current_intent and current_intent.target_location:
             follow_probability = self.get_intent_activity_probability(current_intent)
 
@@ -58,14 +92,8 @@ class ActivityPlanner:
                 current_intent.target_location in location_ids
                 and random.random() < follow_probability
             ):
-                return Activity(
-                    id=f"intent_{current_intent.intent_type}",
-                    name=f"Work on intent: {current_intent.intent_type}",
-                    location_id=current_intent.target_location,
-                    reason=current_intent.description,
-                    tags=self.get_intent_activity_tags(current_intent),
-                )
-        
+                return self.create_intent_activity(current_intent)
+
         # Otherwise choose based on goals, occupation, and needs.
         candidates = self.get_candidate_activities(agent, location_ids)
 

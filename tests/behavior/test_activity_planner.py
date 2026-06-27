@@ -155,3 +155,101 @@ def test_choose_activity_falls_back_to_wander_when_no_candidates():
     assert activity.id == "wander"
     assert activity.location_id == "park"
     assert "wander" in activity.tags
+
+def test_location_intent_can_be_prioritized_before_daily_event(monkeypatch):
+    planner = ActivityPlanner()
+
+    class FakeAgent:
+        name = "Lena"
+        occupation = "community organizer"
+        personality = "helpful"
+        goals = ["help the town"]
+
+        def initialize_needs(self):
+            self.needs = {
+                "social": 50,
+                "wealth": 50,
+                "knowledge": 50,
+            }
+
+        def get_primary_need(self):
+            return "social"
+
+    class FakeIntent:
+        intent_type = "socialize"
+        target_location = "cafe"
+        description = "Lena wants to spend time with other residents."
+
+    class FakeDailyEvent:
+        id = "town_cleanup"
+        name = "Town Cleanup"
+        description = "Volunteers are cleaning the town square."
+        location_id = "town_square"
+        tags = ["volunteer", "cleanup"]
+
+    monkeypatch.setattr("random.random", lambda: 0.0)
+
+    activity = planner.choose_activity(
+        agent=FakeAgent(),
+        location_ids=["cafe", "town_square", "library", "market"],
+        current_day=1,
+        hour=8,
+        daily_event=FakeDailyEvent(),
+        current_intent=FakeIntent(),
+    )
+
+    assert activity.id == "intent_socialize"
+    assert activity.location_id == "cafe"
+    assert "intent" in activity.tags
+    assert "socialize" in activity.tags
+
+def test_daily_event_can_happen_when_intent_not_prioritized(monkeypatch):
+    planner = ActivityPlanner()
+
+    class FakeAgent:
+        name = "Lena"
+        occupation = "community organizer"
+        personality = "helpful"
+        goals = ["help the town"]
+
+        def initialize_needs(self):
+            self.needs = {
+                "social": 50,
+                "wealth": 50,
+                "knowledge": 50,
+            }
+
+        def get_primary_need(self):
+            return "social"
+
+    class FakeIntent:
+        intent_type = "socialize"
+        target_location = "cafe"
+        description = "Lena wants to spend time with other residents."
+
+    class FakeDailyEvent:
+        id = "town_cleanup"
+        name = "Town Cleanup"
+        description = "Volunteers are cleaning the town square."
+        location_id = "town_square"
+        tags = ["volunteer", "cleanup"]
+
+    random_values = iter([
+        0.99,  # do not prioritize intent before event
+        0.0,   # attend relevant daily event
+    ])
+
+    monkeypatch.setattr("random.random", lambda: next(random_values))
+
+    activity = planner.choose_activity(
+        agent=FakeAgent(),
+        location_ids=["cafe", "town_square", "library", "market"],
+        current_day=1,
+        hour=8,
+        daily_event=FakeDailyEvent(),
+        current_intent=FakeIntent(),
+    )
+
+    assert activity.id == "attend_event"
+    assert activity.location_id == "town_square"
+    
