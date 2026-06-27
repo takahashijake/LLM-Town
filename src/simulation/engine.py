@@ -386,16 +386,18 @@ class SimulationEngine:
         return any(marker in text for marker in rumor_markers)
         
     def choose_final_action(
-    self,
-    conversation: str,
-    parsed_action: str,
-    conversation_tags: list[str],
-    allowed_actions: list[str],
+        self,
+        conversation: str,
+        parsed_action: str,
+        conversation_tags: list[str],
+        allowed_actions: list[str],
+        inferred_action: str | None = None,
     ) -> str:
-        inferred_action = self.actions.infer_action(
-            conversation,
-            conversation_tags,
-        )
+        if inferred_action is None:
+            inferred_action = self.actions.infer_action(
+                conversation,
+                conversation_tags,
+            )
     
         if parsed_action == "share_rumor" and inferred_action == "chat":
             if self.has_rumor_marker(conversation):
@@ -867,6 +869,11 @@ class SimulationEngine:
         tags: list[str] | None = None,
         speaker_intent: AgentIntent | None = None,
         listener_intent: AgentIntent | None = None,
+        suggested_action: str = "",
+        parsed_action: str = "",
+        inferred_action: str = "",
+        base_action_weights: dict | None = None,
+        intent_adjusted_weights: dict | None = None,
     ) -> None:
         conversation_record = {
             "day": day,
@@ -881,6 +888,11 @@ class SimulationEngine:
             "action": action,
             "action_source": action_source,
             "action_reason": action_reason,
+            "suggested_action": suggested_action,
+            "parsed_action": parsed_action,
+            "inferred_action": inferred_action,
+            "base_action_weights": base_action_weights or {},
+            "intent_adjusted_weights": intent_adjusted_weights or {},
             "tags": tags or [],
             "speaker_intent_type": speaker_intent.intent_type if speaker_intent else "",
             "speaker_intent_target_agent": speaker_intent.target_agent if speaker_intent else "",
@@ -1016,11 +1028,17 @@ class SimulationEngine:
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.extend(parsed_output.get("tags", []))
             
+            inferred_action = self.actions.infer_action(
+                conversation,
+                conversation_tags,
+            )
+
             action = self.choose_final_action(
                 conversation=conversation,
                 parsed_action=parsed_action,
                 conversation_tags=conversation_tags,
                 allowed_actions=allowed_actions,
+                inferred_action=inferred_action,
             )
             
             if self.current_daily_event:
@@ -1137,6 +1155,11 @@ class SimulationEngine:
                 conversation_tags,
                 speaker_intent=speaker_intent,
                 listener_intent=listener_intent,
+                suggested_action=suggested_action,
+                parsed_action=parsed_action,
+                inferred_action=inferred_action,
+                base_action_weights=base_action_weights,
+                intent_adjusted_weights=intent_adjusted_weights,
             )
             self.print_conversation_event(
                 day,

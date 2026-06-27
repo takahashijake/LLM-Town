@@ -98,6 +98,17 @@ def main():
     missed_target_locations = Counter()
     unavailable_target_agents = Counter()
 
+    suggested_action_counts = Counter()
+    parsed_action_counts = Counter()
+    inferred_action_counts = Counter()
+    final_action_counts = Counter()
+
+    suggested_to_final = Counter()
+    parsed_to_final = Counter()
+    inferred_to_final = Counter()
+
+    suggested_by_intent = Counter()
+    final_by_suggested_and_intent = Counter()
     for row in conversations:
         intent_type = row.get("speaker_intent_type", "")
         target_agent = row.get("speaker_intent_target_agent", "")
@@ -107,6 +118,27 @@ def main():
         location = row.get("location", "")
         action = row.get("action", "")
 
+        suggested_action = row.get("suggested_action", "")
+        parsed_action = row.get("parsed_action", "")
+        inferred_action = row.get("inferred_action", "")
+
+        final_action_counts[action] += 1
+
+        if suggested_action:
+            suggested_action_counts[suggested_action] += 1
+            suggested_to_final[(suggested_action, action)] += 1
+            suggested_by_intent[(intent_type, suggested_action)] += 1
+            final_by_suggested_and_intent[(intent_type, suggested_action, action)] += 1
+
+        if parsed_action:
+            parsed_action_counts[parsed_action] += 1
+            parsed_to_final[(parsed_action, action)] += 1
+
+        if inferred_action:
+            inferred_action_counts[inferred_action] += 1
+            inferred_to_final[(inferred_action, action)] += 1
+
+            
         if not intent_type:
             continue
 
@@ -237,6 +269,44 @@ def main():
                 f"conversation at {actual_location}: {count}"
             )
 
+        print("\nAction pipeline:")
+
+    print("  Suggested actions:")
+    for action, count in suggested_action_counts.most_common():
+        print(f"    {action}: {count}")
+
+    print("  Parsed actions:")
+    for action, count in parsed_action_counts.most_common():
+        print(f"    {action}: {count}")
+
+    print("  Inferred actions:")
+    for action, count in inferred_action_counts.most_common():
+        print(f"    {action}: {count}")
+
+    print("  Final actions:")
+    for action, count in final_action_counts.most_common():
+        print(f"    {action}: {count}")
+
+    print("\nSuggested -> final:")
+    for (suggested, final), count in suggested_to_final.most_common(10):
+        print(f"  {suggested} -> {final}: {count}")
+
+    print("\nParsed -> final:")
+    for (parsed, final), count in parsed_to_final.most_common(10):
+        print(f"  {parsed} -> {final}: {count}")
+
+    print("\nInferred -> final:")
+    for (inferred, final), count in inferred_to_final.most_common(10):
+        print(f"  {inferred} -> {final}: {count}")
+
+    print("\nSuggested actions by intent:")
+    for (intent_type, suggested), count in suggested_by_intent.most_common(10):
+        print(f"  {intent_type} -> suggested {suggested}: {count}")
+
+    print("\nIntent + suggested -> final:")
+    for (intent_type, suggested, final), count in final_by_suggested_and_intent.most_common(10):
+        print(f"  {intent_type}: suggested {suggested} -> final {final}: {count}")
+        
 
 if __name__ == "__main__":
     main()

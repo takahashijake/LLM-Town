@@ -250,3 +250,57 @@ def test_investigate_intent_boosts_share_rumor():
     assert adjusted["chat"] == 9
     assert adjusted["ask_for_help"] == 4
     assert adjusted["share_rumor"] == 3
+
+def test_choose_final_action_accepts_precomputed_inferred_action():
+    engine = build_engine()
+
+    action = engine.choose_final_action(
+        conversation="Generic line without obvious markers.",
+        parsed_action="chat",
+        conversation_tags=[],
+        allowed_actions=["chat", "offer_help"],
+        inferred_action="offer_help",
+    )
+
+    assert action == "offer_help"
+
+def test_log_conversation_event_includes_action_pipeline_fields():
+    engine = build_engine()
+
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    engine.log_conversation_event(
+        day=1,
+        hour=8,
+        location_id="cafe",
+        speaker=speaker,
+        listener=listener,
+        conversation="I can help you with that.",
+        relationship_change=1,
+        new_score=1,
+        relationship_label="neutral",
+        action="offer_help",
+        suggested_action="offer_help",
+        parsed_action="offer_help",
+        inferred_action="offer_help",
+        base_action_weights={"chat": 8, "offer_help": 2},
+        intent_adjusted_weights={"chat": 7, "offer_help": 5},
+    )
+
+    import json
+
+    with open(engine.logger.conversations_file, "r", encoding="utf-8") as file:
+        records = [
+            json.loads(line)
+            for line in file
+            if line.strip()
+        ]
+
+    record = records[-1]
+
+    assert record["suggested_action"] == "offer_help"
+    assert record["parsed_action"] == "offer_help"
+    assert record["inferred_action"] == "offer_help"
+    assert record["base_action_weights"]["chat"] == 8
+    assert record["intent_adjusted_weights"]["offer_help"] == 5
