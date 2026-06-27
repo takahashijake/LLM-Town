@@ -1,0 +1,143 @@
+Intent follow-through report
+  Conversations with speaker intent: 21
+  Target-agent opportunities: 0
+  Target-agent conversations: 0
+  Target-agent unavailable/skipped: 0
+  Target-agent rate: 0.0%
+  Target-location opportunities: 21
+  Target-location conversations: 10
+  Target-location rate: 47.6%
+  Intent-compatible actions: 16
+  Intent-action compatibility: 76.2%
+
+Intents:
+  socialize: 8
+  investigate: 8
+  seek_work: 5
+
+Actions by intent:
+  socialize -> chat: 5
+  investigate -> chat: 4
+  seek_work -> chat: 3
+  investigate -> argue: 2
+  socialize -> share_rumor: 1
+  socialize -> ask_for_help: 1
+  seek_work -> offer_help: 1
+  investigate -> share_rumor: 1
+  seek_work -> ask_for_help: 1
+  socialize -> compliment: 1
+  investigate -> cooperate: 1
+
+Locations by intent:
+  socialize @ cafe: 5
+  investigate @ town_square: 4
+  investigate @ library: 3
+  seek_work @ cafe: 2
+  socialize @ market: 2
+  seek_work @ market: 2
+  seek_work @ town_square: 1
+  investigate @ market: 1
+  socialize @ town_square: 1
+
+Target locations by intent:
+  socialize -> cafe: 8
+  investigate -> library: 8
+  seek_work -> market: 5
+
+Most common missed target-location conversations:
+  investigate: wanted library, conversation at town_square: 4
+  seek_work: wanted market, conversation at cafe: 2
+  socialize: wanted cafe, conversation at market: 2
+  seek_work: wanted market, conversation at town_square: 1
+  investigate: wanted library, conversation at market: 1
+
+Action pipeline:
+  Suggested actions:
+    chat: 8
+    offer_help: 5
+    share_rumor: 3
+    ask_for_help: 3
+    argue: 1
+    compliment: 1
+  Parsed actions:
+    chat: 10
+    share_rumor: 5
+    ask_for_help: 3
+    offer_help: 2
+    compliment: 1
+  Inferred actions:
+    chat: 16
+    share_rumor: 2
+    argue: 2
+    cooperate: 1
+  Final actions:
+    chat: 12
+    share_rumor: 2
+    ask_for_help: 2
+    argue: 2
+    offer_help: 1
+    compliment: 1
+    cooperate: 1
+
+Suggested -> final:
+  chat -> chat: 8
+  offer_help -> chat: 3
+  ask_for_help -> ask_for_help: 2
+  share_rumor -> share_rumor: 1
+  offer_help -> offer_help: 1
+  share_rumor -> argue: 1
+  argue -> share_rumor: 1
+  compliment -> compliment: 1
+  ask_for_help -> argue: 1
+  offer_help -> cooperate: 1
+
+Parsed -> final:
+  chat -> chat: 10
+  share_rumor -> share_rumor: 2
+  ask_for_help -> ask_for_help: 2
+  share_rumor -> argue: 2
+  offer_help -> offer_help: 1
+  compliment -> compliment: 1
+  offer_help -> cooperate: 1
+  ask_for_help -> chat: 1
+  share_rumor -> chat: 1
+
+Inferred -> final:
+  chat -> chat: 12
+  share_rumor -> share_rumor: 2
+  chat -> ask_for_help: 2
+  argue -> argue: 2
+  chat -> offer_help: 1
+  chat -> compliment: 1
+  cooperate -> cooperate: 1
+
+Suggested actions by intent:
+  seek_work -> suggested chat: 3
+  socialize -> suggested offer_help: 3
+  investigate -> suggested chat: 3
+  socialize -> suggested chat: 2
+  investigate -> suggested share_rumor: 2
+  socialize -> suggested share_rumor: 1
+  socialize -> suggested ask_for_help: 1
+  seek_work -> suggested offer_help: 1
+  investigate -> suggested argue: 1
+  seek_work -> suggested ask_for_help: 1
+
+Intent + suggested -> final:
+  seek_work: suggested chat -> final chat: 3
+  socialize: suggested offer_help -> final chat: 3
+  investigate: suggested chat -> final chat: 3
+  socialize: suggested chat -> final chat: 2
+  socialize: suggested share_rumor -> final share_rumor: 1
+  socialize: suggested ask_for_help -> final ask_for_help: 1
+  seek_work: suggested offer_help -> final offer_help: 1
+  investigate: suggested share_rumor -> final argue: 1
+  investigate: suggested argue -> final share_rumor: 1
+  seek_work: suggested ask_for_help -> final ask_for_help: 1
+
+Final action reasons:
+  used_parsed_action: 10
+  trusted_inferred_non_chat: 5
+  trusted_parsed_non_chat: 4
+  capped_ask_for_help: 1
+  parsed_rumor_without_marker: 1
