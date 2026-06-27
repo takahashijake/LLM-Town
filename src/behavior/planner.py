@@ -5,6 +5,32 @@ from src.behavior.activity import Activity
 
 
 class ActivityPlanner:
+    def get_intent_activity_probability(self, intent) -> float:
+        if not intent:
+            return 0.0
+
+        probabilities = {
+            "investigate": 0.40,
+            "seek_work": 0.40,
+            "socialize": 0.45,
+            "build_friendship": 0.35,
+            "repair_relationship": 0.35,
+        }
+
+        return probabilities.get(intent.intent_type, 0.40)
+    def get_intent_activity_tags(self, intent) -> list[str]:
+        base_tags = ["intent", intent.intent_type]
+
+        tags_by_intent = {
+            "investigate": ["knowledge", "learning"],
+            "seek_work": ["wealth", "business", "market"],
+            "socialize": ["social", "relationship"],
+            "build_friendship": ["social", "relationship"],
+            "repair_relationship": ["social", "relationship"],
+        }
+
+        return base_tags + tags_by_intent.get(intent.intent_type, [])
+        
     def choose_activity(
         self,
         agent: Agent,
@@ -26,13 +52,18 @@ class ActivityPlanner:
                 tags=["event", daily_event.id] + daily_event.tags,
             )
         if current_intent and current_intent.target_location:
-            if current_intent.target_location in location_ids and random.random() < 0.60:
+            follow_probability = self.get_intent_activity_probability(current_intent)
+
+            if (
+                current_intent.target_location in location_ids
+                and random.random() < follow_probability
+            ):
                 return Activity(
                     id=f"intent_{current_intent.intent_type}",
                     name=f"Work on intent: {current_intent.intent_type}",
                     location_id=current_intent.target_location,
                     reason=current_intent.description,
-                    tags=["intent", current_intent.intent_type],
+                    tags=self.get_intent_activity_tags(current_intent),
                 )
         
         # Otherwise choose based on goals, occupation, and needs.

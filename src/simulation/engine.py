@@ -257,16 +257,36 @@ class SimulationEngine:
             agents_by_name[agent_b].update_relationship(agent_a, score)
     def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
         text = conversation.strip().lower()
-    
+
+        quoted_name_prefixes = [
+            f"{speaker.name.lower()}:",
+            f"{listener.name.lower()}:",
+        ]
+
+        if any(text.startswith(prefix) for prefix in quoted_name_prefixes):
+            return True
+            
         narration_patterns = [
             f"{speaker.name.lower()} noticed",
             f"{listener.name.lower()} noticed",
+            f"{speaker.name.lower()} notices",
+            f"{listener.name.lower()} notices",
             f"{speaker.name.lower()} nodded",
             f"{listener.name.lower()} nodded",
+            f"{speaker.name.lower()} nods",
+            f"{listener.name.lower()} nods",
             f"{speaker.name.lower()} looked",
             f"{listener.name.lower()} looked",
+            f"{speaker.name.lower()} looks",
+            f"{listener.name.lower()} looks",
             f"{speaker.name.lower()} smiled",
             f"{listener.name.lower()} smiled",
+            f"{speaker.name.lower()} smiles",
+            f"{listener.name.lower()} smiles",
+            f"{speaker.name.lower()} asks",
+            f"{listener.name.lower()} asks",
+            f"{speaker.name.lower()} says",
+            f"{listener.name.lower()} says",
         ]
 
         return any(pattern in text for pattern in narration_patterns)
@@ -326,6 +346,24 @@ class SimulationEngine:
         return False
 
 
+    def has_rumor_marker(self, conversation: str) -> bool:
+        text = conversation.lower()
+
+        rumor_markers = [
+            "rumor",
+            "rumors",
+            "i heard",
+            "someone said",
+            "people are saying",
+            "concerns about",
+            "not sure if it is true",
+            "not sure it's true",
+            "unusual behavior",
+            "suspicious",
+        ]
+
+        return any(marker in text for marker in rumor_markers)
+        
     def choose_final_action(
     self,
     conversation: str,
@@ -339,7 +377,10 @@ class SimulationEngine:
         )
     
         if parsed_action == "share_rumor" and inferred_action == "chat":
-            final_action = "chat"
+            if self.has_rumor_marker(conversation):
+                final_action = "share_rumor"
+            else:
+                final_action = "chat"
         elif inferred_action != "chat" and inferred_action in allowed_actions:
             final_action = inferred_action
         elif parsed_action in allowed_actions:
@@ -902,9 +943,6 @@ class SimulationEngine:
                 listener.name,
                 limit=3,
             )
-
-            speaker_intent = self.agent_intents.get(speaker.name) 
-            listener_intent = self.agent_intents.get(listener.name)
             
             context = build_conversation_context(
                 speaker=speaker,
