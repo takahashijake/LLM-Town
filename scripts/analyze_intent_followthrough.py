@@ -54,13 +54,34 @@ def safe_rate(numerator, denominator):
     return numerator / denominator
 
 
+def build_agent_locations_by_tick(events):
+    locations_by_tick = {}
+
+    for row in events:
+        if row.get("type") != "activity":
+            continue
+
+        key = (
+            row.get("day"),
+            row.get("hour"),
+            row.get("agent"),
+        )
+
+        locations_by_tick[key] = row.get("location", "")
+
+    return locations_by_tick
+
+
 def main():
     conversations = load_jsonl("logs/conversations/conversations.jsonl")
+    events = load_jsonl("logs/events/events.jsonl")
+    locations_by_tick = build_agent_locations_by_tick(events)
 
     total_with_intent = 0
 
     target_agent_opportunities = 0
     target_agent_matches = 0
+    target_agent_unavailable = 0
 
     target_location_opportunities = 0
     target_location_matches = 0
@@ -75,13 +96,13 @@ def main():
 
     missed_target_agents = Counter()
     missed_target_locations = Counter()
+    unavailable_target_agents = Counter()
 
     for row in conversations:
         intent_type = row.get("speaker_intent_type", "")
         target_agent = row.get("speaker_intent_target_agent", "")
         target_location = row.get("speaker_intent_target_location", "")
 
-        speaker = row.get("speaker", "")
         listener = row.get("listener", "")
         location = row.get("location", "")
         action = row.get("action", "")
@@ -101,13 +122,35 @@ def main():
             action_match_count += 1
 
         if target_agent:
-            target_agent_opportunities += 1
-            target_agent_by_intent[(intent_type, target_agent)] += 1
+            target_agent_location = locations_by_tick.get(
+                (
+                    row.get("day"),
+                    row.get("hour"),
+                    target_agent,
+                ),
+                "",
+            )
 
-            if listener == target_agent:
-                target_agent_matches += 1
+            target_available = target_agent_location == location
+
+            if target_available:
+                target_agent_opportunities += 1
+                target_agent_by_intent[(intent_type, target_agent)] += 1
+
+                if listener == target_agent:
+                    target_agent_matches += 1
+                else:
+                    missed_target_agents[(intent_type, target_agent, listener)] += 1
             else:
-                missed_target_agents[(intent_type, target_agent, listener)] += 1
+                target_agent_unavailable += 1
+                unavailable_target_agents[
+                    (
+                        intent_type,
+                        target_agent,
+                        target_agent_location or "unknown",
+                        location,
+                    )
+                ] += 1
 
         if target_location:
             target_location_opportunities += 1
@@ -123,6 +166,7 @@ def main():
 
     print(f"  Target-agent opportunities: {target_agent_opportunities}")
     print(f"  Target-agent conversations: {target_agent_matches}")
+    print(f"  Target-agent unavailable/skipped: {target_agent_unavailable}")
     print(
         "  Target-agent rate: "
         f"{safe_rate(target_agent_matches, target_agent_opportunities):.1%}"
@@ -169,6 +213,20 @@ def main():
             print(
                 f"  {intent_type}: wanted {target_agent}, "
                 f"talked to {actual_listener}: {count}"
+            )
+
+    if unavailable_target_agents:
+        print("\nMost common unavailable target-agent cases:")
+        for (
+            intent_type,
+            target_agent,
+            target_agent_location,
+            speaker_location,
+        ), count in unavailable_target_agents.most_common(5):
+            print(
+                f"  {intent_type}: wanted {target_agent}, "
+                f"target at {target_agent_location}, "
+                f"speaker conversation at {speaker_location}: {count}"
             )
 
     if missed_target_locations:
