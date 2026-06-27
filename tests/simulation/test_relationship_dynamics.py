@@ -156,3 +156,20 @@ def test_relationship_decay_moves_negative_score_toward_neutral(monkeypatch):
     relationships.decay_all_relationships(probability=1.0)
 
     assert relationships.get_score("Maya", "Ethan") == -4
+
+def test_repeated_dialogue_uses_fallback():
+    engine = build_engine()
+
+    maya = next(agent for agent in engine.agents if agent.name == "Maya")
+    lena = next(agent for agent in engine.agents if agent.name == "Lena")
+
+    repeated = "This place has had a lot going on today."
+    engine.remember_dialogue(repeated)
+
+    fallback = engine.get_non_repeated_fallback_dialogue(
+        speaker=maya,
+        listener=lena,
+        relationship_label="neutral",
+    )
+
+    assert fallback != repeated

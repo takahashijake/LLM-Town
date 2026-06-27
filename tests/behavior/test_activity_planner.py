@@ -252,4 +252,28 @@ def test_daily_event_can_happen_when_intent_not_prioritized(monkeypatch):
 
     assert activity.id == "attend_event"
     assert activity.location_id == "town_square"
-    
+
+def test_investigate_intent_priority_before_event_is_not_too_high(monkeypatch):
+    planner = ActivityPlanner()
+
+    class FakeIntent:
+        intent_type = "investigate"
+        target_location = "library"
+        description = "Maya wants to gather information."
+
+    monkeypatch.setattr("random.random", lambda: 0.25)
+
+    assert not planner.should_prioritize_intent_before_event(FakeIntent())
+
+
+def test_socialize_intent_priority_before_event_still_can_happen(monkeypatch):
+    planner = ActivityPlanner()
+
+    class FakeIntent:
+        intent_type = "socialize"
+        target_location = "cafe"
+        description = "Lena wants to spend time with residents."
+
+    monkeypatch.setattr("random.random", lambda: 0.30)
+
+    assert planner.should_prioritize_intent_before_event(FakeIntent())

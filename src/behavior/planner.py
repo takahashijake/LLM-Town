@@ -20,13 +20,13 @@ class ActivityPlanner:
 
         priority_by_intent = {
             "repair_relationship": 0.55,
-            "build_friendship": 0.45,
-            "socialize": 0.45,
-            "investigate": 0.30,
-            "seek_work": 0.25,
+            "build_friendship": 0.40,
+            "socialize": 0.35,
+            "investigate": 0.20,
+            "seek_work": 0.18,
         }
 
-        probability = priority_by_intent.get(current_intent.intent_type, 0.30)
+        probability = priority_by_intent.get(current_intent.intent_type, 0.25)
 
         return random.random() < probability
     
@@ -35,14 +35,15 @@ class ActivityPlanner:
             return 0.0
 
         probabilities = {
-            "investigate": 0.40,
-            "seek_work": 0.40,
-            "socialize": 0.45,
-            "build_friendship": 0.35,
+            "investigate": 0.28,
+            "seek_work": 0.30,
+            "socialize": 0.35,
+            "build_friendship": 0.30,
             "repair_relationship": 0.35,
         }
 
-        return probabilities.get(intent.intent_type, 0.40)
+        return probabilities.get(intent.intent_type, 0.30)
+        
     def get_intent_activity_tags(self, intent) -> list[str]:
         base_tags = ["intent", intent.intent_type]
 

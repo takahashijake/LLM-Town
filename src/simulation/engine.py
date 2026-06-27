@@ -313,7 +313,26 @@ class SimulationEngine:
 
         return normalized in self.recent_dialogues
 
+    def get_non_repeated_fallback_dialogue(
+        self,
+        speaker: Agent,
+        listener: Agent,
+        relationship_label: str,
+    ) -> str:
+        candidates = [
+            speaker.speak_to(listener, relationship_label),
+            "This place has had a lot going on today.",
+            "I have been thinking about how much the town has changed lately.",
+            "It feels like everyone is focused on something different today.",
+            "There is more happening around here than I expected.",
+        ]
 
+        for candidate in candidates:
+            if not self.is_repeated_dialogue(candidate):
+                return candidate
+
+        return speaker.speak_to(listener, relationship_label)
+        
     def remember_action(self, action: str, limit: int = 50) -> None:
         self.recent_actions.append(action)
         self.recent_actions = self.recent_actions[-limit:]
@@ -352,16 +371,18 @@ class SimulationEngine:
         rumor_markers = [
             "rumor",
             "rumors",
-            "i heard",
+            "gossip",
             "someone said",
             "people are saying",
             "concerns about",
             "not sure if it is true",
             "not sure it's true",
-            "unusual behavior",
+            "unverified",
             "suspicious",
+            "strange about",
+            "might be hiding",
+            "might be unreliable",
         ]
-
         return any(marker in text for marker in rumor_markers)
         
     def choose_final_action(
@@ -981,7 +1002,14 @@ class SimulationEngine:
             if self.is_narration(conversation, speaker, listener): 
                 conversation = speaker.speak_to(listener, old_relationship_label) 
                 parsed_action = "chat"
-            
+
+            if self.is_repeated_dialogue(conversation):
+                conversation = self.get_non_repeated_fallback_dialogue(
+                    speaker,
+                    listener,
+                    old_relationship_label,
+                )
+                parsed_action = "chat"
             
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.extend(parsed_output.get("tags", []))

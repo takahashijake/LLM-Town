@@ -142,3 +142,19 @@ def test_targeted_intent_does_not_affect_non_target_listener():
     )
 
     assert adjusted == base_weights
+
+def test_plain_i_heard_is_not_enough_for_rumor_marker():
+    engine = build_engine()
+
+    assert not engine.has_rumor_marker(
+        "I heard the poetry readings were really inspiring today."
+    )
+
+
+def test_specific_rumor_marker_is_preserved():
+    engine = build_engine()
+
+    assert engine.has_rumor_marker(
+        "Someone said the new vendor might be hiding something."
+    )
+    
