@@ -115,20 +115,39 @@ class SimulationEngine:
 
 
     def update_agent_intents(self, current_day: int) -> None:
+        intent_type_counts = {}
+
+        for intent in self.agent_intents.values():
+            if not intent.is_expired(current_day):
+                intent_type_counts[intent.intent_type] = (
+                    intent_type_counts.get(intent.intent_type, 0) + 1
+                )
+
         for agent in self.agents:
             current_intent = self.agent_intents.get(agent.name)
-    
+
             if current_intent and not current_intent.is_expired(current_day):
                 continue
-    
+
             new_intent = self.intent_planner.create_intent_for_agent(
                 agent=agent,
                 engine=self,
                 current_day=current_day,
             )
-    
-            if new_intent:
-                self.agent_intents[agent.name] = new_intent
+
+            if not new_intent:
+                continue
+
+            # Prevent all agents from collapsing into the same intent type.
+            # With 4 agents, allow at most 2 agents to share the same active intent type.
+            if intent_type_counts.get(new_intent.intent_type, 0) >= 2:
+                continue
+
+            self.agent_intents[agent.name] = new_intent
+            intent_type_counts[new_intent.intent_type] = (
+                intent_type_counts.get(new_intent.intent_type, 0) + 1
+            )
+            
 
 
     def get_agent_intent_text(self, agent_name: str) -> str:

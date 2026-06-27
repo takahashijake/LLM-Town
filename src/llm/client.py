@@ -255,6 +255,16 @@ Do not use "chat" when the dialogue clearly asks for help, offers help, suggests
 
 The speaker's current activity is the most important context.
 The dialogue should usually relate to the current activity or the listener's presence at the same location.
+Avoid generic filler dialogue.
+Do not say vague lines like:
+- "There is a lot happening around town today."
+- "This place has had a lot going on today."
+- "I have been trying to keep up with everything going on."
+- "This place feels more active than usual."
+- "The town has changed lately."
+
+Instead, mention one concrete detail from the current activity, location, daily event, relationship history, town arc, or memory.
+
 Do not ignore the current activity unless another context item is clearly more relevant.
 
 Avoid starting with "Have you heard" unless the speaker is investigating, reporting news, or sharing a rumor.
