@@ -253,6 +253,13 @@ class SimulationEngine:
             if day - arc.created_day >= 3 and arc.progress >= 2:
                 arc.status = "resolved"
                 arc.resolved_day = day
+            
+                print(
+                    f"Town arc resolved: {arc.name} "
+                    f"(location={arc.location_id or 'town'}, "
+                    f"tension={arc.tension}, progress={arc.progress})"
+                )
+            
                 self.remember_town_arc_for_all_agents(
                     day=day,
                     arc=arc,
@@ -260,6 +267,21 @@ class SimulationEngine:
                 )
 
             elif changed_significantly:
+                changes = []
+                
+                if arc.tension != previous_tension:
+                    changes.append(f"tension {previous_tension}->{arc.tension}")
+                
+                if arc.progress != previous_progress:
+                    changes.append(f"progress {previous_progress}->{arc.progress}")
+                
+                change_text = ", ".join(changes) if changes else "no major numeric change"
+                
+                print(
+                    f"Town arc updated: {arc.name} "
+                    f"({change_text})"
+                )
+            
                 self.remember_town_arc_for_all_agents(
                     day=day,
                     arc=arc,
@@ -274,6 +296,13 @@ class SimulationEngine:
 
             if new_arc:
                 self.town_arcs.append(new_arc)
+            
+                print(
+                    f"Town arc created: {new_arc.name} "
+                    f"(location={new_arc.location_id or 'town'}, "
+                    f"tension={new_arc.tension}, progress={new_arc.progress})"
+                )
+            
                 self.remember_town_arc_for_all_agents(
                     day=day,
                     arc=new_arc,
