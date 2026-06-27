@@ -6,25 +6,45 @@
       "id": "agent_001",
       "name": "Maya",
       "personality": "curious",
-      "location_id": "town_square",
+      "location_id": "market",
       "memory": [
         {
           "day": 1,
           "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "0584b3b0-cd72-4678-aa4a-b24b13901e25",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Lost Pet Search. Several residents are helping search for a missing pet.",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "lost_pet_search",
+            "town_cleanup",
             "community",
-            "social",
-            "help"
+            "social"
           ],
-          "id": "73e74ca1-cf53-4ee7-b6fa-743e7a0bdd8b",
+          "id": "4084d705-9240-4b00-85e2-b430443e55bd",
           "last_accessed_day": 5,
           "strength": 10
         },
@@ -32,41 +52,43 @@
           "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "I noticed there are quite a few volunteers out here today.",
+          "description": "I heard there were some changes planned for the town square.",
           "participants": [
-            "Maya",
-            "Lena"
+            "Ethan",
+            "Maya"
           ],
-          "location": "town_square",
+          "location": "library",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "event",
+            "town_cleanup",
             "neutral",
             "chat"
           ],
-          "id": "2b06e24e-9a4c-48d2-952b-6f5dafd5f848",
-          "last_accessed_day": 1,
+          "id": "35e29c5d-b310-4858-af4a-0d8c5695458c",
+          "last_accessed_day": 2,
           "strength": 2
         },
         {
-          "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It's been nice seeing so many folks out here today.",
-          "participants": [
-            "Lena",
-            "Maya"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
+          "day": 2,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
           "tags": [
-            "conversation",
-            "neutral",
-            "chat"
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_2",
+            "market",
+            "business",
+            "wealth"
           ],
-          "id": "ba47fb2d-bb68-42fd-a6a9-895af629dee4",
+          "id": "3030dde9-7ba8-46c1-95fd-aad8a7c28a8f",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -85,59 +107,15 @@
             "social",
             "wealth"
           ],
-          "id": "352661d9-08e3-4354-88a9-7d0a06f99b81",
+          "id": "08be8af1-1446-48ea-81e8-1ed67d2df0f5",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 2,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I noticed the market seems busier than usual today.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "426b315e-9d98-480a-9b60-d7b4f54c28b0",
-          "last_accessed_day": 2,
-          "strength": 3
-        },
-        {
-          "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the market manager is looking for volunteers for the upcoming festival.",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "32f14a15-964f-4155-bbaf-c703186da678",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "I heard there are some rumors about the market being short-staffed.",
+          "description": "It's interesting how much activity there's been lately.",
           "participants": [
             "Ethan",
             "Maya"
@@ -147,12 +125,10 @@
           "sentiment": -1,
           "tags": [
             "conversation",
-            "rumor",
-            "market",
             "neutral",
-            "share_rumor"
+            "chat"
           ],
-          "id": "2be65729-9eee-4b9c-910b-3991e3db4365",
+          "id": "0172bb55-8883-466f-8aa4-ed9f533df9cc",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -160,61 +136,105 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "library",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "book_club",
-            "learning",
-            "social",
-            "community"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "d24b2791-322c-4780-86b9-cef6533b2bd9",
+          "id": "0b034efa-3087-4f75-b6b3-14067f69bbe3",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 3,
-          "hour": 12,
+          "hour": 8,
           "type": "conversation",
-          "description": "It seems like everyone is busy today.",
+          "description": "I noticed the garden plots look great! Did you get a chance to plant anything?",
           "participants": [
-            "Ethan",
+            "Lena",
             "Maya"
           ],
-          "location": "library",
+          "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 1,
           "tags": [
             "conversation",
+            "gardening_workshop",
             "neutral",
-            "chat"
+            "offer_help"
           ],
-          "id": "31956985-366c-4734-9f22-6358b5aaa5b4",
+          "id": "a4499a71-a6fe-4594-8730-20811b791197",
           "last_accessed_day": null,
           "strength": 1
         },
         {
           "day": 3,
-          "hour": 18,
+          "hour": 12,
           "type": "conversation",
-          "description": "This place feels more active than usual.",
+          "description": "Have you noticed any changes in the garden lately?",
           "participants": [
-            "Ethan",
-            "Maya"
+            "Maya",
+            "Carlos"
           ],
           "location": "library",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "work",
             "neutral",
             "chat"
           ],
-          "id": "4ef8ee2f-e81e-4aa5-91b3-1322b172f756",
+          "id": "1c229285-3500-4153-b7a9-c002d2f2793a",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Carlos, your presentation at the cafe was really engaging.",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "1c8c04b0-d506-4d62-b4c4-d1f1e08c83f2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c07a0e7e-4200-40b6-92e0-59cf4fe7009d",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -222,19 +242,64 @@
           "day": 4,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
           "participants": [],
-          "location": "town_square",
+          "location": "cafe",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
           ],
-          "id": "391de623-c3d3-440b-aed1-72af0261bd51",
+          "id": "1d680e32-4fcd-4055-b6aa-a69d6566bf27",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard there's been some talk about the new cafe owner being secretive.",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "rumor",
+            "neutral",
+            "share_rumor"
+          ],
+          "id": "e4668ef0-e827-4e72-b18e-e982d5a24db2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard there's a cooking class happening later this afternoon. Would you like to join?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "event",
+            "cooking_class",
+            "neutral",
+            "chat"
+          ],
+          "id": "71836f0b-db90-4dc7-8db7-9e2370694447",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -242,7 +307,68 @@
           "day": 4,
           "hour": 22,
           "type": "conversation",
-          "description": "I heard there's a rumor about some shady dealings at the market.",
+          "description": "I have been trying to keep up with everything going on.",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "74ac7708-c40d-4661-af23-265ebf4f425c",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "8847c53c-e39e-4702-8778-6ce5f47c7c9f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Repair Day. Residents are fixing benches, signs, and small public spaces.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "repair_day",
+            "community",
+            "work"
+          ],
+          "id": "4f77a067-e86d-4340-b31b-e887159f4e79",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed you've been helping out a lot today.",
           "participants": [
             "Maya",
             "Lena"
@@ -252,55 +378,55 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "rumor",
-            "market",
             "neutral",
-            "share_rumor"
+            "compliment"
           ],
-          "id": "1615f5a1-0997-4a4b-8050-0a60822ed184",
+          "id": "644d936c-c5ba-4ef9-b8c5-0ef3ddfaac5a",
           "last_accessed_day": null,
           "strength": 1
         },
         {
           "day": 5,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
-          ],
-          "id": "e5e13c6f-3448-4bf9-9e2d-bc19c17155a8",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 18,
+          "hour": 12,
           "type": "conversation",
-          "description": "I heard the new vendor has been having some supply issues.",
+          "description": "Have you heard about the Repair Day today?",
           "participants": [
             "Maya",
             "Ethan"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -1,
+          "sentiment": 0,
           "tags": [
             "conversation",
-            "conflict",
-            "seek_work",
+            "event",
+            "repair_day",
             "neutral",
-            "argue"
+            "chat"
           ],
-          "id": "ad5cf67c-4568-4370-b371-aea9f4b40523",
+          "id": "b8ea8a8d-3c68-497c-87fa-0c76fb4dcd13",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I heard the market is having a special sale today. Maybe we could check it out together?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "e1a23d45-2c3c-4e78-a3b5-c01de070a721",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -312,35 +438,36 @@
         "build close friendships"
       ],
       "needs": {
-        "social": 59,
-        "wealth": 47,
-        "knowledge": 57
+        "social": 43,
+        "wealth": 53,
+        "knowledge": 75
       },
       "relationships": {
-        "Lena": 0,
-        "Ethan": -1
+        "Ethan": 0,
+        "Lena": 1,
+        "Carlos": -1
       },
       "occupation": "local journalist",
       "recent_topics": [
-        "market",
+        "work",
         "rumor",
-        "market",
         "share_rumor",
-        "rumor",
-        "market",
-        "share_rumor",
-        "conflict",
-        "seek_work",
-        "argue"
-      ],
-      "current_activity": "Attend Street Music Night",
-      "current_activity_reason": "Maya is interested in today's event: Street Music Night.",
-      "current_activity_tags": [
         "event",
-        "street_music_night",
-        "music",
-        "social",
-        "community"
+        "cooking_class",
+        "compliment",
+        "event",
+        "repair_day",
+        "market",
+        "ask_for_help"
+      ],
+      "current_activity": "Work on intent: seek_work",
+      "current_activity_reason": "Maya wants to find work or business opportunities.",
+      "current_activity_tags": [
+        "intent",
+        "seek_work",
+        "wealth",
+        "business",
+        "market"
       ]
     },
     {
@@ -352,22 +479,109 @@
         {
           "day": 1,
           "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "0584b3b0-cd72-4678-aa4a-b24b13901e25",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Lost Pet Search. Several residents are helping search for a missing pet.",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "lost_pet_search",
+            "town_cleanup",
             "community",
-            "social",
-            "help"
+            "social"
           ],
-          "id": "73e74ca1-cf53-4ee7-b6fa-743e7a0bdd8b",
+          "id": "4084d705-9240-4b00-85e2-b430443e55bd",
           "last_accessed_day": 5,
           "strength": 10
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, you've been leading the cleanup so far. It's really impressive.",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "event",
+            "town_cleanup",
+            "neutral",
+            "compliment"
+          ],
+          "id": "fb69b63e-bc0f-47fc-bc0d-a7e3a06ef203",
+          "last_accessed_day": 2,
+          "strength": 2
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I heard there were some changes planned for the town square.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "event",
+            "town_cleanup",
+            "neutral",
+            "chat"
+          ],
+          "id": "35e29c5d-b310-4858-af4a-0d8c5695458c",
+          "last_accessed_day": 2,
+          "strength": 2
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_2",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "3030dde9-7ba8-46c1-95fd-aad8a7c28a8f",
+          "last_accessed_day": null,
+          "strength": 1
         },
         {
           "day": 2,
@@ -384,59 +598,15 @@
             "social",
             "wealth"
           ],
-          "id": "352661d9-08e3-4354-88a9-7d0a06f99b81",
+          "id": "08be8af1-1446-48ea-81e8-1ed67d2df0f5",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 2,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I noticed the market seems busier than usual today.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "426b315e-9d98-480a-9b60-d7b4f54c28b0",
-          "last_accessed_day": 2,
-          "strength": 3
-        },
-        {
-          "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I heard the market manager is looking for volunteers for the upcoming festival.",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "32f14a15-964f-4155-bbaf-c703186da678",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 2,
-          "hour": 22,
-          "type": "conversation",
-          "description": "I heard there are some rumors about the market being short-staffed.",
+          "description": "It's interesting how much activity there's been lately.",
           "participants": [
             "Ethan",
             "Maya"
@@ -446,12 +616,31 @@
           "sentiment": -1,
           "tags": [
             "conversation",
-            "rumor",
-            "market",
             "neutral",
-            "share_rumor"
+            "chat"
           ],
-          "id": "2be65729-9eee-4b9c-910b-3991e3db4365",
+          "id": "0172bb55-8883-466f-8aa4-ed9f533df9cc",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "It looks like everyone is busy with the cleanup recently.",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "547529bb-ff79-42d3-a594-4c81eca769f6",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -459,30 +648,71 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "library",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "book_club",
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
+          ],
+          "id": "0b034efa-3087-4f75-b6b3-14067f69bbe3",
+          "last_accessed_day": 5,
+          "strength": 10
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c07a0e7e-4200-40b6-92e0-59cf4fe7009d",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
             "learning",
-            "social",
-            "community"
+            "social"
           ],
-          "id": "d24b2791-322c-4780-86b9-cef6533b2bd9",
-          "last_accessed_day": 5,
-          "strength": 10
+          "id": "1d680e32-4fcd-4055-b6aa-a69d6566bf27",
+          "last_accessed_day": null,
+          "strength": 1
         },
         {
-          "day": 3,
-          "hour": 8,
+          "day": 4,
+          "hour": 18,
           "type": "conversation",
-          "description": "I heard there were some discussions about the new market vendor.",
+          "description": "I noticed the market is especially lively today.",
           "participants": [
             "Ethan",
-            "Carlos"
+            "Lena"
           ],
           "location": "library",
           "importance": 2,
@@ -493,153 +723,69 @@
             "neutral",
             "chat"
           ],
-          "id": "f628f1be-0647-4a20-9ea8-c10fe393f349",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 3,
-          "hour": 12,
-          "type": "conversation",
-          "description": "It seems like everyone is busy today.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "31956985-366c-4734-9f22-6358b5aaa5b4",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 3,
-          "hour": 18,
-          "type": "conversation",
-          "description": "This place feels more active than usual.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "4ef8ee2f-e81e-4aa5-91b3-1322b172f756",
+          "id": "e765a655-ab4f-42d0-af55-559e15916742",
           "last_accessed_day": null,
           "strength": 1
         },
         {
           "day": 4,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
-          ],
-          "id": "391de623-c3d3-440b-aed1-72af0261bd51",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 4,
-          "hour": 8,
+          "hour": 22,
           "type": "conversation",
-          "description": "The town has felt lively lately.",
-          "participants": [
-            "Carlos",
-            "Ethan"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "24ee2dc5-9298-41aa-89ac-7c9dfa4a5a5b",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 4,
-          "hour": 12,
-          "type": "conversation",
-          "description": "It seems like there's been a lot of activity around here.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "031d5215-56a9-466f-bed7-f524e606b1c0",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
-          ],
-          "id": "e5e13c6f-3448-4bf9-9e2d-bc19c17155a8",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I noticed there's been some talk about the new vendor. Have you heard anything?",
+          "description": "Lena, your presentation at the market was really engaging.",
           "participants": [
             "Ethan",
             "Lena"
           ],
-          "location": "market",
+          "location": "cafe",
           "importance": 2,
-          "sentiment": 1,
+          "sentiment": 2,
           "tags": [
             "conversation",
-            "work",
+            "market",
             "neutral",
-            "ask_for_help"
+            "compliment"
           ],
-          "id": "9b7167bf-1065-4a65-b378-85c6aa80b6a2",
+          "id": "31bc682d-7b30-44ab-93ce-a664b63f88ae",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "8847c53c-e39e-4702-8778-6ce5f47c7c9f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Repair Day. Residents are fixing benches, signs, and small public spaces.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "repair_day",
+            "community",
+            "work"
+          ],
+          "id": "4f77a067-e86d-4340-b31b-e887159f4e79",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -647,65 +793,22 @@
           "day": 5,
           "hour": 12,
           "type": "conversation",
-          "description": "I have been trying to keep up with everything going on.",
-          "participants": [
-            "Carlos",
-            "Ethan"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "fe0da1b9-8da7-45ae-848d-34acc75f1064",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 18,
-          "type": "conversation",
-          "description": "I heard the new vendor has been having some supply issues.",
+          "description": "Have you heard about the Repair Day today?",
           "participants": [
             "Maya",
             "Ethan"
           ],
           "location": "market",
           "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "conflict",
-            "seek_work",
-            "neutral",
-            "argue"
-          ],
-          "id": "ad5cf67c-4568-4370-b371-aea9f4b40523",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 22,
-          "type": "conversation",
-          "description": "I heard there's a new vendor at the market who's keeping things under wraps.",
-          "participants": [
-            "Ethan",
-            "Lena"
-          ],
-          "location": "market",
-          "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
-            "market",
+            "event",
+            "repair_day",
             "neutral",
             "chat"
           ],
-          "id": "ccb59259-6647-49d6-897a-2f6d53ba13b0",
+          "id": "b8ea8a8d-3c68-497c-87fa-0c76fb4dcd13",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -717,32 +820,32 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 44,
-        "wealth": 45,
-        "knowledge": 91
+        "social": 53,
+        "wealth": 59,
+        "knowledge": 68
       },
       "relationships": {
-        "Maya": -1,
-        "Carlos": 0,
-        "Lena": 1
+        "Carlos": 2,
+        "Maya": 0,
+        "Lena": 2
       },
       "occupation": "accountant",
       "recent_topics": [
-        "rumor",
+        "event",
+        "town_cleanup",
+        "compliment",
+        "event",
+        "town_cleanup",
         "market",
-        "share_rumor",
         "market",
-        "work",
-        "ask_for_help",
-        "conflict",
-        "seek_work",
-        "argue",
-        "market"
+        "compliment",
+        "event",
+        "repair_day"
       ],
-      "current_activity": "Look for work or business opportunities",
-      "current_activity_reason": "Ethan wants to improve wealth.",
+      "current_activity": "Observe business activity",
+      "current_activity_reason": "Ethan is watching for financial opportunities or risks.",
       "current_activity_tags": [
-        "wealth",
+        "accounting",
         "business"
       ]
     },
@@ -750,111 +853,89 @@
       "id": "agent_003",
       "name": "Lena",
       "personality": "friendly",
-      "location_id": "market",
+      "location_id": "town_square",
       "memory": [
         {
           "day": 1,
           "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "0584b3b0-cd72-4678-aa4a-b24b13901e25",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Lost Pet Search. Several residents are helping search for a missing pet.",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "lost_pet_search",
+            "town_cleanup",
             "community",
-            "social",
-            "help"
+            "social"
           ],
-          "id": "73e74ca1-cf53-4ee7-b6fa-743e7a0bdd8b",
+          "id": "4084d705-9240-4b00-85e2-b430443e55bd",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 1,
-          "hour": 8,
-          "type": "conversation",
-          "description": "Lena, have you seen any updates on the lost pet?",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "lost_pet_search",
-            "event",
-            "neutral",
-            "ask_for_help"
-          ],
-          "id": "bade9472-5baf-441b-a8a4-4b6469ca5a0a",
-          "last_accessed_day": 2,
-          "strength": 6
-        },
-        {
-          "day": 1,
-          "hour": 12,
-          "type": "conversation",
-          "description": "It's been a while since we've caught up.",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "547d827e-7aca-45b6-be4b-8169a92bbc78",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
           "hour": 18,
           "type": "conversation",
-          "description": "I noticed there are quite a few volunteers out here today.",
-          "participants": [
-            "Maya",
-            "Lena"
-          ],
-          "location": "town_square",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "2b06e24e-9a4c-48d2-952b-6f5dafd5f848",
-          "last_accessed_day": 1,
-          "strength": 2
-        },
-        {
-          "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "It's been nice seeing so many folks out here today.",
+          "description": "It's great to see so many folks here for the cleanup. Have you seen the progress we've made so far?",
           "participants": [
             "Lena",
-            "Maya"
+            "Carlos"
           ],
           "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 2,
           "tags": [
             "conversation",
+            "event",
+            "town_cleanup",
             "neutral",
-            "chat"
+            "compliment"
           ],
-          "id": "ba47fb2d-bb68-42fd-a6a9-895af629dee4",
+          "id": "d1ae8332-4c72-4274-b48f-7d35a9a684d1",
+          "last_accessed_day": 2,
+          "strength": 3
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_2",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "3030dde9-7ba8-46c1-95fd-aad8a7c28a8f",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -873,74 +954,28 @@
             "social",
             "wealth"
           ],
-          "id": "352661d9-08e3-4354-88a9-7d0a06f99b81",
+          "id": "08be8af1-1446-48ea-81e8-1ed67d2df0f5",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 2,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I heard the new bakery is doing great! Have you checked it out?",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "691be9e9-70a4-4c02-a29a-f4c195cfd8c8",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I noticed the discount on your sign, it looks like a great deal!",
+          "description": "Great teamwork during the cleanup, everyone is really stepping up.",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Lena",
+            "Carlos"
           ],
           "location": "cafe",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
-            "event",
-            "cafe_discount",
             "neutral",
             "compliment"
           ],
-          "id": "72b950ae-f3aa-4453-8528-fca94e7ddb36",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 2,
-          "hour": 18,
-          "type": "conversation",
-          "description": "It's nice to see so many folks enjoying the cafe discounts today.",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "event",
-            "cafe_discount",
-            "neutral",
-            "chat"
-          ],
-          "id": "38aeff34-5d6f-4669-bfb0-cf10f871a472",
+          "id": "c22e088f-05da-47c2-9a20-9fcf8cf779cb",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -948,20 +983,20 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "I heard there are some interesting deals on fresh produce today.",
+          "description": "Carlos, the cleanup crew is doing great work recently. What do you think?",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Lena",
+            "Carlos"
           ],
           "location": "cafe",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": -1,
           "tags": [
             "conversation",
-            "neutral",
+            "friendly",
             "chat"
           ],
-          "id": "cadc19b8-917f-41bd-8361-178bd307aaf3",
+          "id": "e6c2920d-b355-49a0-92ea-03ca74e1a7dd",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -969,47 +1004,49 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
-          "participants": [],
-          "location": "library",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "book_club",
-            "learning",
-            "social",
-            "community"
-          ],
-          "id": "d24b2791-322c-4780-86b9-cef6533b2bd9",
-          "last_accessed_day": 5,
-          "strength": 10
-        },
-        {
-          "day": 4,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "391de623-c3d3-440b-aed1-72af0261bd51",
+          "id": "0b034efa-3087-4f75-b6b3-14067f69bbe3",
+          "last_accessed_day": 5,
+          "strength": 10
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed the garden plots look great! Did you get a chance to plant anything?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "gardening_workshop",
+            "neutral",
+            "offer_help"
+          ],
+          "id": "a4499a71-a6fe-4594-8730-20811b791197",
           "last_accessed_day": null,
           "strength": 1
         },
         {
-          "day": 4,
+          "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "There is a lot happening around town today.",
+          "description": "Carlos, the gardening workshop today was really informative.",
           "participants": [
             "Lena",
             "Carlos"
@@ -1019,10 +1056,98 @@
           "sentiment": 0,
           "tags": [
             "conversation",
+            "gardening_workshop",
+            "event",
+            "neutral",
+            "compliment"
+          ],
+          "id": "ebdee5cf-4c68-42e4-a014-de679d1bebe8",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c07a0e7e-4200-40b6-92e0-59cf4fe7009d",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "1d680e32-4fcd-4055-b6aa-a69d6566bf27",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I heard there's a cooking class happening later this afternoon. Would you like to join?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "event",
+            "cooking_class",
             "neutral",
             "chat"
           ],
-          "id": "d3fdc6a4-1bdf-40f2-9fc5-d60f617d7c9a",
+          "id": "71836f0b-db90-4dc7-8db7-9e2370694447",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 18,
+          "type": "conversation",
+          "description": "I noticed the market is especially lively today.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "e765a655-ab4f-42d0-af55-559e15916742",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -1030,7 +1155,69 @@
           "day": 4,
           "hour": 22,
           "type": "conversation",
-          "description": "I heard there's a rumor about some shady dealings at the market.",
+          "description": "Lena, your presentation at the market was really engaging.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 2,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "compliment"
+          ],
+          "id": "31bc682d-7b30-44ab-93ce-a664b63f88ae",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "8847c53c-e39e-4702-8778-6ce5f47c7c9f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Repair Day. Residents are fixing benches, signs, and small public spaces.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "repair_day",
+            "community",
+            "work"
+          ],
+          "id": "4f77a067-e86d-4340-b31b-e887159f4e79",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed you've been helping out a lot today.",
           "participants": [
             "Maya",
             "Lena"
@@ -1040,76 +1227,10 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "rumor",
-            "market",
             "neutral",
-            "share_rumor"
+            "compliment"
           ],
-          "id": "1615f5a1-0997-4a4b-8050-0a60822ed184",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
-          ],
-          "id": "e5e13c6f-3448-4bf9-9e2d-bc19c17155a8",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I noticed there's been some talk about the new vendor. Have you heard anything?",
-          "participants": [
-            "Ethan",
-            "Lena"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "work",
-            "neutral",
-            "ask_for_help"
-          ],
-          "id": "9b7167bf-1065-4a65-b378-85c6aa80b6a2",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 22,
-          "type": "conversation",
-          "description": "I heard there's a new vendor at the market who's keeping things under wraps.",
-          "participants": [
-            "Ethan",
-            "Lena"
-          ],
-          "location": "market",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "ccb59259-6647-49d6-897a-2f6d53ba13b0",
+          "id": "644d936c-c5ba-4ef9-b8c5-0ef3ddfaac5a",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -1121,61 +1242,80 @@
         "help the town community"
       ],
       "needs": {
-        "social": 90,
-        "wealth": 48,
-        "knowledge": 36
+        "social": 91,
+        "wealth": 38,
+        "knowledge": 40
       },
       "relationships": {
         "Carlos": 2,
-        "Maya": 0,
-        "Ethan": 1
+        "Maya": 1,
+        "Ethan": 2
       },
       "occupation": "community organizer",
       "recent_topics": [
-        "cafe_discount",
+        "offer_help",
+        "gardening_workshop",
+        "event",
         "compliment",
         "event",
-        "cafe_discount",
-        "rumor",
+        "cooking_class",
         "market",
-        "share_rumor",
-        "work",
-        "ask_for_help",
-        "market"
+        "market",
+        "compliment",
+        "compliment"
       ],
-      "current_activity": "Work on intent: seek_work",
-      "current_activity_reason": "Lena wants to find work or business opportunities.",
+      "current_activity": "Attend Repair Day",
+      "current_activity_reason": "Lena is interested in today's event: Repair Day.",
       "current_activity_tags": [
-        "intent",
-        "seek_work",
-        "wealth",
-        "business",
-        "market"
+        "event",
+        "repair_day",
+        "community",
+        "work"
       ]
     },
     {
       "id": "agent_004",
       "name": "Carlos",
       "personality": "ambitious",
-      "location_id": "cafe",
+      "location_id": "market",
       "memory": [
         {
           "day": 1,
           "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "0584b3b0-cd72-4678-aa4a-b24b13901e25",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Lost Pet Search. Several residents are helping search for a missing pet.",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
           "participants": [],
           "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "lost_pet_search",
+            "town_cleanup",
             "community",
-            "social",
-            "help"
+            "social"
           ],
-          "id": "73e74ca1-cf53-4ee7-b6fa-743e7a0bdd8b",
+          "id": "4084d705-9240-4b00-85e2-b430443e55bd",
           "last_accessed_day": 5,
           "strength": 10
         },
@@ -1183,43 +1323,66 @@
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "Lena, have you seen any updates on the lost pet?",
+          "description": "Carlos, you've been leading the cleanup so far. It's really impressive.",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Ethan",
+            "Carlos"
           ],
-          "location": "cafe",
+          "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 1,
           "tags": [
             "conversation",
-            "lost_pet_search",
             "event",
+            "town_cleanup",
             "neutral",
-            "ask_for_help"
+            "compliment"
           ],
-          "id": "bade9472-5baf-441b-a8a4-4b6469ca5a0a",
+          "id": "fb69b63e-bc0f-47fc-bc0d-a7e3a06ef203",
           "last_accessed_day": 2,
-          "strength": 6
+          "strength": 2
         },
         {
           "day": 1,
-          "hour": 12,
+          "hour": 18,
           "type": "conversation",
-          "description": "It's been a while since we've caught up.",
+          "description": "It's great to see so many folks here for the cleanup. Have you seen the progress we've made so far?",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Lena",
+            "Carlos"
           ],
-          "location": "cafe",
+          "location": "town_square",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": 2,
           "tags": [
             "conversation",
+            "event",
+            "town_cleanup",
             "neutral",
-            "chat"
+            "compliment"
           ],
-          "id": "547d827e-7aca-45b6-be4b-8169a92bbc78",
+          "id": "d1ae8332-4c72-4274-b48f-7d35a9a684d1",
+          "last_accessed_day": 2,
+          "strength": 3
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_2",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "3030dde9-7ba8-46c1-95fd-aad8a7c28a8f",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -1238,51 +1401,28 @@
             "social",
             "wealth"
           ],
-          "id": "352661d9-08e3-4354-88a9-7d0a06f99b81",
+          "id": "08be8af1-1446-48ea-81e8-1ed67d2df0f5",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 2,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I heard the new bakery is doing great! Have you checked it out?",
-          "participants": [
-            "Carlos",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "691be9e9-70a4-4c02-a29a-f4c195cfd8c8",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 2,
           "hour": 12,
           "type": "conversation",
-          "description": "I noticed the discount on your sign, it looks like a great deal!",
+          "description": "Great teamwork during the cleanup, everyone is really stepping up.",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Lena",
+            "Carlos"
           ],
           "location": "cafe",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
-            "event",
-            "cafe_discount",
             "neutral",
             "compliment"
           ],
-          "id": "72b950ae-f3aa-4453-8528-fca94e7ddb36",
+          "id": "c22e088f-05da-47c2-9a20-9fcf8cf779cb",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -1290,22 +1430,20 @@
           "day": 2,
           "hour": 18,
           "type": "conversation",
-          "description": "It's nice to see so many folks enjoying the cafe discounts today.",
+          "description": "It looks like everyone is busy with the cleanup recently.",
           "participants": [
             "Carlos",
-            "Lena"
+            "Ethan"
           ],
           "location": "cafe",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
-            "event",
-            "cafe_discount",
             "neutral",
             "chat"
           ],
-          "id": "38aeff34-5d6f-4669-bfb0-cf10f871a472",
+          "id": "547529bb-ff79-42d3-a594-4c81eca769f6",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -1313,20 +1451,20 @@
           "day": 2,
           "hour": 22,
           "type": "conversation",
-          "description": "I heard there are some interesting deals on fresh produce today.",
+          "description": "Carlos, the cleanup crew is doing great work recently. What do you think?",
           "participants": [
-            "Carlos",
-            "Lena"
+            "Lena",
+            "Carlos"
           ],
           "location": "cafe",
           "importance": 2,
-          "sentiment": 0,
+          "sentiment": -1,
           "tags": [
             "conversation",
-            "neutral",
+            "friendly",
             "chat"
           ],
-          "id": "cadc19b8-917f-41bd-8361-178bd307aaf3",
+          "id": "e6c2920d-b355-49a0-92ea-03ca74e1a7dd",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -1334,111 +1472,49 @@
           "day": 3,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "library",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "book_club",
-            "learning",
-            "social",
-            "community"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "d24b2791-322c-4780-86b9-cef6533b2bd9",
+          "id": "0b034efa-3087-4f75-b6b3-14067f69bbe3",
           "last_accessed_day": 5,
           "strength": 10
         },
         {
           "day": 3,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I heard there were some discussions about the new market vendor.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "chat"
-          ],
-          "id": "f628f1be-0647-4a20-9ea8-c10fe393f349",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 4,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
-          ],
-          "id": "391de623-c3d3-440b-aed1-72af0261bd51",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 4,
-          "hour": 8,
-          "type": "conversation",
-          "description": "The town has felt lively lately.",
-          "participants": [
-            "Carlos",
-            "Ethan"
-          ],
-          "location": "library",
-          "importance": 2,
-          "sentiment": 1,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "24ee2dc5-9298-41aa-89ac-7c9dfa4a5a5b",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 4,
           "hour": 12,
           "type": "conversation",
-          "description": "It seems like there's been a lot of activity around here.",
+          "description": "Have you noticed any changes in the garden lately?",
           "participants": [
-            "Ethan",
+            "Maya",
             "Carlos"
           ],
-          "location": "town_square",
+          "location": "library",
           "importance": 2,
           "sentiment": 0,
           "tags": [
             "conversation",
+            "work",
             "neutral",
             "chat"
           ],
-          "id": "031d5215-56a9-466f-bed7-f524e606b1c0",
+          "id": "1c229285-3500-4153-b7a9-c002d2f2793a",
           "last_accessed_day": null,
           "strength": 1
         },
         {
-          "day": 4,
+          "day": 3,
           "hour": 18,
           "type": "conversation",
-          "description": "There is a lot happening around town today.",
+          "description": "Carlos, the gardening workshop today was really informative.",
           "participants": [
             "Lena",
             "Carlos"
@@ -1448,43 +1524,25 @@
           "sentiment": 0,
           "tags": [
             "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "d3fdc6a4-1bdf-40f2-9fc5-d60f617d7c9a",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 5,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
-          "participants": [],
-          "location": "town_square",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
+            "gardening_workshop",
             "event",
-            "street_music_night",
-            "music",
-            "social",
-            "community"
+            "neutral",
+            "compliment"
           ],
-          "id": "e5e13c6f-3448-4bf9-9e2d-bc19c17155a8",
+          "id": "ebdee5cf-4c68-42e4-a014-de679d1bebe8",
           "last_accessed_day": null,
           "strength": 1
         },
         {
-          "day": 5,
-          "hour": 12,
+          "day": 3,
+          "hour": 22,
           "type": "conversation",
-          "description": "I have been trying to keep up with everything going on.",
+          "description": "Carlos, your presentation at the cafe was really engaging.",
           "participants": [
-            "Carlos",
-            "Ethan"
+            "Maya",
+            "Carlos"
           ],
-          "location": "town_square",
+          "location": "library",
           "importance": 2,
           "sentiment": -1,
           "tags": [
@@ -1492,7 +1550,153 @@
             "neutral",
             "chat"
           ],
-          "id": "fe0da1b9-8da7-45ae-848d-34acc75f1064",
+          "id": "1c8c04b0-d506-4d62-b4c4-d1f1e08c83f2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c07a0e7e-4200-40b6-92e0-59cf4fe7009d",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "1d680e32-4fcd-4055-b6aa-a69d6566bf27",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I heard there's been some talk about the new cafe owner being secretive.",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "rumor",
+            "neutral",
+            "share_rumor"
+          ],
+          "id": "e4668ef0-e827-4e72-b18e-e982d5a24db2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I have been trying to keep up with everything going on.",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "74ac7708-c40d-4661-af23-265ebf4f425c",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "8847c53c-e39e-4702-8778-6ce5f47c7c9f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Repair Day. Residents are fixing benches, signs, and small public spaces.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "repair_day",
+            "community",
+            "work"
+          ],
+          "id": "4f77a067-e86d-4340-b31b-e887159f4e79",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I heard the market is having a special sale today. Maybe we could check it out together?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "e1a23d45-2c3c-4e78-a3b5-c01de070a721",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -1504,245 +1708,304 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 81,
-        "wealth": 67,
-        "knowledge": 42
+        "social": 59,
+        "wealth": 57,
+        "knowledge": 56
       },
       "relationships": {
+        "Ethan": 2,
         "Lena": 2,
-        "Ethan": 0
+        "Maya": -1
       },
       "occupation": "merchant",
       "recent_topics": [
-        "lost_pet_search",
-        "event",
-        "ask_for_help",
-        "event",
-        "cafe_discount",
         "compliment",
+        "compliment",
+        "work",
+        "gardening_workshop",
         "event",
-        "cafe_discount",
-        "market"
+        "compliment",
+        "rumor",
+        "share_rumor",
+        "market",
+        "ask_for_help"
       ],
-      "current_activity": "Network with townspeople",
-      "current_activity_reason": "Carlos wants to grow influence through relationships.",
+      "current_activity": "Work on intent: seek_work",
+      "current_activity_reason": "Carlos wants to find work or business opportunities.",
       "current_activity_tags": [
+        "intent",
+        "seek_work",
+        "wealth",
         "business",
-        "social"
+        "market"
       ]
     }
   ],
   "relationship_scores": {
+    "Carlos|Ethan": 2,
+    "Ethan|Maya": 0,
     "Carlos|Lena": 2,
-    "Lena|Maya": 0,
-    "Ethan|Maya": -1,
-    "Carlos|Ethan": 0,
-    "Ethan|Lena": 1
+    "Lena|Maya": 1,
+    "Carlos|Maya": -1,
+    "Ethan|Lena": 2
   },
   "relationship_events": [
     {
       "day": 1,
       "hour": 8,
-      "agent_a": "Carlos",
-      "agent_b": "Lena",
-      "action": "ask_for_help",
-      "relationship_change": 0,
-      "relationship_score": 0,
-      "relationship_label": "neutral",
-      "description": "Carlos used action 'ask_for_help' with Lena. Their relationship stayed the same by +0; score is now +0 (neutral).",
-      "location": "cafe",
-      "tags": [
-        "conversation",
-        "lost_pet_search",
-        "event",
-        "neutral",
-        "ask_for_help"
-      ],
-      "conversation": "Lena, have you seen any updates on the lost pet?",
-      "id": "2fa73b89-a637-436c-85de-58d1b7977d46"
-    },
-    {
-      "day": 2,
-      "hour": 8,
       "agent_a": "Ethan",
-      "agent_b": "Maya",
-      "action": "chat",
-      "relationship_change": 1,
-      "relationship_score": 1,
-      "relationship_label": "neutral",
-      "description": "Ethan used action 'chat' with Maya. Their relationship improved by +1; score is now +1 (neutral).",
-      "location": "library",
-      "tags": [
-        "conversation",
-        "market",
-        "neutral",
-        "chat"
-      ],
-      "conversation": "I noticed the market seems busier than usual today.",
-      "id": "29ab613f-7016-4b71-a9e7-e3d104a13b9f"
-    },
-    {
-      "day": 2,
-      "hour": 12,
-      "agent_a": "Carlos",
-      "agent_b": "Lena",
+      "agent_b": "Carlos",
       "action": "compliment",
       "relationship_change": 1,
       "relationship_score": 1,
       "relationship_label": "neutral",
-      "description": "Carlos used action 'compliment' with Lena. Their relationship improved by +1; score is now +1 (neutral).",
-      "location": "cafe",
+      "description": "Ethan used action 'compliment' with Carlos. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "town_square",
       "tags": [
         "conversation",
         "event",
-        "cafe_discount",
+        "town_cleanup",
         "neutral",
         "compliment"
       ],
-      "conversation": "I noticed the discount on your sign, it looks like a great deal!",
-      "id": "10693ba9-3dd1-4240-8f39-da209426b835"
+      "conversation": "Carlos, you've been leading the cleanup so far. It's really impressive.",
+      "id": "eb3a15a2-a64f-442d-a8e8-6c78ffcfdfef"
+    },
+    {
+      "day": 1,
+      "hour": 18,
+      "agent_a": "Lena",
+      "agent_b": "Carlos",
+      "action": "compliment",
+      "relationship_change": 2,
+      "relationship_score": 2,
+      "relationship_label": "neutral",
+      "description": "Lena used action 'compliment' with Carlos. Their relationship improved by +2; score is now +2 (neutral).",
+      "location": "town_square",
+      "tags": [
+        "conversation",
+        "event",
+        "town_cleanup",
+        "neutral",
+        "compliment"
+      ],
+      "conversation": "It's great to see so many folks here for the cleanup. Have you seen the progress we've made so far?",
+      "id": "4b86a6c8-e72e-446d-a534-420175347adb"
+    },
+    {
+      "day": 2,
+      "hour": 12,
+      "agent_a": "Ethan",
+      "agent_b": "Maya",
+      "action": "chat",
+      "relationship_change": -1,
+      "relationship_score": -1,
+      "relationship_label": "neutral",
+      "description": "Ethan used action 'chat' with Maya. Their relationship worsened by -1; score is now -1 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "neutral",
+        "chat"
+      ],
+      "conversation": "It's interesting how much activity there's been lately.",
+      "id": "a55c4d5f-e3db-449d-99e3-ec2180ef6f15"
+    },
+    {
+      "day": 2,
+      "hour": 12,
+      "agent_a": "Lena",
+      "agent_b": "Carlos",
+      "action": "compliment",
+      "relationship_change": 1,
+      "relationship_score": 3,
+      "relationship_label": "friendly",
+      "description": "Lena used action 'compliment' with Carlos. Their relationship improved by +1; score is now +3 (friendly).",
+      "location": "cafe",
+      "tags": [
+        "conversation",
+        "neutral",
+        "compliment"
+      ],
+      "conversation": "Great teamwork during the cleanup, everyone is really stepping up.",
+      "id": "64a3ff5f-aa6d-43a4-afdb-73c4d723e46a"
     },
     {
       "day": 2,
       "hour": 18,
       "agent_a": "Carlos",
-      "agent_b": "Lena",
+      "agent_b": "Ethan",
       "action": "chat",
       "relationship_change": 1,
       "relationship_score": 2,
       "relationship_label": "neutral",
-      "description": "Carlos used action 'chat' with Lena. Their relationship improved by +1; score is now +2 (neutral).",
+      "description": "Carlos used action 'chat' with Ethan. Their relationship improved by +1; score is now +2 (neutral).",
       "location": "cafe",
       "tags": [
         "conversation",
-        "event",
-        "cafe_discount",
         "neutral",
         "chat"
       ],
-      "conversation": "It's nice to see so many folks enjoying the cafe discounts today.",
-      "id": "23b35472-f665-4190-972a-f8482ba6a98e"
+      "conversation": "It looks like everyone is busy with the cleanup recently.",
+      "id": "8d55284a-39c7-4e34-aa19-efd8fcee38a4"
     },
     {
       "day": 2,
       "hour": 22,
-      "agent_a": "Ethan",
-      "agent_b": "Maya",
-      "action": "share_rumor",
+      "agent_a": "Lena",
+      "agent_b": "Carlos",
+      "action": "chat",
       "relationship_change": -1,
-      "relationship_score": 0,
+      "relationship_score": 2,
       "relationship_label": "neutral",
-      "description": "Ethan used action 'share_rumor' with Maya. Their relationship worsened by -1; score is now +0 (neutral).",
-      "location": "library",
+      "description": "Lena used action 'chat' with Carlos. Their relationship worsened by -1; score is now +2 (neutral).",
+      "location": "cafe",
       "tags": [
         "conversation",
-        "rumor",
-        "market",
-        "neutral",
-        "share_rumor"
+        "friendly",
+        "chat"
       ],
-      "conversation": "I heard there are some rumors about the market being short-staffed.",
-      "id": "bd842262-a5b4-431b-948d-f76556660ccb"
+      "conversation": "Carlos, the cleanup crew is doing great work recently. What do you think?",
+      "id": "e31d65b9-b904-4ecb-b147-64928ce794d5"
     },
     {
-      "day": 4,
+      "day": 3,
       "hour": 8,
-      "agent_a": "Carlos",
-      "agent_b": "Ethan",
-      "action": "chat",
+      "agent_a": "Lena",
+      "agent_b": "Maya",
+      "action": "offer_help",
       "relationship_change": 1,
       "relationship_score": 1,
       "relationship_label": "neutral",
-      "description": "Carlos used action 'chat' with Ethan. Their relationship improved by +1; score is now +1 (neutral).",
+      "description": "Lena used action 'offer_help' with Maya. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "town_square",
+      "tags": [
+        "conversation",
+        "gardening_workshop",
+        "neutral",
+        "offer_help"
+      ],
+      "conversation": "I noticed the garden plots look great! Did you get a chance to plant anything?",
+      "id": "b9721c58-0599-4c05-909d-891c5001d66c"
+    },
+    {
+      "day": 3,
+      "hour": 18,
+      "agent_a": "Lena",
+      "agent_b": "Carlos",
+      "action": "compliment",
+      "relationship_change": 0,
+      "relationship_score": 2,
+      "relationship_label": "neutral",
+      "description": "Lena used action 'compliment' with Carlos. Their relationship stayed the same by +0; score is now +2 (neutral).",
+      "location": "cafe",
+      "tags": [
+        "conversation",
+        "gardening_workshop",
+        "event",
+        "neutral",
+        "compliment"
+      ],
+      "conversation": "Carlos, the gardening workshop today was really informative.",
+      "id": "072ec8a2-8374-4131-a7cd-e85c2e292a59"
+    },
+    {
+      "day": 3,
+      "hour": 22,
+      "agent_a": "Maya",
+      "agent_b": "Carlos",
+      "action": "chat",
+      "relationship_change": -1,
+      "relationship_score": -1,
+      "relationship_label": "neutral",
+      "description": "Maya used action 'chat' with Carlos. Their relationship worsened by -1; score is now -1 (neutral).",
       "location": "library",
       "tags": [
         "conversation",
         "neutral",
         "chat"
       ],
-      "conversation": "The town has felt lively lately.",
-      "id": "7ef2ef41-cadd-4ff8-8255-0c21f6b84618"
+      "conversation": "Carlos, your presentation at the cafe was really engaging.",
+      "id": "9656bd2b-cbbe-43db-bcad-361b4f2c643e"
+    },
+    {
+      "day": 4,
+      "hour": 8,
+      "agent_a": "Maya",
+      "agent_b": "Carlos",
+      "action": "share_rumor",
+      "relationship_change": 0,
+      "relationship_score": -1,
+      "relationship_label": "neutral",
+      "description": "Maya used action 'share_rumor' with Carlos. Their relationship stayed the same by +0; score is now -1 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "rumor",
+        "neutral",
+        "share_rumor"
+      ],
+      "conversation": "I heard there's been some talk about the new cafe owner being secretive.",
+      "id": "8de92c69-3eed-4566-94b1-7586679249e7"
     },
     {
       "day": 4,
       "hour": 22,
-      "agent_a": "Maya",
+      "agent_a": "Ethan",
       "agent_b": "Lena",
-      "action": "share_rumor",
-      "relationship_change": 0,
-      "relationship_score": 0,
+      "action": "compliment",
+      "relationship_change": 2,
+      "relationship_score": 2,
       "relationship_label": "neutral",
-      "description": "Maya used action 'share_rumor' with Lena. Their relationship stayed the same by +0; score is now +0 (neutral).",
-      "location": "town_square",
+      "description": "Ethan used action 'compliment' with Lena. Their relationship improved by +2; score is now +2 (neutral).",
+      "location": "cafe",
       "tags": [
         "conversation",
-        "rumor",
         "market",
         "neutral",
-        "share_rumor"
+        "compliment"
       ],
-      "conversation": "I heard there's a rumor about some shady dealings at the market.",
-      "id": "e4136005-c89a-4482-a8da-b5165c9dc734"
+      "conversation": "Lena, your presentation at the market was really engaging.",
+      "id": "0050eabe-9297-4266-954f-5ec99f0ac3b8"
     },
     {
       "day": 5,
       "hour": 8,
-      "agent_a": "Ethan",
+      "agent_a": "Maya",
       "agent_b": "Lena",
-      "action": "ask_for_help",
-      "relationship_change": 1,
+      "action": "compliment",
+      "relationship_change": 0,
       "relationship_score": 1,
       "relationship_label": "neutral",
-      "description": "Ethan used action 'ask_for_help' with Lena. Their relationship improved by +1; score is now +1 (neutral).",
-      "location": "market",
-      "tags": [
-        "conversation",
-        "work",
-        "neutral",
-        "ask_for_help"
-      ],
-      "conversation": "I noticed there's been some talk about the new vendor. Have you heard anything?",
-      "id": "566ab5f6-55e9-4c47-ab8a-bd4f58c3a038"
-    },
-    {
-      "day": 5,
-      "hour": 12,
-      "agent_a": "Carlos",
-      "agent_b": "Ethan",
-      "action": "chat",
-      "relationship_change": -1,
-      "relationship_score": 0,
-      "relationship_label": "neutral",
-      "description": "Carlos used action 'chat' with Ethan. Their relationship worsened by -1; score is now +0 (neutral).",
+      "description": "Maya used action 'compliment' with Lena. Their relationship stayed the same by +0; score is now +1 (neutral).",
       "location": "town_square",
       "tags": [
         "conversation",
         "neutral",
-        "chat"
+        "compliment"
       ],
-      "conversation": "I have been trying to keep up with everything going on.",
-      "id": "900b40a3-91f7-43ea-9ef2-c7fc69abdc58"
+      "conversation": "I noticed you've been helping out a lot today.",
+      "id": "7fad8728-34f1-409a-bacc-d4e8920cd787"
     },
     {
       "day": 5,
-      "hour": 18,
-      "agent_a": "Maya",
-      "agent_b": "Ethan",
-      "action": "argue",
-      "relationship_change": -1,
+      "hour": 22,
+      "agent_a": "Carlos",
+      "agent_b": "Maya",
+      "action": "ask_for_help",
+      "relationship_change": 0,
       "relationship_score": -1,
       "relationship_label": "neutral",
-      "description": "Maya used action 'argue' with Ethan. Their relationship worsened by -1; score is now -1 (neutral).",
+      "description": "Carlos used action 'ask_for_help' with Maya. Their relationship stayed the same by +0; score is now -1 (neutral).",
       "location": "market",
       "tags": [
         "conversation",
-        "conflict",
-        "seek_work",
+        "market",
         "neutral",
-        "argue"
+        "ask_for_help"
       ],
-      "conversation": "I heard the new vendor has been having some supply issues.",
-      "id": "0cba02f1-0705-4c62-bee1-519f3807d845"
+      "conversation": "I heard the market is having a special sale today. Maybe we could check it out together?",
+      "id": "58af4d0a-db52-4cab-bd3f-3bf5243fd8ef"
     }
   ],
   "agent_intents": {
@@ -1756,19 +2019,19 @@
       "target_agent": null,
       "target_location": "market",
       "status": "active",
-      "id": "11b0067f-a085-48f6-8d16-55294acecca7"
+      "id": "9cb46bf7-131d-457e-9b9a-1a2cd7271092"
     },
     "Ethan": {
       "agent_name": "Ethan",
-      "intent_type": "seek_work",
-      "description": "Ethan wants to find work or business opportunities.",
+      "intent_type": "investigate",
+      "description": "Ethan wants to gather information about recent town activity.",
       "created_day": 5,
       "expires_day": 6,
-      "priority": 2,
+      "priority": 3,
       "target_agent": null,
-      "target_location": "market",
+      "target_location": "library",
       "status": "active",
-      "id": "1af575ef-7479-4f4a-8aca-2524d042af80"
+      "id": "7ec5e64f-5bd2-4f2f-9c1b-264625c73a8b"
     },
     "Lena": {
       "agent_name": "Lena",
@@ -1780,19 +2043,57 @@
       "target_agent": null,
       "target_location": "market",
       "status": "active",
-      "id": "6cc05680-bb0b-4a71-8fde-edddacb7baa9"
+      "id": "2c6a668c-49da-4d16-abbc-2e56b20d7ffc"
     },
     "Carlos": {
       "agent_name": "Carlos",
-      "intent_type": "investigate",
-      "description": "Carlos wants to gather information about recent town activity.",
+      "intent_type": "seek_work",
+      "description": "Carlos wants to find work or business opportunities.",
       "created_day": 5,
       "expires_day": 6,
-      "priority": 3,
+      "priority": 2,
       "target_agent": null,
-      "target_location": "library",
+      "target_location": "market",
       "status": "active",
-      "id": "40234ae2-3ec3-46b2-a5c2-2c563b3f618b"
+      "id": "5c12f5d3-a54b-4feb-a3d9-08fd12f33405"
     }
-  }
+  },
+  "town_arcs": [
+    {
+      "id": "arc_community_project_day_1",
+      "name": "Community Project",
+      "description": "Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation.",
+      "status": "resolved",
+      "location_id": "town_square",
+      "involved_agents": [],
+      "tags": [
+        "community",
+        "volunteer",
+        "social"
+      ],
+      "tension": 0,
+      "progress": 2,
+      "created_day": 1,
+      "updated_day": 5,
+      "resolved_day": 5
+    },
+    {
+      "id": "arc_market_pressure_day_2",
+      "name": "Market Pressure",
+      "description": "Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly.",
+      "status": "active",
+      "location_id": "market",
+      "involved_agents": [],
+      "tags": [
+        "market",
+        "business",
+        "wealth"
+      ],
+      "tension": 2,
+      "progress": 0,
+      "created_day": 2,
+      "updated_day": 5,
+      "resolved_day": null
+    }
+  ]
 }

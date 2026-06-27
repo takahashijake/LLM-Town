@@ -33,12 +33,37 @@ class SimulationReporter:
         self.print_relationship_distribution(engine)
         self.print_relationship_event_summary(engine)
         self.print_intent_summary(engine)
+        self.print_town_arc_summary(engine)
         self.print_need_summary(engine)
         self.print_memory_summary(engine)
         self.print_topic_summary(engine)
         self.print_repetition_summary(engine)
         self.print_daily_event_usage(engine)
 
+    def print_town_arc_summary(self, engine) -> None:
+        town_arcs = getattr(engine, "town_arcs", [])
+
+        if not town_arcs:
+            print("\nNo town arcs recorded.")
+            return
+
+        active_arcs = [
+            arc
+            for arc in town_arcs
+            if arc.is_active()
+        ]
+
+        print("\nTown arc summary:")
+        print(f"  Total arcs: {len(town_arcs)}")
+        print(f"  Active arcs: {len(active_arcs)}")
+
+        for arc in town_arcs:
+            print(
+                f"  {arc.name}: {arc.status}, "
+                f"location={arc.location_id or 'town'}, "
+                f"tension={arc.tension}, progress={arc.progress}"
+            )
+            
     def print_intent_summary(self, engine) -> None:
         agent_intents = getattr(engine, "agent_intents", {})
 

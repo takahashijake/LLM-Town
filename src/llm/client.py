@@ -95,11 +95,25 @@ class TransformersLLMClient:
         recent_topic_text = ", ".join(recent_topics[-5:]) if recent_topics else "None"
         primary_need = context.get("primary_need", "social")
         daily_event = context.get("daily_event") 
+        town_arcs = context.get("town_arcs", [])
         allowed_actions = context.get("allowed_actions", ["chat"])
         allowed_action_text = ", ".join(allowed_actions)
 
         suggested_action = context.get("suggested_action", "chat") 
         memory_summary = context.get("memory_summary", "")
+        if town_arcs:
+            town_arc_text = "\n".join(
+                (
+                    f"- {arc['name']} ({arc['status']}): "
+                    f"{arc['description']} "
+                    f"Location: {arc.get('location_id') or 'town'}. "
+                    f"Tension: {arc.get('tension', 0)}. "
+                    f"Progress: {arc.get('progress', 0)}."
+                )
+                for arc in town_arcs
+            )
+        else:
+            town_arc_text = "- No active town arcs relevant to this location."
         if suggested_action not in allowed_actions: 
             suggested_action = "chat"
         if daily_event:
@@ -192,6 +206,9 @@ Long-term memory summary:
 Today's town event:
 {daily_event_text}
 
+Relevant town arcs:
+{town_arc_text}
+
 Speaker goals:
 {goal_text}
 
@@ -212,6 +229,12 @@ Intent rules:
 - If the intent naturally fits the location, listener, relationship, and current activity, reflect it in the dialogue.
 - Do not force the intent if it would feel unnatural.
 - If the speaker has a target agent intent and the listener is that target, the dialogue may more directly support that intent.
+
+Town arc rules:
+- Town arcs are ongoing multi-day situations.
+- Mention a town arc only when it naturally fits the location, activity, intent, or relationship.
+- Do not force town arcs into every conversation.
+- If a town arc is relevant, treat it as background context that residents may gradually discuss across days.
 
 The suggested action controls the intended social move for this line.
 

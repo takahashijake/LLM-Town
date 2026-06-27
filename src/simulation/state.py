@@ -46,6 +46,10 @@ class SimulationState:
                 agent_name: intent.to_dict()
                 for agent_name, intent in getattr(engine, "agent_intents", {}).items()
             },
+            "town_arcs": [
+                arc.to_dict()
+                for arc in getattr(engine, "town_arcs", [])
+            ],
         }
 
         self.path.write_text(json.dumps(state, indent=2))

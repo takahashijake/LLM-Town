@@ -11,6 +11,7 @@ def build_conversation_context(
     relationship_history=None,
     speaker_intent=None,
     listener_intent=None,
+    town_arcs=None,
 ):
     return {
         "speaker": speaker.name,
@@ -46,6 +47,7 @@ def build_conversation_context(
         "primary_need": speaker.get_primary_need(),
         "allowed_actions": allowed_actions or ["chat"],
         "suggested_action": suggested_action or "chat",
+        "town_arcs": town_arcs or [],
         "daily_event": {
             "id" : daily_event.id,
             "name": daily_event.name,

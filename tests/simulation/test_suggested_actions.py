@@ -348,3 +348,108 @@ def test_choose_final_action_with_reason_rejects_rumor_without_marker():
 
     assert action == "chat"
     assert reason == "parsed_rumor_without_marker"
+
+def test_relevant_town_arcs_for_context_filters_by_location():
+    from src.town.town_arc import TownArc
+
+    engine = build_engine()
+    engine.town_arcs = [
+        TownArc(
+            id="arc_market_pressure_day_1",
+            name="Market Pressure",
+            description="Residents are watching market prices.",
+            status="active",
+            location_id="market",
+            involved_agents=[],
+            tags=["market", "business"],
+            tension=2,
+            progress=1,
+            created_day=1,
+            updated_day=1,
+        ),
+        TownArc(
+            id="arc_library_questions_day_1",
+            name="Public Questions",
+            description="Residents are reviewing records.",
+            status="active",
+            location_id="library",
+            involved_agents=[],
+            tags=["knowledge"],
+            tension=1,
+            progress=0,
+            created_day=1,
+            updated_day=1,
+        ),
+    ]
+
+    arcs = engine.get_relevant_town_arcs_for_context("market")
+
+    assert len(arcs) == 1
+    assert arcs[0]["id"] == "arc_market_pressure_day_1"
+
+from src.town.town_arc import TownArc
+from tests.simulation.test_suggested_actions import build_engine
+
+
+def count_town_arc_memories(engine):
+    return sum(
+        1
+        for agent in engine.agents
+        for memory in agent.memory
+        if memory.type == "town_arc"
+    )
+
+
+def test_town_arc_creation_creates_one_memory_per_agent():
+    engine = build_engine()
+
+    arc = TownArc(
+        id="arc_market_pressure_day_1",
+        name="Market Pressure",
+        description="Residents are watching market prices.",
+        status="active",
+        location_id="market",
+        involved_agents=[],
+        tags=["market", "business"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.remember_town_arc_for_all_agents(
+        day=1,
+        arc=arc,
+        reason="created",
+    )
+
+    assert count_town_arc_memories(engine) == len(engine.agents)
+
+
+def test_active_town_arc_does_not_create_memory_without_update():
+    engine = build_engine()
+
+    engine.town_arcs = [
+        TownArc(
+            id="arc_market_pressure_day_1",
+            name="Market Pressure",
+            description="Residents are watching market prices.",
+            status="active",
+            location_id="market",
+            involved_agents=[],
+            tags=["market", "business"],
+            tension=2,
+            progress=0,
+            created_day=1,
+            updated_day=2,
+        )
+    ]
+
+    before = count_town_arc_memories(engine)
+
+    engine.update_town_arcs(day=2)
+
+    after = count_town_arc_memories(engine)
+
+    assert after == before
+    

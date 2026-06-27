@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+from src.town.town_arc import TownArc
 from src.agents.agent import Agent
 from src.agents.memory import Memory
 from src.agents.relationships import RelationshipManager
@@ -211,4 +212,32 @@ def test_save_preserves_agent_intents(tmp_path):
 
     assert loaded["agent_intents"]["Maya"]["intent_type"] == "build_friendship"
     assert loaded["agent_intents"]["Maya"]["target_agent"] == "Lena"
-    
+
+def test_state_saves_town_arcs(tmp_path):
+    from src.simulation.state import SimulationState
+    from tests.simulation.test_suggested_actions import build_engine
+
+    engine = build_engine()
+    engine.town_arcs = [
+        TownArc(
+            id="arc_market_pressure_day_1",
+            name="Market Pressure",
+            description="Residents are watching market prices.",
+            status="active",
+            location_id="market",
+            involved_agents=[],
+            tags=["market", "business"],
+            tension=2,
+            progress=1,
+            created_day=1,
+            updated_day=1,
+        )
+    ]
+
+    state = SimulationState(path=str(tmp_path / "save_state.json"))
+    state.save(engine, current_day=1, current_hour=8)
+
+    loaded = state.load()
+
+    assert loaded["town_arcs"][0]["id"] == "arc_market_pressure_day_1"
+    assert loaded["town_arcs"][0]["status"] == "active"
