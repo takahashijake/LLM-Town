@@ -74,7 +74,7 @@ class SimulationEngine:
             "volunteer": {"social": 1},
             "knowledge": {"knowledge": 2},
             "learning": {"knowledge": 2},
-            "jousrnalism": {"knowledge": 2},
+            "journalism": {"knowledge": 2},
             "accounting": {"knowledge": 2},
         }
     
@@ -167,7 +167,8 @@ class SimulationEngine:
             arc.name
             for arc in self.get_active_town_arcs()
         }
-        if "market" in event_tags or "wealth" in event_tags or "business" in event_tags: 
+
+        if "market" in event_tags or "wealth" in event_tags or "business" in event_tags:
             if "Market Pressure" in active_arc_names:
                 return None
 
@@ -188,47 +189,47 @@ class SimulationEngine:
                 updated_day=day,
             )
 
-            if "community" in event_tags or "volunteer" in event_tags or "help" in event_tags:
-                if "Community Project" in active_arc_names:
-                    return None
-    
-                return TownArc(
-                    id=f"arc_community_project_day_{day}",
-                    name="Community Project",
-                    description=(
-                        "Residents are becoming more involved in shared town projects, "
-                        "repairs, volunteering, and public cooperation."
-                    ),
-                    status="active",
-                    location_id="town_square",
-                    involved_agents=[],
-                    tags=["community", "volunteer", "social"],
-                    tension=1,
-                    progress=0,
-                    created_day=day,
-                    updated_day=day,
-                )
+        if "community" in event_tags or "volunteer" in event_tags or "help" in event_tags:
+            if "Community Project" in active_arc_names:
+                return None
 
-            if "learning" in event_tags or "rules" in event_tags:
-                if "Public Questions" in active_arc_names:
-                    return None
-    
-                return TownArc(
-                    id=f"arc_public_questions_day_{day}",
-                    name="Public Questions",
-                    description=(
-                        "Residents are asking more questions about records, rules, "
-                        "local decisions, and recent town activity."
-                    ),
-                    status="active",
-                    location_id="library",
-                    involved_agents=[],
-                    tags=["knowledge", "rules", "learning"],
-                    tension=2,
-                    progress=0,
-                    created_day=day,
-                    updated_day=day,
-                )
+            return TownArc(
+                id=f"arc_community_project_day_{day}",
+                name="Community Project",
+                description=(
+                    "Residents are becoming more involved in shared town projects, "
+                    "repairs, volunteering, and public cooperation."
+                ),
+                status="active",
+                location_id="town_square",
+                involved_agents=[],
+                tags=["community", "volunteer", "social"],
+                tension=1,
+                progress=0,
+                created_day=day,
+                updated_day=day,
+            )
+
+        if "learning" in event_tags or "rules" in event_tags:
+            if "Public Questions" in active_arc_names:
+                return None
+
+            return TownArc(
+                id=f"arc_public_questions_day_{day}",
+                name="Public Questions",
+                description=(
+                    "Residents are asking more questions about records, rules, "
+                    "local decisions, and recent town activity."
+                ),
+                status="active",
+                location_id="library",
+                involved_agents=[],
+                tags=["knowledge", "rules", "learning"],
+                tension=2,
+                progress=0,
+                created_day=day,
+                updated_day=day,
+            )
 
         return None
 
@@ -358,7 +359,21 @@ class SimulationEngine:
         )
 
         for agent in self.agents:
-            agent.remember(arc_memory)
+            should_remember = reason in {"created", "resolved"}
+        
+            if not should_remember:
+                agent_location = getattr(agent, "location_id", None)
+                agent_activity_tags = set(getattr(agent, "current_activity_tags", []))
+                arc_tags = set(arc.tags)
+        
+                should_remember = (
+                    agent_location == arc.location_id
+                    or bool(agent_activity_tags & arc_tags)
+                    or agent.name in arc.involved_agents
+                )
+        
+            if should_remember:
+                agent.remember(arc_memory)
 
 
     def get_relevant_town_arcs_for_context(self, location_id: str) -> list[dict]:
