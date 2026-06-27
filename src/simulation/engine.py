@@ -242,7 +242,7 @@ class SimulationEngine:
         if len(active_arcs) >= 2:
             return False
 
-        return random.random() < 0.25
+        return random.random() < 0.35
 
 
     def update_town_arcs(self, day: int) -> None:
