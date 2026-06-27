@@ -702,9 +702,9 @@ class SimulationEngine:
     
         elif intent.intent_type == "build_friendship":
             if "compliment" in adjusted:
-                adjusted["compliment"] += 2
+                adjusted["compliment"] += 1
             if "offer_help" in adjusted:
-                adjusted["offer_help"] += 2
+                adjusted["offer_help"] += 3
             if "cooperate" in adjusted:
                 adjusted["cooperate"] += 2
     
@@ -712,16 +712,18 @@ class SimulationEngine:
             if "ask_for_help" in adjusted:
                 adjusted["ask_for_help"] += 3
             if "share_rumor" in adjusted:
-                adjusted["share_rumor"] += 1
+                adjusted["share_rumor"] += 2
             if "chat" in adjusted:
                 adjusted["chat"] += 1
-    
+            
         elif intent.intent_type == "socialize":
             if "chat" in adjusted:
                 adjusted["chat"] += 2
-            if "compliment" in adjusted:
-                adjusted["compliment"] += 1
-    
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 1
+            if "offer_help" in adjusted:
+                adjusted["offer_help"] += 1
+            
         elif intent.intent_type == "seek_work":
             if "ask_for_help" in adjusted:
                 adjusted["ask_for_help"] += 1

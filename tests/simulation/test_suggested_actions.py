@@ -157,4 +157,96 @@ def test_specific_rumor_marker_is_preserved():
     assert engine.has_rumor_marker(
         "Someone said the new vendor might be hiding something."
     )
-    
+
+def test_build_friendship_boosts_help_more_than_compliment():
+    engine = build_engine()
+
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="build_friendship",
+        target_agent="Lena",
+        target_location=None,
+        description="Maya wants to strengthen her bond with Lena.",
+        created_day=1,
+        expires_day=3,
+        priority=4,
+    )
+
+    base_weights = {
+        "chat": 8,
+        "compliment": 1,
+        "offer_help": 1,
+        "cooperate": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_intent(
+        weights=base_weights,
+        intent=intent,
+        listener_name="Lena",
+    )
+
+    assert adjusted["compliment"] == 2
+    assert adjusted["offer_help"] == 4
+    assert adjusted["cooperate"] == 3
+
+def test_socialize_intent_does_not_boost_compliment():
+    engine = build_engine()
+
+    intent = AgentIntent(
+        agent_name="Lena",
+        intent_type="socialize",
+        target_agent=None,
+        target_location="cafe",
+        description="Lena wants to spend time with other residents.",
+        created_day=1,
+        expires_day=2,
+        priority=2,
+    )
+
+    base_weights = {
+        "chat": 8,
+        "compliment": 1,
+        "ask_for_help": 1,
+        "offer_help": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_intent(
+        weights=base_weights,
+        intent=intent,
+        listener_name="Carlos",
+    )
+
+    assert adjusted["chat"] == 10
+    assert adjusted["compliment"] == 1
+    assert adjusted["ask_for_help"] == 2
+    assert adjusted["offer_help"] == 2
+
+def test_investigate_intent_boosts_share_rumor():
+    engine = build_engine()
+
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="investigate",
+        target_agent=None,
+        target_location="library",
+        description="Maya wants to gather information.",
+        created_day=1,
+        expires_day=2,
+        priority=3,
+    )
+
+    base_weights = {
+        "chat": 8,
+        "ask_for_help": 1,
+        "share_rumor": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_intent(
+        weights=base_weights,
+        intent=intent,
+        listener_name="Ethan",
+    )
+
+    assert adjusted["chat"] == 9
+    assert adjusted["ask_for_help"] == 4
+    assert adjusted["share_rumor"] == 3
