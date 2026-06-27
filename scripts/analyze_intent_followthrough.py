@@ -109,6 +109,9 @@ def main():
 
     suggested_by_intent = Counter()
     final_by_suggested_and_intent = Counter()
+
+    final_action_reason_counts = Counter()
+    
     for row in conversations:
         intent_type = row.get("speaker_intent_type", "")
         target_agent = row.get("speaker_intent_target_agent", "")
@@ -121,9 +124,13 @@ def main():
         suggested_action = row.get("suggested_action", "")
         parsed_action = row.get("parsed_action", "")
         inferred_action = row.get("inferred_action", "")
-
+        final_action_reason = row.get("final_action_reason", "")
+        
         final_action_counts[action] += 1
 
+        if final_action_reason: 
+            final_action_reason_counts[final_action_reason] += 1
+            
         if suggested_action:
             suggested_action_counts[suggested_action] += 1
             suggested_to_final[(suggested_action, action)] += 1
@@ -137,6 +144,8 @@ def main():
         if inferred_action:
             inferred_action_counts[inferred_action] += 1
             inferred_to_final[(inferred_action, action)] += 1
+
+        
 
             
         if not intent_type:
@@ -306,7 +315,10 @@ def main():
     print("\nIntent + suggested -> final:")
     for (intent_type, suggested, final), count in final_by_suggested_and_intent.most_common(10):
         print(f"  {intent_type}: suggested {suggested} -> final {final}: {count}")
-        
+
+    print("\nFinal action reasons:")
+    for reason, count in final_action_reason_counts.most_common():
+        print(f"  {reason}: {count}")
 
 if __name__ == "__main__":
     main()

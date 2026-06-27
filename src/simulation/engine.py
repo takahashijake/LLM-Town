@@ -385,6 +385,50 @@ class SimulationEngine:
         ]
         return any(marker in text for marker in rumor_markers)
         
+    def choose_final_action_with_reason(
+        self,
+        conversation: str,
+        parsed_action: str,
+        conversation_tags: list[str],
+        allowed_actions: list[str],
+        inferred_action: str | None = None,
+    ) -> tuple[str, str]:
+        if inferred_action is None:
+            inferred_action = self.actions.infer_action(
+                conversation,
+                conversation_tags,
+            )
+
+        if parsed_action == "share_rumor" and inferred_action == "chat":
+            if self.has_rumor_marker(conversation):
+                final_action = "share_rumor"
+                reason = "parsed_rumor_with_marker"
+            else:
+                final_action = "chat"
+                reason = "parsed_rumor_without_marker"
+
+        elif inferred_action != "chat" and inferred_action in allowed_actions:
+            final_action = inferred_action
+            reason = "trusted_inferred_non_chat"
+
+        elif parsed_action != "chat" and parsed_action in allowed_actions:
+            final_action = parsed_action
+            reason = "trusted_parsed_non_chat"
+
+        elif parsed_action in allowed_actions:
+            final_action = parsed_action
+            reason = "used_parsed_action"
+
+        else:
+            final_action = "chat"
+            reason = "fallback_chat_action_not_allowed"
+
+        if self.should_cap_action(final_action):
+            return "chat", f"capped_{final_action}"
+
+        return final_action, reason
+
+
     def choose_final_action(
         self,
         conversation: str,
@@ -393,28 +437,15 @@ class SimulationEngine:
         allowed_actions: list[str],
         inferred_action: str | None = None,
     ) -> str:
-        if inferred_action is None:
-            inferred_action = self.actions.infer_action(
-                conversation,
-                conversation_tags,
-            )
-    
-        if parsed_action == "share_rumor" and inferred_action == "chat":
-            if self.has_rumor_marker(conversation):
-                final_action = "share_rumor"
-            else:
-                final_action = "chat"
-        elif inferred_action != "chat" and inferred_action in allowed_actions:
-            final_action = inferred_action
-        elif parsed_action in allowed_actions:
-            final_action = parsed_action
-        else:
-            final_action = "chat"
-    
-        if self.should_cap_action(final_action):
-            return "chat"
-    
-        return final_action
+        action, _reason = self.choose_final_action_with_reason(
+            conversation=conversation,
+            parsed_action=parsed_action,
+            conversation_tags=conversation_tags,
+            allowed_actions=allowed_actions,
+            inferred_action=inferred_action,
+        )
+
+        return action
 
 
     def get_previous_event_names(self, current_day: int) -> list[str]:
@@ -874,6 +905,8 @@ class SimulationEngine:
         inferred_action: str = "",
         base_action_weights: dict | None = None,
         intent_adjusted_weights: dict | None = None,
+        allowed_actions: list[str] | None = None,
+        final_action_reason: str = "",
     ) -> None:
         conversation_record = {
             "day": day,
@@ -894,6 +927,8 @@ class SimulationEngine:
             "base_action_weights": base_action_weights or {},
             "intent_adjusted_weights": intent_adjusted_weights or {},
             "tags": tags or [],
+            "allowed_actions" : allowed_actions or [], 
+            "final_action_reason": final_action_reason,
             "speaker_intent_type": speaker_intent.intent_type if speaker_intent else "",
             "speaker_intent_target_agent": speaker_intent.target_agent if speaker_intent else "",
             "speaker_intent_target_location": speaker_intent.target_location if speaker_intent else "",
@@ -1033,7 +1068,7 @@ class SimulationEngine:
                 conversation_tags,
             )
 
-            action = self.choose_final_action(
+            action, final_action_reason = self.choose_final_action_with_reason(
                 conversation=conversation,
                 parsed_action=parsed_action,
                 conversation_tags=conversation_tags,
@@ -1160,6 +1195,8 @@ class SimulationEngine:
                 inferred_action=inferred_action,
                 base_action_weights=base_action_weights,
                 intent_adjusted_weights=intent_adjusted_weights,
+                allowed_actions=allowed_actions,
+                final_action_reason=final_action_reason,
             )
             self.print_conversation_event(
                 day,

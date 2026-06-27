@@ -304,3 +304,47 @@ def test_log_conversation_event_includes_action_pipeline_fields():
     assert record["inferred_action"] == "offer_help"
     assert record["base_action_weights"]["chat"] == 8
     assert record["intent_adjusted_weights"]["offer_help"] == 5
+
+def test_choose_final_action_with_reason_trusts_parsed_non_chat():
+    engine = build_engine()
+
+    action, reason = engine.choose_final_action_with_reason(
+        conversation="Have you noticed any unusual activity around the market lately?",
+        parsed_action="ask_for_help",
+        conversation_tags=[],
+        allowed_actions=["chat", "ask_for_help"],
+        inferred_action="chat",
+    )
+
+    assert action == "ask_for_help"
+    assert reason == "trusted_parsed_non_chat"
+
+
+def test_choose_final_action_with_reason_reports_disallowed_action():
+    engine = build_engine()
+
+    action, reason = engine.choose_final_action_with_reason(
+        conversation="Can you help me figure this out?",
+        parsed_action="ask_for_help",
+        conversation_tags=[],
+        allowed_actions=["chat"],
+        inferred_action="chat",
+    )
+
+    assert action == "chat"
+    assert reason == "fallback_chat_action_not_allowed"
+
+
+def test_choose_final_action_with_reason_rejects_rumor_without_marker():
+    engine = build_engine()
+
+    action, reason = engine.choose_final_action_with_reason(
+        conversation="The music was good today.",
+        parsed_action="share_rumor",
+        conversation_tags=[],
+        allowed_actions=["chat", "share_rumor"],
+        inferred_action="chat",
+    )
+
+    assert action == "chat"
+    assert reason == "parsed_rumor_without_marker"
