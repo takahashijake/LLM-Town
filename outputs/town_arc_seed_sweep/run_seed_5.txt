@@ -1,0 +1,309 @@
+Previous run data cleared.
+Loading weights:   0%|                                                       | 0/434 [00:00<?, ?it/s]Loading weights:   6%|██▊                                          | 27/434 [00:00<00:01, 269.17it/s]Loading weights:  17%|███████▊                                     | 75/434 [00:00<00:00, 374.92it/s]Loading weights:  26%|███████████▍                                | 113/434 [00:00<00:00, 366.06it/s]Loading weights:  37%|████████████████                            | 159/434 [00:00<00:00, 397.47it/s]Loading weights:  46%|████████████████████▏                       | 199/434 [00:00<00:00, 300.63it/s]Loading weights:  56%|████████████████████████▋                   | 243/434 [00:00<00:00, 336.04it/s]Loading weights:  65%|████████████████████████████▍               | 281/434 [00:00<00:00, 342.35it/s]Loading weights:  73%|████████████████████████████████▏           | 318/434 [00:00<00:00, 289.39it/s]Loading weights:  84%|████████████████████████████████████▊       | 363/434 [00:01<00:00, 321.59it/s]Loading weights:  92%|████████████████████████████████████████▋   | 401/434 [00:01<00:00, 332.09it/s]Loading weights: 100%|████████████████████████████████████████████| 434/434 [00:01<00:00, 339.15it/s]
+Starting town simulation...
+
+=== Day 1 ===
+Town arc created: Community Project (location=town_square, tension=1, progress=0)
+Daily Event: Lost Pet Search - Several residents are helping search for a missing pet.
+
+--- 8:00 ---
+Maya chooses activity: Attend Lost Pet Search at town_square (Maya is interested in today's event: Lost Pet Search.)
+Ethan chooses activity: Work on intent: investigate at library (Ethan wants to gather information about recent town activity.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 1, 8:00 at cafe: It seems like everyone has something to do today. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Work on intent: investigate at library (Maya wants to gather information about recent town activity.)
+Ethan chooses activity: Talk with people in the town square at town_square (Ethan wants to be around people.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Attend Lost Pet Search at town_square (Carlos is interested in today's event: Lost Pet Search.)
+Day 1, 12:00 at town_square: There is a lot happening around town today. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Maya chooses activity: Work on intent: investigate at library (Maya wants to gather information about recent town activity.)
+Ethan chooses activity: Work on intent: investigate at library (Ethan wants to gather information about recent town activity.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 1, 18:00 at library: I noticed more people are stopping by the market today. Relationship is now neutral (score +0, change +0). Action: chat.
+Day 1, 18:00 at cafe: Lena, have you seen any updates on the pet search? I've been trying to reach the volunteer coordinator but couldn't get through. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Maya chooses activity: Attend Lost Pet Search at town_square (Maya is interested in today's event: Lost Pet Search.)
+Ethan chooses activity: Observe business activity at market (Ethan is watching for financial opportunities or risks.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 1, 22:00 at cafe: It seems like everyone is busy today, doesn't it? Relationship is now neutral (score -1, change -1). Action: chat.
+
+=== Day 2 ===
+Town arc updated: Community Project (tension 1->2, progress 0->1)
+Town arc created: Market Pressure (location=market, tension=2, progress=0)
+Daily Event: Farmers Market - Local vendors are setting up booths and selling fresh produce.
+
+--- 8:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Attend Farmers Market at market (Ethan is interested in today's event: Farmers Market.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 2, 8:00 at market: It looks like there's been a lot of interest in the market today. Relationship is now neutral (score +0, change +0). Action: chat.
+Day 2, 8:00 at cafe: The town has felt lively lately. Relationship is now neutral (score +0, change +1). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Investigate a possible story at town_square (Maya is looking for town stories or rumors.)
+Ethan chooses activity: Attend Farmers Market at market (Ethan is interested in today's event: Farmers Market.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 2, 12:00 at cafe: The farmers market looks lively today. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Maya chooses activity: Work on intent: investigate at library (Maya wants to gather information about recent town activity.)
+Ethan chooses activity: Work on intent: investigate at library (Ethan wants to gather information about recent town activity.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Work on intent: socialize at cafe (Carlos wants to spend time with other residents.)
+Day 2, 18:00 at library: I heard there's been some talk about the new vendor's practices. Relationship is now neutral (score +0, change +0). Action: chat.
+Day 2, 18:00 at cafe: I heard there's a rumor about the market closing soon. Relationship is now neutral (score -1, change -1). Action: share_rumor.
+
+--- 22:00 ---
+Maya chooses activity: Work on intent: investigate at library (Maya wants to gather information about recent town activity.)
+Ethan chooses activity: Attend Farmers Market at market (Ethan is interested in today's event: Farmers Market.)
+Lena chooses activity: Work on intent: socialize at cafe (Lena wants to spend time with other residents.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 2, 22:00 at market: Carlos, the market seems quite lively today. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 3 ===
+Town arc updated: Community Project (progress 1->2)
+Town arc updated: Market Pressure (progress 0->1)
+Daily Event: Repair Day - Residents are fixing benches, signs, and small public spaces.
+
+--- 8:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Work on intent: socialize at cafe (Ethan wants to spend time with other residents.)
+Lena chooses activity: Attend Repair Day at town_square (Lena is interested in today's event: Repair Day.)
+Carlos chooses activity: Work on intent: investigate at library (Carlos wants to gather information about recent town activity.)
+No conversations this tick
+
+--- 12:00 ---
+Maya chooses activity: Attend Repair Day at town_square (Maya is interested in today's event: Repair Day.)
+Ethan chooses activity: Review records and numbers at library (Ethan wants reliable information before trusting others.)
+Lena chooses activity: Work on intent: seek_work at market (Lena wants to find work or business opportunities.)
+Carlos chooses activity: Look for work or business opportunities at market (Carlos wants to improve wealth.)
+Day 3, 12:00 at market: I heard rumors about some shady dealings at the market. Relationship is now neutral (score -1, change +0). Action: share_rumor.
+
+--- 18:00 ---
+Maya chooses activity: Investigate a possible story at town_square (Maya is looking for town stories or rumors.)
+Ethan chooses activity: Work on intent: socialize at cafe (Ethan wants to spend time with other residents.)
+Lena chooses activity: Attend Repair Day at town_square (Lena is interested in today's event: Repair Day.)
+Carlos chooses activity: Work on intent: investigate at library (Carlos wants to gather information about recent town activity.)
+Day 3, 18:00 at town_square: I have been trying to keep up with everything going on. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 22:00 ---
+Maya chooses activity: Talk with people in the town square at town_square (Maya wants to be around people.)
+Ethan chooses activity: Review records and numbers at library (Ethan wants reliable information before trusting others.)
+Lena chooses activity: Attend Repair Day at town_square (Lena is interested in today's event: Repair Day.)
+Carlos chooses activity: Work on intent: investigate at library (Carlos wants to gather information about recent town activity.)
+Day 3, 22:00 at town_square: Maya, have you seen anyone who could help fix this broken bench? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+Day 3, 22:00 at library: I noticed more people at the market recently, seems like it's really popular. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Day 4 ===
+Town arc resolved: Community Project (location=town_square, tension=2, progress=3)
+Town arc updated: Market Pressure (tension 2->1, progress 1->2)
+Town arc created: Community Project (location=town_square, tension=1, progress=0)
+Daily Event: Public Debate - Residents are debating a proposed change to town rules.
+
+--- 8:00 ---
+Maya chooses activity: Attend Public Debate at town_square (Maya is interested in today's event: Public Debate.)
+Ethan chooses activity: Work on intent: socialize at cafe (Ethan wants to spend time with other residents.)
+Lena chooses activity: Attend Public Debate at town_square (Lena is interested in today's event: Public Debate.)
+Carlos chooses activity: Look for work or business opportunities at market (Carlos wants to improve wealth.)
+Day 4, 8:00 at town_square: It seems like everyone is busy today. What brings you here? Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Attend Public Debate at town_square (Maya is interested in today's event: Public Debate.)
+Ethan chooses activity: Look for work or business opportunities at market (Ethan wants to improve wealth.)
+Lena chooses activity: Look for information at library (Lena wants to learn something useful.)
+Carlos chooses activity: Look for work or business opportunities at market (Carlos wants to improve wealth.)
+Day 4, 12:00 at market: This place has had a lot going on today. Relationship is now neutral (score -1, change -1). Action: chat.
+
+--- 18:00 ---
+Maya chooses activity: Attend Public Debate at town_square (Maya is interested in today's event: Public Debate.)
+Ethan chooses activity: Attend Public Debate at town_square (Ethan is interested in today's event: Public Debate.)
+Lena chooses activity: Organize community support at town_square (Lena wants to help the town community.)
+Carlos chooses activity: Work on intent: investigate at library (Carlos wants to gather information about recent town activity.)
+Day 4, 18:00 at town_square: Have you noticed any improvements on the repair day? Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Maya chooses activity: Work on intent: seek_work at market (Maya wants to find work or business opportunities.)
+Ethan chooses activity: Work on intent: socialize at cafe (Ethan wants to spend time with other residents.)
+Lena chooses activity: Work on intent: seek_work at market (Lena wants to find work or business opportunities.)
+Carlos chooses activity: Look for business opportunities at market (Carlos wants to find business opportunities.)
+Day 4, 22:00 at market: I heard there's a shortage of tomatoes this season. Relationship is now neutral (score +1, change +1). Action: chat.
+
+=== Day 5 ===
+Town arc resolved: Market Pressure (location=market, tension=1, progress=3)
+Town arc updated: Community Project (progress 0->1)
+Daily Event: Lost Pet Search - Several residents are helping search for a missing pet.
+
+--- 8:00 ---
+Maya chooses activity: Attend Lost Pet Search at town_square (Maya is interested in today's event: Lost Pet Search.)
+Ethan chooses activity: Work on intent: seek_work at market (Ethan wants to find work or business opportunities.)
+Lena chooses activity: Work on intent: investigate at library (Lena wants to gather information about recent town activity.)
+Carlos chooses activity: Look for information at library (Carlos wants to learn something useful.)
+Day 5, 8:00 at library: I noticed more people at the market recently. Relationship is now neutral (score +0, change +1). Action: chat.
+
+--- 12:00 ---
+Maya chooses activity: Attend Lost Pet Search at town_square (Maya is interested in today's event: Lost Pet Search.)
+Ethan chooses activity: Look for information at library (Ethan wants to learn something useful.)
+Lena chooses activity: Work on intent: investigate at library (Lena wants to gather information about recent town activity.)
+Carlos chooses activity: Work on intent: seek_work at market (Carlos wants to find work or business opportunities.)
+Day 5, 12:00 at library: It seems like there's been quite a bit of activity around here lately. Relationship is now neutral (score +0, change +0). Action: chat.
+
+--- 18:00 ---
+Maya chooses activity: Attend Lost Pet Search at town_square (Maya is interested in today's event: Lost Pet Search.)
+Ethan chooses activity: Work on intent: seek_work at market (Ethan wants to find work or business opportunities.)
+Lena chooses activity: Meet residents at cafe (Lena wants to build goodwill with residents.)
+Carlos chooses activity: Attend Lost Pet Search at town_square (Carlos is interested in today's event: Lost Pet Search.)
+Day 5, 18:00 at town_square: Maya, have you heard about the missing pet? It's been a big concern here. Relationship is now neutral (score +0, change +0). Action: ask_for_help.
+
+--- 22:00 ---
+Maya chooses activity: Look for work or business opportunities at market (Maya wants to improve wealth.)
+Ethan chooses activity: Attend Lost Pet Search at town_square (Ethan is interested in today's event: Lost Pet Search.)
+Lena chooses activity: Organize community support at town_square (Lena wants to help the town community.)
+Carlos chooses activity: Attend Lost Pet Search at town_square (Carlos is interested in today's event: Lost Pet Search.)
+Day 5, 22:00 at town_square: I heard there's been some talk about the lost pet search today. Relationship is now neutral (score +0, change +0). Action: chat.
+
+=== Final Relationships ===
+
+Maya:
+  Ethan: neutral (+0)
+  Lena: neutral (+1)
+  Carlos: neutral (+0)
+
+Ethan:
+  Carlos: neutral (-1)
+  Maya: neutral (+0)
+  Lena: neutral (+0)
+
+Lena:
+  Carlos: neutral (+0)
+  Maya: neutral (+1)
+  Ethan: neutral (+0)
+
+Carlos:
+  Lena: neutral (+0)
+  Ethan: neutral (-1)
+  Maya: neutral (+0)
+
+=== Town Summary ===
+
+Total conversations: 23
+Most common action: chat (17)
+
+Action distribution:
+  chat: 17 (73.9%)
+  ask_for_help: 4 (17.4%)
+  share_rumor: 2 (8.7%)
+
+Conversations by day:
+  Day 1: 5
+  Day 2: 6
+  Day 3: 4
+  Day 4: 4
+  Day 5: 4
+
+Activity distribution:
+  Work on intent: socialize: 18
+  Work on intent: investigate: 13
+  Attend Lost Pet Search: 9
+  Look for work or business opportunities: 7
+  Work on intent: seek_work: 6
+  Attend Public Debate: 5
+  Attend Repair Day: 4
+  Attend Farmers Market: 3
+  Look for information: 3
+  Talk with people in the town square: 2
+  Investigate a possible story: 2
+  Look for business opportunities: 2
+  Review records and numbers: 2
+  Organize community support: 2
+  Observe business activity: 1
+  Meet residents: 1
+
+Location distribution:
+  town_square: 24
+  cafe: 19
+  market: 19
+  library: 18
+
+Relationship summary:
+  Average relationship score: +0.00
+  Strongest relationship: Lena <-> Maya (+1, neutral)
+  Weakest relationship: Carlos <-> Ethan (-1, neutral)
+
+Relationship distribution:
+  close friends: 0
+  friendly: 0
+  neutral: 6
+  tense: 0
+  enemies: 0
+
+Relationship event summary:
+  Total relationship events: 11
+  Positive events: 3
+  Negative events: 3
+  Neutral events: 5
+  Events by action:
+    chat: 5
+    ask_for_help: 4
+    share_rumor: 2
+  Positive/repair social actions: 3
+  Negative/guarded social actions: 2
+
+Agent intent summary:
+  Active intents: 4
+  Intents by type:
+    investigate: 2
+    seek_work: 2
+  Current intents:
+    Carlos: seek_work -> market (expires day 6)
+    Ethan: seek_work -> market (expires day 6)
+    Lena: investigate -> library (expires day 6)
+    Maya: investigate -> library (expires day 6)
+
+Town arc summary:
+  Total arcs: 3
+  Active arcs: 1
+  Community Project: resolved, location=town_square, tension=2, progress=3
+  Market Pressure: resolved, location=market, tension=1, progress=3
+  Community Project: active, location=town_square, tension=1, progress=1
+
+Average needs:
+  knowledge: 52.0
+  social: 68.2
+  wealth: 54.2
+
+Memory summary:
+  Total memories: 106
+  Average memories per agent: 26.5
+  Most memories: Lena (30)
+
+Topic summary:
+  Unique topic tags: 9
+  Most common topics:
+    conversation: 23
+    market: 8
+    event: 6
+    farmers_market: 4
+    lost_pet_search: 3
+    repair_day: 2
+    rumor: 2
+    help: 1
+    rumors: 1
+
+Repetition summary:
+  Repeated dialogue rate: 0.0%
+
+Daily event usage:
+  Event-related conversations: 6
+  Daily event mention rate: 26.1%
+
+Simulation finished.

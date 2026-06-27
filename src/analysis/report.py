@@ -328,25 +328,34 @@ class SimulationReporter:
             for agent in engine.agents
         }
 
+        total_memories = sum(memory_counts.values())
+
         if not memory_counts:
-            print("\nNo memories recorded.")
+            print("\nMemory summary:")
+            print("  Total memories: 0")
             return
 
-        most_memories_agent = max(
+        average_memories = total_memories / len(memory_counts)
+
+        most_memory_agent = max(
             memory_counts.items(),
             key=lambda item: item[1],
         )
 
-        total_memories = sum(memory_counts.values())
-        average_memories = total_memories / len(memory_counts)
+        memory_type_counts = Counter()
+
+        for agent in engine.agents:
+            for memory in agent.memory:
+                memory_type_counts[memory.type] += 1
 
         print("\nMemory summary:")
         print(f"  Total memories: {total_memories}")
         print(f"  Average memories per agent: {average_memories:.1f}")
-        print(
-            "  Most memories: "
-            f"{most_memories_agent[0]} ({most_memories_agent[1]})"
-        )
+        print(f"  Most memories: {most_memory_agent[0]} ({most_memory_agent[1]})")
+
+        print("  Memories by type:")
+        for memory_type, count in memory_type_counts.most_common():
+            print(f"    {memory_type}: {count}")
 
     def print_topic_summary(self, engine) -> None:
         conversations = self.get_all_conversation_memories(engine)
