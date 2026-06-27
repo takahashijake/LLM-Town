@@ -213,9 +213,22 @@ Intent rules:
 - Do not force the intent if it would feel unnatural.
 - If the speaker has a target agent intent and the listener is that target, the dialogue may more directly support that intent.
 
-The suggested action is a soft nudge, not an absolute command.
-Try to use the suggested action if it naturally fits the speaker, listener, relationship, location, and current activity.
-If the suggested action does not fit naturally, use "chat".
+The suggested action controls the intended social move for this line.
+
+If the suggested action is not "chat", you should usually use it.
+Only ignore a non-chat suggested action if it clearly violates the relationship rules or allowed actions.
+
+When using a non-chat suggested action, the dialogue must contain clear wording that matches that action:
+- ask_for_help: ask the listener for advice, information, or assistance.
+- offer_help: offer to help the listener directly.
+- cooperate: suggest working together on a shared task.
+- share_rumor: mention uncertain, secondhand, or suspicious information.
+- compliment: clearly praise the listener.
+- argue: clearly disagree or challenge the listener.
+- apologize: clearly express regret.
+
+Do not label generic observations as non-chat.
+Do not use "chat" when the dialogue clearly asks for help, offers help, suggests cooperation, shares a rumor, apologizes, compliments, or argues.
 
 The speaker's current activity is the most important context.
 The dialogue should usually relate to the current activity or the listener's presence at the same location.
