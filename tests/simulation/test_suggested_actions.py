@@ -452,4 +452,76 @@ def test_active_town_arc_does_not_create_memory_without_update():
     after = count_town_arc_memories(engine)
 
     assert after == before
-    
+
+def test_town_arc_boosts_community_actions():
+    from src.town.town_arc import TownArc
+
+    engine = build_engine()
+
+    engine.town_arcs = [
+        TownArc(
+            id="arc_community_project_day_1",
+            name="Community Project",
+            description="Residents are working together.",
+            status="active",
+            location_id="town_square",
+            involved_agents=[],
+            tags=["community", "volunteer", "social"],
+            tension=1,
+            progress=0,
+            created_day=1,
+            updated_day=1,
+        )
+    ]
+
+    base_weights = {
+        "chat": 8,
+        "cooperate": 1,
+        "offer_help": 1,
+        "ask_for_help": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_town_arcs(
+        weights=base_weights,
+        location_id="town_square",
+    )
+
+    assert adjusted["cooperate"] > base_weights["cooperate"]
+    assert adjusted["offer_help"] > base_weights["offer_help"]
+    assert adjusted["ask_for_help"] > base_weights["ask_for_help"]
+
+
+def test_town_arc_does_not_boost_unrelated_location():
+    from src.town.town_arc import TownArc
+
+    engine = build_engine()
+
+    engine.town_arcs = [
+        TownArc(
+            id="arc_community_project_day_1",
+            name="Community Project",
+            description="Residents are working together.",
+            status="active",
+            location_id="town_square",
+            involved_agents=[],
+            tags=["community", "volunteer", "social"],
+            tension=1,
+            progress=0,
+            created_day=1,
+            updated_day=1,
+        )
+    ]
+
+    base_weights = {
+        "chat": 8,
+        "cooperate": 1,
+        "offer_help": 1,
+        "ask_for_help": 1,
+    }
+
+    adjusted = engine.adjust_action_weights_for_town_arcs(
+        weights=base_weights,
+        location_id="library",
+    )
+
+    assert adjusted == base_weights

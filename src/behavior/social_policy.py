@@ -29,7 +29,7 @@ class SocialBehaviorPolicy:
         if relationship_label in ["friendly", "close friends"]:
             return {
                 "chat": 7,
-                "compliment": 3,
+                "compliment": 2,
                 "cooperate": 1,
                 "offer_help": 2,
                 "ask_for_help": 1,

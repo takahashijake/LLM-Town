@@ -176,3 +176,113 @@ def test_town_arc_update_memory_only_goes_to_relevant_agents():
 
     for agent in engine.agents[1:]:
         assert after_counts[agent.name] == before_counts[agent.name]
+
+def test_constructive_conversation_advances_relevant_town_arc():
+    engine = build_engine()
+
+    arc = TownArc(
+        id="arc_community_project_day_1",
+        name="Community Project",
+        description="Residents are working together.",
+        status="active",
+        location_id="town_square",
+        involved_agents=[],
+        tags=["community", "volunteer", "social"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.town_arcs = [arc]
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    engine.apply_conversation_to_town_arcs(
+        day=2,
+        location_id="town_square",
+        speaker=speaker,
+        listener=listener,
+        action="cooperate",
+        conversation_tags=["community", "cooperate"],
+    )
+
+    assert arc.progress == 1
+    assert arc.tension == 1
+    assert speaker.name in arc.involved_agents
+    assert listener.name in arc.involved_agents
+    assert arc.updated_day == 2
+
+
+def test_irrelevant_conversation_does_not_change_town_arc():
+    engine = build_engine()
+
+    arc = TownArc(
+        id="arc_market_pressure_day_1",
+        name="Market Pressure",
+        description="Residents are watching market prices.",
+        status="active",
+        location_id="market",
+        involved_agents=[],
+        tags=["market", "business", "wealth"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.town_arcs = [arc]
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    engine.apply_conversation_to_town_arcs(
+        day=2,
+        location_id="library",
+        speaker=speaker,
+        listener=listener,
+        action="cooperate",
+        conversation_tags=["learning"],
+    )
+
+    assert arc.progress == 0
+    assert arc.tension == 2
+    assert arc.involved_agents == []
+    assert arc.updated_day == 1
+
+
+def test_destabilizing_conversation_increases_relevant_arc_tension():
+    engine = build_engine()
+
+    arc = TownArc(
+        id="arc_market_pressure_day_1",
+        name="Market Pressure",
+        description="Residents are watching market prices.",
+        status="active",
+        location_id="market",
+        involved_agents=[],
+        tags=["market", "business", "wealth"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.town_arcs = [arc]
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    engine.apply_conversation_to_town_arcs(
+        day=2,
+        location_id="market",
+        speaker=speaker,
+        listener=listener,
+        action="share_rumor",
+        conversation_tags=["market", "share_rumor"],
+    )
+
+    assert arc.progress == 0
+    assert arc.tension == 3
+    assert speaker.name in arc.involved_agents
+    assert listener.name in arc.involved_agents
+
+    

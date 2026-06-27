@@ -241,3 +241,67 @@ def test_state_saves_town_arcs(tmp_path):
 
     assert loaded["town_arcs"][0]["id"] == "arc_market_pressure_day_1"
     assert loaded["town_arcs"][0]["status"] == "active"
+
+def test_engine_reconstructs_memory_archive_from_saved_state(memory_factory):
+    engine = SimulationEngine(
+        agents_path="data/agents.json",
+        locations_path="data/locations.json",
+        load_state=False,
+        llm_client=FakeLLMClient(),
+    )
+
+    active_memory = memory_factory(
+        day=3,
+        hour=18,
+        description="Active memory.",
+        participants=["Maya"],
+        location="library",
+        importance=3,
+        sentiment=0,
+        tags=["active"],
+    )
+
+    archived_memory = memory_factory(
+        day=1,
+        hour=8,
+        description="Archived memory.",
+        participants=["Maya"],
+        location="market",
+        importance=1,
+        sentiment=0,
+        tags=["archived"],
+    )
+
+    saved_state = {
+        "current_day": 3,
+        "current_hour": 18,
+        "agents": [
+            {
+                "id": "agent_001",
+                "name": "Maya",
+                "personality": "curious",
+                "occupation": "local journalist",
+                "location_id": "library",
+                "goals": [],
+                "needs": {"social": 50, "wealth": 50, "knowledge": 50},
+                "memory": [active_memory.to_dict()],
+                "memory_archive": [archived_memory.to_dict()],
+                "memory_summary": "",
+                "recent_topics": [],
+                "relationships": {},
+                "current_activity": "idle",
+                "current_activity_reason": "",
+                "current_activity_tags": [],
+            }
+        ],
+        "relationship_scores": {},
+    }
+
+    agents = engine.load_agents_from_state(saved_state)
+    agent = agents[0]
+
+    assert len(agent.memory) == 1
+    assert len(agent.memory_archive) == 1
+    assert agent.memory[0].description == "Active memory."
+    assert agent.memory_archive[0].description == "Archived memory."
+    

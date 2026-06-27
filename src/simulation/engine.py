@@ -114,6 +114,55 @@ class SimulationEngine:
         }
 
 
+    def apply_conversation_to_town_arcs(
+        self,
+        day: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        conversation_tags: list[str],
+    ) -> None:
+        tags = set(conversation_tags or [])
+
+        for arc in self.get_active_town_arcs():
+            arc_tags = set(arc.tags)
+
+            is_relevant = (
+                location_id == arc.location_id
+                or bool(tags & arc_tags)
+            )
+
+            if not is_relevant:
+                continue
+
+            old_progress = arc.progress
+            old_tension = arc.tension
+
+            if action in {"cooperate", "offer_help"}:
+                arc.progress = min(5, arc.progress + 1)
+                arc.tension = max(0, arc.tension - 1)
+
+            elif action == "ask_for_help":
+                arc.progress = min(5, arc.progress + 1)
+
+            elif action == "apologize":
+                arc.tension = max(0, arc.tension - 1)
+
+            elif action in {"share_rumor", "argue", "insult", "storm_off"}:
+                arc.tension = min(5, arc.tension + 1)
+
+            else:
+                continue
+
+            for agent_name in [speaker.name, listener.name]:
+                if agent_name not in arc.involved_agents:
+                    arc.involved_agents.append(agent_name)
+
+            if arc.progress != old_progress or arc.tension != old_tension:
+                arc.updated_day = day
+
+                
     def update_agent_intents(self, current_day: int) -> None:
         intent_type_counts = {}
 
@@ -594,20 +643,79 @@ class SimulationEngine:
         speaker: Agent,
         listener: Agent,
         relationship_label: str,
+        location_id: str | None = None,
+        suggested_action: str = "chat",
     ) -> str:
-        candidates = [
-            speaker.speak_to(listener, relationship_label),
-            "This place has had a lot going on today.",
-            "I have been thinking about how much the town has changed lately.",
-            "It feels like everyone is focused on something different today.",
-            "There is more happening around here than I expected.",
-        ]
+        activity = getattr(speaker, "current_activity", "this")
+        occupation = getattr(speaker, "occupation", "resident")
+        location_text = location_id or getattr(speaker, "location_id", "town")
+        location_phrase = location_text.replace("_", " ")
+        article = "an" if occupation[:1].lower() in "aeiou" else "a"
+        
+        candidates_by_action = {
+            "compliment": [
+                f"You handled the work near the {location_phrase} well.",
+                f"You seem to understand this situation better than most people.",
+                f"Your help with {activity.lower()} has been useful.",
+            ],
+            "offer_help": [
+                f"I can help with {activity.lower()} if you need another pair of hands.",
+                f"I can take care of part of this work at {location_text}.",
+                f"I can help you sort through this before it gets harder.",
+            ],
+            "ask_for_help": [
+                f"Could you give me advice about {activity.lower()}?",
+                f"Do you know where I should start with this work at {location_text}?",
+                f"Can you help me understand what people need here?",
+            ],
+            "cooperate": [
+                f"We could work together on {activity.lower()} today.",
+                f"If we coordinate at {location_text}, this will go smoother.",
+                f"Let's split up the work and handle this together.",
+            ],
+            "share_rumor": [
+                f"Someone said there may be more going on at {location_text}, but I am not sure it is true.",
+                f"I heard an uncertain story about {location_text}, and people are starting to talk.",
+                f"There is a rumor about this situation, but I do not know if I trust it yet.",
+            ],
+            "argue": [
+                f"I disagree with how this is being handled at {location_text}.",
+                f"That plan for {activity.lower()} does not make sense to me.",
+                f"I think you are overlooking the real problem here.",
+            ],
+            "apologize": [
+                f"I'm sorry about how I handled things earlier.",
+                f"I should have been more careful with what I said.",
+                f"I apologize if I made this harder than it needed to be.",
+            ],
+            "chat": [
+                f"My work as {article} {occupation} has kept me busy near the {location_phrase}."                
+                f"I have been focused on {activity.lower()} today.",
+                f"{location_text.replace('_', ' ').title()} has been important to my plans today.",
+                f"I keep noticing small changes while working on {activity.lower()}.",
+                f"This part of town feels different when I am focused on {activity.lower()}.",
+            ],
+        }
+
+        candidates = candidates_by_action.get(suggested_action, candidates_by_action["chat"])
+
+        if relationship_label == "tense":
+            candidates = [
+                f"I am still not sure we agree about what is happening at {location_text}.",
+                f"I would rather keep this focused on {activity.lower()}.",
+            ] + candidates
+
+        if relationship_label == "enemies":
+            candidates = [
+                f"Let's keep this short and focus on what needs to be done.",
+                f"I do not want this conversation to become another argument.",
+            ] + candidates
 
         for candidate in candidates:
             if not self.is_repeated_dialogue(candidate):
                 return candidate
 
-        return speaker.speak_to(listener, relationship_label)
+        return f"I am focused on {activity.lower()} right now."
         
     def remember_action(self, action: str, limit: int = 50) -> None:
         self.recent_actions.append(action)
@@ -617,7 +725,7 @@ class SimulationEngine:
     def should_cap_action(self, action: str) -> bool:
         if action == "chat":
             return False
-
+            
         recent_window = self.recent_actions[-20:]
 
         if len(recent_window) < 5:
@@ -627,6 +735,9 @@ class SimulationEngine:
         action_rate = action_count / len(recent_window)
 
         if action == "share_rumor" and action_rate >= 0.20:
+            return True
+
+        if action == "compliment" and action_rate >= 0.15: 
             return True
 
         non_chat_count = sum(
@@ -817,8 +928,8 @@ class SimulationEngine:
             ]
 
             memory_archive = [
-                Memory(**memory_data) 
-                for memory_data in agent_data.get("memory", [])
+                Memory(**memory_data)
+                for memory_data in agent_data.get("memory_archive", [])
             ]
             agent = Agent(
                 id=agent_data["id"],
@@ -985,6 +1096,56 @@ class SimulationEngine:
     
         return max(-3, min(3, relationship_change))
 
+    def adjust_action_weights_for_town_arcs(
+    self,
+    weights: dict[str, int],
+    location_id: str,
+    conversation_tags: list[str] | None = None,
+    ) -> dict[str, int]:
+        adjusted = dict(weights)
+        tags = set(conversation_tags or [])
+    
+        relevant_arcs = self.get_relevant_town_arcs_for_context(location_id)
+    
+        if not relevant_arcs:
+            return adjusted
+    
+        arc_tags = set()
+    
+        for arc in relevant_arcs:
+            arc_tags.update(arc.get("tags", []))
+    
+        # Community arcs should produce more helping/cooperation.
+        if {"community", "volunteer", "social"} & arc_tags:
+            if "cooperate" in adjusted:
+                adjusted["cooperate"] += 2
+            if "offer_help" in adjusted:
+                adjusted["offer_help"] += 2
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 1
+    
+        # Market pressure should produce some questions, rumors, and disagreement.
+        if {"market", "business", "wealth"} & arc_tags:
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 2
+            if "share_rumor" in adjusted:
+                adjusted["share_rumor"] += 1
+            if "argue" in adjusted:
+                adjusted["argue"] += 1
+            if "cooperate" in adjusted:
+                adjusted["cooperate"] += 1
+    
+        # Public questions should produce investigation/help-seeking.
+        if {"knowledge", "rules", "learning"} & arc_tags:
+            if "ask_for_help" in adjusted:
+                adjusted["ask_for_help"] += 2
+            if "cooperate" in adjusted:
+                adjusted["cooperate"] += 1
+            if "share_rumor" in adjusted:
+                adjusted["share_rumor"] += 1
+    
+        return adjusted
+    
     def adjust_action_weights_for_intent(
     self,
     weights: dict[str, int],
@@ -1287,7 +1448,13 @@ class SimulationEngine:
                 listener_name=listener.name,
             )
             
-            suggested_action = self.choose_weighted_action(intent_adjusted_weights)
+            arc_adjusted_weights = self.adjust_action_weights_for_town_arcs(
+                weights=intent_adjusted_weights,
+                location_id=location_id,
+                conversation_tags=[],
+            )
+            
+            suggested_action = self.choose_weighted_action(arc_adjusted_weights)
 
             relationship_history = self.format_relationship_history_for_prompt(
                 speaker.name,
@@ -1336,9 +1503,11 @@ class SimulationEngine:
 
             if self.is_repeated_dialogue(conversation):
                 conversation = self.get_non_repeated_fallback_dialogue(
-                    speaker,
-                    listener,
-                    old_relationship_label,
+                    speaker=speaker,
+                    listener=listener,
+                    relationship_label=old_relationship_label,
+                    location_id=location_id,
+                    suggested_action=suggested_action,
                 )
                 parsed_action = "chat"
             
@@ -1397,7 +1566,15 @@ class SimulationEngine:
             
             conversation_tags = list(dict.fromkeys(conversation_tags))
 
-           
+            self.apply_conversation_to_town_arcs(
+                day=day,
+                location_id=location_id,
+                speaker=speaker,
+                listener=listener,
+                action=action,
+                conversation_tags=conversation_tags,
+            )
+            
 
             relationship_change = self.calculate_relationship_change(
                 action,

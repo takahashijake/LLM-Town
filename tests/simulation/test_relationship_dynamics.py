@@ -173,3 +173,46 @@ def test_repeated_dialogue_uses_fallback():
     )
 
     assert fallback != repeated
+
+def test_fallback_dialogue_uses_activity_context():
+    engine = build_engine()
+
+    maya = next(agent for agent in engine.agents if agent.name == "Maya")
+    lena = next(agent for agent in engine.agents if agent.name == "Lena")
+
+    maya.current_activity = "Investigate a possible story"
+    maya.occupation = "local journalist"
+
+    fallback = engine.get_non_repeated_fallback_dialogue(
+        speaker=maya,
+        listener=lena,
+        relationship_label="neutral",
+        location_id="library",
+        suggested_action="chat",
+    )
+
+    assert "investigate a possible story" in fallback.lower() or "library" in fallback.lower()
+    assert fallback not in {
+        "There is a lot happening around town today.",
+        "This place feels more active than usual.",
+        "The town has felt lively lately.",
+    }
+
+
+def test_fallback_dialogue_respects_suggested_action():
+    engine = build_engine()
+
+    maya = next(agent for agent in engine.agents if agent.name == "Maya")
+    lena = next(agent for agent in engine.agents if agent.name == "Lena")
+
+    maya.current_activity = "Organize community support"
+
+    fallback = engine.get_non_repeated_fallback_dialogue(
+        speaker=maya,
+        listener=lena,
+        relationship_label="friendly",
+        location_id="town_square",
+        suggested_action="offer_help",
+    )
+
+    assert "help" in fallback.lower()
