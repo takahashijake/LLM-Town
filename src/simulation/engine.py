@@ -1122,9 +1122,9 @@ class SimulationEngine:
                 print(f"\n--- {hour}:00 ---")
                 self.run_tick(day, hour)
                 self.state.save(self, day, hour)
-            self.print_relationships()
-            self.reporter.summarize(self)
-            print("\nSimulation finished.")
+        self.print_relationships()
+        self.reporter.summarize(self)
+        print("\nSimulation finished.")
 
     def run_tick(self, day: int, hour: int) -> None:
         location_ids = [location.id for location in self.locations]
