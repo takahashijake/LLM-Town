@@ -468,7 +468,7 @@ def print_town_arc_change_summary(path: Path = Path("logs/town_arc_changes.jsonl
     print("  Changes by action:")
     for action, count in action_counts.most_common():
         print(f"    {action}: {count}")
-        
+
 def main() -> None:
     records = load_conversations(CONVERSATIONS_PATH)
 
