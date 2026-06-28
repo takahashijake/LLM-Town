@@ -185,7 +185,26 @@ class SimulationEngine:
             
                 with arc_change_log.open("a", encoding="utf-8") as file:
                     file.write(json.dumps(record) + "\n")
-
+                    
+                arc_memory = Memory(
+                    day=day,
+                    hour=0,
+                    type="town_arc_participation",
+                    description=(
+                        f"{speaker.name} and {listener.name} affected the town arc '{arc.name}' "
+                        f"through action '{action}'. "
+                        f"Progress changed from {old_progress} to {arc.progress}; "
+                        f"tension changed from {old_tension} to {arc.tension}."
+                    ),
+                    participants=[speaker.name, listener.name],
+                    location=location_id,
+                    importance=3,
+                    sentiment=arc.tension,
+                    tags=["town_arc", "participation", arc.id, action] + arc.tags,
+                )
+                
+                speaker.remember(arc_memory)
+                listener.remember(arc_memory)
                 
     def update_agent_intents(self, current_day: int) -> None:
         intent_type_counts = {}

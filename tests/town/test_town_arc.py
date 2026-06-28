@@ -334,4 +334,52 @@ def test_conversation_driven_town_arc_change_is_recorded(tmp_path, monkeypatch):
 
     log_path = Path("logs/town_arc_changes.jsonl")
     assert log_path.exists()
+
+def test_conversation_driven_town_arc_change_creates_agent_memories(tmp_path, monkeypatch):
+    from src.town.town_arc import TownArc
+
+    engine = build_engine()
+    monkeypatch.chdir(tmp_path)
+
+    arc = TownArc(
+        id="arc_community_project_day_1",
+        name="Community Project",
+        description="Residents are working together.",
+        status="active",
+        location_id="town_square",
+        involved_agents=[],
+        tags=["community", "volunteer", "social"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.town_arcs = [arc]
+
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    old_speaker_memory_count = len(speaker.memory)
+    old_listener_memory_count = len(listener.memory)
+
+    engine.apply_conversation_to_town_arcs(
+        day=2,
+        location_id="town_square",
+        speaker=speaker,
+        listener=listener,
+        action="offer_help",
+        conversation_tags=["community", "offer_help"],
+    )
+
+    assert len(speaker.memory) == old_speaker_memory_count + 1
+    assert len(listener.memory) == old_listener_memory_count + 1
+
+    speaker_memory = speaker.memory[-1]
+
+    assert speaker_memory.type == "town_arc_participation"
+    assert "Community Project" in speaker_memory.description
+    assert "offer_help" in speaker_memory.description
+    assert "town_arc" in speaker_memory.tags
+    assert "participation" in speaker_memory.tags
     
