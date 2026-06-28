@@ -250,24 +250,6 @@ class SimulationEngine:
             return "No active intent."
     
         return intent.description
-
-    def clean_dialogue_text(self, dialogue: str) -> str:
-        dialogue = dialogue.strip()
-    
-        dialogue = dialogue.replace(".I ", ". I ")
-        dialogue = dialogue.replace(".You ", ". You ")
-        dialogue = dialogue.replace(".We ", ". We ")
-        dialogue = dialogue.replace(".They ", ". They ")
-        dialogue = dialogue.replace(".This ", ". This ")
-        dialogue = dialogue.replace(".That ", ". That ")
-    
-        dialogue = dialogue.replace("check records", "checking records")
-        dialogue = dialogue.replace("review reports", "reviewing reports")
-        dialogue = dialogue.replace("help neighbors", "helping neighbors")
-        dialogue = dialogue.replace("serve customers", "serving customers")
-        dialogue = dialogue.replace("organize supplies", "organizing supplies")
-    
-        return dialogue
     
     def load_relationship_events_from_state(self, saved_state: dict) -> None:
         self.relationship_events = [
