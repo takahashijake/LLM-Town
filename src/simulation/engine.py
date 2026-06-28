@@ -230,6 +230,24 @@ class SimulationEngine:
             return "No active intent."
     
         return intent.description
+
+    def clean_dialogue_text(self, dialogue: str) -> str:
+        dialogue = dialogue.strip()
+    
+        dialogue = dialogue.replace(".I ", ". I ")
+        dialogue = dialogue.replace(".You ", ". You ")
+        dialogue = dialogue.replace(".We ", ". We ")
+        dialogue = dialogue.replace(".They ", ". They ")
+        dialogue = dialogue.replace(".This ", ". This ")
+        dialogue = dialogue.replace(".That ", ". That ")
+    
+        dialogue = dialogue.replace("check records", "checking records")
+        dialogue = dialogue.replace("review reports", "reviewing reports")
+        dialogue = dialogue.replace("help neighbors", "helping neighbors")
+        dialogue = dialogue.replace("serve customers", "serving customers")
+        dialogue = dialogue.replace("organize supplies", "organizing supplies")
+    
+        return dialogue
     
     def load_relationship_events_from_state(self, saved_state: dict) -> None:
         self.relationship_events = [
@@ -662,6 +680,28 @@ class SimulationEngine:
 
         return normalized in self.recent_dialogues
 
+    def clean_dialogue_text(self, conversation: str) -> str:
+        conversation = conversation.strip()
+    
+        replacements = {
+            ".I ": ". I ",
+            ".You ": ". You ",
+            ".We ": ". We ",
+            ".They ": ". They ",
+            ".This ": ". This ",
+            ".That ": ". That ",
+            "check records": "checking records",
+            "review reports": "reviewing reports",
+            "help neighbors": "helping neighbors",
+            "serve customers": "serving customers",
+            "organize supplies": "organizing supplies",
+        }
+    
+        for old_text, new_text in replacements.items():
+            conversation = conversation.replace(old_text, new_text)
+    
+        return conversation
+    
     def get_non_repeated_fallback_dialogue(
         self,
         speaker: Agent,
@@ -713,7 +753,7 @@ class SimulationEngine:
                 f"I apologize if I made this harder than it needed to be.",
             ],
             "chat": [
-                f"My work as {article} {occupation} has kept me busy near the {location_phrase}."                
+                f"My work as {article} {occupation} has kept me busy near the {location_phrase}.",                
                 f"I have been focused on {activity.lower()} today.",
                 f"{location_text.replace('_', ' ').title()} has been important to my plans today.",
                 f"I keep noticing small changes while working on {activity.lower()}.",
@@ -1534,6 +1574,8 @@ class SimulationEngine:
                     suggested_action=suggested_action,
                 )
                 parsed_action = "chat"
+            
+            conversation = self.clean_dialogue_text(conversation)
             
             conversation_tags = infer_conversation_tags(conversation)
             conversation_tags.extend(parsed_output.get("tags", []))
