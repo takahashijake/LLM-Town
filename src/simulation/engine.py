@@ -20,7 +20,13 @@ from src.agents.relationship_event import RelationshipEvent
 from src.behavior.social_policy import SocialBehaviorPolicy 
 from src.agents.intent import AgentIntent 
 from src.behavior.intent_planner import IntentPlanner 
-
+from src.simulation.dialogue_utils import ( 
+    clean_dialogue_text,
+    fix_stale_event_reference,
+    get_previous_event_keywords,
+    has_rumor_marker,
+    is_narration,
+)
 
 class SimulationEngine:
     def __init__(
@@ -640,41 +646,13 @@ class SimulationEngine:
 
             agents_by_name[agent_a].update_relationship(agent_b, score)
             agents_by_name[agent_b].update_relationship(agent_a, score)
-    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
-        text = conversation.strip().lower()
-
-        quoted_name_prefixes = [
-            f"{speaker.name.lower()}:",
-            f"{listener.name.lower()}:",
-        ]
-
-        if any(text.startswith(prefix) for prefix in quoted_name_prefixes):
-            return True
             
-        narration_patterns = [
-            f"{speaker.name.lower()} noticed",
-            f"{listener.name.lower()} noticed",
-            f"{speaker.name.lower()} notices",
-            f"{listener.name.lower()} notices",
-            f"{speaker.name.lower()} nodded",
-            f"{listener.name.lower()} nodded",
-            f"{speaker.name.lower()} nods",
-            f"{listener.name.lower()} nods",
-            f"{speaker.name.lower()} looked",
-            f"{listener.name.lower()} looked",
-            f"{speaker.name.lower()} looks",
-            f"{listener.name.lower()} looks",
-            f"{speaker.name.lower()} smiled",
-            f"{listener.name.lower()} smiled",
-            f"{speaker.name.lower()} smiles",
-            f"{listener.name.lower()} smiles",
-            f"{speaker.name.lower()} asks",
-            f"{listener.name.lower()} asks",
-            f"{speaker.name.lower()} says",
-            f"{listener.name.lower()} says",
-        ]
-
-        return any(pattern in text for pattern in narration_patterns)
+    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
+        return is_narration(
+            conversation=conversation,
+            speaker_name=speaker.name,
+            listener_name=listener.name,
+        )
         
     def maintain_agent_memories(self) -> None:
         for agent in self.agents:
@@ -699,26 +677,7 @@ class SimulationEngine:
         return normalized in self.recent_dialogues
 
     def clean_dialogue_text(self, conversation: str) -> str:
-        conversation = conversation.strip()
-    
-        replacements = {
-            ".I ": ". I ",
-            ".You ": ". You ",
-            ".We ": ". We ",
-            ".They ": ". They ",
-            ".This ": ". This ",
-            ".That ": ". That ",
-            "check records": "checking records",
-            "review reports": "reviewing reports",
-            "help neighbors": "helping neighbors",
-            "serve customers": "serving customers",
-            "organize supplies": "organizing supplies",
-        }
-    
-        for old_text, new_text in replacements.items():
-            conversation = conversation.replace(old_text, new_text)
-    
-        return conversation
+        return clean_dialogue_text(conversation)
     
     def get_non_repeated_fallback_dialogue(
         self,
@@ -834,25 +793,8 @@ class SimulationEngine:
         return False
 
 
-    def has_rumor_marker(self, conversation: str) -> bool:
-        text = conversation.lower()
-
-        rumor_markers = [
-            "rumor",
-            "rumors",
-            "gossip",
-            "someone said",
-            "people are saying",
-            "concerns about",
-            "not sure if it is true",
-            "not sure it's true",
-            "unverified",
-            "suspicious",
-            "strange about",
-            "might be hiding",
-            "might be unreliable",
-        ]
-        return any(marker in text for marker in rumor_markers)
+    def has_rumor_marker(self, conversation: str) -> bool: 
+        return has_rumor_marker(conversation)
         
     def choose_final_action_with_reason(
         self,
@@ -926,63 +868,19 @@ class SimulationEngine:
 
 
     def get_previous_event_keywords(self, current_day: int) -> list[str]:
-        keywords = []
-
-        for event in self.daily_event_history:
-            if event["day"] >= current_day:
-                continue
-
-            name = event["name"].lower()
-            keywords.append(name)
-
-            for word in name.split():
-                if len(word) >= 5:
-                    keywords.append(word)
-
-        return list(dict.fromkeys(keywords))
+        return get_previous_event_keywords(
+            daily_event_history=self.daily_event_history,
+            current_day=current_day,
+        )
 
 
     def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
-        if not self.current_daily_event:
-            return conversation
-
-        current_event_name = self.current_daily_event.name.lower()
-        current_event_words = {
-            word
-            for word in current_event_name.split()
-            if len(word) >= 5
-        }
-
-        previous_keywords = self.get_previous_event_keywords(current_day)
-        fixed_conversation = conversation
-        fixed_lower = fixed_conversation.lower()
-
-        mentions_today = (
-            "today" in fixed_lower
-            or "tonight" in fixed_lower
-            or "this morning" in fixed_lower
-            or "this afternoon" in fixed_lower
-            or "this evening" in fixed_lower
+        return fix_stale_event_reference(
+            conversation=conversation,
+            current_day=current_day,
+            current_daily_event=self.current_daily_event,
+            daily_event_history=self.daily_event_history,
         )
-
-        if not mentions_today:
-            return fixed_conversation
-
-        for keyword in previous_keywords:
-            if keyword in current_event_words:
-                continue
-
-            if keyword in fixed_lower and keyword not in current_event_name:
-                fixed_conversation = fixed_conversation.replace(" today", " recently")
-                fixed_conversation = fixed_conversation.replace(" Today", " Recently")
-                fixed_conversation = fixed_conversation.replace(" tonight", " recently")
-                fixed_conversation = fixed_conversation.replace(" Tonight", " Recently")
-                fixed_conversation = fixed_conversation.replace(" this morning", " recently")
-                fixed_conversation = fixed_conversation.replace(" this afternoon", " recently")
-                fixed_conversation = fixed_conversation.replace(" this evening", " recently")
-                return fixed_conversation
-
-        return fixed_conversation
         
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         activity_record = {
