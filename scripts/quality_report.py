@@ -71,6 +71,60 @@ def print_arc_usage(records: list[dict]) -> None:
         print("  Arc-relevant actions: none")
         
 
+def print_town_arc_change_summary(path: Path = Path("logs/town_arc_changes.jsonl")) -> None:
+    print("\nTown arc causal changes:")
+
+    if not path.exists():
+        print("  No town arc change log found.")
+        return
+
+    records = []
+
+    with path.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+
+            if line:
+                records.append(json.loads(line))
+
+    if not records:
+        print("  Total conversation-driven arc changes: 0")
+        return
+
+    arc_counts = Counter(record["arc_name"] for record in records)
+    action_counts = Counter(record["action"] for record in records)
+
+    progress_increases = sum(
+        1
+        for record in records
+        if record["new_progress"] > record["old_progress"]
+    )
+
+    tension_increases = sum(
+        1
+        for record in records
+        if record["new_tension"] > record["old_tension"]
+    )
+
+    tension_decreases = sum(
+        1
+        for record in records
+        if record["new_tension"] < record["old_tension"]
+    )
+
+    print(f"  Total conversation-driven arc changes: {len(records)}")
+    print(f"  Progress increases: {progress_increases}")
+    print(f"  Tension increases: {tension_increases}")
+    print(f"  Tension decreases: {tension_decreases}")
+
+    print("  Changes by arc:")
+    for arc_name, count in arc_counts.most_common():
+        print(f"    {arc_name}: {count}")
+
+    print("  Changes by action:")
+    for action, count in action_counts.most_common():
+        print(f"    {action}: {count}")
+        
 def load_conversations(path: Path) -> list[dict]:
     if not path.exists():
         raise FileNotFoundError(
@@ -209,7 +263,56 @@ def print_quality_flags(records: list[dict]) -> None:
     else:
         print("  WARN daily event mention rate outside 20%-40%")
 
+def print_town_arc_change_summary(path: Path = Path("logs/town_arc_changes.jsonl")) -> None:
+    print("\nTown arc causal changes:")
 
+    if not path.exists():
+        print("  No town arc change log found.")
+        return
+
+    records = []
+
+    with path.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+
+    if not records:
+        print("  Total conversation-driven arc changes: 0")
+        return
+
+    arc_counts = Counter(record["arc_name"] for record in records)
+    action_counts = Counter(record["action"] for record in records)
+
+    progress_increases = sum(
+        1 for record in records
+        if record["new_progress"] > record["old_progress"]
+    )
+
+    tension_increases = sum(
+        1 for record in records
+        if record["new_tension"] > record["old_tension"]
+    )
+
+    tension_decreases = sum(
+        1 for record in records
+        if record["new_tension"] < record["old_tension"]
+    )
+
+    print(f"  Total conversation-driven arc changes: {len(records)}")
+    print(f"  Progress increases: {progress_increases}")
+    print(f"  Tension increases: {tension_increases}")
+    print(f"  Tension decreases: {tension_decreases}")
+
+    print("  Changes by arc:")
+    for arc_name, count in arc_counts.most_common():
+        print(f"    {arc_name}: {count}")
+
+    print("  Changes by action:")
+    for action, count in action_counts.most_common():
+        print(f"    {action}: {count}")
+        
 def main() -> None:
     records = load_conversations(CONVERSATIONS_PATH)
 
@@ -220,6 +323,7 @@ def main() -> None:
     print_repetition_summary(records)
     print_daily_event_usage(records)
     print_arc_usage(records)
+    print_town_arc_change_summary()
     print_quality_flags(records)
 
 

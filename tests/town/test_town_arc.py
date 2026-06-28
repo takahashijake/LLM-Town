@@ -285,4 +285,53 @@ def test_destabilizing_conversation_increases_relevant_arc_tension():
     assert speaker.name in arc.involved_agents
     assert listener.name in arc.involved_agents
 
+def test_conversation_driven_town_arc_change_is_recorded(tmp_path, monkeypatch):
+
+    from pathlib import Path
+    from src.town.town_arc import TownArc
+
+    engine = build_engine()
+
+    monkeypatch.chdir(tmp_path)
+    
+
+    arc = TownArc(
+        id="arc_community_project_day_1",
+        name="Community Project",
+        description="Residents are working together.",
+        status="active",
+        location_id="town_square",
+        involved_agents=[],
+        tags=["community", "volunteer", "social"],
+        tension=2,
+        progress=0,
+        created_day=1,
+        updated_day=1,
+    )
+
+    engine.town_arcs = [arc]
+
+    speaker = engine.agents[0]
+    listener = engine.agents[1]
+
+    engine.apply_conversation_to_town_arcs(
+        day=2,
+        location_id="town_square",
+        speaker=speaker,
+        listener=listener,
+        action="offer_help",
+        conversation_tags=["community", "offer_help"],
+    )
+
+    assert len(engine.town_arc_change_records) == 1
+
+    record = engine.town_arc_change_records[0]
+
+    assert record["arc_name"] == "Community Project"
+    assert record["action"] == "offer_help"
+    assert record["old_progress"] == 0
+    assert record["new_progress"] == 1
+
+    log_path = Path("logs/town_arc_changes.jsonl")
+    assert log_path.exists()
     

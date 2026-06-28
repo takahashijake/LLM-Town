@@ -4,6 +4,7 @@ def clear_run() -> None:
     files_to_clear = [
         "logs/conversations/conversations.jsonl",
         "data/save_state.json",
+        "logs/town_arc_changes.jsonl"
     ]
 
     for file_path in files_to_clear: 

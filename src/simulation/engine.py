@@ -49,6 +49,7 @@ class SimulationEngine:
         self.daily_event_history = []
         self.relationship_events = []
         self.town_arcs = []
+        self.town_arc_change_records = []
         if saved_state:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
@@ -161,6 +162,29 @@ class SimulationEngine:
 
             if arc.progress != old_progress or arc.tension != old_tension:
                 arc.updated_day = day
+            
+                record = {
+                    "day": day,
+                    "arc_id": arc.id,
+                    "arc_name": arc.name,
+                    "location": location_id,
+                    "speaker": speaker.name,
+                    "listener": listener.name,
+                    "action": action,
+                    "old_progress": old_progress,
+                    "new_progress": arc.progress,
+                    "old_tension": old_tension,
+                    "new_tension": arc.tension,
+                    "tags": conversation_tags,
+                }
+            
+                self.town_arc_change_records.append(record)
+            
+                arc_change_log = Path("logs/town_arc_changes.jsonl")
+                arc_change_log.parent.mkdir(parents=True, exist_ok=True)
+            
+                with arc_change_log.open("a", encoding="utf-8") as file:
+                    file.write(json.dumps(record) + "\n")
 
                 
     def update_agent_intents(self, current_day: int) -> None:
