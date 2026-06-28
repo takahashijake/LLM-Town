@@ -273,16 +273,45 @@ def print_memory_summary(path: Path = Path("data/save_state.json")) -> None:
 
     avg_active = sum(active_memory_counts) / len(active_memory_counts)
     avg_archived = sum(archived_memory_counts) / len(archived_memory_counts)
+    max_active = max(active_memory_counts)
+    max_archived = max(archived_memory_counts)
 
     print(f"  Agents: {len(agents)}")
     print(f"  Average active memories per agent: {avg_active:.1f}")
     print(f"  Average archived memories per agent: {avg_archived:.1f}")
-    print(f"  Max active memories for one agent: {max(active_memory_counts)}")
-    print(f"  Max archived memories for one agent: {max(archived_memory_counts)}")
+    print(f"  Max active memories for one agent: {max_active}")
+    print(f"  Max archived memories for one agent: {max_archived}")
 
     print("  Memory types:")
     for memory_type, count in memory_type_counts.most_common():
         print(f"    {memory_type}: {count}")
+
+    print("  Memory quality flags:")
+
+    if max_active <= 200:
+        print("    PASS max active memories <= 200")
+    else:
+        print("    WARN max active memories exceeds 200")
+
+    if avg_active <= 150:
+        print("    PASS average active memories <= 150")
+    else:
+        print("    WARN average active memories is high")
+
+    if memory_type_counts.get("town_arc_participation", 0) > 0:
+        print("    PASS town arc participation memories exist")
+    else:
+        print("    WARN no town arc participation memories found")
+
+    if memory_type_counts.get("conversation", 0) > 0:
+        print("    PASS conversation memories exist")
+    else:
+        print("    WARN no conversation memories found")
+
+    if memory_type_counts.get("daily_event", 0) > 0:
+        print("    PASS daily event memories exist")
+    else:
+        print("    WARN no daily event memories found")
         
 def print_daily_event_usage(records: list[dict]) -> None:
     event_related = 0
