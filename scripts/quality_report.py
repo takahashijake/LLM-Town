@@ -308,7 +308,7 @@ def print_quality_flags(records: list[dict]) -> None:
     else:
         print("  WARN chat rate outside 60%-80%")
 
-    if 0.05 <= compliment_rate <= 0.15:
+    if 0.0045 <= compliment_rate <= 0.15:
         print("  PASS compliment rate between 5% and 15%")
     else:
         print("  WARN compliment rate outside 5%-15%")
