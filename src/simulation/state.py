@@ -8,9 +8,26 @@ class SimulationState:
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def save(self, engine, current_day: int, current_hour: int) -> None:
+        current_daily_event = getattr(engine, "current_daily_event", None)
+
         state = {
             "current_day": current_day,
             "current_hour": current_hour,
+            "current_daily_event": (
+                {
+                    "id": current_daily_event.id,
+                    "name": current_daily_event.name,
+                    "description": current_daily_event.description,
+                    "location_id": current_daily_event.location_id,
+                    "tags": current_daily_event.tags,
+                }
+                if current_daily_event
+                else None
+            ),
+            "daily_event_history": getattr(engine, "daily_event_history", []),
+            "recent_dialogues": getattr(engine, "recent_dialogues", []),
+            "recent_actions": getattr(engine, "recent_actions", []),
+            "activity_records": getattr(engine, "activity_records", []),
             "agents": [
                 {
                     "id": agent.id,

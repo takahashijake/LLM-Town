@@ -13,7 +13,7 @@ from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
 from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
-from src.town.daily_event import choose_daily_event
+from src.town.daily_event import choose_daily_event, DailyEvent
 from src.actions.action_system import ActionSystem 
 from src.analysis.report import SimulationReporter
 from src.agents.relationship_event import RelationshipEvent 
@@ -51,6 +51,7 @@ class SimulationEngine:
         self.town_arcs = []
         self.town_arc_change_records = []
         if saved_state:
+            self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
             self.load_agent_intents_from_state(saved_state)
@@ -274,6 +275,22 @@ class SimulationEngine:
             for event_data in saved_state.get("relationship_events", [])
         ]
 
+    def load_daily_event_from_state(self, saved_state: dict) -> DailyEvent | None:
+        event_data = saved_state.get("current_daily_event")
+    
+        if not event_data:
+            return None
+    
+        return DailyEvent(**event_data)
+
+
+    def load_run_continuity_from_state(self, saved_state: dict) -> None:
+        self.current_daily_event = self.load_daily_event_from_state(saved_state)
+        self.daily_event_history = saved_state.get("daily_event_history", [])
+        self.recent_dialogues = saved_state.get("recent_dialogues", [])
+        self.recent_actions = saved_state.get("recent_actions", [])
+        self.activity_records = saved_state.get("activity_records", [])
+    
     def load_town_arcs_from_state(self, saved_state: dict) -> None:
         self.town_arcs = [
             TownArc.from_dict(arc_data)
@@ -1074,38 +1091,58 @@ class SimulationEngine:
     def run(self, days: int, hours: list[int]) -> None:
         print("Starting town simulation...")
 
-        end_day = self.start_day + days - 1 
-        for day in range(self.start_day, end_day + 1):
-            print(f"\n=== Day {day} ===")
-            self.current_daily_event = choose_daily_event() 
+        end_day = self.start_day + days - 1
 
-            self.daily_event_history.append({
-                "day" : day, 
-                "id" : self.current_daily_event.id, 
-                "name" : self.current_daily_event.name,
-            })
+        for day in range(self.start_day, end_day + 1):
+            if day == self.start_day and self.start_hour:
+                active_hours = [
+                    hour
+                    for hour in hours
+                    if hour > self.start_hour
+                ]
+            else:
+                active_hours = hours
+        
+            if not active_hours:
+                continue
+        
+            print(f"\n=== Day {day} ===")
+
+            is_resuming_saved_day = (
+                day == self.start_day
+                and self.start_hour > 0
+                and self.current_daily_event is not None
+            )
             
-            self.update_town_arcs(day)
+            if not is_resuming_saved_day:
+                self.current_daily_event = choose_daily_event()
             
-            event_memory = self.create_daily_event_memory(day, self.current_daily_event) 
-            for agent in self.agents:
-                agent.remember(event_memory)
+                self.daily_event_history.append({
+                    "day": day,
+                    "id": self.current_daily_event.id,
+                    "name": self.current_daily_event.name,
+                })
             
+                self.update_town_arcs(day)
             
+                event_memory = self.create_daily_event_memory(day, self.current_daily_event)
+                for agent in self.agents:
+                    agent.remember(event_memory)
             
-            self.update_agent_intents(day)
-                
+                self.update_agent_intents(day)
+        
             print(
                 f"Daily Event: {self.current_daily_event.name} - "
                 f"{self.current_daily_event.description}"
             )
-            for hour in hours:
+        
+            for hour in active_hours:
                 print(f"\n--- {hour}:00 ---")
                 self.run_tick(day, hour)
                 self.state.save(self, day, hour)
-        self.print_relationships()
-        self.reporter.summarize(self)
-        print("\nSimulation finished.")
+            self.print_relationships()
+            self.reporter.summarize(self)
+            print("\nSimulation finished.")
 
     def run_tick(self, day: int, hour: int) -> None:
         location_ids = [location.id for location in self.locations]

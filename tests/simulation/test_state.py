@@ -8,6 +8,7 @@ from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
 from src.simulation.state import SimulationState
 from src.agents.intent import AgentIntent
+from src.town.daily_event import DailyEvent
 
 def test_load_returns_none_when_state_file_does_not_exist(tmp_path):
     state = SimulationState(path=str(tmp_path / "missing_state.json"))
@@ -304,4 +305,229 @@ def test_engine_reconstructs_memory_archive_from_saved_state(memory_factory):
     assert len(agent.memory_archive) == 1
     assert agent.memory[0].description == "Active memory."
     assert agent.memory_archive[0].description == "Archived memory."
+
+def test_loaded_state_resumes_after_saved_hour(monkeypatch):
+    from src.llm.client import FakeLLMClient
+    from src.simulation.engine import SimulationEngine
+
+    engine = SimulationEngine(
+        agents_path="data/agents.json",
+        locations_path="data/locations.json",
+        load_state=False,
+        llm_client=FakeLLMClient(),
+    )
+
+    engine.start_day = 3
+    engine.start_hour = 18
+
+    ticks = []
+
+    def fake_run_tick(day, hour):
+        ticks.append((day, hour))
+
+    def fake_save(engine_arg, day, hour):
+        pass
+
+    monkeypatch.setattr(engine, "run_tick", fake_run_tick)
+    monkeypatch.setattr(engine.state, "save", fake_save)
+
+    engine.run(days=1, hours=[8, 12, 18, 22])
+
+    assert ticks == [(3, 22)]
+
+def test_loaded_state_continues_to_next_day_when_saved_hour_is_last(monkeypatch):
+    from src.llm.client import FakeLLMClient
+    from src.simulation.engine import SimulationEngine
+
+    engine = SimulationEngine(
+        agents_path="data/agents.json",
+        locations_path="data/locations.json",
+        load_state=False,
+        llm_client=FakeLLMClient(),
+    )
+
+    engine.start_day = 3
+    engine.start_hour = 22
+
+    ticks = []
+
+    def fake_run_tick(day, hour):
+        ticks.append((day, hour))
+
+    def fake_save(engine_arg, day, hour):
+        pass
+
+    monkeypatch.setattr(engine, "run_tick", fake_run_tick)
+    monkeypatch.setattr(engine.state, "save", fake_save)
+
+    engine.run(days=2, hours=[8, 12, 18, 22])
+
+    assert ticks == [
+        (4, 8),
+        (4, 12),
+        (4, 18),
+        (4, 22),
+    ]
+
+def test_save_preserves_run_continuity_fields(tmp_path):
+    state = SimulationState(path=str(tmp_path / "save_state.json"))
+
+    daily_event = DailyEvent(
+        id="farmers_market",
+        name="Farmers Market",
+        description="Local vendors are setting up booths.",
+        location_id="market",
+        tags=["market", "community", "wealth"],
+    )
+
+    fake_engine = SimpleNamespace(
+        agents=[],
+        relationships=RelationshipManager(),
+        current_daily_event=daily_event,
+        daily_event_history=[
+            {
+                "day": 1,
+                "id": "farmers_market",
+                "name": "Farmers Market",
+            }
+        ],
+        recent_dialogues=["the town feels busy today."],
+        recent_actions=["chat"],
+        activity_records=[
+            {
+                "type": "activity",
+                "day": 1,
+                "hour": 8,
+                "agent": "Maya",
+                "activity_id": "attend_event",
+                "activity_name": "Attend Farmers Market",
+                "location": "market",
+                "reason": "Maya is interested in today's event.",
+                "tags": ["event", "farmers_market"],
+            }
+        ],
+    )
+
+    state.save(fake_engine, current_day=1, current_hour=18)
+    loaded = state.load()
+
+    assert loaded["current_daily_event"]["id"] == "farmers_market"
+    assert loaded["current_daily_event"]["name"] == "Farmers Market"
+    assert loaded["daily_event_history"] == [
+        {
+            "day": 1,
+            "id": "farmers_market",
+            "name": "Farmers Market",
+        }
+    ]
+    assert loaded["recent_dialogues"] == ["the town feels busy today."]
+    assert loaded["recent_actions"] == ["chat"]
+    assert loaded["activity_records"][0]["activity_name"] == "Attend Farmers Market"
+
+
+def test_engine_loads_run_continuity_from_saved_state():
+    engine = SimulationEngine(
+        agents_path="data/agents.json",
+        locations_path="data/locations.json",
+        load_state=False,
+        llm_client=FakeLLMClient(),
+    )
+
+    saved_state = {
+        "current_daily_event": {
+            "id": "farmers_market",
+            "name": "Farmers Market",
+            "description": "Local vendors are setting up booths.",
+            "location_id": "market",
+            "tags": ["market", "community", "wealth"],
+        },
+        "daily_event_history": [
+            {
+                "day": 1,
+                "id": "farmers_market",
+                "name": "Farmers Market",
+            }
+        ],
+        "recent_dialogues": ["the town feels busy today."],
+        "recent_actions": ["chat"],
+        "activity_records": [
+            {
+                "type": "activity",
+                "day": 1,
+                "hour": 8,
+                "agent": "Maya",
+                "activity_id": "attend_event",
+                "activity_name": "Attend Farmers Market",
+                "location": "market",
+                "reason": "Maya is interested in today's event.",
+                "tags": ["event", "farmers_market"],
+            }
+        ],
+    }
+
+    engine.load_run_continuity_from_state(saved_state)
+
+    assert engine.current_daily_event is not None
+    assert engine.current_daily_event.id == "farmers_market"
+    assert engine.current_daily_event.name == "Farmers Market"
+    assert engine.daily_event_history[0]["id"] == "farmers_market"
+    assert engine.recent_dialogues == ["the town feels busy today."]
+    assert engine.recent_actions == ["chat"]
+    assert engine.activity_records[0]["activity_name"] == "Attend Farmers Market"
+
+
+def test_loaded_state_reuses_saved_daily_event_for_remaining_hours(monkeypatch):
+    engine = SimulationEngine(
+        agents_path="data/agents.json",
+        locations_path="data/locations.json",
+        load_state=False,
+        llm_client=FakeLLMClient(),
+    )
+
+    saved_event = DailyEvent(
+        id="farmers_market",
+        name="Farmers Market",
+        description="Local vendors are setting up booths.",
+        location_id="market",
+        tags=["market", "community", "wealth"],
+    )
+
+    engine.start_day = 1
+    engine.start_hour = 18
+    engine.current_daily_event = saved_event
+    engine.daily_event_history = [
+        {
+            "day": 1,
+            "id": "farmers_market",
+            "name": "Farmers Market",
+        }
+    ]
+
+    ticks = []
+
+    def fake_run_tick(day, hour):
+        ticks.append((day, hour))
+
+    def fake_save(engine_arg, day, hour):
+        pass
+
+    def fail_if_called(day):
+        raise AssertionError("Day-start logic should not rerun when resuming saved day.")
+
+    monkeypatch.setattr(engine, "run_tick", fake_run_tick)
+    monkeypatch.setattr(engine.state, "save", fake_save)
+    monkeypatch.setattr(engine, "update_town_arcs", fail_if_called)
+    monkeypatch.setattr(engine, "update_agent_intents", fail_if_called)
+
+    engine.run(days=1, hours=[8, 12, 18, 22])
+
+    assert ticks == [(1, 22)]
+    assert engine.current_daily_event.id == "farmers_market"
+    assert engine.daily_event_history == [
+        {
+            "day": 1,
+            "id": "farmers_market",
+            "name": "Farmers Market",
+        }
+    ]
     
