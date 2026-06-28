@@ -125,7 +125,37 @@ def print_arc_usage(records: list[dict]) -> None:
     else:
         print("  Arc-relevant actions: none")
         
+def print_run_metadata(
+    conversations_path: Path = CONVERSATIONS_PATH,
+    state_path: Path = Path("data/save_state.json"),
+    arc_changes_path: Path = Path("logs/town_arc_changes.jsonl"),
+) -> None:
+    print("\nRun metadata:")
 
+    print(f"  Conversation log: {conversations_path}")
+    print(f"  Conversation log exists: {conversations_path.exists()}")
+
+    print(f"  Saved state: {state_path}")
+    print(f"  Saved state exists: {state_path.exists()}")
+
+    print(f"  Town arc change log: {arc_changes_path}")
+    print(f"  Town arc change log exists: {arc_changes_path.exists()}")
+
+    if not state_path.exists():
+        print("  Current day: unknown")
+        print("  Current hour: unknown")
+        print("  Agents: unknown")
+        return
+
+    with state_path.open("r", encoding="utf-8") as file:
+        state = json.load(file)
+
+    agents = state.get("agents", [])
+
+    print(f"  Current day: {state.get('current_day', 'unknown')}")
+    print(f"  Current hour: {state.get('current_hour', 'unknown')}")
+    print(f"  Agents: {len(agents)}")
+    
 def print_town_arc_change_summary(path: Path = Path("logs/town_arc_changes.jsonl")) -> None:
     print("\nTown arc causal changes:")
 
@@ -443,6 +473,7 @@ def main() -> None:
     records = load_conversations(CONVERSATIONS_PATH)
 
     print("=== LLM-Town Quality Report ===")
+    print_run_metadata()
     print(f"\nTotal conversations: {len(records)}")
 
     print_action_distribution(records)
