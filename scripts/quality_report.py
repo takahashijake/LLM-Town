@@ -241,7 +241,49 @@ def print_repetition_summary(records: list[dict]) -> None:
         for dialogue, count in Counter(repeated).most_common(5):
             print(f"    {count}x: {dialogue}")
 
+def print_memory_summary(path: Path = Path("data/save_state.json")) -> None:
+    print("\nMemory summary:")
 
+    if not path.exists():
+        print("  No saved state found.")
+        return
+
+    with path.open("r", encoding="utf-8") as file:
+        state = json.load(file)
+
+    agents = state.get("agents", [])
+
+    if not agents:
+        print("  No agents found in saved state.")
+        return
+
+    active_memory_counts = []
+    archived_memory_counts = []
+    memory_type_counts = Counter()
+
+    for agent in agents:
+        active_memories = agent.get("memory", [])
+        archived_memories = agent.get("memory_archive", [])
+
+        active_memory_counts.append(len(active_memories))
+        archived_memory_counts.append(len(archived_memories))
+
+        for memory in active_memories + archived_memories:
+            memory_type_counts[memory.get("type", "unknown")] += 1
+
+    avg_active = sum(active_memory_counts) / len(active_memory_counts)
+    avg_archived = sum(archived_memory_counts) / len(archived_memory_counts)
+
+    print(f"  Agents: {len(agents)}")
+    print(f"  Average active memories per agent: {avg_active:.1f}")
+    print(f"  Average archived memories per agent: {avg_archived:.1f}")
+    print(f"  Max active memories for one agent: {max(active_memory_counts)}")
+    print(f"  Max archived memories for one agent: {max(archived_memory_counts)}")
+
+    print("  Memory types:")
+    for memory_type, count in memory_type_counts.most_common():
+        print(f"    {memory_type}: {count}")
+        
 def print_daily_event_usage(records: list[dict]) -> None:
     event_related = 0
 
@@ -380,6 +422,7 @@ def main() -> None:
     print_arc_usage(records)
     print_town_arc_change_summary()
     print_story_summary()
+    print_memory_summary()
     print_quality_flags(records)
 
 
