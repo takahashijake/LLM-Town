@@ -1,6 +1,8 @@
 from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
+from src.simulation.dialogue_utils import clean_dialogue_text
 from src.agents.relationships import RelationshipManager
+from src.simulation.dialogue_utils import clean_dialogue_text
 
 
 def build_engine():
@@ -218,15 +220,14 @@ def test_fallback_dialogue_respects_suggested_action():
     assert "help" in fallback.lower()
 
 def test_clean_dialogue_text_fixes_spacing_and_activity_grammar():
-    engine = build_engine()
-
     dirty = (
         "My work as a local journalist has kept me busy near the library."
         "I have been focused on check records for leads today."
     )
 
-    cleaned = engine.clean_dialogue_text(dirty)
+    cleaned = clean_dialogue_text(dirty)
 
-    assert "library. I" in cleaned
-    assert "check records" not in cleaned
-    assert "checking records" in cleaned
+    assert cleaned == (
+        "My work as a local journalist has kept me busy near the library. "
+        "I have been focused on checking records for leads today."
+    )
