@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.intent_system import IntentSystem 
 from src.simulation.persistence import SimulationPersistence
 from src.simulation.town_arc_system import TownArcSystem
 from src.simulation.relationship_updater import RelationshipUpdater
@@ -54,6 +55,10 @@ class SimulationEngine:
         self.social_policy = SocialBehaviorPolicy()
         self.intent_planner = IntentPlanner() 
         self.agent_intents = {}
+        self.intent_system = IntentSystem(
+            intent_planner=self.intent_planner,
+            agent_intents=self.agent_intents,
+        )
         self.current_daily_event = None
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
@@ -87,6 +92,9 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def sync_intent_system_refs(self) -> None:
+        self.intent_system.agent_intents = self.agent_intents
+        
     def get_activity_need_effects(self, activity) -> dict[str, int]:
         effects_by_tag = {
             "wealth": {"wealth": 3},
@@ -114,31 +122,21 @@ class SimulationEngine:
         self.town_arc_system.town_arc_change_records = self.town_arc_change_records
         
     def get_intent_listener_weight_bonus(
-    self,
-    speaker: Agent,
-    listener: Agent,
+        self,
+        speaker: Agent,
+        listener: Agent,
     ) -> int:
-        intent = self.agent_intents.get(speaker.name)
-    
-        if not intent:
-            return 0
-    
-        if intent.target_agent != listener.name:
-            return 0
-    
-        if intent.intent_type == "repair_relationship":
-            return 5
-    
-        if intent.intent_type == "build_friendship":
-            return 4
-    
-        return 2
-    
+        self.sync_intent_system_refs()
+        return self.intent_system.get_intent_listener_weight_bonus(
+            speaker=speaker,
+            listener=listener,
+        )
+        
     def load_agent_intents_from_state(self, saved_state: dict) -> None:
         self.agent_intents = self.persistence.load_agent_intents_from_state(
             saved_state=saved_state,
         )
-
+        self.sync_intent_system_refs()
 
     def apply_conversation_to_town_arcs(
         self,
@@ -160,48 +158,19 @@ class SimulationEngine:
         )
         
     def update_agent_intents(self, current_day: int) -> None:
-        intent_type_counts = {}
-
-        for intent in self.agent_intents.values():
-            if not intent.is_expired(current_day):
-                intent_type_counts[intent.intent_type] = (
-                    intent_type_counts.get(intent.intent_type, 0) + 1
-                )
-
-        for agent in self.agents:
-            current_intent = self.agent_intents.get(agent.name)
-
-            if current_intent and not current_intent.is_expired(current_day):
-                continue
-
-            new_intent = self.intent_planner.create_intent_for_agent(
-                agent=agent,
-                engine=self,
-                current_day=current_day,
-            )
-
-            if not new_intent:
-                continue
-
-            # Prevent all agents from collapsing into the same intent type.
-            # With 4 agents, allow at most 2 agents to share the same active intent type.
-            if intent_type_counts.get(new_intent.intent_type, 0) >= 2:
-                continue
-
-            self.agent_intents[agent.name] = new_intent
-            intent_type_counts[new_intent.intent_type] = (
-                intent_type_counts.get(new_intent.intent_type, 0) + 1
-            )
-            
+        self.sync_intent_system_refs()
+        self.intent_system.update_agent_intents(
+            agents=self.agents,
+            current_day=current_day,
+            engine=self,
+        )
 
 
     def get_agent_intent_text(self, agent_name: str) -> str:
-        intent = self.agent_intents.get(agent_name)
-    
-        if not intent:
-            return "No active intent."
-    
-        return intent.description
+        self.sync_intent_system_refs()
+        return self.intent_system.get_agent_intent_text(
+            agent_name=agent_name,
+        )
     
     
     def load_relationship_events_from_state(self, saved_state: dict) -> None:
@@ -785,63 +754,12 @@ class SimulationEngine:
         intent: AgentIntent | None,
         listener_name: str,
     ) -> dict[str, int]:
-        adjusted = dict(weights)
-
-        if not intent:
-            return adjusted
-
-        target_matches = (
-            intent.target_agent is None
-            or intent.target_agent == listener_name
+        self.sync_intent_system_refs()
+        return self.intent_system.adjust_action_weights_for_intent(
+            weights=weights,
+            intent=intent,
+            listener_name=listener_name,
         )
-
-        if not target_matches:
-            return adjusted
-
-        if intent.intent_type == "repair_relationship":
-            if "apologize" in adjusted:
-                adjusted["apologize"] += 4
-            if "offer_help" in adjusted:
-                adjusted["offer_help"] += 2
-            if "chat" in adjusted:
-                adjusted["chat"] += 1
-            if "argue" in adjusted:
-                adjusted["argue"] = max(1, adjusted["argue"] - 2)
-
-        elif intent.intent_type == "build_friendship":
-            if "compliment" in adjusted:
-                adjusted["compliment"] += 1
-            if "offer_help" in adjusted:
-                adjusted["offer_help"] += 3
-            if "cooperate" in adjusted:
-                adjusted["cooperate"] += 2
-
-        elif intent.intent_type == "investigate":
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 3
-            if "share_rumor" in adjusted:
-                adjusted["share_rumor"] += 2
-            if "chat" in adjusted:
-                adjusted["chat"] += 1
-
-        elif intent.intent_type == "socialize":
-            if "chat" in adjusted:
-                adjusted["chat"] += 2
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 1
-            if "offer_help" in adjusted:
-                adjusted["offer_help"] += 1
-
-        elif intent.intent_type == "seek_work":
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 1
-            if "cooperate" in adjusted:
-                adjusted["cooperate"] += 1
-            if "chat" in adjusted:
-                adjusted["chat"] += 2
-
-        return adjusted
-        
     
 
     def get_suggested_action_weights(
