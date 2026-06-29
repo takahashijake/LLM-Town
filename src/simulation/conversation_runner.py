@@ -91,6 +91,25 @@ class ConversationRunner:
             new_score = effects_result["new_score"]
             relationship_label = effects_result["relationship_label"]
 
+            intent_update = engine.update_intents_after_conversation(
+                day=day,
+                location_id=location_id,
+                speaker=speaker,
+                listener=listener,
+                action=action,
+                relationship_change=relationship_change,
+                new_score=new_score,
+                conversation_tags=conversation_tags,
+            )
+            
+            if intent_update:
+                print(
+                    "Intent update: "
+                    f"{intent_update['agent']} {intent_update['intent_type']} "
+                    f"{intent_update['status']} "
+                    f"({intent_update['progress']}/{intent_update['progress_goal']})"
+                )
+    
             engine.log_conversation_event(
                 day,
                 hour,

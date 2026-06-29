@@ -73,30 +73,64 @@ class SimulationReporter:
             
     def print_intent_summary(self, engine) -> None:
         agent_intents = getattr(engine, "agent_intents", {})
-
-        if not agent_intents:
-            print("\nNo active agent intents.")
+        intent_history = getattr(engine, "intent_history", [])
+    
+        if not agent_intents and not intent_history:
+            print("\nNo agent intents recorded.")
             return
-
-        intent_counts = Counter(
+    
+        active_intents = {
+            agent_name: intent
+            for agent_name, intent in agent_intents.items()
+            if intent.status == "active"
+        }
+    
+        active_counts = Counter(
             intent.intent_type
-            for intent in agent_intents.values()
+            for intent in active_intents.values()
         )
-
+    
+        history_status_counts = Counter(
+            intent.status
+            for intent in intent_history
+        )
+    
         print("\nAgent intent summary:")
-        print(f"  Active intents: {len(agent_intents)}")
-
-        print("  Intents by type:")
-        for intent_type, count in intent_counts.most_common():
-            print(f"    {intent_type}: {count}")
-
-        print("  Current intents:")
-        for agent_name, intent in sorted(agent_intents.items()):
-            target = intent.target_agent or intent.target_location or "general"
-            print(
-                f"    {agent_name}: {intent.intent_type} -> {target} "
-                f"(expires day {intent.expires_day})"
-            )
+        print(f"  Active intents: {len(active_intents)}")
+        print(f"  Completed/ended intents: {len(intent_history)}")
+    
+        if active_counts:
+            print("  Active intents by type:")
+            for intent_type, count in active_counts.most_common():
+                print(f"    {intent_type}: {count}")
+    
+        if active_intents:
+            print("  Current intents:")
+            for agent_name, intent in sorted(active_intents.items()):
+                target = intent.target_agent or intent.target_location or "general"
+                print(
+                    f"    {agent_name}: {intent.intent_type} -> {target} "
+                    f"progress {intent.progress}/{intent.progress_goal} "
+                    f"(expires day {intent.expires_day})"
+                )
+    
+        if history_status_counts:
+            print("  Intent outcomes:")
+            for status, count in history_status_counts.most_common():
+                print(f"    {status}: {count}")
+    
+        recent_history = intent_history[-5:]
+    
+        if recent_history:
+            print("  Recent completed/ended intents:")
+            for intent in recent_history:
+                target = intent.target_agent or intent.target_location or "general"
+                print(
+                    f"    {intent.agent_name}: {intent.intent_type} -> {target} "
+                    f"{intent.status} on day {intent.completed_day} "
+                    f"({intent.completion_reason})"
+                )
+                
     def print_relationship_event_summary(self, engine) -> None:
         relationship_events = getattr(engine, "relationship_events", [])
     

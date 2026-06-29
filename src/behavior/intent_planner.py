@@ -162,6 +162,7 @@ class IntentPlanner:
             created_day=current_day,
             expires_day=current_day + 2,
             priority=5,
+            progress_goal=2,
         )
 
     def create_build_friendship_intent(
@@ -182,6 +183,7 @@ class IntentPlanner:
             created_day=current_day,
             expires_day=current_day + 2,
             priority=4,
+            progress_goal=2,
         )
 
     def create_investigate_intent(
@@ -201,6 +203,7 @@ class IntentPlanner:
             created_day=current_day,
             expires_day=current_day + 1,
             priority=3,
+            progress_goal=2,
         )
 
     def create_socialize_intent(
@@ -217,6 +220,7 @@ class IntentPlanner:
             created_day=current_day,
             expires_day=current_day + 1,
             priority=2,
+            progress_goal=2,
         )
 
     def create_work_intent(
@@ -233,4 +237,5 @@ class IntentPlanner:
             created_day=current_day,
             expires_day=current_day + 1,
             priority=2,
+            progress_goal=2,
         )
