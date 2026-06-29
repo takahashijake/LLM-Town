@@ -73,7 +73,6 @@ class SimulationEngine:
             self.load_agent_intents_from_state(saved_state)
             self.load_relationship_events_from_state(saved_state)
             self.load_town_arcs_from_state(saved_state)
-            self.load_town_arcs_from_state(saved_state)
             self.town_arc_system = TownArcSystem(
                 town_arcs=self.town_arcs,
                 town_arc_change_records=self.town_arc_change_records,
@@ -150,88 +149,15 @@ class SimulationEngine:
         conversation_tags: list[str],
     ) -> None:
         self.sync_town_arc_system_refs()
-        tags = set(conversation_tags or [])
-
-        for arc in self.get_active_town_arcs():
-            arc_tags = set(arc.tags)
-
-            is_relevant = (
-                location_id == arc.location_id
-                or bool(tags & arc_tags)
-            )
-
-            if not is_relevant:
-                continue
-
-            old_progress = arc.progress
-            old_tension = arc.tension
-
-            if action in {"cooperate", "offer_help"}:
-                arc.progress = min(5, arc.progress + 1)
-                arc.tension = max(0, arc.tension - 1)
-
-            elif action == "ask_for_help":
-                arc.progress = min(5, arc.progress + 1)
-
-            elif action == "apologize":
-                arc.tension = max(0, arc.tension - 1)
-
-            elif action in {"share_rumor", "argue", "insult", "storm_off"}:
-                arc.tension = min(5, arc.tension + 1)
-
-            else:
-                continue
-
-            for agent_name in [speaker.name, listener.name]:
-                if agent_name not in arc.involved_agents:
-                    arc.involved_agents.append(agent_name)
-
-            if arc.progress != old_progress or arc.tension != old_tension:
-                arc.updated_day = day
-            
-                record = {
-                    "day": day,
-                    "arc_id": arc.id,
-                    "arc_name": arc.name,
-                    "location": location_id,
-                    "speaker": speaker.name,
-                    "listener": listener.name,
-                    "action": action,
-                    "old_progress": old_progress,
-                    "new_progress": arc.progress,
-                    "old_tension": old_tension,
-                    "new_tension": arc.tension,
-                    "tags": conversation_tags,
-                }
-            
-                self.town_arc_change_records.append(record)
-            
-                arc_change_log = Path("logs/town_arc_changes.jsonl")
-                arc_change_log.parent.mkdir(parents=True, exist_ok=True)
-            
-                with arc_change_log.open("a", encoding="utf-8") as file:
-                    file.write(json.dumps(record) + "\n")
-                    
-                arc_memory = Memory(
-                    day=day,
-                    hour=0,
-                    type="town_arc_participation",
-                    description=(
-                        f"{speaker.name} and {listener.name} affected the town arc '{arc.name}' "
-                        f"through action '{action}'. "
-                        f"Progress changed from {old_progress} to {arc.progress}; "
-                        f"tension changed from {old_tension} to {arc.tension}."
-                    ),
-                    participants=[speaker.name, listener.name],
-                    location=location_id,
-                    importance=3,
-                    sentiment=arc.tension,
-                    tags=["town_arc", "participation", arc.id, action] + arc.tags,
-                )
-                
-                speaker.remember(arc_memory)
-                listener.remember(arc_memory)
-                
+        self.town_arc_system.apply_conversation_to_town_arcs(
+            day=day,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            action=action,
+            conversation_tags=conversation_tags,
+        )
+        
     def update_agent_intents(self, current_day: int) -> None:
         intent_type_counts = {}
 
@@ -319,16 +245,7 @@ class SimulationEngine:
 
     def should_create_town_arc(self, day: int) -> bool:
         self.sync_town_arc_system_refs()
-        
-        active_arcs = self.get_active_town_arcs()
-
-        if not active_arcs:
-            return True
-
-        if len(active_arcs) >= 2:
-            return False
-
-        return random.random() < 0.35
+        return self.town_arc_system.should_create_town_arc(day=day)
 
 
     def update_town_arcs(self, day: int) -> None:
@@ -343,19 +260,9 @@ class SimulationEngine:
 
     def create_town_arc_memory(self, day: int, arc: TownArc) -> Memory:
         self.sync_town_arc_system_refs()
-        return Memory(
+        return self.town_arc_system.create_town_arc_memory(
             day=day,
-            hour=0,
-            type="town_arc",
-            description=(
-                f"Town arc: {arc.name}. {arc.description} "
-                f"Status: {arc.status}. Tension: {arc.tension}. Progress: {arc.progress}."
-            ),
-            participants=arc.involved_agents,
-            location=arc.location_id or "town",
-            importance=3,
-            sentiment=arc.tension,
-            tags=["town_arc", arc.id] + arc.tags,
+            arc=arc,
         )
 
 
@@ -888,54 +795,17 @@ class SimulationEngine:
         )
         
     def adjust_action_weights_for_town_arcs(
-    self,
-    weights: dict[str, int],
-    location_id: str,
-    conversation_tags: list[str] | None = None,
+        self,
+        weights: dict[str, int],
+        location_id: str,
+        conversation_tags: list[str] | None = None,
     ) -> dict[str, int]:
-        adjusted = dict(weights)
-        tags = set(conversation_tags or [])
-    
-        relevant_arcs = self.get_relevant_town_arcs_for_context(location_id)
-    
-        if not relevant_arcs:
-            return adjusted
-    
-        arc_tags = set()
-    
-        for arc in relevant_arcs:
-            arc_tags.update(arc.get("tags", []))
-    
-        # Community arcs should produce more helping/cooperation.
-        if {"community", "volunteer", "social"} & arc_tags:
-            if "cooperate" in adjusted:
-                adjusted["cooperate"] += 2
-            if "offer_help" in adjusted:
-                adjusted["offer_help"] += 2
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 1
-    
-        # Market pressure should produce some questions, rumors, and disagreement.
-        if {"market", "business", "wealth"} & arc_tags:
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 2
-            if "share_rumor" in adjusted:
-                adjusted["share_rumor"] += 1
-            if "argue" in adjusted:
-                adjusted["argue"] += 1
-            if "cooperate" in adjusted:
-                adjusted["cooperate"] += 1
-    
-        # Public questions should produce investigation/help-seeking.
-        if {"knowledge", "rules", "learning"} & arc_tags:
-            if "ask_for_help" in adjusted:
-                adjusted["ask_for_help"] += 2
-            if "cooperate" in adjusted:
-                adjusted["cooperate"] += 1
-            if "share_rumor" in adjusted:
-                adjusted["share_rumor"] += 1
-    
-        return adjusted
+        self.sync_town_arc_system_refs()
+        return self.town_arc_system.adjust_action_weights_for_town_arcs(
+            weights=weights,
+            location_id=location_id,
+            conversation_tags=conversation_tags,
+        )
     
     def adjust_action_weights_for_intent(
         self,
