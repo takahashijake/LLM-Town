@@ -88,7 +88,7 @@ class SimulationLoop:
 
             for hour in active_hours:
                 print(f"\n--- {hour}:00 ---")
-                self.run_tick(engine, day, hour)
+                engine.run_tick(day, hour)
                 engine.state.save(engine, day, hour)
 
         engine.print_relationships()
