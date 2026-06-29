@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_tagger import ConversationTagger
 from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_policy import ConversationPolicy
@@ -19,7 +20,7 @@ from src.agents.relationships import RelationshipManager
 from src.simulation.state import SimulationState
 from src.llm.client import FakeLLMClient, TransformersLLMClient
 from src.llm.context import build_conversation_context 
-from src.llm.parser import clean_conversation_output, parse_llm_conversation_output, infer_conversation_tags
+from src.llm.parser import clean_conversation_output, parse_llm_conversation_output
 from src.town.daily_event import choose_daily_event, DailyEvent
 from src.actions.action_system import ActionSystem 
 from src.analysis.report import SimulationReporter
@@ -48,6 +49,7 @@ class SimulationEngine:
         self.conversation_recorder = ConversationRecorder(
             logger=self.logger,
         )
+        self.conversation_tagger = ConversationTagger()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.persistence = SimulationPersistence()
@@ -124,7 +126,33 @@ class SimulationEngine:
     def sync_town_arc_system_refs(self) -> None:
         self.town_arc_system.town_arcs = self.town_arcs
         self.town_arc_system.town_arc_change_records = self.town_arc_change_records
-        
+
+    def get_initial_conversation_tags(
+        self,
+        conversation: str,
+        parsed_tags: list[str] | None = None,
+    ) -> list[str]:
+        return self.conversation_tagger.get_initial_conversation_tags(
+            conversation=conversation,
+            parsed_tags=parsed_tags,
+        )
+
+    def finalize_conversation_tags(
+        self,
+        conversation: str,
+        conversation_tags: list[str],
+        relationship_label: str,
+        action: str,
+    ) -> list[str]:
+        return self.conversation_tagger.finalize_conversation_tags(
+            conversation=conversation,
+            conversation_tags=conversation_tags,
+            current_daily_event=self.current_daily_event,
+            relationship_label=relationship_label,
+            action=action,
+        )
+
+    
     def get_intent_listener_weight_bonus(
         self,
         speaker: Agent,
@@ -934,8 +962,10 @@ class SimulationEngine:
             
             conversation = self.clean_dialogue_text(conversation)
             
-            conversation_tags = infer_conversation_tags(conversation)
-            conversation_tags.extend(parsed_output.get("tags", []))
+            conversation_tags = self.get_initial_conversation_tags(
+                conversation=conversation,
+                parsed_tags=parsed_output.get("tags", []),
+            )
             
             inferred_action = self.actions.infer_action(
                 conversation,
@@ -949,45 +979,14 @@ class SimulationEngine:
                 allowed_actions=allowed_actions,
                 inferred_action=inferred_action,
             )
+
+            conversation_tags = self.finalize_conversation_tags(
+                conversation=conversation,
+                conversation_tags=conversation_tags,
+                relationship_label=old_relationship_label,
+                action=action,
+            )
             
-            if self.current_daily_event:
-                dialogue_lower = conversation.lower()
-                event_name_words = [
-                    word
-                    for word in self.current_daily_event.name.lower().split()
-                    if len(word) >= 4
-                ]
-            
-                mentions_event = any(word in dialogue_lower for word in event_name_words)
-            
-                if mentions_event or "event" in conversation_tags:
-                    conversation_tags.append("event")
-                    conversation_tags.append(self.current_daily_event.id)
-            
-            action_tags = {
-                "chat",
-                "compliment",
-                "apologize",
-                "offer_help",
-                "ask_for_help",
-                "argue",
-                "insult",
-                "storm_off",
-                "confess_feelings",
-                "share_rumor",
-                "cooperate",
-            }
-            
-            conversation_tags = [
-                tag
-                for tag in conversation_tags
-                if tag not in action_tags
-            ]
-            
-            conversation_tags.append(old_relationship_label)
-            conversation_tags.append(action)
-            
-            conversation_tags = list(dict.fromkeys(conversation_tags))
 
             self.apply_conversation_to_town_arcs(
                 day=day,
