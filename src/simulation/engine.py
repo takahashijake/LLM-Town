@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_policy import ConversationPolicy
 from src.simulation.intent_system import IntentSystem 
@@ -44,6 +45,9 @@ class SimulationEngine:
     ):
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger()
+        self.conversation_recorder = ConversationRecorder(
+            logger=self.logger,
+        )
         self.relationships = RelationshipManager()
         self.state = SimulationState()
         self.persistence = SimulationPersistence()
@@ -706,7 +710,29 @@ class SimulationEngine:
             listener=listener,
             relationship_change=relationship_change,
         )
-
+        
+    def remember_conversation_for_agents(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        conversation: str,
+        relationship_change: int,
+        tags: list[str],
+    ) -> Memory:
+        return self.conversation_recorder.remember_conversation_for_agents(
+            day=day,
+            hour=hour,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            conversation=conversation,
+            relationship_change=relationship_change,
+            tags=tags,
+        )
+        
     def create_conversation_memory(
         self,
         day: int,
@@ -718,17 +744,16 @@ class SimulationEngine:
         relationship_change: int,
         tags: list[str],
     ) -> Memory:
-        return Memory(
+        return self.conversation_recorder.create_conversation_memory(
             day=day,
             hour=hour,
-            type="conversation",
-            description=conversation,
-            participants=[speaker.name, listener.name],
-            location=location_id,
-            importance=2,
-            sentiment=relationship_change,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            conversation=conversation,
+            relationship_change=relationship_change,
             tags=tags,
-    )
+        )
 
     def choose_weighted_action(self, weights: dict[str, int]) -> str:
         return self.conversation_policy.choose_weighted_action(
@@ -760,65 +785,51 @@ class SimulationEngine:
         allowed_actions: list[str] | None = None,
         final_action_reason: str = "",
     ) -> None:
-        conversation_record = {
-            "day": day,
-            "hour": hour,
-            "location": location_id,
-            "speaker": speaker.name,
-            "listener": listener.name,
-            "conversation": conversation,
-            "relationship_change": relationship_change,
-            "relationship_score": new_score,
-            "relationship_label": relationship_label,
-            "action": action,
-            "action_source": action_source,
-            "action_reason": action_reason,
-            "suggested_action": suggested_action,
-            "parsed_action": parsed_action,
-            "inferred_action": inferred_action,
-            "base_action_weights": base_action_weights or {},
-            "intent_adjusted_weights": intent_adjusted_weights or {},
-            "tags": tags or [],
-            "allowed_actions" : allowed_actions or [], 
-            "final_action_reason": final_action_reason,
-            "speaker_intent_type": speaker_intent.intent_type if speaker_intent else "",
-            "speaker_intent_target_agent": speaker_intent.target_agent if speaker_intent else "",
-            "speaker_intent_target_location": speaker_intent.target_location if speaker_intent else "",
-            "speaker_intent_description": speaker_intent.description if speaker_intent else "",
-            "listener_intent_type": listener_intent.intent_type if listener_intent else "",
-        }
-    
-        self.logger.log_conversation(conversation_record)
-    
-        event_record = {
-            "type": "conversation",
-            "day": day,
-            "hour": hour,
-            "location": location_id,
-            "participants": [
-                speaker.name,
-                listener.name,
-            ],
-        }
-    
-        self.logger.log_event(event_record)
+        self.conversation_recorder.log_conversation_event(
+            day=day,
+            hour=hour,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            conversation=conversation,
+            relationship_change=relationship_change,
+            new_score=new_score,
+            relationship_label=relationship_label,
+            action=action,
+            action_source=action_source,
+            action_reason=action_reason,
+            tags=tags,
+            speaker_intent=speaker_intent,
+            listener_intent=listener_intent,
+            suggested_action=suggested_action,
+            parsed_action=parsed_action,
+            inferred_action=inferred_action,
+            base_action_weights=base_action_weights,
+            intent_adjusted_weights=intent_adjusted_weights,
+            allowed_actions=allowed_actions,
+            final_action_reason=final_action_reason,
+        )
 
     def print_conversation_event(
-    self,
-    day: int,
-    hour: int,
-    location_id: str,
-    conversation: str,
-    relationship_label: str,
-    new_score: int,
-    relationship_change: int,
-    action: str,
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        conversation: str,
+        relationship_label: str,
+        new_score: int,
+        relationship_change: int,
+        action: str,
     ) -> None:
-        print(
-            f"Day {day}, {hour}:00 at {location_id}: {conversation} "
-            f"Relationship is now {relationship_label} "
-            f"(score {new_score:+d}, change {relationship_change:+d}). "
-            f"Action: {action}."
+        self.conversation_recorder.print_conversation_event(
+            day=day,
+            hour=hour,
+            location_id=location_id,
+            conversation=conversation,
+            relationship_label=relationship_label,
+            new_score=new_score,
+            relationship_change=relationship_change,
+            action=action,
         )
         
     def generate_conversations(self, day: int, hour: int) -> None:
@@ -1020,24 +1031,16 @@ class SimulationEngine:
                 speaker.satisfy_need(need, amount)
                 
 
-            topic_memory = conversation_tags
-
-            speaker.remember_topics(topic_memory) 
-            listener.remember_topics(topic_memory)
-            
-            memory = self.create_conversation_memory(
-                day,
-                hour,
-                location_id,
-                speaker,
-                listener,
-                conversation,
-                relationship_change,
-                conversation_tags,
-            )
-            
-            speaker.remember(memory)
-            listener.remember(memory)
+            self.remember_conversation_for_agents(
+                day=day,
+                hour=hour,
+                location_id=location_id,
+                speaker=speaker,
+                listener=listener,
+                conversation=conversation,
+                relationship_change=relationship_change,
+                tags=conversation_tags,
+            ) 
 
             self.remember_dialogue(conversation)
             self.remember_action(action)
