@@ -1,45 +1,41 @@
 import json
-import random
-from pathlib import Path
 
-from src.simulation.conversation_runner import ConversationRunner
+from src.actions.action_system import ActionSystem
+from src.agents.agent import Agent
+from src.agents.intent import AgentIntent
+from src.agents.memory import Memory
+from src.agents.relationship_event import RelationshipEvent
+from src.agents.relationships import RelationshipManager
+from src.analysis.report import SimulationReporter
+from src.behavior.intent_planner import IntentPlanner
+from src.behavior.planner import ActivityPlanner
+from src.behavior.social_policy import SocialBehaviorPolicy
+from src.llm.client import TransformersLLMClient
+from src.simulation.activity_system import ActivitySystem
+from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_effects_applier import ConversationEffectsApplier
 from src.simulation.conversation_output_processor import ConversationOutputProcessor
-from src.simulation.conversation_context_preparer import ConversationContextPreparer
-from src.simulation.conversation_selector import ConversationSelector 
-from src.simulation.conversation_tagger import ConversationTagger
-from src.simulation.conversation_recorder import ConversationRecorder
-from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_policy import ConversationPolicy
-from src.simulation.intent_system import IntentSystem 
-from src.simulation.persistence import SimulationPersistence
-from src.simulation.town_arc_system import TownArcSystem
-from src.simulation.relationship_updater import RelationshipUpdater
-from src.town.town_arc import TownArc
-from src.behavior.planner import ActivityPlanner
-from src.agents.memory import Memory
-from src.agents.agent import Agent
-from src.town.location import Location
-from src.utils.logger import TownLogger
-from src.agents.relationships import RelationshipManager
-from src.simulation.state import SimulationState
-from src.llm.client import FakeLLMClient, TransformersLLMClient
-from src.llm.context import build_conversation_context 
-from src.llm.parser import clean_conversation_output, parse_llm_conversation_output
-from src.town.daily_event import choose_daily_event, DailyEvent
-from src.actions.action_system import ActionSystem 
-from src.analysis.report import SimulationReporter
-from src.agents.relationship_event import RelationshipEvent 
-from src.behavior.social_policy import SocialBehaviorPolicy 
-from src.agents.intent import AgentIntent 
-from src.behavior.intent_planner import IntentPlanner 
-from src.simulation.dialogue_utils import ( 
+from src.simulation.conversation_recorder import ConversationRecorder
+from src.simulation.conversation_runner import ConversationRunner
+from src.simulation.conversation_selector import ConversationSelector
+from src.simulation.conversation_tagger import ConversationTagger
+from src.simulation.dialogue_utils import (
     clean_dialogue_text,
     fix_stale_event_reference,
     get_previous_event_keywords,
     has_rumor_marker,
     is_narration,
 )
+from src.simulation.intent_system import IntentSystem
+from src.simulation.persistence import SimulationPersistence
+from src.simulation.relationship_updater import RelationshipUpdater
+from src.simulation.state import SimulationState
+from src.simulation.town_arc_system import TownArcSystem
+from src.town.daily_event import DailyEvent, choose_daily_event
+from src.town.location import Location
+from src.town.town_arc import TownArc
+from src.utils.logger import TownLogger
 
 class SimulationEngine:
     def __init__(
@@ -109,7 +105,7 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
             conversation_recorder=self.conversation_recorder,
             conversation_policy=self.conversation_policy,
-)
+        )
         if saved_state:
             self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
