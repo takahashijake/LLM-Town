@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_selector import ConversationSelector 
 from src.simulation.conversation_tagger import ConversationTagger
 from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.activity_system import ActivitySystem
@@ -51,6 +52,9 @@ class SimulationEngine:
         )
         self.conversation_tagger = ConversationTagger()
         self.relationships = RelationshipManager()
+        self.conversation_selector = ConversationSelector(
+            relationships=self.relationships,
+        )
         self.state = SimulationState()
         self.persistence = SimulationPersistence()
         self.llm = llm_client or TransformersLLMClient()
@@ -699,33 +703,15 @@ class SimulationEngine:
         return self.choose_weighted_action(weights)
         
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
-        agents_by_location = {}
-        
-        for agent in self.agents:
-            agents_by_location.setdefault(agent.location_id, []).append(agent)
+        return self.conversation_selector.group_agents_by_location(
+            agents=self.agents,
+        )
 
-        return agents_by_location
-
-    def choose_conversation_pair(self, agents_here: list[Agent]) -> tuple[Agent, Agent]: 
-        speaker = random.choice(agents_here) 
-        possible_listeners = [ 
-            agent for agent in agents_here
-            if agent.name != speaker.name
-        ]
-
-        weights = [
-            self.relationships.get_conversation_weight(speaker.name, listener.name)
-            + self.get_intent_listener_weight_bonus(speaker, listener)
-            for listener in possible_listeners
-        ]
-
-        listener = random.choices(
-            possible_listeners,
-            weights=weights,
-            k=1,
-        )[0]
-
-        return speaker, listener
+    def choose_conversation_pair(self, agents_here: list[Agent]) -> tuple[Agent, Agent]:
+        return self.conversation_selector.choose_conversation_pair(
+            agents_here=agents_here,
+            intent_bonus_fn=self.get_intent_listener_weight_bonus,
+        )
 
     def apply_relationship_change(
         self,
