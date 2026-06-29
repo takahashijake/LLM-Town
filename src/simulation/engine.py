@@ -108,7 +108,10 @@ class SimulationEngine:
                 effects[need] = effects.get(need, 0) + amount
     
         return effects
-    
+    def sync_town_arc_system_refs(self) -> None:
+        self.town_arc_system.town_arcs = self.town_arcs
+        self.town_arc_system.town_arc_change_records = self.town_arc_change_records
+        
     def get_intent_listener_weight_bonus(
     self,
     speaker: Agent,
@@ -146,6 +149,7 @@ class SimulationEngine:
         action: str,
         conversation_tags: list[str],
     ) -> None:
+        self.sync_town_arc_system_refs()
         tags = set(conversation_tags or [])
 
         for arc in self.get_active_town_arcs():
@@ -302,9 +306,11 @@ class SimulationEngine:
 
 
     def get_active_town_arcs(self): 
+        self.sync_town_arc_system_refs()
         return self.town_arc_system.get_active_town_arcs()
 
     def create_town_arc_from_daily_event(self, day: int, daily_event) -> TownArc | None:
+        self.sync_town_arc_system_refs()
         return self.town_arc_system.create_town_arc_from_daily_event(
             day=day,
             daily_event=daily_event,
@@ -312,6 +318,8 @@ class SimulationEngine:
 
 
     def should_create_town_arc(self, day: int) -> bool:
+        self.sync_town_arc_system_refs()
+        
         active_arcs = self.get_active_town_arcs()
 
         if not active_arcs:
@@ -324,6 +332,8 @@ class SimulationEngine:
 
 
     def update_town_arcs(self, day: int) -> None:
+        self.sync_town_arc_system_refs()
+
         self.town_arc_system.update_town_arcs(
             day=day,
             current_daily_event=self.current_daily_event,
@@ -332,6 +342,7 @@ class SimulationEngine:
 
 
     def create_town_arc_memory(self, day: int, arc: TownArc) -> Memory:
+        self.sync_town_arc_system_refs()
         return Memory(
             day=day,
             hour=0,
@@ -351,6 +362,7 @@ class SimulationEngine:
    
 
     def remember_town_arc_for_all_agents(self, day, arc, reason):
+        self.sync_town_arc_system_refs()
         self.town_arc_system.remember_town_arc_for_all_agents(
             day=day,
             arc=arc,
@@ -359,6 +371,7 @@ class SimulationEngine:
         )
     
     def get_relevant_town_arcs_for_context(self, location_id: str):
+        self.sync_town_arc_system_refs()
         return self.town_arc_system.get_relevant_town_arcs_for_context(
             location_id=location_id,
         )
@@ -925,24 +938,24 @@ class SimulationEngine:
         return adjusted
     
     def adjust_action_weights_for_intent(
-    self,
-    weights: dict[str, int],
-    intent: AgentIntent | None,
-    listener_name: str,
+        self,
+        weights: dict[str, int],
+        intent: AgentIntent | None,
+        listener_name: str,
     ) -> dict[str, int]:
         adjusted = dict(weights)
-    
+
         if not intent:
             return adjusted
-    
+
         target_matches = (
             intent.target_agent is None
             or intent.target_agent == listener_name
         )
-    
+
         if not target_matches:
             return adjusted
-    
+
         if intent.intent_type == "repair_relationship":
             if "apologize" in adjusted:
                 adjusted["apologize"] += 4
@@ -952,7 +965,7 @@ class SimulationEngine:
                 adjusted["chat"] += 1
             if "argue" in adjusted:
                 adjusted["argue"] = max(1, adjusted["argue"] - 2)
-    
+
         elif intent.intent_type == "build_friendship":
             if "compliment" in adjusted:
                 adjusted["compliment"] += 1
@@ -960,7 +973,7 @@ class SimulationEngine:
                 adjusted["offer_help"] += 3
             if "cooperate" in adjusted:
                 adjusted["cooperate"] += 2
-    
+
         elif intent.intent_type == "investigate":
             if "ask_for_help" in adjusted:
                 adjusted["ask_for_help"] += 3
@@ -968,7 +981,7 @@ class SimulationEngine:
                 adjusted["share_rumor"] += 2
             if "chat" in adjusted:
                 adjusted["chat"] += 1
-            
+
         elif intent.intent_type == "socialize":
             if "chat" in adjusted:
                 adjusted["chat"] += 2
@@ -976,7 +989,7 @@ class SimulationEngine:
                 adjusted["ask_for_help"] += 1
             if "offer_help" in adjusted:
                 adjusted["offer_help"] += 1
-            
+
         elif intent.intent_type == "seek_work":
             if "ask_for_help" in adjusted:
                 adjusted["ask_for_help"] += 1
@@ -984,8 +997,9 @@ class SimulationEngine:
                 adjusted["cooperate"] += 1
             if "chat" in adjusted:
                 adjusted["chat"] += 2
-            
+
         return adjusted
+        
     
 
     def get_suggested_action_weights(
