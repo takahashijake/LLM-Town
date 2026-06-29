@@ -9,6 +9,7 @@ from src.behavior.intent_planner import IntentPlanner
 from src.behavior.planner import ActivityPlanner
 from src.behavior.social_policy import SocialBehaviorPolicy
 from src.llm.client import TransformersLLMClient
+from src.simulation.simulation_loop import SimulationLoop
 from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_effects_applier import ConversationEffectsApplier
@@ -49,6 +50,7 @@ class SimulationEngine:
         )
         self.state = SimulationState()
         self.persistence = SimulationPersistence()
+        self.simulation_loop = SimulationLoop()
         self.llm = llm_client or TransformersLLMClient()
         self.actions = ActionSystem()
         self.relationship_updater = RelationshipUpdater(
@@ -542,18 +544,6 @@ class SimulationEngine:
         
         return agents
 
-    def create_daily_event_memory(self, day: int, event) -> Memory:
-        return Memory(
-            day=day,
-            hour=0,
-            type="daily_event",
-            description=f"Town event today: {event.name}. {event.description}",
-            participants=[],
-            location=event.location_id,
-            importance=3,
-            sentiment=0,
-            tags=["event", event.id] + event.tags,
-        )
     def load_locations(self, path: str) -> list[Location]:
         with open(path, "r") as f:
             data = json.load(f)
@@ -561,60 +551,11 @@ class SimulationEngine:
         return [Location(**location_data) for location_data in data]
     
     def run(self, days: int, hours: list[int]) -> None:
-        print("Starting town simulation...")
-
-        end_day = self.start_day + days - 1
-
-        for day in range(self.start_day, end_day + 1):
-            if day == self.start_day and self.start_hour:
-                active_hours = [
-                    hour
-                    for hour in hours
-                    if hour > self.start_hour
-                ]
-            else:
-                active_hours = hours
-        
-            if not active_hours:
-                continue
-        
-            print(f"\n=== Day {day} ===")
-
-            is_resuming_saved_day = (
-                day == self.start_day
-                and self.start_hour > 0
-                and self.current_daily_event is not None
-            )
-            
-            if not is_resuming_saved_day:
-                self.current_daily_event = choose_daily_event()
-            
-                self.daily_event_history.append({
-                    "day": day,
-                    "id": self.current_daily_event.id,
-                    "name": self.current_daily_event.name,
-                })
-            
-                self.update_town_arcs(day)
-            
-                event_memory = self.create_daily_event_memory(day, self.current_daily_event)
-                for agent in self.agents:
-                    agent.remember(event_memory)
-            
-                self.update_agent_intents(day)
-        
-            print(
-                f"Daily Event: {self.current_daily_event.name} - "
-                f"{self.current_daily_event.description}"
-            )
-        
-            for hour in active_hours:
-                print(f"\n--- {hour}:00 ---")
-                self.run_tick(day, hour)
-                self.state.save(self, day, hour)
-        self.print_relationships()
-        self.reporter.summarize(self)
-        print("\nSimulation finished.")
+        self.simulation_loop.run(
+            engine=self,
+            days=days,
+            hours=hours,
+        )
 
     def run_agent_activities(self, day: int, hour: int) -> None:
         self.sync_activity_system_refs()
@@ -632,12 +573,11 @@ class SimulationEngine:
         self.activity_records = self.activity_system.activity_records
         
     def run_tick(self, day: int, hour: int) -> None:
-        self.run_agent_activities(day, hour)
-        self.generate_conversations(day, hour)
-        self.maintain_agent_memories()
-        self.relationships.decay_all_relationships(probability=0.03)
-        self.sync_agent_relationships_from_manager()
-        
+        self.simulation_loop.run_tick(
+            engine=self,
+            day=day,
+            hour=hour,
+        )
 
     def get_relationship_change(self, relationship_label: str) -> int:
         return self.relationship_updater.get_relationship_change(
