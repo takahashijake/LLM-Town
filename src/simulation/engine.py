@@ -1,5 +1,4 @@
 import json
-from src.agents.relationship_event import RelationshipEvent
 from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
@@ -408,94 +407,12 @@ class SimulationEngine:
             location_id=location_id,
         )
         
-    def should_record_relationship_event(
-        self,
-        action: str,
-        relationship_change: int,
-    ) -> bool:
-        return self.relationship_updater.should_record_relationship_event(
-            action=action,
-            relationship_change=relationship_change,
-        )
-
-    
-    def create_relationship_event(
-        self,
-        day: int,
-        hour: int,
-        location_id: str,
-        speaker: Agent,
-        listener: Agent,
-        action: str,
-        relationship_change: int,
-        new_score: int,
-        relationship_label: str,
-        conversation: str,
-        tags: list[str],
-    ) -> RelationshipEvent:
-        return self.relationship_updater.create_relationship_event(
-            day=day,
-            hour=hour,
-            location_id=location_id,
-            speaker=speaker,
-            listener=listener,
-            action=action,
-            relationship_change=relationship_change,
-            new_score=new_score,
-            relationship_label=relationship_label,
-            conversation=conversation,
-            tags=tags,
-        )
-
-
-    def record_relationship_event(
-        self,
-        relationship_event: RelationshipEvent,
-    ) -> None:
-        self.relationship_updater.record_relationship_event(
-            relationship_events=self.relationship_events,
-            relationship_event=relationship_event,
-        )
-
-
-    def get_recent_relationship_events(
-        self,
-        agent_a: str,
-        agent_b: str,
-        limit: int = 3,
-    ) -> list[RelationshipEvent]:
-        return self.relationship_updater.get_recent_relationship_events(
-            relationship_events=self.relationship_events,
-            agent_a=agent_a,
-            agent_b=agent_b,
-            limit=limit,
-        )
-    
-    
-    def format_relationship_history_for_prompt(
-        self,
-        agent_a: str,
-        agent_b: str,
-        limit: int = 3,
-    ) -> list[str]:
-        return self.relationship_updater.format_relationship_history_for_prompt(
-            relationship_events=self.relationship_events,
-            agent_a=agent_a,
-            agent_b=agent_b,
-            limit=limit,
-        )
         
     def sync_agent_relationships_from_manager(self) -> None:
         self.relationship_updater.sync_agent_relationships_from_manager(
             agents=self.agents,
         )
             
-    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
-        return is_narration(
-            conversation=conversation,
-            speaker_name=speaker.name,
-            listener_name=listener.name,
-        )
         
     def maintain_agent_memories(self) -> None:
         for agent in self.agents:
@@ -517,9 +434,6 @@ class SimulationEngine:
             conversation=conversation,
         )
 
-    def clean_dialogue_text(self, conversation: str) -> str:
-        return clean_dialogue_text(conversation)
-    
     def get_non_repeated_fallback_dialogue(
         self,
         speaker: Agent,
@@ -551,9 +465,6 @@ class SimulationEngine:
         return self.conversation_policy.should_cap_action(
             action=action,
         )
-
-    def has_rumor_marker(self, conversation: str) -> bool: 
-        return has_rumor_marker(conversation)
         
     def choose_final_action_with_reason(
         self,
@@ -598,21 +509,6 @@ class SimulationEngine:
             if event["day"] < current_day
         ]
 
-
-    def get_previous_event_keywords(self, current_day: int) -> list[str]:
-        return get_previous_event_keywords(
-            daily_event_history=self.daily_event_history,
-            current_day=current_day,
-        )
-
-
-    def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
-        return fix_stale_event_reference(
-            conversation=conversation,
-            current_day=current_day,
-            current_daily_event=self.current_daily_event,
-            daily_event_history=self.daily_event_history,
-        )
         
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         self.sync_activity_system_refs()
