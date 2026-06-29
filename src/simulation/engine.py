@@ -19,13 +19,6 @@ from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.conversation_runner import ConversationRunner
 from src.simulation.conversation_selector import ConversationSelector
 from src.simulation.conversation_tagger import ConversationTagger
-from src.simulation.dialogue_utils import (
-    clean_dialogue_text,
-    fix_stale_event_reference,
-    get_previous_event_keywords,
-    has_rumor_marker,
-    is_narration,
-)
 from src.simulation.intent_system import IntentSystem
 from src.simulation.persistence import SimulationPersistence
 from src.simulation.relationship_updater import RelationshipUpdater
@@ -420,13 +413,6 @@ class SimulationEngine:
         self.relationship_updater.sync_agent_relationships_from_manager(
             agents=self.agents,
         )
-            
-    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
-        return is_narration(
-            conversation=conversation,
-            speaker_name=speaker.name,
-            listener_name=listener.name,
-        )
         
     def maintain_agent_memories(self) -> None:
         for agent in self.agents:
@@ -447,9 +433,6 @@ class SimulationEngine:
         return self.conversation_policy.is_repeated_dialogue(
             conversation=conversation,
         )
-
-    def clean_dialogue_text(self, conversation: str) -> str:
-        return clean_dialogue_text(conversation)
     
     def get_non_repeated_fallback_dialogue(
         self,
@@ -482,9 +465,6 @@ class SimulationEngine:
         return self.conversation_policy.should_cap_action(
             action=action,
         )
-
-    def has_rumor_marker(self, conversation: str) -> bool: 
-        return has_rumor_marker(conversation)
         
     def choose_final_action_with_reason(
         self,
@@ -529,21 +509,6 @@ class SimulationEngine:
             if event["day"] < current_day
         ]
 
-
-    def get_previous_event_keywords(self, current_day: int) -> list[str]:
-        return get_previous_event_keywords(
-            daily_event_history=self.daily_event_history,
-            current_day=current_day,
-        )
-
-
-    def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
-        return fix_stale_event_reference(
-            conversation=conversation,
-            current_day=current_day,
-            current_daily_event=self.current_daily_event,
-            daily_event_history=self.daily_event_history,
-        )
         
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         self.sync_activity_system_refs()
