@@ -63,6 +63,10 @@ class SimulationState:
                 agent_name: intent.to_dict()
                 for agent_name, intent in getattr(engine, "agent_intents", {}).items()
             },
+            "intent_history": [
+                intent.to_dict() if hasattr(intent, "to_dict") else intent
+                for intent in getattr(engine, "intent_history", [])
+            ],
             "town_arcs": [
                 arc.to_dict()
                 for arc in getattr(engine, "town_arcs", [])

@@ -61,6 +61,7 @@ class SimulationEngine:
         self.social_policy = SocialBehaviorPolicy()
         self.intent_planner = IntentPlanner() 
         self.agent_intents = {}
+        self.intent_history = []
         self.intent_system = IntentSystem(
             intent_planner=self.intent_planner,
             agent_intents=self.agent_intents,
@@ -104,6 +105,7 @@ class SimulationEngine:
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)
             self.load_agent_intents_from_state(saved_state)
+            self.load_intent_history_from_state(saved_state)
             self.load_relationship_events_from_state(saved_state)
             self.load_town_arcs_from_state(saved_state)
             self.town_arc_system = TownArcSystem(
@@ -162,7 +164,36 @@ class SimulationEngine:
         self.recent_actions = self.conversation_policy.recent_actions
 
         return result
-        
+
+    def update_intents_after_conversation(
+        self,
+        day: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        relationship_change: int,
+        new_score: int,
+        conversation_tags: list[str],
+    ) -> dict | None:
+        self.sync_intent_system_refs()
+    
+        result = self.intent_system.update_intents_after_conversation(
+            day=day,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            action=action,
+            relationship_change=relationship_change,
+            new_score=new_score,
+            conversation_tags=conversation_tags,
+        )
+    
+        self.agent_intents = self.intent_system.agent_intents
+        self.intent_history = self.intent_system.intent_history
+    
+        return result
+    
     def process_conversation_output(
         self,
         raw_output: str,
@@ -205,6 +236,7 @@ class SimulationEngine:
         
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents
+        self.intent_system.intent_history = self.intent_history
 
     def sync_conversation_policy_refs(self) -> None:
         self.conversation_policy.recent_dialogues = self.recent_dialogues
@@ -283,7 +315,13 @@ class SimulationEngine:
             speaker=speaker,
             listener=listener,
         )
-        
+
+    def load_intent_history_from_state(self, saved_state: dict) -> None:
+        self.intent_history = self.persistence.load_intent_history_from_state(
+            saved_state=saved_state,
+        )
+        self.sync_intent_system_refs()
+    
     def load_agent_intents_from_state(self, saved_state: dict) -> None:
         self.agent_intents = self.persistence.load_agent_intents_from_state(
             saved_state=saved_state,

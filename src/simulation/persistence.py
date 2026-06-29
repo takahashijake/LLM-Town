@@ -49,6 +49,15 @@ class SimulationPersistence:
             "activity_records": saved_state.get("activity_records", []),
         }
 
+    def load_intent_history_from_state(
+        self,
+        saved_state: dict,
+    ) -> list[AgentIntent]:
+        return [
+            AgentIntent(**intent_data)
+            for intent_data in saved_state.get("intent_history", [])
+        ]
+    
     def load_town_arcs_from_state(
         self,
         saved_state: dict,
