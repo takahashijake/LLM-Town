@@ -35,15 +35,19 @@ def test_generate_conversations_preserves_core_side_effects(monkeypatch):
         lambda agents_here: (maya, ethan),
     )
     monkeypatch.setattr(
-        engine,
+        engine.conversation_policy,
         "choose_weighted_action",
         lambda weights: "compliment",
     )
+
+    # The effects applier now uses engine.relationship_updater directly.
+    # Patch this subsystem, not the old engine wrapper.
     monkeypatch.setattr(
-        engine,
+        engine.relationship_updater,
         "get_relationship_change",
         lambda relationship_label: 0,
     )
+
     monkeypatch.setattr(
         engine.logger,
         "log_conversation",

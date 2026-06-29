@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_effects_applier import ConversationEffectsApplier
 from src.simulation.conversation_output_processor import ConversationOutputProcessor
 from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_selector import ConversationSelector 
@@ -97,9 +98,16 @@ class SimulationEngine:
         self.town_arcs = []
         self.town_arc_change_records = []
         self.town_arc_system = TownArcSystem(
-            town_arcs = self.town_arcs, 
+            town_arcs=self.town_arcs,
             town_arc_change_records=self.town_arc_change_records,
         )
+        self.conversation_effects_applier = ConversationEffectsApplier(
+            actions=self.actions,
+            relationship_updater=self.relationship_updater,
+            town_arc_system=self.town_arc_system,
+            conversation_recorder=self.conversation_recorder,
+            conversation_policy=self.conversation_policy,
+)
         if saved_state:
             self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
@@ -128,6 +136,42 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
         )
 
+    def apply_conversation_effects(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        conversation: str,
+        conversation_tags: list[str],
+        old_relationship_label: str,
+        old_score: int,
+    ) -> dict:
+        self.sync_town_arc_system_refs()
+        self.sync_conversation_policy_refs()
+        self.sync_conversation_effects_applier_refs()
+
+        result = self.conversation_effects_applier.apply_conversation_effects(
+            day=day,
+            hour=hour,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            action=action,
+            conversation=conversation,
+            conversation_tags=conversation_tags,
+            old_relationship_label=old_relationship_label,
+            old_score=old_score,
+            relationship_events=self.relationship_events,
+        )
+
+        self.recent_dialogues = self.conversation_policy.recent_dialogues
+        self.recent_actions = self.conversation_policy.recent_actions
+
+        return result
+        
     def process_conversation_output(
         self,
         raw_output: str,
@@ -181,6 +225,14 @@ class SimulationEngine:
     def sync_town_arc_system_refs(self) -> None:
         self.town_arc_system.town_arcs = self.town_arcs
         self.town_arc_system.town_arc_change_records = self.town_arc_change_records
+
+    def sync_conversation_effects_applier_refs(self) -> None:
+        self.conversation_effects_applier.actions = self.actions
+        self.conversation_effects_applier.relationship_updater = self.relationship_updater
+        self.conversation_effects_applier.town_arc_system = self.town_arc_system
+        self.conversation_effects_applier.conversation_recorder = self.conversation_recorder
+        self.conversation_effects_applier.conversation_policy = self.conversation_policy
+        
 
     def get_initial_conversation_tags(
         self,
@@ -990,61 +1042,22 @@ class SimulationEngine:
             )
             
 
-            self.apply_conversation_to_town_arcs(
-                day=day,
-                location_id=location_id,
-                speaker=speaker,
-                listener=listener,
-                action=action,
-                conversation_tags=conversation_tags,
-            )
-            
-
-            relationship_change = self.calculate_relationship_change(
-                action,
-                old_relationship_label,
-                old_score,
-            )
-            
-            new_score, relationship_label = self.apply_relationship_change(
-                speaker,
-                listener,
-                relationship_change, 
-            )
-
-            if self.should_record_relationship_event(action, relationship_change):
-                relationship_event = self.create_relationship_event(
-                    day=day,
-                    hour=hour,
-                    location_id=location_id,
-                    speaker=speaker,
-                    listener=listener,
-                    action=action,
-                    relationship_change=relationship_change,
-                    new_score=new_score,
-                    relationship_label=relationship_label,
-                    conversation=conversation,
-                    tags=conversation_tags,
-                )
-                self.record_relationship_event(relationship_event)
-            need_effects = self.actions.get_need_effects(action)
-            for need, amount in need_effects.items():
-                speaker.satisfy_need(need, amount)
-                
-
-            self.remember_conversation_for_agents(
+            effects_result = self.apply_conversation_effects(
                 day=day,
                 hour=hour,
                 location_id=location_id,
                 speaker=speaker,
                 listener=listener,
+                action=action,
                 conversation=conversation,
-                relationship_change=relationship_change,
-                tags=conversation_tags,
-            ) 
+                conversation_tags=conversation_tags,
+                old_relationship_label=old_relationship_label,
+                old_score=old_score,
+            )
 
-            self.remember_dialogue(conversation)
-            self.remember_action(action)
+            relationship_change = effects_result["relationship_change"]
+            new_score = effects_result["new_score"]
+            relationship_label = effects_result["relationship_label"]
 
             
             
