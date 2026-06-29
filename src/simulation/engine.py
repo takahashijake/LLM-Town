@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_selector import ConversationSelector 
 from src.simulation.conversation_tagger import ConversationTagger
 from src.simulation.conversation_recorder import ConversationRecorder
@@ -113,7 +114,23 @@ class SimulationEngine:
             self.agents = self.load_agents(agents_path)
             self.start_day = 1
             self.start_hour = 0
+        self.conversation_context_preparer = ConversationContextPreparer(
+            relationships=self.relationships,
+            actions=self.actions,
+            social_policy=self.social_policy,
+            intent_system=self.intent_system,
+            conversation_policy=self.conversation_policy,
+            relationship_updater=self.relationship_updater,
+            town_arc_system=self.town_arc_system,
+        )
 
+    def sync_conversation_context_preparer_refs(self) -> None:
+        self.conversation_context_preparer.relationships = self.relationships
+        self.conversation_context_preparer.intent_system = self.intent_system
+        self.conversation_context_preparer.conversation_policy = self.conversation_policy
+        self.conversation_context_preparer.relationship_updater = self.relationship_updater
+        self.conversation_context_preparer.town_arc_system = self.town_arc_system
+        
     def sync_activity_system_refs(self) -> None:
         self.activity_system.activity_records = self.activity_records
         
@@ -141,6 +158,28 @@ class SimulationEngine:
             parsed_tags=parsed_tags,
         )
 
+    def prepare_conversation_context(
+        self,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        current_day: int,
+    ) -> dict:
+        self.sync_intent_system_refs()
+        self.sync_town_arc_system_refs()
+        self.sync_conversation_policy_refs()
+        self.sync_conversation_context_preparer_refs()
+
+        return self.conversation_context_preparer.prepare_conversation_context(
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            current_day=current_day,
+            current_daily_event=self.current_daily_event,
+            agent_intents=self.agent_intents,
+            relationship_events=self.relationship_events,
+        )
+        
     def finalize_conversation_tags(
         self,
         conversation: str,
@@ -855,63 +894,22 @@ class SimulationEngine:
             conversations_created = conversations_created + 1 
             speaker, listener = self.choose_conversation_pair(agents_here) 
 
-            old_score = self.relationships.get_score(speaker.name, listener.name) 
-            old_relationship_label = self.relationships.describe_relationship(
-                speaker.name,
-                listener.name,
-            )
-            allowed_actions = self.actions.get_allowed_actions_for_relationship(old_score)
-
-            recent_relationship_events = self.get_recent_relationship_events(
-                speaker.name,
-                listener.name,
-                limit=5,
-            )
-            
-            speaker_intent = self.agent_intents.get(speaker.name)
-            listener_intent = self.agent_intents.get(listener.name)
-            
-            base_action_weights = self.get_suggested_action_weights(
-                allowed_actions=allowed_actions,
-                relationship_label=old_relationship_label,
-                recent_relationship_events=recent_relationship_events,
-            )
-            
-            intent_adjusted_weights = self.adjust_action_weights_for_intent(
-                weights=base_action_weights,
-                intent=speaker_intent,
-                listener_name=listener.name,
-            )
-            
-            arc_adjusted_weights = self.adjust_action_weights_for_town_arcs(
-                weights=intent_adjusted_weights,
+            conversation_setup = self.prepare_conversation_context(
                 location_id=location_id,
-                conversation_tags=[],
-            )
-            
-            suggested_action = self.choose_weighted_action(arc_adjusted_weights)
-
-            relationship_history = self.format_relationship_history_for_prompt(
-                speaker.name,
-                listener.name,
-                limit=3,
-            )
-            
-            context = build_conversation_context(
                 speaker=speaker,
                 listener=listener,
-                location_id=location_id,
-                relationship_label=old_relationship_label,
-                relationship_score=old_score,
                 current_day=day,
-                daily_event=self.current_daily_event,
-                allowed_actions=allowed_actions,
-                suggested_action=suggested_action,
-                relationship_history=relationship_history,
-                speaker_intent=speaker_intent.to_dict() if speaker_intent else None,
-                listener_intent=listener_intent.to_dict() if listener_intent else None,
-                town_arcs=self.get_relevant_town_arcs_for_context(location_id),
-            )     
+            )
+
+            old_score = conversation_setup["old_score"]
+            old_relationship_label = conversation_setup["old_relationship_label"]
+            allowed_actions = conversation_setup["allowed_actions"]
+            speaker_intent = conversation_setup["speaker_intent"]
+            listener_intent = conversation_setup["listener_intent"]
+            base_action_weights = conversation_setup["base_action_weights"]
+            intent_adjusted_weights = conversation_setup["intent_adjusted_weights"]
+            suggested_action = conversation_setup["suggested_action"]
+            context = conversation_setup["context"] 
             
             raw_output = self.llm.generate_conversation(context)
 
