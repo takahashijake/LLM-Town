@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.persistence import SimulationPersistence
 from src.simulation.town_arc_system import TownArcSystem
 from src.simulation.relationship_updater import RelationshipUpdater
 from src.town.town_arc import TownArc
@@ -42,6 +43,7 @@ class SimulationEngine:
         self.logger = TownLogger()
         self.relationships = RelationshipManager()
         self.state = SimulationState()
+        self.persistence = SimulationPersistence()
         self.llm = llm_client or TransformersLLMClient()
         self.actions = ActionSystem()
         self.relationship_updater = RelationshipUpdater(
@@ -133,10 +135,9 @@ class SimulationEngine:
         return 2
     
     def load_agent_intents_from_state(self, saved_state: dict) -> None:
-        self.agent_intents = {
-            agent_name: AgentIntent(**intent_data)
-            for agent_name, intent_data in saved_state.get("agent_intents", {}).items()
-        }
+        self.agent_intents = self.persistence.load_agent_intents_from_state(
+            saved_state=saved_state,
+        )
 
 
     def apply_conversation_to_town_arcs(
@@ -202,33 +203,34 @@ class SimulationEngine:
     
         return intent.description
     
+    
     def load_relationship_events_from_state(self, saved_state: dict) -> None:
-        self.relationship_events = [
-            RelationshipEvent(**event_data)
-            for event_data in saved_state.get("relationship_events", [])
-        ]
-
+        self.relationship_events = self.persistence.load_relationship_events_from_state(
+            saved_state=saved_state,
+        )
+        
     def load_daily_event_from_state(self, saved_state: dict) -> DailyEvent | None:
-        event_data = saved_state.get("current_daily_event")
-    
-        if not event_data:
-            return None
-    
-        return DailyEvent(**event_data)
+        return self.persistence.load_daily_event_from_state(
+            saved_state=saved_state,
+        )
 
 
     def load_run_continuity_from_state(self, saved_state: dict) -> None:
-        self.current_daily_event = self.load_daily_event_from_state(saved_state)
-        self.daily_event_history = saved_state.get("daily_event_history", [])
-        self.recent_dialogues = saved_state.get("recent_dialogues", [])
-        self.recent_actions = saved_state.get("recent_actions", [])
-        self.activity_records = saved_state.get("activity_records", [])
+        continuity = self.persistence.load_run_continuity_from_state(
+            saved_state=saved_state,
+        )
+
+        self.current_daily_event = continuity["current_daily_event"]
+        self.daily_event_history = continuity["daily_event_history"]
+        self.recent_dialogues = continuity["recent_dialogues"]
+        self.recent_actions = continuity["recent_actions"]
+        self.activity_records = continuity["activity_records"]
     
     def load_town_arcs_from_state(self, saved_state: dict) -> None:
-        self.town_arcs = [
-            TownArc.from_dict(arc_data)
-            for arc_data in saved_state.get("town_arcs", [])
-        ]
+        self.town_arcs = self.persistence.load_town_arcs_from_state(
+            saved_state=saved_state,
+        )
+        
 
 
     def get_active_town_arcs(self): 
@@ -617,46 +619,16 @@ class SimulationEngine:
         self.logger.log_event(activity_record)
         
     def load_agents_from_state(self, saved_state: dict) -> list[Agent]:
-        agents = []
-    
-        for agent_data in saved_state["agents"]:
-            memories = [
-                Memory(**memory_data)
-                for memory_data in agent_data.get("memory", [])
-            ]
-
-            memory_archive = [
-                Memory(**memory_data)
-                for memory_data in agent_data.get("memory_archive", [])
-            ]
-            agent = Agent(
-                id=agent_data["id"],
-                name=agent_data["name"],
-                personality=agent_data["personality"],
-                location_id=agent_data["location_id"],
-                goals=agent_data.get("goals", []),
-                needs=agent_data.get("needs", {}),
-                memory=memories,
-                memory_archive=memory_archive, 
-                memory_summary=agent_data.get("memory_summary", ""),
-                occupation=agent_data.get("occupation", "unemployed"),
-                recent_topics=agent_data.get("recent_topics", []),
-                relationships=agent_data.get("relationships", {}),
-                current_activity=agent_data.get("current_activity", "idle"),
-                current_activity_reason=agent_data.get("current_activity_reason", ""),
-                current_activity_tags=agent_data.get("current_activity_tags", []),
-            )
-            agents.append(agent)
-    
-        return agents
+        return self.persistence.load_agents_from_state(
+            saved_state=saved_state,
+        )
 
 
     def load_relationships_from_state(self, saved_state: dict) -> None:
-        relationship_scores = saved_state.get("relationship_scores", {})
-    
-        for pair_key, score in relationship_scores.items():
-            agent_a, agent_b = pair_key.split("|")
-            self.relationships.scores[(agent_a, agent_b)] = score
+        self.persistence.load_relationships_from_state(
+            saved_state=saved_state,
+            relationships=self.relationships,
+        )
         
     def load_agents(self, path: str) -> list[Agent]:
         with open(path, "r") as f:
