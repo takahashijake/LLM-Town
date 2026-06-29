@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_policy import ConversationPolicy
 from src.simulation.intent_system import IntentSystem 
 from src.simulation.persistence import SimulationPersistence
@@ -64,6 +65,11 @@ class SimulationEngine:
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
         self.activity_records = []
+        self.activity_system = ActivitySystem(
+            activity_planner=self.activity_planner,
+            logger=self.logger,
+            activity_records=self.activity_records,
+        )
         self.recent_dialogues = [] 
         self.recent_actions = []
         self.conversation_policy = ConversationPolicy(
@@ -98,6 +104,9 @@ class SimulationEngine:
             self.start_day = 1
             self.start_hour = 0
 
+    def sync_activity_system_refs(self) -> None:
+        self.activity_system.activity_records = self.activity_records
+        
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents
 
@@ -106,27 +115,8 @@ class SimulationEngine:
         self.conversation_policy.recent_actions = self.recent_actions
         
     def get_activity_need_effects(self, activity) -> dict[str, int]:
-        effects_by_tag = {
-            "wealth": {"wealth": 3},
-            "business": {"wealth": 2},
-            "market": {"wealth": 1},
-            "social": {"social": 2},
-            "relationship": {"social": 2},
-            "community": {"social": 1},
-            "volunteer": {"social": 1},
-            "knowledge": {"knowledge": 2},
-            "learning": {"knowledge": 2},
-            "journalism": {"knowledge": 2},
-            "accounting": {"knowledge": 2},
-        }
-    
-        effects = {}
-    
-        for tag in activity.tags:
-            for need, amount in effects_by_tag.get(tag, {}).items():
-                effects[need] = effects.get(need, 0) + amount
-    
-        return effects
+        return self.activity_system.get_activity_need_effects(activity)
+        
     def sync_town_arc_system_refs(self) -> None:
         self.town_arc_system.town_arcs = self.town_arcs
         self.town_arc_system.town_arc_change_records = self.town_arc_change_records
@@ -204,6 +194,7 @@ class SimulationEngine:
         self.recent_dialogues = continuity["recent_dialogues"]
         self.recent_actions = continuity["recent_actions"]
         self.activity_records = continuity["activity_records"]
+        self.sync_activity_system_refs()
         self.sync_conversation_policy_refs()
     
     def load_town_arcs_from_state(self, saved_state: dict) -> None:
@@ -472,20 +463,14 @@ class SimulationEngine:
         )
         
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
-        activity_record = {
-            "type": "activity",
-            "day": day,
-            "hour": hour,
-            "agent": agent.name,
-            "activity_id": activity.id,
-            "activity_name": activity.name,
-            "location": activity.location_id,
-            "reason": activity.reason,
-            "tags": activity.tags,
-        }
-
-        self.activity_records.append(activity_record)
-        self.logger.log_event(activity_record)
+        self.sync_activity_system_refs()
+        self.activity_system.log_activity_event(
+            day=day,
+            hour=hour,
+            agent=agent,
+            activity=activity,
+        )
+        self.activity_records = self.activity_system.activity_records
         
     def load_agents_from_state(self, saved_state: dict) -> list[Agent]:
         return self.persistence.load_agents_from_state(
@@ -583,38 +568,27 @@ class SimulationEngine:
         self.reporter.summarize(self)
         print("\nSimulation finished.")
 
-    def run_tick(self, day: int, hour: int) -> None:
+    def run_agent_activities(self, day: int, hour: int) -> None:
+        self.sync_activity_system_refs()
         location_ids = [location.id for location in self.locations]
-    
-        for agent in self.agents:
-            agent.decay_needs()
-    
-            activity = self.activity_planner.choose_activity(
-                agent=agent,
-                location_ids=location_ids,
-                current_day=day,
-                hour=hour,
-                daily_event=self.current_daily_event,
-                current_intent=self.agent_intents.get(agent.name),
-            )
-    
-            agent.set_activity(activity)
-            self.log_activity_event(day, hour, agent, activity)
 
-            activity_need_effects = self.get_activity_need_effects(activity)
+        self.activity_system.run_agent_activities(
+            agents=self.agents,
+            location_ids=location_ids,
+            day=day,
+            hour=hour,
+            current_daily_event=self.current_daily_event,
+            agent_intents=self.agent_intents,
+        )
 
-            for need, amount in activity_need_effects.items():
-                agent.satisfy_need(need, amount)
-                
-            print(
-                f"{agent.name} chooses activity: {activity.name} "
-                f"at {activity.location_id} ({activity.reason})"
-            )
-    
+        self.activity_records = self.activity_system.activity_records
+        
+    def run_tick(self, day: int, hour: int) -> None:
+        self.run_agent_activities(day, hour)
         self.generate_conversations(day, hour)
         self.maintain_agent_memories()
         self.relationships.decay_all_relationships(probability=0.03)
-        self.sync_agent_relationships_from_manager() 
+        self.sync_agent_relationships_from_manager()
         
 
     def get_relationship_change(self, relationship_label: str) -> int:
