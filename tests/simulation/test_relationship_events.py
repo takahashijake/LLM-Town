@@ -1,27 +1,41 @@
-from src.llm.client import FakeLLMClient
-from src.simulation.engine import SimulationEngine
+from src.actions.action_system import ActionSystem
+from src.agents.agent import Agent
+from src.agents.relationships import RelationshipManager
+from src.simulation.relationship_updater import RelationshipUpdater
 
 
-def build_engine():
-    return SimulationEngine(
-        agents_path="data/agents.json",
-        locations_path="data/locations.json",
-        load_state=False,
-        llm_client=FakeLLMClient(),
+def build_agent(name: str) -> Agent:
+    return Agent(
+        id=f"agent_{name.lower()}",
+        name=name,
+        personality="curious",
+        location_id="market",
+        occupation="resident",
+        goals=[],
+        needs={
+            "social": 50,
+            "wealth": 50,
+            "knowledge": 50,
+        },
     )
 
 
-def get_agent(engine, name):
-    return next(agent for agent in engine.agents if agent.name == name)
+def build_relationship_updater():
+    return RelationshipUpdater(
+        relationships=RelationshipManager(),
+        actions=ActionSystem(),
+    )
 
 
 def test_record_relationship_event_can_be_retrieved_for_pair():
-    engine = build_engine()
+    updater = build_relationship_updater()
 
-    speaker = get_agent(engine, "Maya")
-    listener = get_agent(engine, "Ethan")
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
 
-    event = engine.create_relationship_event(
+    relationship_events = []
+
+    event = updater.create_relationship_event(
         day=2,
         hour=12,
         location_id="market",
@@ -35,15 +49,22 @@ def test_record_relationship_event_can_be_retrieved_for_pair():
         tags=["conversation", "compliment"],
     )
 
-    engine.record_relationship_event(event)
+    updater.record_relationship_event(
+        relationship_events=relationship_events,
+        relationship_event=event,
+    )
 
-    events = engine.get_recent_relationship_events(
-        "Maya",
-        "Ethan",
+    events = updater.get_recent_relationship_events(
+        relationship_events=relationship_events,
+        agent_a="Maya",
+        agent_b="Ethan",
         limit=3,
     )
 
     assert len(events) == 1
+    assert events[0].agent_a == "Maya"
+    assert events[0].agent_b == "Ethan"
+    assert events[0].location == "market"
     assert events[0].action == "compliment"
     assert events[0].relationship_change == 1
     assert events[0].relationship_score == 3

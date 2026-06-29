@@ -4,7 +4,6 @@ from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
 from src.agents.memory import Memory
-from src.agents.relationship_event import RelationshipEvent
 from src.agents.relationships import RelationshipManager
 from src.analysis.report import SimulationReporter
 from src.behavior.intent_planner import IntentPlanner
@@ -416,83 +415,7 @@ class SimulationEngine:
             location_id=location_id,
         )
         
-    def should_record_relationship_event(
-        self,
-        action: str,
-        relationship_change: int,
-    ) -> bool:
-        return self.relationship_updater.should_record_relationship_event(
-            action=action,
-            relationship_change=relationship_change,
-        )
 
-    
-    def create_relationship_event(
-        self,
-        day: int,
-        hour: int,
-        location_id: str,
-        speaker: Agent,
-        listener: Agent,
-        action: str,
-        relationship_change: int,
-        new_score: int,
-        relationship_label: str,
-        conversation: str,
-        tags: list[str],
-    ) -> RelationshipEvent:
-        return self.relationship_updater.create_relationship_event(
-            day=day,
-            hour=hour,
-            location_id=location_id,
-            speaker=speaker,
-            listener=listener,
-            action=action,
-            relationship_change=relationship_change,
-            new_score=new_score,
-            relationship_label=relationship_label,
-            conversation=conversation,
-            tags=tags,
-        )
-
-
-    def record_relationship_event(
-        self,
-        relationship_event: RelationshipEvent,
-    ) -> None:
-        self.relationship_updater.record_relationship_event(
-            relationship_events=self.relationship_events,
-            relationship_event=relationship_event,
-        )
-
-
-    def get_recent_relationship_events(
-        self,
-        agent_a: str,
-        agent_b: str,
-        limit: int = 3,
-    ) -> list[RelationshipEvent]:
-        return self.relationship_updater.get_recent_relationship_events(
-            relationship_events=self.relationship_events,
-            agent_a=agent_a,
-            agent_b=agent_b,
-            limit=limit,
-        )
-    
-    
-    def format_relationship_history_for_prompt(
-        self,
-        agent_a: str,
-        agent_b: str,
-        limit: int = 3,
-    ) -> list[str]:
-        return self.relationship_updater.format_relationship_history_for_prompt(
-            relationship_events=self.relationship_events,
-            agent_a=agent_a,
-            agent_b=agent_b,
-            limit=limit,
-        )
-        
     def sync_agent_relationships_from_manager(self) -> None:
         self.relationship_updater.sync_agent_relationships_from_manager(
             agents=self.agents,
