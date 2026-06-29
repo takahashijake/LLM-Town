@@ -1,34 +1,31 @@
 {
   "current_day": 1,
-  "current_hour": 22,
+  "current_hour": 8,
   "current_daily_event": {
-    "id": "cafe_discount",
-    "name": "Cafe Discount",
-    "description": "The cafe is offering a discount to first-time customers.",
-    "location_id": "cafe",
+    "id": "gardening_workshop",
+    "name": "Gardening Workshop",
+    "description": "Volunteers are teaching residents how to grow vegetables and herbs.",
+    "location_id": "town_square",
     "tags": [
-      "social",
-      "wealth"
+      "community",
+      "food",
+      "learning"
     ]
   },
   "daily_event_history": [
     {
       "day": 1,
-      "id": "cafe_discount",
-      "name": "Cafe Discount"
+      "id": "gardening_workshop",
+      "name": "Gardening Workshop"
     }
   ],
   "recent_dialogues": [
-    "i heard something strange about the market.",
-    "i can help you with that.",
-    "the town feels busy today.",
-    "my work as a local journalist has kept me busy near the cafe."
+    "we could work together on this.",
+    "you handled that really well."
   ],
   "recent_actions": [
-    "share_rumor",
-    "offer_help",
-    "chat",
-    "chat"
+    "cooperate",
+    "compliment"
   ],
   "activity_records": [
     {
@@ -36,201 +33,22 @@
       "day": 1,
       "hour": 8,
       "agent": "Maya",
-      "activity_id": "intent_socialize",
-      "activity_name": "Work on intent: socialize",
-      "location": "cafe",
-      "reason": "Maya wants to spend time with other residents.",
-      "tags": [
-        "intent",
-        "socialize",
-        "social",
-        "relationship"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 8,
-      "agent": "Ethan",
       "activity_id": "attend_event",
-      "activity_name": "Attend Cafe Discount",
-      "location": "cafe",
-      "reason": "Ethan is interested in today's event: Cafe Discount.",
+      "activity_name": "Attend Gardening Workshop",
+      "location": "town_square",
+      "reason": "Maya is interested in today's event: Gardening Workshop.",
       "tags": [
         "event",
-        "cafe_discount",
-        "social",
-        "wealth"
+        "gardening_workshop",
+        "community",
+        "food",
+        "learning"
       ]
     },
     {
       "type": "activity",
       "day": 1,
       "hour": 8,
-      "agent": "Lena",
-      "activity_id": "meet_residents",
-      "activity_name": "Meet residents",
-      "location": "cafe",
-      "reason": "Lena wants to build goodwill with residents.",
-      "tags": [
-        "community",
-        "social"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 8,
-      "agent": "Carlos",
-      "activity_id": "public_socialize",
-      "activity_name": "Talk with people in the town square",
-      "location": "town_square",
-      "reason": "Carlos wants to be around people.",
-      "tags": [
-        "social",
-        "town_life"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 12,
-      "agent": "Maya",
-      "activity_id": "intent_socialize",
-      "activity_name": "Work on intent: socialize",
-      "location": "cafe",
-      "reason": "Maya wants to spend time with other residents.",
-      "tags": [
-        "intent",
-        "socialize",
-        "social",
-        "relationship"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 12,
-      "agent": "Ethan",
-      "activity_id": "observe_market",
-      "activity_name": "Observe business activity",
-      "location": "market",
-      "reason": "Ethan is watching for financial opportunities or risks.",
-      "tags": [
-        "accounting",
-        "business"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 12,
-      "agent": "Lena",
-      "activity_id": "organize_community",
-      "activity_name": "Organize community support",
-      "location": "town_square",
-      "reason": "Lena wants to help the town community.",
-      "tags": [
-        "community",
-        "volunteer",
-        "social"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 12,
-      "agent": "Carlos",
-      "activity_id": "pursue_business",
-      "activity_name": "Look for business opportunities",
-      "location": "market",
-      "reason": "Carlos wants to find business opportunities.",
-      "tags": [
-        "business",
-        "market",
-        "wealth"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 18,
-      "agent": "Maya",
-      "activity_id": "investigate_story",
-      "activity_name": "Investigate a possible story",
-      "location": "town_square",
-      "reason": "Maya is looking for town stories or rumors.",
-      "tags": [
-        "journalism",
-        "rumor",
-        "knowledge"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 18,
-      "agent": "Ethan",
-      "activity_id": "attend_event",
-      "activity_name": "Attend Cafe Discount",
-      "location": "cafe",
-      "reason": "Ethan is interested in today's event: Cafe Discount.",
-      "tags": [
-        "event",
-        "cafe_discount",
-        "social",
-        "wealth"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 18,
-      "agent": "Lena",
-      "activity_id": "meet_residents",
-      "activity_name": "Meet residents",
-      "location": "cafe",
-      "reason": "Lena wants to build goodwill with residents.",
-      "tags": [
-        "community",
-        "social"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 18,
-      "agent": "Carlos",
-      "activity_id": "pursue_business",
-      "activity_name": "Look for business opportunities",
-      "location": "market",
-      "reason": "Carlos wants to find business opportunities.",
-      "tags": [
-        "business",
-        "market",
-        "wealth"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 22,
-      "agent": "Maya",
-      "activity_id": "intent_socialize",
-      "activity_name": "Work on intent: socialize",
-      "location": "cafe",
-      "reason": "Maya wants to spend time with other residents.",
-      "tags": [
-        "intent",
-        "socialize",
-        "social",
-        "relationship"
-      ]
-    },
-    {
-      "type": "activity",
-      "day": 1,
-      "hour": 22,
       "agent": "Ethan",
       "activity_id": "intent_socialize",
       "activity_name": "Work on intent: socialize",
@@ -246,29 +64,32 @@
     {
       "type": "activity",
       "day": 1,
-      "hour": 22,
+      "hour": 8,
       "agent": "Lena",
-      "activity_id": "seek_work",
-      "activity_name": "Look for work or business opportunities",
-      "location": "market",
-      "reason": "Lena wants to improve wealth.",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Gardening Workshop",
+      "location": "town_square",
+      "reason": "Lena is interested in today's event: Gardening Workshop.",
       "tags": [
-        "wealth",
-        "business"
+        "event",
+        "gardening_workshop",
+        "community",
+        "food",
+        "learning"
       ]
     },
     {
       "type": "activity",
       "day": 1,
-      "hour": 22,
+      "hour": 8,
       "agent": "Carlos",
-      "activity_id": "network",
-      "activity_name": "Network with townspeople",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
       "location": "cafe",
-      "reason": "Carlos wants to grow influence through relationships.",
+      "reason": "Carlos wants more social contact.",
       "tags": [
-        "business",
-        "social"
+        "social",
+        "relationship"
       ]
     }
   ],
@@ -277,119 +98,95 @@
       "id": "agent_001",
       "name": "Maya",
       "personality": "curious",
-      "location_id": "cafe",
+      "location_id": "town_square",
       "memory": [
         {
           "day": 1,
           "hour": 0,
           "type": "town_arc",
-          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
           "participants": [
-            "Ethan",
-            "Maya",
-            "Carlos"
+            "Lena",
+            "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
-          "sentiment": 2,
+          "sentiment": 1,
           "tags": [
             "town_arc",
             "created",
-            "arc_market_pressure_day_1",
-            "market",
-            "business",
-            "wealth"
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
           ],
-          "id": "d31e139c-1ef9-4fb4-8138-2f9292cab140",
-          "last_accessed_day": 1,
-          "strength": 2
-        },
-        {
-          "day": 1,
-          "hour": 0,
-          "type": "daily_event",
-          "description": "Town event today: Cafe Discount. The cafe is offering a discount to first-time customers.",
-          "participants": [],
-          "location": "cafe",
-          "importance": 3,
-          "sentiment": 0,
-          "tags": [
-            "event",
-            "cafe_discount",
-            "social",
-            "wealth"
-          ],
-          "id": "2c38f4fb-8c1f-42a6-9def-d7cb79f1d2cf",
-          "last_accessed_day": 1,
-          "strength": 5
-        },
-        {
-          "day": 1,
-          "hour": 0,
-          "type": "town_arc_participation",
-          "description": "Ethan and Maya affected the town arc 'Market Pressure' through action 'share_rumor'. Progress changed from 0 to 0; tension changed from 2 to 3.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "cafe",
-          "importance": 3,
-          "sentiment": 3,
-          "tags": [
-            "town_arc",
-            "participation",
-            "arc_market_pressure_day_1",
-            "share_rumor",
-            "market",
-            "business",
-            "wealth"
-          ],
-          "id": "de632864-e2e7-4b10-ae8d-c4b738e6aa7f",
-          "last_accessed_day": 1,
-          "strength": 2
-        },
-        {
-          "day": 1,
-          "hour": 8,
-          "type": "conversation",
-          "description": "I heard something strange about the market.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "share_rumor"
-          ],
-          "id": "6251dbce-a089-43be-bf73-e476c8067c72",
+          "id": "02916920-eb41-4b3a-ba02-22e03655c3d0",
           "last_accessed_day": null,
           "strength": 1
         },
         {
           "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "My work as a local journalist has kept me busy near the cafe.",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "cafe",
-          "importance": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
           "sentiment": 0,
           "tags": [
-            "conversation",
             "event",
-            "cafe_discount",
-            "neutral",
-            "chat"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "5c029148-7fb7-4fd0-8979-75f77d40b63f",
+          "id": "768e2771-ffb3-4df9-804d-4af4d8ee93b8",
+          "last_accessed_day": 1,
+          "strength": 3
+        },
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "town_arc_participation",
+          "description": "Lena and Maya affected the town arc 'Community Project' through action 'cooperate'. Progress changed from 0 to 1; tension changed from 1 to 0.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "participation",
+            "arc_community_project_day_1",
+            "cooperate",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "d85f81a7-8a52-4ebd-8217-d1efa11b642a",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "We could work together on this.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 2,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ],
+          "id": "b32dd032-81ce-404a-aa16-38c31e0ea542",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -401,27 +198,25 @@
         "build close friendships"
       ],
       "needs": {
-        "social": 59,
-        "wealth": 46,
-        "knowledge": 50
+        "social": 50,
+        "wealth": 49,
+        "knowledge": 51
       },
       "relationships": {
-        "Ethan": -1
+        "Lena": 2
       },
       "occupation": "local journalist",
       "recent_topics": [
-        "market",
-        "share_rumor",
-        "event",
-        "cafe_discount"
+        "cooperate"
       ],
-      "current_activity": "Work on intent: socialize",
-      "current_activity_reason": "Maya wants to spend time with other residents.",
+      "current_activity": "Attend Gardening Workshop",
+      "current_activity_reason": "Maya is interested in today's event: Gardening Workshop.",
       "current_activity_tags": [
-        "intent",
-        "socialize",
-        "social",
-        "relationship"
+        "event",
+        "gardening_workshop",
+        "community",
+        "food",
+        "learning"
       ]
     },
     {
@@ -434,24 +229,23 @@
           "day": 1,
           "hour": 0,
           "type": "town_arc",
-          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
           "participants": [
-            "Ethan",
-            "Maya",
-            "Carlos"
+            "Lena",
+            "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
-          "sentiment": 2,
+          "sentiment": 1,
           "tags": [
             "town_arc",
             "created",
-            "arc_market_pressure_day_1",
-            "market",
-            "business",
-            "wealth"
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
           ],
-          "id": "d31e139c-1ef9-4fb4-8138-2f9292cab140",
+          "id": "02916920-eb41-4b3a-ba02-22e03655c3d0",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -459,155 +253,40 @@
           "day": 1,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Cafe Discount. The cafe is offering a discount to first-time customers.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "cafe",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "cafe_discount",
-            "social",
-            "wealth"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "2c38f4fb-8c1f-42a6-9def-d7cb79f1d2cf",
+          "id": "768e2771-ffb3-4df9-804d-4af4d8ee93b8",
           "last_accessed_day": 1,
-          "strength": 4
-        },
-        {
-          "day": 1,
-          "hour": 0,
-          "type": "town_arc_participation",
-          "description": "Ethan and Maya affected the town arc 'Market Pressure' through action 'share_rumor'. Progress changed from 0 to 0; tension changed from 2 to 3.",
-          "participants": [
-            "Ethan",
-            "Maya"
-          ],
-          "location": "cafe",
-          "importance": 3,
-          "sentiment": 3,
-          "tags": [
-            "town_arc",
-            "participation",
-            "arc_market_pressure_day_1",
-            "share_rumor",
-            "market",
-            "business",
-            "wealth"
-          ],
-          "id": "de632864-e2e7-4b10-ae8d-c4b738e6aa7f",
-          "last_accessed_day": null,
-          "strength": 1
+          "strength": 3
         },
         {
           "day": 1,
           "hour": 8,
           "type": "conversation",
-          "description": "I heard something strange about the market.",
+          "description": "You handled that really well.",
           "participants": [
-            "Ethan",
-            "Maya"
+            "Carlos",
+            "Ethan"
           ],
           "location": "cafe",
-          "importance": 2,
-          "sentiment": -1,
-          "tags": [
-            "conversation",
-            "market",
-            "neutral",
-            "share_rumor"
-          ],
-          "id": "6251dbce-a089-43be-bf73-e476c8067c72",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
-          "hour": 0,
-          "type": "town_arc_participation",
-          "description": "Ethan and Carlos affected the town arc 'Market Pressure' through action 'offer_help'. Progress changed from 0 to 1; tension changed from 3 to 2.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "market",
-          "importance": 3,
-          "sentiment": 2,
-          "tags": [
-            "town_arc",
-            "participation",
-            "arc_market_pressure_day_1",
-            "offer_help",
-            "market",
-            "business",
-            "wealth"
-          ],
-          "id": "dd2600eb-e967-4025-92d8-c484366c277e",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
-          "hour": 12,
-          "type": "conversation",
-          "description": "I can help you with that.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "market",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
             "neutral",
-            "offer_help"
+            "compliment"
           ],
-          "id": "5f7c7c7b-cb04-4df3-951d-212f658b33e2",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
-          "hour": 18,
-          "type": "conversation",
-          "description": "The town feels busy today.",
-          "participants": [
-            "Ethan",
-            "Lena"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "neutral",
-            "chat"
-          ],
-          "id": "515e975a-b817-494d-819e-923fa618b646",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
-          "hour": 22,
-          "type": "conversation",
-          "description": "My work as a local journalist has kept me busy near the cafe.",
-          "participants": [
-            "Maya",
-            "Ethan"
-          ],
-          "location": "cafe",
-          "importance": 2,
-          "sentiment": 0,
-          "tags": [
-            "conversation",
-            "event",
-            "cafe_discount",
-            "neutral",
-            "chat"
-          ],
-          "id": "5c029148-7fb7-4fd0-8979-75f77d40b63f",
+          "id": "a501c0c6-e450-406f-b736-6c288ff657f1",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -619,22 +298,16 @@
         "find reliable allies"
       ],
       "needs": {
-        "social": 56,
-        "wealth": 54,
+        "social": 53,
+        "wealth": 49,
         "knowledge": 49
       },
       "relationships": {
-        "Maya": -1,
-        "Carlos": 1,
-        "Lena": 0
+        "Carlos": 1
       },
       "occupation": "accountant",
       "recent_topics": [
-        "market",
-        "share_rumor",
-        "offer_help",
-        "event",
-        "cafe_discount"
+        "compliment"
       ],
       "current_activity": "Work on intent: socialize",
       "current_activity_reason": "Ethan wants to spend time with other residents.",
@@ -649,30 +322,29 @@
       "id": "agent_003",
       "name": "Lena",
       "personality": "friendly",
-      "location_id": "market",
+      "location_id": "town_square",
       "memory": [
         {
           "day": 1,
           "hour": 0,
           "type": "town_arc",
-          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
           "participants": [
-            "Ethan",
-            "Maya",
-            "Carlos"
+            "Lena",
+            "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
-          "sentiment": 2,
+          "sentiment": 1,
           "tags": [
             "town_arc",
             "created",
-            "arc_market_pressure_day_1",
-            "market",
-            "business",
-            "wealth"
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
           ],
-          "id": "d31e139c-1ef9-4fb4-8138-2f9292cab140",
+          "id": "02916920-eb41-4b3a-ba02-22e03655c3d0",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -680,39 +352,65 @@
           "day": 1,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Cafe Discount. The cafe is offering a discount to first-time customers.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "cafe",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "cafe_discount",
-            "social",
-            "wealth"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "2c38f4fb-8c1f-42a6-9def-d7cb79f1d2cf",
+          "id": "768e2771-ffb3-4df9-804d-4af4d8ee93b8",
           "last_accessed_day": 1,
-          "strength": 4
+          "strength": 3
         },
         {
           "day": 1,
-          "hour": 18,
-          "type": "conversation",
-          "description": "The town feels busy today.",
+          "hour": 0,
+          "type": "town_arc_participation",
+          "description": "Lena and Maya affected the town arc 'Community Project' through action 'cooperate'. Progress changed from 0 to 1; tension changed from 1 to 0.",
           "participants": [
-            "Ethan",
-            "Lena"
+            "Lena",
+            "Maya"
           ],
-          "location": "cafe",
-          "importance": 2,
+          "location": "town_square",
+          "importance": 3,
           "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "participation",
+            "arc_community_project_day_1",
+            "cooperate",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "d85f81a7-8a52-4ebd-8217-d1efa11b642a",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 8,
+          "type": "conversation",
+          "description": "We could work together on this.",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 2,
           "tags": [
             "conversation",
             "neutral",
-            "chat"
+            "cooperate"
           ],
-          "id": "515e975a-b817-494d-819e-923fa618b646",
+          "id": "b32dd032-81ce-404a-aa16-38c31e0ea542",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -724,20 +422,25 @@
         "help the town community"
       ],
       "needs": {
-        "social": 56,
-        "wealth": 51,
-        "knowledge": 46
+        "social": 52,
+        "wealth": 49,
+        "knowledge": 51
       },
       "relationships": {
-        "Ethan": 0
+        "Maya": 2
       },
       "occupation": "community organizer",
-      "recent_topics": [],
-      "current_activity": "Look for work or business opportunities",
-      "current_activity_reason": "Lena wants to improve wealth.",
+      "recent_topics": [
+        "cooperate"
+      ],
+      "current_activity": "Attend Gardening Workshop",
+      "current_activity_reason": "Lena is interested in today's event: Gardening Workshop.",
       "current_activity_tags": [
-        "wealth",
-        "business"
+        "event",
+        "gardening_workshop",
+        "community",
+        "food",
+        "learning"
       ]
     },
     {
@@ -750,24 +453,23 @@
           "day": 1,
           "hour": 0,
           "type": "town_arc",
-          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
           "participants": [
-            "Ethan",
-            "Maya",
-            "Carlos"
+            "Lena",
+            "Maya"
           ],
-          "location": "market",
+          "location": "town_square",
           "importance": 3,
-          "sentiment": 2,
+          "sentiment": 1,
           "tags": [
             "town_arc",
             "created",
-            "arc_market_pressure_day_1",
-            "market",
-            "business",
-            "wealth"
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
           ],
-          "id": "d31e139c-1ef9-4fb4-8138-2f9292cab140",
+          "id": "02916920-eb41-4b3a-ba02-22e03655c3d0",
           "last_accessed_day": null,
           "strength": 1
         },
@@ -775,64 +477,40 @@
           "day": 1,
           "hour": 0,
           "type": "daily_event",
-          "description": "Town event today: Cafe Discount. The cafe is offering a discount to first-time customers.",
+          "description": "Town event today: Gardening Workshop. Volunteers are teaching residents how to grow vegetables and herbs.",
           "participants": [],
-          "location": "cafe",
+          "location": "town_square",
           "importance": 3,
           "sentiment": 0,
           "tags": [
             "event",
-            "cafe_discount",
-            "social",
-            "wealth"
+            "gardening_workshop",
+            "community",
+            "food",
+            "learning"
           ],
-          "id": "2c38f4fb-8c1f-42a6-9def-d7cb79f1d2cf",
+          "id": "768e2771-ffb3-4df9-804d-4af4d8ee93b8",
           "last_accessed_day": 1,
-          "strength": 4
+          "strength": 3
         },
         {
           "day": 1,
-          "hour": 0,
-          "type": "town_arc_participation",
-          "description": "Ethan and Carlos affected the town arc 'Market Pressure' through action 'offer_help'. Progress changed from 0 to 1; tension changed from 3 to 2.",
-          "participants": [
-            "Ethan",
-            "Carlos"
-          ],
-          "location": "market",
-          "importance": 3,
-          "sentiment": 2,
-          "tags": [
-            "town_arc",
-            "participation",
-            "arc_market_pressure_day_1",
-            "offer_help",
-            "market",
-            "business",
-            "wealth"
-          ],
-          "id": "dd2600eb-e967-4025-92d8-c484366c277e",
-          "last_accessed_day": null,
-          "strength": 1
-        },
-        {
-          "day": 1,
-          "hour": 12,
+          "hour": 8,
           "type": "conversation",
-          "description": "I can help you with that.",
+          "description": "You handled that really well.",
           "participants": [
-            "Ethan",
-            "Carlos"
+            "Carlos",
+            "Ethan"
           ],
-          "location": "market",
+          "location": "cafe",
           "importance": 2,
           "sentiment": 1,
           "tags": [
             "conversation",
             "neutral",
-            "offer_help"
+            "compliment"
           ],
-          "id": "5f7c7c7b-cb04-4df3-951d-212f658b33e2",
+          "id": "a501c0c6-e450-406f-b736-6c288ff657f1",
           "last_accessed_day": null,
           "strength": 1
         }
@@ -844,83 +522,81 @@
         "find business opportunities"
       ],
       "needs": {
-        "social": 50,
-        "wealth": 60,
-        "knowledge": 46
+        "social": 55,
+        "wealth": 49,
+        "knowledge": 49
       },
       "relationships": {
         "Ethan": 1
       },
       "occupation": "merchant",
       "recent_topics": [
-        "offer_help"
+        "compliment"
       ],
-      "current_activity": "Network with townspeople",
-      "current_activity_reason": "Carlos wants to grow influence through relationships.",
+      "current_activity": "Socialize with townspeople",
+      "current_activity_reason": "Carlos wants more social contact.",
       "current_activity_tags": [
-        "business",
-        "social"
+        "social",
+        "relationship"
       ]
     }
   ],
   "relationship_scores": {
-    "Ethan|Maya": -1,
-    "Carlos|Ethan": 1,
-    "Ethan|Lena": 0
+    "Lena|Maya": 2,
+    "Carlos|Ethan": 1
   },
   "relationship_events": [
     {
       "day": 1,
       "hour": 8,
-      "agent_a": "Ethan",
+      "agent_a": "Lena",
       "agent_b": "Maya",
-      "action": "share_rumor",
-      "relationship_change": -1,
-      "relationship_score": -1,
+      "action": "cooperate",
+      "relationship_change": 2,
+      "relationship_score": 2,
       "relationship_label": "neutral",
-      "description": "Ethan used action 'share_rumor' with Maya. Their relationship worsened by -1; score is now -1 (neutral).",
-      "location": "cafe",
+      "description": "Lena used action 'cooperate' with Maya. Their relationship improved by +2; score is now +2 (neutral).",
+      "location": "town_square",
       "tags": [
         "conversation",
-        "market",
         "neutral",
-        "share_rumor"
+        "cooperate"
       ],
-      "conversation": "I heard something strange about the market.",
-      "id": "30cd9e02-795a-48c0-bfdc-fc77d2210d76"
+      "conversation": "We could work together on this.",
+      "id": "03c2c006-ed82-48ec-89ec-dd3b1e1087fc"
     },
     {
       "day": 1,
-      "hour": 12,
-      "agent_a": "Ethan",
-      "agent_b": "Carlos",
-      "action": "offer_help",
+      "hour": 8,
+      "agent_a": "Carlos",
+      "agent_b": "Ethan",
+      "action": "compliment",
       "relationship_change": 1,
       "relationship_score": 1,
       "relationship_label": "neutral",
-      "description": "Ethan used action 'offer_help' with Carlos. Their relationship improved by +1; score is now +1 (neutral).",
-      "location": "market",
+      "description": "Carlos used action 'compliment' with Ethan. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "cafe",
       "tags": [
         "conversation",
         "neutral",
-        "offer_help"
+        "compliment"
       ],
-      "conversation": "I can help you with that.",
-      "id": "61613ca2-7e80-4e6b-b233-4de6b59b1551"
+      "conversation": "You handled that really well.",
+      "id": "3373cf12-fcba-41b7-887a-2923db66eac4"
     }
   ],
   "agent_intents": {
     "Maya": {
       "agent_name": "Maya",
-      "intent_type": "socialize",
-      "description": "Maya wants to spend time with other residents.",
+      "intent_type": "investigate",
+      "description": "Maya wants to gather information about recent town activity.",
       "created_day": 1,
       "expires_day": 2,
-      "priority": 2,
+      "priority": 3,
       "target_agent": null,
-      "target_location": "cafe",
+      "target_location": "library",
       "status": "active",
-      "id": "3e69e984-1645-45f4-9adb-fd3a9b686281"
+      "id": "59d05acd-2bd4-46a9-944a-247667ddecd1"
     },
     "Ethan": {
       "agent_name": "Ethan",
@@ -932,27 +608,38 @@
       "target_agent": null,
       "target_location": "cafe",
       "status": "active",
-      "id": "b7048656-3151-42a6-8a8e-521492fc36a0"
+      "id": "404e2139-e380-49a8-bfa9-c35a46cececf"
+    },
+    "Lena": {
+      "agent_name": "Lena",
+      "intent_type": "socialize",
+      "description": "Lena wants to spend time with other residents.",
+      "created_day": 1,
+      "expires_day": 2,
+      "priority": 2,
+      "target_agent": null,
+      "target_location": "cafe",
+      "status": "active",
+      "id": "98ddc9ba-81e9-42d7-b7b9-26c053be10d7"
     }
   },
   "town_arcs": [
     {
-      "id": "arc_market_pressure_day_1",
-      "name": "Market Pressure",
-      "description": "Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly.",
+      "id": "arc_community_project_day_1",
+      "name": "Community Project",
+      "description": "Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation.",
       "status": "active",
-      "location_id": "market",
+      "location_id": "town_square",
       "involved_agents": [
-        "Ethan",
-        "Maya",
-        "Carlos"
+        "Lena",
+        "Maya"
       ],
       "tags": [
-        "market",
-        "business",
-        "wealth"
+        "community",
+        "volunteer",
+        "social"
       ],
-      "tension": 2,
+      "tension": 0,
       "progress": 1,
       "created_day": 1,
       "updated_day": 1,

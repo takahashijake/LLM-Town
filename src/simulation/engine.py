@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.town_arc_system import TownArcSystem
 from src.simulation.relationship_updater import RelationshipUpdater
 from src.town.town_arc import TownArc
 from src.behavior.planner import ActivityPlanner
@@ -61,6 +62,10 @@ class SimulationEngine:
         self.relationship_events = []
         self.town_arcs = []
         self.town_arc_change_records = []
+        self.town_arc_system = TownArcSystem(
+            town_arcs = self.town_arcs, 
+            town_arc_change_records=self.town_arc_change_records,
+        )
         if saved_state:
             self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
@@ -68,6 +73,11 @@ class SimulationEngine:
             self.load_agent_intents_from_state(saved_state)
             self.load_relationship_events_from_state(saved_state)
             self.load_town_arcs_from_state(saved_state)
+            self.load_town_arcs_from_state(saved_state)
+            self.town_arc_system = TownArcSystem(
+                town_arcs=self.town_arcs,
+                town_arc_change_records=self.town_arc_change_records,
+            )
             self.sync_agent_relationships_from_manager()
             self.start_day = saved_state["current_day"]
             self.start_hour = saved_state["current_hour"]
@@ -291,86 +301,14 @@ class SimulationEngine:
         ]
 
 
-    def get_active_town_arcs(self) -> list[TownArc]:
-        return [
-            arc
-            for arc in self.town_arcs
-            if arc.is_active()
-        ]
-
+    def get_active_town_arcs(self): 
+        return self.town_arc_system.get_active_town_arcs()
 
     def create_town_arc_from_daily_event(self, day: int, daily_event) -> TownArc | None:
-        event_tags = set(daily_event.tags)
-
-        active_arc_names = {
-            arc.name
-            for arc in self.get_active_town_arcs()
-        }
-
-        if "market" in event_tags or "wealth" in event_tags or "business" in event_tags:
-            if "Market Pressure" in active_arc_names:
-                return None
-
-            return TownArc(
-                id=f"arc_market_pressure_day_{day}",
-                name="Market Pressure",
-                description=(
-                    "Residents are paying closer attention to market prices, "
-                    "business opportunities, and whether local merchants are acting fairly."
-                ),
-                status="active",
-                location_id="market",
-                involved_agents=[],
-                tags=["market", "business", "wealth"],
-                tension=2,
-                progress=0,
-                created_day=day,
-                updated_day=day,
-            )
-
-        if "community" in event_tags or "volunteer" in event_tags or "help" in event_tags:
-            if "Community Project" in active_arc_names:
-                return None
-
-            return TownArc(
-                id=f"arc_community_project_day_{day}",
-                name="Community Project",
-                description=(
-                    "Residents are becoming more involved in shared town projects, "
-                    "repairs, volunteering, and public cooperation."
-                ),
-                status="active",
-                location_id="town_square",
-                involved_agents=[],
-                tags=["community", "volunteer", "social"],
-                tension=1,
-                progress=0,
-                created_day=day,
-                updated_day=day,
-            )
-
-        if "learning" in event_tags or "rules" in event_tags:
-            if "Public Questions" in active_arc_names:
-                return None
-
-            return TownArc(
-                id=f"arc_public_questions_day_{day}",
-                name="Public Questions",
-                description=(
-                    "Residents are asking more questions about records, rules, "
-                    "local decisions, and recent town activity."
-                ),
-                status="active",
-                location_id="library",
-                involved_agents=[],
-                tags=["knowledge", "rules", "learning"],
-                tension=2,
-                progress=0,
-                created_day=day,
-                updated_day=day,
-            )
-
-        return None
+        return self.town_arc_system.create_town_arc_from_daily_event(
+            day=day,
+            daily_event=daily_event,
+        )
 
 
     def should_create_town_arc(self, day: int) -> bool:
@@ -386,82 +324,11 @@ class SimulationEngine:
 
 
     def update_town_arcs(self, day: int) -> None:
-        for arc in self.get_active_town_arcs():
-            if arc.updated_day == day:
-                continue
-
-            previous_tension = arc.tension
-            previous_progress = arc.progress
-
-            arc.progress += random.choice([0, 1])
-            arc.tension += random.choice([-1, 0, 0, 1])
-            arc.tension = max(0, min(5, arc.tension))
-            arc.updated_day = day
-
-            changed_significantly = (
-                abs(arc.tension - previous_tension) >= 2
-                or arc.progress > previous_progress
-            )
-
-            if day - arc.created_day >= 3 and arc.progress >= 2:
-                arc.status = "resolved"
-                arc.resolved_day = day
-            
-                print(
-                    f"Town arc resolved: {arc.name} "
-                    f"(location={arc.location_id or 'town'}, "
-                    f"tension={arc.tension}, progress={arc.progress})"
-                )
-            
-                self.remember_town_arc_for_all_agents(
-                    day=day,
-                    arc=arc,
-                    reason="resolved",
-                )
-
-            elif changed_significantly:
-                changes = []
-                
-                if arc.tension != previous_tension:
-                    changes.append(f"tension {previous_tension}->{arc.tension}")
-                
-                if arc.progress != previous_progress:
-                    changes.append(f"progress {previous_progress}->{arc.progress}")
-                
-                change_text = ", ".join(changes) if changes else "no major numeric change"
-                
-                print(
-                    f"Town arc updated: {arc.name} "
-                    f"({change_text})"
-                )
-            
-                self.remember_town_arc_for_all_agents(
-                    day=day,
-                    arc=arc,
-                    reason="updated",
-                )
-
-        if self.current_daily_event and self.should_create_town_arc(day):
-            new_arc = self.create_town_arc_from_daily_event(
-                day=day,
-                daily_event=self.current_daily_event,
-            )
-
-            if new_arc:
-                self.town_arcs.append(new_arc)
-            
-                print(
-                    f"Town arc created: {new_arc.name} "
-                    f"(location={new_arc.location_id or 'town'}, "
-                    f"tension={new_arc.tension}, progress={new_arc.progress})"
-                )
-            
-                self.remember_town_arc_for_all_agents(
-                    day=day,
-                    arc=new_arc,
-                    reason="created",
-                )
-                
+        self.town_arc_system.update_town_arcs(
+            day=day,
+            current_daily_event=self.current_daily_event,
+            agents=self.agents,
+        )
 
 
     def create_town_arc_memory(self, day: int, arc: TownArc) -> Memory:
@@ -481,61 +348,20 @@ class SimulationEngine:
         )
 
 
-    def remember_town_arc_for_all_agents(self, day: int, arc: TownArc, reason: str) ->None:
-        arc_memory = Memory(
+   
+
+    def remember_town_arc_for_all_agents(self, day, arc, reason):
+        self.town_arc_system.remember_town_arc_for_all_agents(
             day=day,
-            hour=0,
-            type="town_arc",
-            description=(
-                f"Town arc {reason}: {arc.name}. {arc.description} "
-                f"Status: {arc.status}. Tension: {arc.tension}. Progress: {arc.progress}."
-            ),
-            participants=arc.involved_agents,
-            location=arc.location_id or "town",
-            importance=3,
-            sentiment=arc.tension,
-            tags=["town_arc", reason, arc.id] + arc.tags,
+            arc=arc,
+            reason=reason,
+            agents=self.agents,
         )
-
-        for agent in self.agents:
-            should_remember = reason in {"created", "resolved"}
-        
-            if not should_remember:
-                agent_location = getattr(agent, "location_id", None)
-                agent_activity_tags = set(getattr(agent, "current_activity_tags", []))
-                arc_tags = set(arc.tags)
-        
-                should_remember = (
-                    agent_location == arc.location_id
-                    or bool(agent_activity_tags & arc_tags)
-                    or agent.name in arc.involved_agents
-                )
-        
-            if should_remember:
-                agent.remember(arc_memory)
-
-
-    def get_relevant_town_arcs_for_context(self, location_id: str) -> list[dict]:
-        relevant_arcs = []
-
-        for arc in self.get_active_town_arcs():
-            if arc.location_id and arc.location_id != location_id:
-                continue
-
-            relevant_arcs.append(
-                {
-                    "id": arc.id,
-                    "name": arc.name,
-                    "description": arc.description,
-                    "status": arc.status,
-                    "location_id": arc.location_id,
-                    "tags": arc.tags,
-                    "tension": arc.tension,
-                    "progress": arc.progress,
-                }
-            )
-
-        return relevant_arcs[:2]
+    
+    def get_relevant_town_arcs_for_context(self, location_id: str):
+        return self.town_arc_system.get_relevant_town_arcs_for_context(
+            location_id=location_id,
+        )
         
     def should_record_relationship_event(
         self,
