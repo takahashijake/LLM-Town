@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 
+from src.simulation.conversation_output_processor import ConversationOutputProcessor
 from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_selector import ConversationSelector 
 from src.simulation.conversation_tagger import ConversationTagger
@@ -88,6 +89,9 @@ class SimulationEngine:
             recent_dialogues=self.recent_dialogues,
             recent_actions=self.recent_actions,
         )
+        self.conversation_output_processor = ConversationOutputProcessor(
+            conversation_policy=self.conversation_policy,
+        )
         self.daily_event_history = []
         self.relationship_events = []
         self.town_arcs = []
@@ -124,12 +128,42 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
         )
 
+    def process_conversation_output(
+        self,
+        raw_output: str,
+        allowed_actions: list[str],
+        speaker: Agent,
+        listener: Agent,
+        old_relationship_label: str,
+        location_id: str,
+        suggested_action: str,
+        current_day: int,
+    ) -> dict:
+        self.sync_conversation_policy_refs()
+        self.sync_conversation_output_processor_refs()
+
+        return self.conversation_output_processor.process_llm_output(
+            raw_output=raw_output,
+            allowed_actions=allowed_actions,
+            speaker=speaker,
+            listener=listener,
+            old_relationship_label=old_relationship_label,
+            location_id=location_id,
+            suggested_action=suggested_action,
+            current_day=current_day,
+            current_daily_event=self.current_daily_event,
+            daily_event_history=self.daily_event_history,
+        )
+        
     def sync_conversation_context_preparer_refs(self) -> None:
         self.conversation_context_preparer.relationships = self.relationships
         self.conversation_context_preparer.intent_system = self.intent_system
         self.conversation_context_preparer.conversation_policy = self.conversation_policy
         self.conversation_context_preparer.relationship_updater = self.relationship_updater
         self.conversation_context_preparer.town_arc_system = self.town_arc_system
+
+    def sync_conversation_output_processor_refs(self) -> None:
+        self.conversation_output_processor.conversation_policy = self.conversation_policy
         
     def sync_activity_system_refs(self) -> None:
         self.activity_system.activity_records = self.activity_records
@@ -271,6 +305,7 @@ class SimulationEngine:
         self.activity_records = continuity["activity_records"]
         self.sync_activity_system_refs()
         self.sync_conversation_policy_refs()
+        self.sync_conversation_output_processor_refs()
     
     def load_town_arcs_from_state(self, saved_state: dict) -> None:
         self.town_arcs = self.persistence.load_town_arcs_from_state(
@@ -913,38 +948,21 @@ class SimulationEngine:
             
             raw_output = self.llm.generate_conversation(context)
 
-            parsed_output = parse_llm_conversation_output(
-                raw_output,
+            processed_output = self.process_conversation_output(
+                raw_output=raw_output,
                 allowed_actions=allowed_actions,
-            )
-            
-            conversation = parsed_output["dialogue"]
-            parsed_action = parsed_output["action"]
-            
-            if not conversation:
-                conversation = speaker.speak_to(listener, old_relationship_label)
-                parsed_action = "chat"
-            
-            conversation = self.fix_stale_event_reference(
-                conversation,
+                speaker=speaker,
+                listener=listener,
+                old_relationship_label=old_relationship_label,
+                location_id=location_id,
+                suggested_action=suggested_action,
                 current_day=day,
             )
 
-            if self.is_narration(conversation, speaker, listener): 
-                conversation = speaker.speak_to(listener, old_relationship_label) 
-                parsed_action = "chat"
-
-            if self.is_repeated_dialogue(conversation):
-                conversation = self.get_non_repeated_fallback_dialogue(
-                    speaker=speaker,
-                    listener=listener,
-                    relationship_label=old_relationship_label,
-                    location_id=location_id,
-                    suggested_action=suggested_action,
-                )
-                parsed_action = "chat"
+            parsed_output = processed_output["parsed_output"]
+            conversation = processed_output["conversation"]
+            parsed_action = processed_output["parsed_action"]
             
-            conversation = self.clean_dialogue_text(conversation)
             
             conversation_tags = self.get_initial_conversation_tags(
                 conversation=conversation,
