@@ -1,33 +1,45 @@
 import json
+import random
+from pathlib import Path
 
-from src.actions.action_system import ActionSystem
-from src.agents.agent import Agent
-from src.agents.intent import AgentIntent
-from src.agents.memory import Memory
-from src.agents.relationships import RelationshipManager
-from src.analysis.report import SimulationReporter
-from src.behavior.intent_planner import IntentPlanner
-from src.behavior.planner import ActivityPlanner
-from src.behavior.social_policy import SocialBehaviorPolicy
-from src.llm.client import TransformersLLMClient
-from src.simulation.activity_system import ActivitySystem
-from src.simulation.conversation_context_preparer import ConversationContextPreparer
+from src.simulation.conversation_runner import ConversationRunner
 from src.simulation.conversation_effects_applier import ConversationEffectsApplier
 from src.simulation.conversation_output_processor import ConversationOutputProcessor
-from src.simulation.conversation_policy import ConversationPolicy
-from src.simulation.conversation_recorder import ConversationRecorder
-from src.simulation.conversation_runner import ConversationRunner
-from src.simulation.conversation_selector import ConversationSelector
+from src.simulation.conversation_context_preparer import ConversationContextPreparer
+from src.simulation.conversation_selector import ConversationSelector 
 from src.simulation.conversation_tagger import ConversationTagger
-from src.simulation.intent_system import IntentSystem
+from src.simulation.conversation_recorder import ConversationRecorder
+from src.simulation.activity_system import ActivitySystem
+from src.simulation.conversation_policy import ConversationPolicy
+from src.simulation.intent_system import IntentSystem 
 from src.simulation.persistence import SimulationPersistence
-from src.simulation.relationship_updater import RelationshipUpdater
-from src.simulation.state import SimulationState
 from src.simulation.town_arc_system import TownArcSystem
-from src.town.daily_event import DailyEvent, choose_daily_event
-from src.town.location import Location
+from src.simulation.relationship_updater import RelationshipUpdater
 from src.town.town_arc import TownArc
+from src.behavior.planner import ActivityPlanner
+from src.agents.memory import Memory
+from src.agents.agent import Agent
+from src.town.location import Location
 from src.utils.logger import TownLogger
+from src.agents.relationships import RelationshipManager
+from src.simulation.state import SimulationState
+from src.llm.client import FakeLLMClient, TransformersLLMClient
+from src.llm.context import build_conversation_context 
+from src.llm.parser import clean_conversation_output, parse_llm_conversation_output
+from src.town.daily_event import choose_daily_event, DailyEvent
+from src.actions.action_system import ActionSystem 
+from src.analysis.report import SimulationReporter
+from src.agents.relationship_event import RelationshipEvent 
+from src.behavior.social_policy import SocialBehaviorPolicy 
+from src.agents.intent import AgentIntent 
+from src.behavior.intent_planner import IntentPlanner 
+from src.simulation.dialogue_utils import ( 
+    clean_dialogue_text,
+    fix_stale_event_reference,
+    get_previous_event_keywords,
+    has_rumor_marker,
+    is_narration,
+)
 
 class SimulationEngine:
     def __init__(
@@ -97,7 +109,7 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
             conversation_recorder=self.conversation_recorder,
             conversation_policy=self.conversation_policy,
-        )
+)
         if saved_state:
             self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
@@ -408,10 +420,93 @@ class SimulationEngine:
             location_id=location_id,
         )
         
+    def should_record_relationship_event(
+        self,
+        action: str,
+        relationship_change: int,
+    ) -> bool:
+        return self.relationship_updater.should_record_relationship_event(
+            action=action,
+            relationship_change=relationship_change,
+        )
 
+    
+    def create_relationship_event(
+        self,
+        day: int,
+        hour: int,
+        location_id: str,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        relationship_change: int,
+        new_score: int,
+        relationship_label: str,
+        conversation: str,
+        tags: list[str],
+    ) -> RelationshipEvent:
+        return self.relationship_updater.create_relationship_event(
+            day=day,
+            hour=hour,
+            location_id=location_id,
+            speaker=speaker,
+            listener=listener,
+            action=action,
+            relationship_change=relationship_change,
+            new_score=new_score,
+            relationship_label=relationship_label,
+            conversation=conversation,
+            tags=tags,
+        )
+
+
+    def record_relationship_event(
+        self,
+        relationship_event: RelationshipEvent,
+    ) -> None:
+        self.relationship_updater.record_relationship_event(
+            relationship_events=self.relationship_events,
+            relationship_event=relationship_event,
+        )
+
+
+    def get_recent_relationship_events(
+        self,
+        agent_a: str,
+        agent_b: str,
+        limit: int = 3,
+    ) -> list[RelationshipEvent]:
+        return self.relationship_updater.get_recent_relationship_events(
+            relationship_events=self.relationship_events,
+            agent_a=agent_a,
+            agent_b=agent_b,
+            limit=limit,
+        )
+    
+    
+    def format_relationship_history_for_prompt(
+        self,
+        agent_a: str,
+        agent_b: str,
+        limit: int = 3,
+    ) -> list[str]:
+        return self.relationship_updater.format_relationship_history_for_prompt(
+            relationship_events=self.relationship_events,
+            agent_a=agent_a,
+            agent_b=agent_b,
+            limit=limit,
+        )
+        
     def sync_agent_relationships_from_manager(self) -> None:
         self.relationship_updater.sync_agent_relationships_from_manager(
             agents=self.agents,
+        )
+            
+    def is_narration(self, conversation: str, speaker: Agent, listener: Agent) -> bool:
+        return is_narration(
+            conversation=conversation,
+            speaker_name=speaker.name,
+            listener_name=listener.name,
         )
         
     def maintain_agent_memories(self) -> None:
@@ -433,6 +528,9 @@ class SimulationEngine:
         return self.conversation_policy.is_repeated_dialogue(
             conversation=conversation,
         )
+
+    def clean_dialogue_text(self, conversation: str) -> str:
+        return clean_dialogue_text(conversation)
     
     def get_non_repeated_fallback_dialogue(
         self,
@@ -465,6 +563,9 @@ class SimulationEngine:
         return self.conversation_policy.should_cap_action(
             action=action,
         )
+
+    def has_rumor_marker(self, conversation: str) -> bool: 
+        return has_rumor_marker(conversation)
         
     def choose_final_action_with_reason(
         self,
@@ -509,6 +610,21 @@ class SimulationEngine:
             if event["day"] < current_day
         ]
 
+
+    def get_previous_event_keywords(self, current_day: int) -> list[str]:
+        return get_previous_event_keywords(
+            daily_event_history=self.daily_event_history,
+            current_day=current_day,
+        )
+
+
+    def fix_stale_event_reference(self, conversation: str, current_day: int) -> str:
+        return fix_stale_event_reference(
+            conversation=conversation,
+            current_day=current_day,
+            current_daily_event=self.current_daily_event,
+            daily_event_history=self.daily_event_history,
+        )
         
     def log_activity_event(self, day: int, hour: int, agent: Agent, activity) -> None:
         self.sync_activity_system_refs()
@@ -683,36 +799,6 @@ class SimulationEngine:
             listener_name=listener_name,
         )
     
-
-    def get_suggested_action_weights(
-        self,
-        allowed_actions: list[str],
-        relationship_label: str,
-        recent_relationship_events=None,
-    ) -> dict[str, int]:
-        return self.social_policy.get_action_weights(
-            allowed_actions=allowed_actions,
-            relationship_label=relationship_label,
-            recent_events=recent_relationship_events,
-        )
-
-
-    def choose_suggested_action(
-    self,
-    allowed_actions: list[str],
-    relationship_label: str,
-    recent_relationship_events=None,
-    ) -> str:
-        if not allowed_actions:
-            return "chat"
-    
-        weights = self.get_suggested_action_weights(
-            allowed_actions=allowed_actions,
-            relationship_label=relationship_label,
-            recent_relationship_events=recent_relationship_events,
-        )
-    
-        return self.choose_weighted_action(weights)
         
     def group_agents_by_location(self) -> dict[str, list[Agent]]:
         return self.conversation_selector.group_agents_by_location(
