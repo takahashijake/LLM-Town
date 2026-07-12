@@ -17,18 +17,19 @@ class SimulationLoop:
             intent_history=engine.intent_history,
             town_arc_change_records=engine.town_arc_change_records,
         )
-    
+
         for agent in engine.agents:
             engine.journal_system.compress_old_memories(
                 agent=agent,
                 current_day=day,
                 raw_memory_retention_days=7,
             )
-    
+
+        # Positional arguments preserve compatibility with older test fakes.
         engine.state.save(
             engine,
-            current_day=day,
-            current_hour=final_hour,
+            day,
+            final_hour,
         )
     
     def create_daily_event_memory(self, day: int, event) -> Memory:
@@ -117,9 +118,14 @@ class SimulationLoop:
             for hour in active_hours:
                 print(f"\n--- {hour}:00 ---")
                 engine.run_tick(day, hour)
-                engine.state.save(engine, day, hour)
+                engine.state.save(
+                    engine,
+                    day,
+                    hour,
+                )
+        
             self.finish_day(
-                engine=engine, 
+                engine=engine,
                 day=day,
                 final_hour=active_hours[-1],
             )
