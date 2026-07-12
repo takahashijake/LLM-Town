@@ -3,7 +3,12 @@ from src.town.daily_event import choose_daily_event
 
 
 class SimulationLoop:
-    def finish_day(self, engine, day: int) -> None:
+    def finish_day(
+        self,
+        engine,
+        day: int,
+        final_hour: int,
+    ) -> None:
         engine.journal_system.create_journals_for_day(
             agents=engine.agents,
             day=day,
@@ -23,7 +28,7 @@ class SimulationLoop:
         engine.state.save(
             engine,
             current_day=day,
-            current_hour=engine.last_completed_hour,
+            current_hour=final_hour,
         )
     
     def create_daily_event_memory(self, day: int, event) -> Memory:
@@ -113,6 +118,11 @@ class SimulationLoop:
                 print(f"\n--- {hour}:00 ---")
                 engine.run_tick(day, hour)
                 engine.state.save(engine, day, hour)
+            self.finish_day(
+                engine=engine, 
+                day=day,
+                final_hour=active_hours[-1],
+            )
 
         engine.print_relationships()
         engine.reporter.summarize(engine)

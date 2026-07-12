@@ -98,7 +98,18 @@ class TransformersLLMClient:
         town_arcs = context.get("town_arcs", [])
         allowed_actions = context.get("allowed_actions", ["chat"])
         allowed_action_text = ", ".join(allowed_actions)
-
+        recent_journals = context.get(
+            "recent_journals",
+            [],
+        )
+        journal_text = "\n".join(
+            f"- {journal}"
+            for journal in recent_journals
+        )
+        
+        if not journal_text:
+            journal_text = "- No recent journal summaries."
+            
         suggested_action = context.get("suggested_action", "chat") 
         memory_summary = context.get("memory_summary", "")
         if town_arcs:
@@ -200,6 +211,9 @@ Recently used topics:
 Relevant memories:
 {memory_text}
 
+Recent daily journals:
+{journal_text}
+
 Long-term memory summary:
 {memory_summary if memory_summary else "No long-term summary yet."}
 
@@ -223,6 +237,9 @@ Allowed actions:
 
 Suggested action:
 {suggested_action}
+
+Use journal entries as historical context. Do not describe journal events
+as happening today unless the current-day context confirms it.
 
 Intent rules:
 - The speaker's intent is a soft goal, not a command.

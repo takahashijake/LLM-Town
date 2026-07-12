@@ -1,4 +1,5 @@
 import json
+from src.simulation.journal_system import JournalSystem
 from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
@@ -51,6 +52,7 @@ class SimulationEngine:
         self.state = SimulationState()
         self.persistence = SimulationPersistence()
         self.simulation_loop = SimulationLoop()
+        self.journal_system = JournalSystem()
         self.llm = llm_client or TransformersLLMClient()
         self.actions = ActionSystem()
         self.relationship_updater = RelationshipUpdater(

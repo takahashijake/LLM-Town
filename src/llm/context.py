@@ -37,6 +37,13 @@ def build_conversation_context(
                 max_age_days=5,
             )
         ],
+        "recent_journals": [
+            f"Day {journal.day}: {journal.summary}"
+            for journal in speaker.get_recent_journals(
+                current_day=current_day,
+                limit=3,
+            )
+        ],
         "memory_summary": speaker.memory_summary,
         "goals" : speaker.goals,
         "needs" : speaker.needs, 

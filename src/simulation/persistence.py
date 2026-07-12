@@ -5,7 +5,7 @@ from src.agents.relationships import RelationshipManager
 from src.agents.intent import AgentIntent
 from src.town.daily_event import DailyEvent
 from src.town.town_arc import TownArc
-
+from src.agents.journal_entry import JournalEntry
 
 class SimulationPersistence:
     def load_agent_intents_from_state(
@@ -83,7 +83,13 @@ class SimulationPersistence:
                 Memory(**memory_data)
                 for memory_data in agent_data.get("memory_archive", [])
             ]
-
+            daily_journals = [
+                JournalEntry(**journal_data)
+                for journal_data in agent_data.get(
+                    "daily_journals",
+                    [],
+                )
+            ]
             agent = Agent(
                 id=agent_data["id"],
                 name=agent_data["name"],
@@ -94,6 +100,7 @@ class SimulationPersistence:
                 memory=memories,
                 memory_archive=memory_archive,
                 memory_summary=agent_data.get("memory_summary", ""),
+                daily_journals=daily_journals,
                 occupation=agent_data.get("occupation", "unemployed"),
                 recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),

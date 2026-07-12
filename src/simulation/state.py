@@ -40,6 +40,10 @@ class SimulationState:
                         for memory in agent.memory_archive
                     ],
                     "memory_summary": agent.memory_summary,
+                    "daily_journals" : [
+                        journal.to_dict()
+                        for journal in agent.daily_journals
+                    ],
                     "goals" : agent.goals,
                     "needs" : agent.needs,
                     "relationships": agent.relationships,

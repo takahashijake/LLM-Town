@@ -38,7 +38,26 @@ class SimulationReporter:
         self.print_topic_summary(engine)
         self.print_repetition_summary(engine)
         self.print_daily_event_usage(engine)
+        self.print_journal_summary(engine)
 
+    def print_journal_summary(self, engine) -> None:
+        print("\nDaily journal summary:")
+    
+        for agent in engine.agents:
+            print(
+                f"  {agent.name}: "
+                f"{len(agent.daily_journals)} journal entries, "
+                f"{len(agent.memory)} active memories, "
+                f"{len(agent.memory_archive)} archived memories"
+            )
+    
+            if agent.daily_journals:
+                latest = agent.daily_journals[-1]
+                print(
+                    f"    Latest day {latest.day}: "
+                    f"{latest.summary}"
+            )
+            
     def print_town_arc_summary(self, engine) -> None:
         town_arcs = getattr(engine, "town_arcs", [])
 
