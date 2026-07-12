@@ -3,6 +3,29 @@ from src.town.daily_event import choose_daily_event
 
 
 class SimulationLoop:
+    def finish_day(self, engine, day: int) -> None:
+        engine.journal_system.create_journals_for_day(
+            agents=engine.agents,
+            day=day,
+            activity_records=engine.activity_records,
+            relationship_events=engine.relationship_events,
+            intent_history=engine.intent_history,
+            town_arc_change_records=engine.town_arc_change_records,
+        )
+    
+        for agent in engine.agents:
+            engine.journal_system.compress_old_memories(
+                agent=agent,
+                current_day=day,
+                raw_memory_retention_days=7,
+            )
+    
+        engine.state.save(
+            engine,
+            current_day=day,
+            current_hour=engine.last_completed_hour,
+        )
+    
     def create_daily_event_memory(self, day: int, event) -> Memory:
         return Memory(
             day=day,

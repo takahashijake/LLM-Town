@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field 
 import random 
-
+from src.agents.journal_entry import JournalEntry
 from src.agents.memory import Memory
 
 @dataclass
@@ -20,7 +20,31 @@ class Agent:
     current_activity: str = "idle" 
     current_activity_reason: str = ""
     current_activity_tags: list[str] = field(default_factory=list)
+    daily_journals: list[JournalEntry] = field(default_factory=list)
 
+    def upsert_daily_journal(self, journal: JournalEntry) -> None:
+        for index, existing in enumerate(self.daily_journals):
+            if existing.day == journal.day:
+                self.daily_journals[index] = journal
+                return
+    
+        self.daily_journals.append(journal)
+        self.daily_journals.sort(key=lambda entry: entry.day)
+
+
+    def get_recent_journals(
+        self,
+        current_day: int,
+        limit: int = 3,
+    ) -> list[JournalEntry]:
+        eligible = [
+            journal
+            for journal in self.daily_journals
+            if journal.day < current_day
+        ]
+    
+        return eligible[-limit:]
+    
     def summarize_archived_memories(self, max_archive_size: int = 500) -> None:
         if len(self.memory_archive) <= max_archive_size:
             return
