@@ -56,11 +56,20 @@ class SimulationLoop:
 
         return hours
 
-    def is_resuming_saved_day(self, engine, day: int) -> bool:
+    def is_resuming_saved_day(
+        self,
+        engine,
+        day: int,
+    ) -> bool:
         return (
             day == engine.start_day
             and engine.start_hour > 0
             and engine.current_daily_event is not None
+            and not getattr(
+                engine,
+                "resume_day_complete",
+                False,
+            )
         )
 
     def resolve_first_run_day(

@@ -42,12 +42,15 @@ class RecordingState:
         engine,
         day,
         hour,
+        *,
+        day_complete=False,
     ):
         self.calls.append(
             (
                 "save",
                 day,
                 hour,
+                day_complete,
             )
         )
 
@@ -100,6 +103,7 @@ def test_finish_day_creates_journals_before_compression_and_save():
             "save",
             3,
             22,
+            True,
         ),
     ]
 
@@ -118,4 +122,5 @@ def test_finish_day_saves_with_supplied_final_hour():
         "save",
         4,
         18,
+        True,
     )

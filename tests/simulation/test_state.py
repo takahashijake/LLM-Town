@@ -325,7 +325,12 @@ def test_loaded_state_resumes_after_saved_hour(monkeypatch):
     def fake_run_tick(day, hour):
         ticks.append((day, hour))
 
-    def fake_save(engine_arg, day, hour):
+    def fake_save(
+        engine_arg,
+        day,
+        hour,
+        day_complete=False,
+    ):
         pass
 
     monkeypatch.setattr(engine, "run_tick", fake_run_tick)
@@ -335,10 +340,9 @@ def test_loaded_state_resumes_after_saved_hour(monkeypatch):
 
     assert ticks == [(3, 22)]
 
-def test_loaded_state_continues_to_next_day_when_saved_hour_is_last(monkeypatch):
-    from src.llm.client import FakeLLMClient
-    from src.simulation.engine import SimulationEngine
-
+def test_loaded_state_continues_to_next_day_when_saved_hour_is_last(
+    monkeypatch,
+):
     engine = SimulationEngine(
         agents_path="data/agents.json",
         locations_path="data/locations.json",
@@ -348,27 +352,49 @@ def test_loaded_state_continues_to_next_day_when_saved_hour_is_last(monkeypatch)
 
     engine.start_day = 3
     engine.start_hour = 22
+    engine.resume_day_complete = True
 
     ticks = []
 
     def fake_run_tick(day, hour):
         ticks.append((day, hour))
 
-    def fake_save(engine_arg, day, hour):
+    def fake_save(
+        engine_arg,
+        day,
+        hour,
+        *,
+        day_complete=False,
+    ):
         pass
 
-    monkeypatch.setattr(engine, "run_tick", fake_run_tick)
-    monkeypatch.setattr(engine.state, "save", fake_save)
+    monkeypatch.setattr(
+        engine,
+        "run_tick",
+        fake_run_tick,
+    )
 
-    engine.run(days=2, hours=[8, 12, 18, 22])
+    monkeypatch.setattr(
+        engine.state,
+        "save",
+        fake_save,
+    )
+
+    engine.run(
+        days=2,
+        hours=[8, 12, 18, 22],
+    )
 
     assert ticks == [
         (4, 8),
         (4, 12),
         (4, 18),
         (4, 22),
+        (5, 8),
+        (5, 12),
+        (5, 18),
+        (5, 22),
     ]
-
 def test_save_preserves_run_continuity_fields(tmp_path):
     state = SimulationState(path=str(tmp_path / "save_state.json"))
 
@@ -508,7 +534,12 @@ def test_loaded_state_reuses_saved_daily_event_for_remaining_hours(monkeypatch):
     def fake_run_tick(day, hour):
         ticks.append((day, hour))
 
-    def fake_save(engine_arg, day, hour):
+    def fake_save(
+        engine_arg,
+        day,
+        hour,
+        day_complete=False,
+    ):
         pass
 
     def fail_if_called(day):

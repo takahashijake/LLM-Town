@@ -106,27 +106,55 @@ class SimulationEngine:
         )
         if saved_state:
             self.resume_day_complete = bool(
-                saved_state.get("day_complete", False)
+                saved_state.get(
+                    "day_complete",
+                    False,
+                )
             )
         
-            self.load_run_continuity_from_state(saved_state)
-            self.agents = self.load_agents_from_state(saved_state)
-            self.load_run_continuity_from_state(saved_state)
-            self.agents = self.load_agents_from_state(saved_state)
-            self.load_relationships_from_state(saved_state)
-            self.load_agent_intents_from_state(saved_state)
-            self.load_intent_history_from_state(saved_state)
-            self.load_relationship_events_from_state(saved_state)
-            self.load_town_arcs_from_state(saved_state)
+            self.load_run_continuity_from_state(
+                saved_state
+            )
+        
+            self.agents = self.load_agents_from_state(
+                saved_state
+            )
+        
+            self.load_relationships_from_state(
+                saved_state
+            )
+        
+            self.load_agent_intents_from_state(
+                saved_state
+            )
+        
+            self.load_intent_history_from_state(
+                saved_state
+            )
+        
+            self.load_relationship_events_from_state(
+                saved_state
+            )
+        
+            self.load_town_arcs_from_state(
+                saved_state
+            )
+        
             self.town_arc_system = TownArcSystem(
                 town_arcs=self.town_arcs,
-                town_arc_change_records=self.town_arc_change_records,
+                town_arc_change_records=(
+                    self.town_arc_change_records
+                ),
             )
+        
             self.sync_agent_relationships_from_manager()
+        
             self.start_day = saved_state["current_day"]
             self.start_hour = saved_state["current_hour"]
         else:
-            self.agents = self.load_agents(agents_path)
+            self.agents = self.load_agents(
+                agents_path
+            )
             self.start_day = 1
             self.start_hour = 0
         self.conversation_context_preparer = ConversationContextPreparer(
