@@ -30,6 +30,7 @@ class SimulationLoop:
             engine,
             day,
             final_hour,
+            day_complete=True,
         )
     
     def create_daily_event_memory(self, day: int, event) -> Memory:
@@ -62,6 +63,31 @@ class SimulationLoop:
             and engine.current_daily_event is not None
         )
 
+    def resolve_first_run_day(
+        self,
+        engine,
+        hours: list[int],
+    ) -> int:
+        if getattr(engine, "resume_day_complete", False):
+            return engine.start_day + 1
+    
+        remaining_hours = self.get_active_hours(
+            engine=engine,
+            day=engine.start_day,
+            hours=hours,
+        )
+    
+        if engine.start_hour > 0 and not remaining_hours:
+            self.finish_day(
+                engine=engine,
+                day=engine.start_day,
+                final_hour=engine.start_hour,
+            )
+    
+            return engine.start_day + 1
+    
+        return engine.start_day
+        
     def start_new_day(self, engine, day: int) -> None:
         engine.current_daily_event = choose_daily_event()
 
@@ -91,11 +117,14 @@ class SimulationLoop:
         engine.sync_agent_relationships_from_manager()
 
     def run(self, engine, days: int, hours: list[int]) -> None:
-        print("Starting town simulation...")
-
-        end_day = engine.start_day + days - 1
-
-        for day in range(engine.start_day, end_day + 1):
+        first_day = self.resolve_first_run_day(
+            engine=engine,
+            hours=hours,
+        )
+        
+        end_day = first_day + days - 1
+        
+        for day in range(first_day, end_day + 1):
             active_hours = self.get_active_hours(
                 engine=engine,
                 day=day,
@@ -122,6 +151,7 @@ class SimulationLoop:
                     engine,
                     day,
                     hour,
+                    day_complete=False,
                 )
         
             self.finish_day(

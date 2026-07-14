@@ -69,6 +69,8 @@ class SimulationEngine:
             agent_intents=self.agent_intents,
         )
         self.current_daily_event = None
+        self.resume_day_complete = False
+        
         saved_state = self.state.load() if load_state else None
         self.reporter = SimulationReporter()
         self.activity_records = []
@@ -103,6 +105,12 @@ class SimulationEngine:
             conversation_policy=self.conversation_policy,
         )
         if saved_state:
+            self.resume_day_complete = bool(
+                saved_state.get("day_complete", False)
+            )
+        
+            self.load_run_continuity_from_state(saved_state)
+            self.agents = self.load_agents_from_state(saved_state)
             self.load_run_continuity_from_state(saved_state)
             self.agents = self.load_agents_from_state(saved_state)
             self.load_relationships_from_state(saved_state)

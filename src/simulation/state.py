@@ -7,12 +7,20 @@ class SimulationState:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def save(self, engine, current_day: int, current_hour: int) -> None:
+    def save(
+        self,
+        engine,
+        current_day: int,
+        current_hour: int,
+        *,
+        day_complete: bool = False,
+    ) -> None:
         current_daily_event = getattr(engine, "current_daily_event", None)
 
         state = {
             "current_day": current_day,
             "current_hour": current_hour,
+            "day_complete": day_complete,
             "current_daily_event": (
                 {
                     "id": current_daily_event.id,
