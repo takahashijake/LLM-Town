@@ -157,35 +157,14 @@ class ActionSystem:
             or "organizing the volunteers" in text
         ):
             return "compliment"
-        # Explicit offers of help or recommendations
+        # Explicit offers of help. Recommendations and third-party staffing
+        # observations are ordinary chat unless the speaker offers assistance.
         if (
-            "you should check it out" in text
-            or "you might want to" in text
-            or "maybe you could" in text
-            or "could be useful for you" in text
-            or "might be useful for you" in text
-            or "you could use" in text
-            or "maybe you could use" in text
-            or "would help you" in text
-            or "could help you" in text
-            or "might help you" in text
-            or "i can help" in text
+            "i can help" in text
             or "let me help" in text
             or "we could help" in text
             or "lend a hand" in text
             or "pitching in" in text
-            or "might be worth checking out" in text
-            or "worth checking out" in text
-            or "could use some extra hands" in text
-            or "they could use some help" in text
-            or "could use some help" in text
-            or "it could use some extra hands" in text
-            or "they're really looking for some help" in text
-            or "really looking for some help" in text
-            or "seems like a good chance" in text
-            or "good opportunity" in text
-            or "it could be a good way" in text
-            or "thought you might enjoy" in text
             or "i can show you" in text
             or "i could show you" in text
             or "i can give you a hand" in text

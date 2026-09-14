@@ -85,6 +85,11 @@ class ConversationRecorder:
         intent_adjusted_weights: dict | None = None,
         allowed_actions: list[str] | None = None,
         final_action_reason: str = "",
+        raw_response: str = "",
+        generation_error: str = "",
+        context_evidence: dict | None = None,
+        context_snapshot: dict | None = None,
+        dialogue_source: str = "llm",
     ) -> None:
         conversation_record = {
             "day": day,
@@ -112,6 +117,11 @@ class ConversationRecorder:
             "speaker_intent_target_location": speaker_intent.target_location if speaker_intent else "",
             "speaker_intent_description": speaker_intent.description if speaker_intent else "",
             "listener_intent_type": listener_intent.intent_type if listener_intent else "",
+            "raw_response": raw_response,
+            "generation_error": generation_error,
+            "context_evidence": context_evidence or {},
+            "context": context_snapshot or {},
+            "dialogue_source": dialogue_source,
         }
 
         self.logger.log_conversation(conversation_record)

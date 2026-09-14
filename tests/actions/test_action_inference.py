@@ -85,3 +85,11 @@ def test_infer_cooperate_from_coordinate():
     assert actions.infer_action(
         "Let's coordinate with the volunteers.", []
     ) == "cooperate"
+
+
+def test_infer_recommendation_as_chat_not_offer_help():
+    actions = ActionSystem()
+
+    assert actions.infer_action(
+        "That discount might be worth checking out.", []
+    ) == "chat"

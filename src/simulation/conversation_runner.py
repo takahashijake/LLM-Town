@@ -32,7 +32,12 @@ class ConversationRunner:
             suggested_action = conversation_setup["suggested_action"]
             context = conversation_setup["context"]
 
-            raw_output = engine.llm.generate_conversation(context)
+            generation_error = ""
+            try:
+                raw_output = engine.llm.generate_conversation(context)
+            except Exception as error:  # A single model failure must not end a long run.
+                raw_output = ""
+                generation_error = f"{type(error).__name__}: {error}"
 
             processed_output = engine.process_conversation_output(
                 raw_output=raw_output,
@@ -43,11 +48,16 @@ class ConversationRunner:
                 location_id=location_id,
                 suggested_action=suggested_action,
                 current_day=day,
+                conversation_context=context,
+                enforce_information_boundaries=not getattr(
+                    engine.llm, "is_deterministic_fake", False
+                ),
             )
 
             parsed_output = processed_output["parsed_output"]
             conversation = processed_output["conversation"]
             parsed_action = processed_output["parsed_action"]
+            dialogue_source = processed_output["dialogue_source"]
 
             conversation_tags = engine.get_initial_conversation_tags(
                 conversation=conversation,
@@ -133,6 +143,27 @@ class ConversationRunner:
                 intent_adjusted_weights=intent_adjusted_weights,
                 allowed_actions=allowed_actions,
                 final_action_reason=final_action_reason,
+                raw_response=raw_output,
+                generation_error=generation_error,
+                context_evidence=context.get("context_evidence", {}),
+                context_snapshot={
+                    "occupation": context.get("occupation"),
+                    "activity": context.get("speaker_activity"),
+                    "activity_display": context.get("speaker_activity_display"),
+                    "activity_reason": context.get("speaker_activity_reason"),
+                    "relationship_history": context.get("relationship_history", []),
+                    "memories": context.get("relevant_memories", []),
+                    "journals": context.get("recent_journals", []),
+                    "goals": context.get("goals", []),
+                    "speaker_intent": context.get("speaker_intent"),
+                    "daily_event": context.get("daily_event"),
+                    "daily_event_relevant": context.get("daily_event_relevant", False),
+                    "town_arcs": context.get("town_arcs", []),
+                    "recent_topics": context.get("recent_topics", []),
+                    "recent_utterances": context.get("recent_utterances", []),
+                    "focus_options": context.get("focus_options", []),
+                },
+                dialogue_source=dialogue_source,
             )
 
             engine.print_conversation_event(

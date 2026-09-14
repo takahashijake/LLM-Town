@@ -116,3 +116,11 @@ def test_parse_keeps_chat_when_chat_is_allowed():
 
     assert parsed["action"] == "chat"
     assert parsed["action_source"] == "llm"
+
+
+def test_malformed_output_has_empty_dialogue_for_agent_fallback():
+    parsed = parse_llm_conversation_output("not json")
+
+    assert parsed["dialogue"] == ""
+    assert parsed["action"] == "chat"
+    assert parsed["action_source"] == "fallback_no_json"

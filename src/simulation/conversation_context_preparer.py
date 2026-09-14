@@ -104,7 +104,6 @@ class ConversationContextPreparer:
             suggested_action=suggested_action,
             relationship_history=relationship_history,
             speaker_intent=speaker_intent.to_dict() if speaker_intent else None,
-            listener_intent=listener_intent.to_dict() if listener_intent else None,
             town_arcs=self.town_arc_system.get_relevant_town_arcs_for_context(
                 location_id,
             ),

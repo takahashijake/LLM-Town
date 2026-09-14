@@ -137,6 +137,10 @@ def test_log_conversation_event_logs_conversation_and_event_records():
         intent_adjusted_weights={"chat": 5, "ask_for_help": 3},
         allowed_actions=["chat", "ask_for_help"],
         final_action_reason="trusted_parsed_non_chat",
+        raw_response='{"dialogue": "Could you give me advice?"}',
+        generation_error="",
+        context_evidence={"daily_event_relevant": False},
+        context_snapshot={"memories": ["Earlier advice"]},
     )
 
     assert len(logger.conversations) == 1
@@ -159,6 +163,10 @@ def test_log_conversation_event_logs_conversation_and_event_records():
     assert conversation_record["listener_intent_type"] == "socialize"
     assert conversation_record["allowed_actions"] == ["chat", "ask_for_help"]
     assert conversation_record["final_action_reason"] == "trusted_parsed_non_chat"
+    assert conversation_record["raw_response"].startswith("{")
+    assert conversation_record["generation_error"] == ""
+    assert conversation_record["context_evidence"]["daily_event_relevant"] is False
+    assert conversation_record["context"]["memories"] == ["Earlier advice"]
 
     event_record = logger.events[0]
 

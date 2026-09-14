@@ -1,4 +1,5 @@
 import random
+from difflib import SequenceMatcher
 
 from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
@@ -33,6 +34,20 @@ class ConversationPolicy:
 
         return normalized in self.recent_dialogues
 
+    def is_near_repeated_dialogue(
+        self,
+        conversation: str,
+        threshold: float = 0.86,
+    ) -> bool:
+        normalized = " ".join(conversation.strip().lower().split())
+        if len(normalized) < 20:
+            return False
+        return any(
+            len(previous) >= 20
+            and SequenceMatcher(None, previous, normalized).ratio() >= threshold
+            for previous in self.recent_dialogues
+        )
+
     def get_non_repeated_fallback_dialogue(
         self,
         speaker: Agent,
@@ -40,8 +55,11 @@ class ConversationPolicy:
         relationship_label: str,
         location_id: str | None = None,
         suggested_action: str = "chat",
+        avoid_near_repetition: bool = False,
     ) -> str:
-        activity = getattr(speaker, "current_activity", "this")
+        activity = self._describe_activity(
+            getattr(speaker, "current_activity", "current task")
+        )
         occupation = getattr(speaker, "occupation", "resident")
         location_text = location_id or getattr(speaker, "location_id", "town")
         location_phrase = location_text.replace("_", " ")
@@ -107,10 +125,86 @@ class ConversationPolicy:
             ] + candidates
 
         for candidate in candidates:
-            if not self.is_repeated_dialogue(candidate):
+            if not self.is_repeated_dialogue(candidate) and not (
+                avoid_near_repetition and self.is_near_repeated_dialogue(candidate)
+            ):
                 return candidate
 
         return f"I am focused on {activity.lower()} right now."
+
+    def get_grounded_fallback_dialogue(
+        self,
+        speaker: Agent,
+        context: dict,
+        location_id: str,
+    ) -> str:
+        """Create a safe line from supplied facts after an unsupported claim."""
+        candidates = []
+        event = context.get("daily_event")
+        if event:
+            candidates.append(
+                f"The {event['name'].lower()} is worth a closer look. "
+                "What has stood out to you?"
+            )
+        if context.get("relationship_history") or context.get("relevant_memories"):
+            candidates.append(
+                "I've been thinking about our earlier conversation. "
+                "Has anything changed since then?"
+            )
+        activity = self._describe_activity(
+            context.get("speaker_activity")
+            or getattr(speaker, "current_activity", "current task")
+        )
+        activity = self._as_activity_phrase(activity)
+        candidates.extend(
+            [
+                f"I've been busy with {activity.lower()}. What have you noticed here?",
+                f"The {location_id.replace('_', ' ')} has my attention today. "
+                "What are you working on?",
+            ]
+        )
+        for candidate in candidates:
+            if not self.is_repeated_dialogue(candidate) and not self.is_near_repeated_dialogue(candidate):
+                return candidate
+        return "I would rather check the facts before drawing a conclusion."
+
+    @staticmethod
+    def _describe_activity(activity: str) -> str:
+        """Render internal activity labels as ordinary language for fallbacks."""
+        text = str(activity or "current task").strip()
+        lowered = text.lower()
+        if lowered.startswith("work on intent:"):
+            text = text.split(":", 1)[1].strip()
+        text = text.replace("_", " ").strip()
+        if text.lower().startswith("attend "):
+            text = "the " + text[7:]
+        replacements = {
+            "seek work": "finding work",
+            "investigate": "investigating recent activity",
+            "socialize": "catching up with neighbors",
+            "build friendship": "getting to know people",
+            "repair relationship": "making amends",
+        }
+        if text.lower() in replacements:
+            return replacements[text.lower()]
+        return text or "current task"
+
+    @staticmethod
+    def _as_activity_phrase(text: str) -> str:
+        verb_forms = {
+            "talk ": "talking ",
+            "look ": "looking ",
+            "review ": "reviewing ",
+            "observe ": "observing ",
+            "organize ": "organizing ",
+            "socialize ": "socializing ",
+            "meet ": "meeting ",
+            "check ": "checking ",
+        }
+        for prefix, replacement in verb_forms.items():
+            if text.lower().startswith(prefix):
+                return replacement + text[len(prefix):]
+        return text or "current task"
 
     def remember_action(self, action: str, limit: int = 50) -> None:
         self.recent_actions.append(action)

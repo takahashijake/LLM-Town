@@ -29,6 +29,9 @@ class BenchmarkConfig:
     hours: tuple[int, ...] = (8, 12, 18, 22)
     fake_llm: bool = False
     model_name: str = "Qwen/Qwen2.5-3B-Instruct"
+    max_new_tokens: int = 150
+    temperature: float = 0.4
+    top_p: float = 0.9
     agents_path: str = "data/agents.json"
     locations_path: str = "data/locations.json"
 
@@ -45,6 +48,12 @@ class BenchmarkConfig:
             raise ValueError("hours must be unique and in ascending order")
         if any(hour < 0 or hour > 23 for hour in self.hours):
             raise ValueError("hours must be between 0 and 23")
+        if self.max_new_tokens < 1:
+            raise ValueError("max_new_tokens must be at least 1")
+        if self.temperature <= 0:
+            raise ValueError("temperature must be greater than 0")
+        if not 0 < self.top_p <= 1:
+            raise ValueError("top_p must be greater than 0 and at most 1")
 
 
 def _sha256(path: Path) -> str:
@@ -97,7 +106,12 @@ def _git_metadata(project_root: Path) -> dict[str, Any]:
 def _build_llm(config: BenchmarkConfig):
     if config.fake_llm:
         return FakeLLMClient()
-    return TransformersLLMClient(model_name=config.model_name)
+    return TransformersLLMClient(
+        model_name=config.model_name,
+        max_new_tokens=config.max_new_tokens,
+        temperature=config.temperature,
+        top_p=config.top_p,
+    )
 
 
 def _seed_random_generators(seed: int, *, fake_llm: bool) -> None:

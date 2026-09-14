@@ -49,11 +49,7 @@ def test_conversation_context_includes_recent_journals():
 
     assert "recent_journals" in context
 
-    assert context["recent_journals"] == [
-        "Day 3: Summary for day 3.",
-        "Day 4: Summary for day 4.",
-        "Day 5: Summary for day 5.",
-    ]
+    assert context["recent_journals"] == ["Day 5: Summary for day 5."]
 
 
 def test_conversation_context_does_not_include_current_day_journal():

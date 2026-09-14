@@ -30,9 +30,25 @@ def test_is_narration_detects_name_prefixed_dialogue():
     )
 
 
+def test_is_narration_detects_speaker_addressing_themself():
+    assert is_narration(
+        conversation="Maya, I noticed some new stalls here.",
+        speaker_name="Maya",
+        listener_name="Ethan",
+    )
+
+
 def test_is_narration_detects_action_description():
     assert is_narration(
         conversation="Maya noticed Ethan looking worried.",
+        speaker_name="Maya",
+        listener_name="Ethan",
+    )
+
+
+def test_is_narration_detects_subjectless_action_summary():
+    assert is_narration(
+        conversation="Spoke about the art workshop she mentioned earlier.",
         speaker_name="Maya",
         listener_name="Ethan",
     )

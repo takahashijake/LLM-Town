@@ -18,10 +18,6 @@ ALLOWED_ACTIONS = {
 
 def clean_conversation_output(text: str) -> str:
     text = text.strip()
-
-    if not text:
-        return "They exchange a brief comment."
-
     return text
 
 
@@ -100,7 +96,7 @@ def parse_llm_conversation_output(
 
     if json_text is None:
         return {
-            "dialogue": "They exchange a brief comment.",
+            "dialogue": "",
             "action": "chat",
             "tags": [],
             "reason": "",
@@ -112,7 +108,7 @@ def parse_llm_conversation_output(
         data = json.loads(json_text)
     except json.JSONDecodeError:
         return {
-            "dialogue": "They exchange a brief comment.",
+            "dialogue": "",
             "action": "chat",
             "tags": [],
             "reason": "",

@@ -1,8 +1,12 @@
 def is_narration(conversation: str, speaker_name: str, listener_name: str) -> bool:
     text = conversation.strip().lower()
 
+    if text.startswith(("spoke about ", "talked about ", "asked about ", "mentioned ")):
+        return True
+
     quoted_name_prefixes = [
         f"{speaker_name.lower()}:",
+        f"{speaker_name.lower()},",
         f"{listener_name.lower()}:",
     ]
 

@@ -7,3 +7,4 @@ debug_bundle*.txt
 .env
 .venv/
 outputs/benchmarks/
+outputs/real_llm_evaluations/

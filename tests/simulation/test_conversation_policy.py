@@ -56,11 +56,20 @@ def test_is_repeated_dialogue_detects_normalized_text():
     assert not policy.is_repeated_dialogue("Something new.")
 
 
+def test_near_repetition_detects_template_reuse_without_affecting_exact_check():
+    policy = build_policy(
+        recent_dialogues=["my work as a merchant has kept me busy near the cafe."]
+    )
+
+    candidate = "My work as a merchant has kept me busy near the library."
+    assert not policy.is_repeated_dialogue(candidate)
+    assert policy.is_near_repeated_dialogue(candidate)
+
 def test_get_non_repeated_fallback_dialogue_skips_recent_candidate():
     speaker = build_agent("Maya")
     listener = build_agent("Ethan")
 
-    first_candidate = "I can help with review records and numbers if you need another pair of hands."
+    first_candidate = "I can help with reviewing records and numbers if you need another pair of hands."
 
     policy = build_policy(
         recent_dialogues=[
@@ -170,4 +179,3 @@ def test_choose_weighted_action_returns_chat_for_empty_weights():
     policy = build_policy()
 
     assert policy.choose_weighted_action({}) == "chat"
-    

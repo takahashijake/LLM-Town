@@ -249,6 +249,8 @@ class SimulationEngine:
         location_id: str,
         suggested_action: str,
         current_day: int,
+        conversation_context: dict | None = None,
+        enforce_information_boundaries: bool = False,
     ) -> dict:
         self.sync_conversation_policy_refs()
         self.sync_conversation_output_processor_refs()
@@ -264,6 +266,8 @@ class SimulationEngine:
             current_day=current_day,
             current_daily_event=self.current_daily_event,
             daily_event_history=self.daily_event_history,
+            conversation_context=conversation_context,
+            enforce_information_boundaries=enforce_information_boundaries,
         )
         
     def sync_conversation_context_preparer_refs(self) -> None:
@@ -803,6 +807,11 @@ class SimulationEngine:
         intent_adjusted_weights: dict | None = None,
         allowed_actions: list[str] | None = None,
         final_action_reason: str = "",
+        raw_response: str = "",
+        generation_error: str = "",
+        context_evidence: dict | None = None,
+        context_snapshot: dict | None = None,
+        dialogue_source: str = "llm",
     ) -> None:
         self.conversation_recorder.log_conversation_event(
             day=day,
@@ -827,6 +836,11 @@ class SimulationEngine:
             intent_adjusted_weights=intent_adjusted_weights,
             allowed_actions=allowed_actions,
             final_action_reason=final_action_reason,
+            raw_response=raw_response,
+            generation_error=generation_error,
+            context_evidence=context_evidence,
+            context_snapshot=context_snapshot,
+            dialogue_source=dialogue_source,
         )
 
     def print_conversation_event(
