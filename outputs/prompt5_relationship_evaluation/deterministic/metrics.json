@@ -1,0 +1,20 @@
+{
+  "context_present_without_preferred_action_change_count": 0,
+  "hostile_help_seeking_suppressed": 1.0,
+  "memory_retrieval_correctness": 1.0,
+  "preferred_target_consistency": 1.0,
+  "proven_cooperation_preferred": 1.0,
+  "real_context_pair_without_action_change_count": null,
+  "real_llm_direct_dialogue_parser_inference_agreement_rate": null,
+  "real_llm_json_parsing_rate": null,
+  "real_llm_pair_action_difference_rate": null,
+  "real_llm_parser_inference_agreement_rate": null,
+  "real_llm_suggested_action_followthrough_rate": null,
+  "relationship_attributed_strategy_adaptation": 1.0,
+  "relationship_conditioned_decision_rate": 1.0,
+  "relationship_update_correctness": 1.0,
+  "repair_deescalation_preferred": 1.0,
+  "repair_relationship_value_gain": 0.212,
+  "trusted_help_seeking_preferred": 1.0,
+  "valid_relationship_diagnostics_rate": 1.0
+}

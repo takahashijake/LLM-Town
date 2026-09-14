@@ -157,6 +157,70 @@ class SocialBehaviorPolicy:
 
         return adjusted, deltas
 
+    def adjust_action_weights_for_relationship_state(
+        self,
+        weights: dict[str, int],
+        relationship_state,
+    ) -> tuple[dict[str, int], dict[str, int], list[str]]:
+        """Condition a social move on private direct experience."""
+        adjusted = dict(weights)
+        deltas: dict[str, int] = {}
+        reasons: list[str] = []
+        if relationship_state is None or relationship_state.is_neutral():
+            return adjusted, deltas, reasons
+
+        def change(action: str, amount: int) -> None:
+            if action not in adjusted or not amount:
+                return
+            old = adjusted[action]
+            adjusted[action] = max(1, old + amount)
+            actual = adjusted[action] - old
+            if actual:
+                deltas[action] = deltas.get(action, 0) + actual
+
+        if relationship_state.trust >= 0.25:
+            change("ask_for_help", 2)
+            change("cooperate", 1)
+            reasons.append("direct trust supports reliance")
+        elif relationship_state.trust <= -0.20:
+            change("ask_for_help", -2)
+            change("cooperate", -2)
+            reasons.append("direct distrust discourages reliance")
+
+        if relationship_state.helpfulness >= 0.25:
+            change("ask_for_help", 3)
+            reasons.append("past helpfulness supports asking")
+        elif relationship_state.helpfulness <= -0.20:
+            change("ask_for_help", -2)
+            reasons.append("past unreliability discourages asking")
+
+        if relationship_state.cooperation >= 0.25:
+            change("cooperate", 3)
+            reasons.append("successful cooperation supports another joint action")
+        elif relationship_state.cooperation <= -0.20:
+            change("cooperate", -2)
+            reasons.append("poor cooperation history discourages joint action")
+
+        if relationship_state.affinity >= 0.25:
+            change("offer_help", 1)
+            change("compliment", 1)
+        elif relationship_state.affinity <= -0.20:
+            change("offer_help", -1)
+            change("compliment", -1)
+
+        if relationship_state.hostility >= 0.20:
+            change("chat", 2)
+            change("apologize", 2)
+            change("argue", 2)
+            change("ask_for_help", -2)
+            change("offer_help", -2)
+            change("cooperate", -2)
+            reasons.append("conflict history favors caution or repair")
+        elif relationship_state.hostility <= -0.20:
+            change("cooperate", 1)
+
+        return adjusted, deltas, reasons
+
     def _increase(
         self,
         weights: dict[str, int],

@@ -117,11 +117,24 @@ class IntentSystem:
                             goal.current_intent_id = None
                             goal.adaptation_count += 1
                             goal.current_strategy = replacement.name
+                            goal.current_strategy_target = replacement.target_agent
                             goal.evidence.append({
                                 "type": "strategy_adaptation", "day": current_day,
                                 "trigger": trigger, "old_strategy": old_strategy,
                                 "new_strategy": replacement.name,
                                 "preserved_progress": goal.progress,
+                                "old_target_agent": current_intent.target_agent,
+                                "new_target_agent": replacement.target_agent,
+                                "relationship_reason": replacement.relationship_reason,
+                                "relationship_snapshot": replacement.relationship_snapshot,
+                                "relevant_social_memories": list(
+                                    replacement.relevant_social_memories
+                                ),
+                                "prior_counterpart_memories": [
+                                    memory.summary for memory in agent.get_social_memories(
+                                        current_intent.target_agent, limit=3
+                                    )
+                                ] if current_intent.target_agent else [],
                             })
                             self.agent_intents.pop(agent.name, None)
                             current_intent = None
@@ -161,8 +174,14 @@ class IntentSystem:
                     strategy = self.goal_planner.select_strategy(goal, agent, engine)
                     if strategy:
                         previous_strategy = goal.current_strategy
-                        if previous_strategy and previous_strategy != strategy.name:
-                            target = goal.target_agents[0] if goal.target_agents else None
+                        previous_target = goal.current_strategy_target
+                        if previous_strategy and (
+                            previous_strategy != strategy.name
+                            or previous_target != strategy.target_agent
+                        ):
+                            target = previous_target or (
+                                goal.target_agents[0] if goal.target_agents else None
+                            )
                             relationship = (
                                 engine.relationships.get_score(agent.name, target)
                                 if target else None
@@ -174,6 +193,9 @@ class IntentSystem:
                                 relationship is not None
                                 and goal.last_relationship_score is not None
                                 and relationship // 3 != goal.last_relationship_score // 3
+                            ) or (
+                                previous_target != strategy.target_agent
+                                and strategy.relationship_influenced
                             ):
                                 trigger = "relationship"
                             else:
@@ -184,16 +206,31 @@ class IntentSystem:
                                 "trigger": trigger,
                                 "old_strategy": previous_strategy,
                                 "new_strategy": strategy.name,
+                                "old_target_agent": previous_target,
                                 "preserved_progress": goal.progress,
+                                "new_target_agent": strategy.target_agent,
+                                "relationship_reason": strategy.relationship_reason,
+                                "relationship_snapshot": strategy.relationship_snapshot,
+                                "relevant_social_memories": list(
+                                    strategy.relevant_social_memories
+                                ),
+                                "prior_counterpart_memories": [
+                                    memory.summary for memory in agent.get_social_memories(
+                                        previous_target, limit=3
+                                    )
+                                ] if previous_target else [],
                             })
                         new_intent = self.intent_planner.create_intent_from_goal(
                             goal, strategy, current_day
                         )
                         goal.current_intent_id = new_intent.id
                         goal.current_strategy = strategy.name
+                        goal.current_strategy_target = strategy.target_agent
                         goal.strategy_started_day = current_day
                         goal.last_review_day = current_day
-                        target = goal.target_agents[0] if goal.target_agents else None
+                        target = strategy.target_agent or (
+                            goal.target_agents[0] if goal.target_agents else None
+                        )
                         goal.last_relationship_score = (
                             engine.relationships.get_score(agent.name, target)
                             if target else None
@@ -205,6 +242,13 @@ class IntentSystem:
                             "type": "strategy_selected", "day": current_day,
                             "strategy": strategy.name, "score": strategy.score,
                             "intent_id": new_intent.id,
+                            "target_agent": strategy.target_agent,
+                            "relationship_influenced": strategy.relationship_influenced,
+                            "relationship_reason": strategy.relationship_reason,
+                            "relationship_snapshot": strategy.relationship_snapshot,
+                            "relevant_social_memories": list(
+                                strategy.relevant_social_memories
+                            ),
                         })
                         self.agent_intents[agent.name] = new_intent
                     continue
@@ -321,6 +365,7 @@ class IntentSystem:
             "low_risk_chat": {"chat": 4},
             "ask_target_directly": {"ask_for_help": 4},
             "ask_informed_agent": {"ask_for_help": 3, "chat": 1},
+            "ask_reliable_partner": {"ask_for_help": 4, "chat": 1},
         }
         for action, bonus in strategy_bonuses.get(intent.strategy, {}).items():
             if action in adjusted:

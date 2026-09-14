@@ -33,18 +33,11 @@ class ConversationSelector:
             if agent.name != speaker.name
         ]
 
-        weights = [
-            self.relationships.get_conversation_weight(
-                speaker.name,
-                listener.name,
-            )
-            + self.get_intent_bonus(
-                speaker=speaker,
-                listener=listener,
-                intent_bonus_fn=intent_bonus_fn,
-            )
-            for listener in possible_listeners
-        ]
+        weights = self.get_listener_weights(
+            speaker,
+            possible_listeners,
+            intent_bonus_fn=intent_bonus_fn,
+        )
 
         listener = random.choices(
             possible_listeners,
@@ -53,6 +46,34 @@ class ConversationSelector:
         )[0]
 
         return speaker, listener
+
+    def get_listener_weights(
+        self,
+        speaker: Agent,
+        listeners: list[Agent],
+        intent_bonus_fn: Callable[[Agent, Agent], int] | None = None,
+    ) -> list[int]:
+        """Expose the interpretable target weights used by seeded selection."""
+        return [
+            max(
+                1,
+                self.relationships.get_conversation_weight(
+                    speaker.name, listener.name
+                )
+                + self.get_relationship_memory_bonus(speaker, listener)
+                + self.get_intent_bonus(
+                    speaker=speaker,
+                    listener=listener,
+                    intent_bonus_fn=intent_bonus_fn,
+                ),
+            )
+            for listener in listeners
+        ]
+
+    @staticmethod
+    def get_relationship_memory_bonus(speaker: Agent, listener: Agent) -> int:
+        state = speaker.get_relationship_state(listener.name)
+        return round(state.decision_value() * 4)
 
     def get_intent_bonus(
         self,

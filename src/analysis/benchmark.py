@@ -156,6 +156,9 @@ def _run_one(
     conversations_path = logs_dir / "conversations" / "conversations.jsonl"
     events_path = logs_dir / "events" / "events.jsonl"
     arc_changes_path = logs_dir / "town_arc_changes.jsonl"
+    # An empty update stream is still a valid benchmark artifact.
+    arc_changes_path.parent.mkdir(parents=True, exist_ok=True)
+    arc_changes_path.touch(exist_ok=True)
     metrics = analyze_run_files(
         conversations_path=conversations_path,
         state_path=state_path,

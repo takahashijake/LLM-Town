@@ -59,11 +59,23 @@ class ConversationOutputProcessor:
             listener.name,
         ):
             if enforce_information_boundaries:
-                conversation = self.conversation_policy.get_grounded_fallback_dialogue(
-                    speaker=speaker,
-                    context=conversation_context or {},
-                    location_id=location_id,
-                )
+                if suggested_action in allowed_actions and suggested_action != "share_rumor":
+                    conversation = (
+                        self.conversation_policy.get_non_repeated_fallback_dialogue(
+                            speaker=speaker,
+                            listener=listener,
+                            relationship_label=old_relationship_label,
+                            location_id=location_id,
+                            suggested_action=suggested_action,
+                            avoid_near_repetition=True,
+                        )
+                    )
+                else:
+                    conversation = self.conversation_policy.get_grounded_fallback_dialogue(
+                        speaker=speaker,
+                        context=conversation_context or {},
+                        location_id=location_id,
+                    )
             else:
                 conversation = speaker.speak_to(listener, old_relationship_label)
             parsed_action = "chat"

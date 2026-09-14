@@ -1,0 +1,42 @@
+[
+  {
+    "cooperation_weight_delta": 1,
+    "expected": "trusted history increases help seeking",
+    "help_weight_delta": 5,
+    "left": "help_seek_trusted",
+    "name": "trusted_helper_vs_neutral",
+    "preferred_actions_differ": true,
+    "relationship_value_delta": 0.312,
+    "right": "help_seek_neutral"
+  },
+  {
+    "cooperation_weight_delta": 1,
+    "expected": "hostile history suppresses help seeking",
+    "help_weight_delta": 6,
+    "left": "help_seek_trusted",
+    "name": "trusted_helper_vs_hostile",
+    "preferred_actions_differ": true,
+    "relationship_value_delta": 0.453,
+    "right": "help_seek_hostile"
+  },
+  {
+    "cooperation_weight_delta": 3,
+    "expected": "successful cooperation increases cooperation preference",
+    "help_weight_delta": 0,
+    "left": "cooperate_proven",
+    "name": "proven_cooperator_vs_neutral",
+    "preferred_actions_differ": true,
+    "relationship_value_delta": 0.243,
+    "right": "cooperate_neutral"
+  },
+  {
+    "cooperation_weight_delta": 0,
+    "expected": "positive follow-up improves the private relationship state",
+    "help_weight_delta": 0,
+    "left": "conflict_unresolved",
+    "name": "repair_progress",
+    "preferred_actions_differ": true,
+    "relationship_value_delta": -0.212,
+    "right": "conflict_repaired"
+  }
+]

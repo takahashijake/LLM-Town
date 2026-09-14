@@ -260,6 +260,19 @@ def analyze_real_llm_records(
         for row in records
     ]
     fallbacks = sum(fallback_flags)
+    relationship_opportunities = sum(
+        row.get("relationship_snapshot", {}).get("interaction_count", 0) > 0
+        for row in records
+    )
+    relationship_influenced = sum(
+        bool(row.get("relationship_influenced")) for row in records
+    )
+    valid_relationship_diagnostics = sum(
+        bool(row.get("relationship_snapshot", {}).get("interaction_count", 0))
+        and bool(row.get("retrieved_social_memories"))
+        and bool(row.get("relationship_decision_reasons"))
+        for row in records
+    )
 
     return {
         "conversation_count": len(records),
@@ -283,6 +296,20 @@ def analyze_real_llm_records(
             "intent_followthrough", {}
         ).get("action_compatibility_rate", 0.0),
         "action_language_diagnostics": _action_language_diagnostics(records),
+        "relationship_conditioning_diagnostics": {
+            "opportunities": relationship_opportunities,
+            "influenced_decisions": relationship_influenced,
+            "influenced_decision_rate": safe_rate(
+                relationship_influenced, relationship_opportunities
+            ),
+            "valid_diagnostics": valid_relationship_diagnostics,
+            "valid_diagnostics_rate": safe_rate(
+                valid_relationship_diagnostics, relationship_opportunities
+            ),
+            "context_present_without_measurable_policy_influence": max(
+                0, relationship_opportunities - relationship_influenced
+            ),
+        },
         "measurement_note": (
             "Context-use rates are transparent lexical-overlap indicators, not "
             "judgments of naturalness or proof that context was used causally."
@@ -317,6 +344,7 @@ def build_human_review_sample(
         "strategy_adaptation": [],
         "goal_progress": [],
         "goal_reputation_tension": [],
+        "relationship_conditioned_decision": [],
     }
 
     for index, record in enumerate(records):
@@ -439,6 +467,8 @@ def build_human_review_sample(
             memberships.append("legitimate_rumor_transmission")
         if record.get("reputation_influenced"):
             memberships.append("behavior_influenced_by_reputation")
+        if record.get("relationship_influenced"):
+            memberships.append("relationship_conditioned_decision")
         if record.get("dialogue_source") == "policy_fallback_unsourced_hearsay":
             memberships.append("unsupported_rumor_blocked_or_fallback")
 

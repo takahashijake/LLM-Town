@@ -116,6 +116,8 @@ class SimulationPersistence:
                 occupation=agent_data.get("occupation", "unemployed"),
                 recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
+                relationship_states=agent_data.get("relationship_states", {}),
+                social_memories=agent_data.get("social_memories", {}),
                 reputation_beliefs=reputation_beliefs,
                 current_activity=agent_data.get("current_activity", "idle"),
                 current_activity_reason=agent_data.get("current_activity_reason", ""),

@@ -1,0 +1,367 @@
+[
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 10,
+      "chat": 9,
+      "compliment": 1,
+      "cooperate": 2,
+      "offer_help": 2
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "offer_help",
+      "offer_help",
+      "offer_help"
+    ],
+    "name": "help_seek_trusted",
+    "preferred_action": "ask_for_help",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "Could you give me advice about reviewing public records for useful information?",
+      "dialogue_source": "agent_fallback_narration",
+      "final_action": "ask_for_help",
+      "final_action_reason": "trusted_inferred_non_chat",
+      "generation_seed": 142,
+      "inference_reason": "request_marker:could you give me advice",
+      "inferred_action": "ask_for_help",
+      "parsed_action": "chat",
+      "raw_response": "{\"dialogue\": \"Maya asked if Ethan had seen any unusual activity around town lately.\", \"action\": \"ask_for_help\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "ask_for_help"
+    },
+    "relationship_decision_reasons": [
+      "direct trust supports reliance",
+      "past helpfulness supports asking"
+    ],
+    "relationship_snapshot": {
+      "affinity": 0.18,
+      "cooperation": 0.0,
+      "helpfulness": 0.54,
+      "hostility": -0.12,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.36
+    },
+    "relationship_weight_adjustments": {
+      "ask_for_help": 5,
+      "cooperate": 1
+    },
+    "retrieved_social_memories": [
+      "Day 3: Ethan offered me help.",
+      "Day 2: Ethan offered me help.",
+      "Day 1: Ethan offered me help."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 5,
+      "chat": 9,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 2
+    },
+    "counterpart": "Ethan",
+    "history": [],
+    "name": "help_seek_neutral",
+    "preferred_action": "chat",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "I noticed the mayor's office was unusually quiet today. Do you think he's avoiding something?",
+      "dialogue_source": "llm",
+      "final_action": "chat",
+      "final_action_reason": "used_parsed_action",
+      "generation_seed": 142,
+      "inference_reason": "no_action_language",
+      "inferred_action": "chat",
+      "parsed_action": "chat",
+      "raw_response": "{\"dialogue\": \"I noticed the mayor's office was unusually quiet today. Do you think he's avoiding something?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "chat"
+    },
+    "relationship_decision_reasons": [],
+    "relationship_snapshot": {
+      "affinity": 0.0,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.0,
+      "interaction_count": 0,
+      "last_interaction_day": null,
+      "negative_interactions": 0,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {},
+    "retrieved_social_memories": []
+  },
+  {
+    "action_weights": {
+      "apologize": 3,
+      "argue": 3,
+      "ask_for_help": 4,
+      "chat": 11,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 1
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "argue",
+      "argue",
+      "argue"
+    ],
+    "name": "help_seek_hostile",
+    "preferred_action": "chat",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "I noticed the old oak tree was pruned last week. Do you know if there were any unusual activities around then?",
+      "dialogue_source": "llm",
+      "final_action": "ask_for_help",
+      "final_action_reason": "trusted_inferred_non_chat",
+      "generation_seed": 142,
+      "inference_reason": "request_marker:do you know if",
+      "inferred_action": "ask_for_help",
+      "parsed_action": "chat",
+      "raw_response": "{\"dialogue\": \"I noticed the old oak tree was pruned last week. Do you know if there were any unusual activities around then?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "chat"
+    },
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.24,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.3,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 3,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {
+      "apologize": 2,
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 3: I argued with Ethan.",
+      "Day 2: I argued with Ethan.",
+      "Day 1: I argued with Ethan."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 2,
+      "chat": 8,
+      "compliment": 2,
+      "cooperate": 10,
+      "offer_help": 5
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "cooperate",
+      "cooperate",
+      "cooperate"
+    ],
+    "name": "cooperate_proven",
+    "preferred_action": "cooperate",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "Let's sort these boxes together while we're here.",
+      "dialogue_source": "llm",
+      "final_action": "cooperate",
+      "final_action_reason": "trusted_inferred_non_chat",
+      "generation_seed": 242,
+      "inference_reason": "cooperation_pattern:sort_together",
+      "inferred_action": "cooperate",
+      "parsed_action": "cooperate",
+      "raw_response": "{\"dialogue\": \"Let's sort these boxes together while we're here.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "cooperate"
+    },
+    "relationship_decision_reasons": [
+      "successful cooperation supports another joint action"
+    ],
+    "relationship_snapshot": {
+      "affinity": 0.15,
+      "cooperation": 0.48,
+      "helpfulness": 0.0,
+      "hostility": -0.15,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.24
+    },
+    "relationship_weight_adjustments": {
+      "cooperate": 3
+    },
+    "retrieved_social_memories": [
+      "Day 3: Ethan and I cooperated.",
+      "Day 2: Ethan and I cooperated.",
+      "Day 1: Ethan and I cooperated."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 2,
+      "chat": 8,
+      "compliment": 2,
+      "cooperate": 7,
+      "offer_help": 5
+    },
+    "counterpart": "Ethan",
+    "history": [],
+    "name": "cooperate_neutral",
+    "preferred_action": "chat",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "Hey Ethan, do you think we'll have enough volunteers for this project?",
+      "dialogue_source": "llm",
+      "final_action": "chat",
+      "final_action_reason": "used_parsed_action",
+      "generation_seed": 242,
+      "inference_reason": "no_action_language",
+      "inferred_action": "chat",
+      "parsed_action": "chat",
+      "raw_response": "{\"dialogue\": \"Hey Ethan, do you think we'll have enough volunteers for this project?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "chat"
+    },
+    "relationship_decision_reasons": [],
+    "relationship_snapshot": {
+      "affinity": 0.0,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.0,
+      "interaction_count": 0,
+      "last_interaction_day": null,
+      "negative_interactions": 0,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {},
+    "retrieved_social_memories": []
+  },
+  {
+    "action_weights": {
+      "apologize": 12,
+      "argue": 1,
+      "ask_for_help": 1,
+      "chat": 12,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 3
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "insult",
+      "argue",
+      "argue"
+    ],
+    "name": "conflict_unresolved",
+    "preferred_action": "apologize",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "I'm sorry if I upset you yesterday, Ethan.",
+      "dialogue_source": "llm",
+      "final_action": "apologize",
+      "final_action_reason": "trusted_inferred_non_chat",
+      "generation_seed": 342,
+      "inference_reason": "apology_marker:sorry",
+      "inferred_action": "apologize",
+      "parsed_action": "apologize",
+      "raw_response": "{\"dialogue\": \"I'm sorry if I upset you yesterday, Ethan.\", \"action\": \"apologize\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "apologize"
+    },
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.28,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.36,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 3,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {
+      "apologize": 2,
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 3: I argued with Ethan.",
+      "Day 2: I argued with Ethan.",
+      "Day 1: I insulted Ethan."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 1,
+      "chat": 12,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 3
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "insult",
+      "argue",
+      "argue",
+      "apologize",
+      "offer_help",
+      "cooperate"
+    ],
+    "name": "conflict_repaired",
+    "preferred_action": "chat",
+    "real_llm": {
+      "action_source": "llm",
+      "dialogue": "I noticed you've been here a lot lately. Is everything okay?",
+      "dialogue_source": "llm",
+      "final_action": "chat",
+      "final_action_reason": "used_parsed_action",
+      "generation_seed": 342,
+      "inference_reason": "no_action_language",
+      "inferred_action": "chat",
+      "parsed_action": "chat",
+      "raw_response": "{\"dialogue\": \"I noticed you've been here a lot lately. Is everything okay?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+      "suggested_action": "chat"
+    },
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.13,
+      "cooperation": 0.16,
+      "helpfulness": 0.18,
+      "hostility": 0.21,
+      "interaction_count": 6,
+      "last_interaction_day": 6,
+      "negative_interactions": 3,
+      "positive_interactions": 3,
+      "trust": 0.2
+    },
+    "relationship_weight_adjustments": {
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 6: Ethan and I cooperated.",
+      "Day 5: Ethan offered me help.",
+      "Day 4: I apologized to Ethan."
+    ]
+  }
+]

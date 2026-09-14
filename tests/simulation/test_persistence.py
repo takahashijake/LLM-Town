@@ -53,6 +53,21 @@ def test_persistence_reconstructs_agents_from_saved_state():
                 "memory_summary": "Maya remembers old market activity.",
                 "recent_topics": ["learning"],
                 "relationships": {"Ethan": 2},
+                "relationship_states": {
+                    "Ethan": {
+                        "trust": 0.4,
+                        "helpfulness": 0.6,
+                        "interaction_count": 2,
+                    }
+                },
+                "social_memories": {
+                    "Ethan": [{
+                        "day": 2, "hour": 8, "counterpart": "Ethan",
+                        "actor": "Ethan", "action": "offer_help",
+                        "outcome": "completed", "summary": "Ethan offered me help.",
+                        "deltas": {"helpfulness": 0.18},
+                    }]
+                },
                 "current_activity": "Check records for leads",
                 "current_activity_reason": "Maya is looking for background information.",
                 "current_activity_tags": ["journalism", "learning"],
@@ -73,6 +88,9 @@ def test_persistence_reconstructs_agents_from_saved_state():
     assert agent.needs["knowledge"] == 80
     assert agent.recent_topics == ["learning"]
     assert agent.relationships == {"Ethan": 2}
+    assert agent.get_relationship_state("Ethan").trust == 0.4
+    assert agent.get_relationship_state("Ethan").helpfulness == 0.6
+    assert agent.get_social_memories("Ethan")[0].action == "offer_help"
     assert agent.current_activity == "Check records for leads"
     assert agent.current_activity_tags == ["journalism", "learning"]
     assert agent.memory_summary == "Maya remembers old market activity."

@@ -51,6 +51,7 @@ Each agent possesses:
 - Needs
 - Memories
 - Relationships
+- Directional relationship profiles and bounded social episodes
 - Current activity
 - Recent topics
 
@@ -102,6 +103,13 @@ Relationships influence:
 - Available actions
 - Conversation tone
 - Future interactions
+
+Prompt 5 adds private per-counterpart experience without replacing the legacy
+pair score. Trust, affinity, cooperation, helpfulness, and hostility are bounded
+and updated only from finalized structured actions/outcomes. Up to eight recent
+structured episodes per counterpart condition target, strategy, intent, and
+social-action policy. These private views remain separate from global reputation.
+See [the Prompt 5 design and evaluation guide](docs/prompt5_relationship_memory.md).
 
 ---
 
@@ -184,6 +192,7 @@ Current action system:
 - storm_off
 - confess_feelings
 - share_rumor
+- cooperate
 
 Actions affect:
 
@@ -386,14 +395,9 @@ These are the highest-priority features currently planned.
 
 ## 1. Relationship Dynamics Improvements
 
-Current relationships only change based on explicit actions.
-
-Future improvements:
-
-- Personality compatibility
-- Shared history
-- Relationship drift
-- Context-sensitive relationship updates
+Prompt 5 now provides bounded, directional shared-history conditioning.
+Possible later improvements include personality compatibility and more explicit
+multi-turn outcome modeling without expanding the current lightweight policy.
 
 ---
 

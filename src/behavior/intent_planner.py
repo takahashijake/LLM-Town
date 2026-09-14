@@ -22,6 +22,10 @@ class IntentPlanner:
             parent_goal_id=goal.id,
             strategy=strategy.name,
             strategy_score=strategy.score,
+            relationship_influenced=strategy.relationship_influenced,
+            relationship_reason=strategy.relationship_reason,
+            relationship_snapshot=dict(strategy.relationship_snapshot),
+            relevant_social_memories=list(strategy.relevant_social_memories),
         )
 
     def create_occupation_intent(

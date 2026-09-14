@@ -83,6 +83,12 @@ class ConversationRecorder:
         inferred_action: str = "",
         inference_reason: str = "",
         base_action_weights: dict | None = None,
+        relationship_adjusted_weights: dict | None = None,
+        relationship_weight_adjustments: dict | None = None,
+        relationship_decision_reasons: list[str] | None = None,
+        relationship_snapshot: dict | None = None,
+        retrieved_social_memories: list[str] | None = None,
+        relationship_updates: dict | None = None,
         intent_adjusted_weights: dict | None = None,
         reputation_adjusted_weights: dict | None = None,
         reputation_weight_adjustments: dict | None = None,
@@ -96,6 +102,11 @@ class ConversationRecorder:
         reputation_updates: list[dict] | None = None,
         rumor_transmission: dict | None = None,
     ) -> None:
+        intent_relationship_applies = bool(
+            speaker_intent
+            and getattr(speaker_intent, "relationship_influenced", False)
+            and speaker_intent.target_agent in (None, listener.name)
+        )
         conversation_record = {
             "day": day,
             "hour": hour,
@@ -114,6 +125,18 @@ class ConversationRecorder:
             "inferred_action": inferred_action,
             "inference_reason": inference_reason,
             "base_action_weights": base_action_weights or {},
+            "relationship_adjusted_weights": relationship_adjusted_weights or {},
+            "relationship_weight_adjustments": relationship_weight_adjustments or {},
+            "relationship_influenced": bool(relationship_weight_adjustments) or bool(
+                intent_relationship_applies
+            ),
+            "relationship_decision_reasons": relationship_decision_reasons or (
+                [getattr(speaker_intent, "relationship_reason", "")]
+                if intent_relationship_applies else []
+            ),
+            "relationship_snapshot": relationship_snapshot or {},
+            "retrieved_social_memories": retrieved_social_memories or [],
+            "relationship_updates": relationship_updates or {},
             "intent_adjusted_weights": intent_adjusted_weights or {},
             "reputation_adjusted_weights": reputation_adjusted_weights or {},
             "reputation_weight_adjustments": reputation_weight_adjustments or {},

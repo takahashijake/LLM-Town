@@ -77,7 +77,7 @@ class ConversationPolicy:
                 f"I can help you sort through this before it gets harder.",
             ],
             "ask_for_help": [
-                f"Could you give me advice about {activity.lower()}?",
+                f"Could you give me advice about {self._as_activity_phrase(activity).lower()}?",
                 f"Do you know where I should start with this work at {location_text}?",
                 f"Can you help me understand what people need here?",
             ],

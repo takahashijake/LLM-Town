@@ -1,0 +1,397 @@
+{
+  "kind": "llm-town-prompt5-relationship-evaluation",
+  "metrics": {
+    "context_present_without_preferred_action_change_count": 0,
+    "hostile_help_seeking_suppressed": 1.0,
+    "memory_retrieval_correctness": 1.0,
+    "preferred_target_consistency": 1.0,
+    "proven_cooperation_preferred": 1.0,
+    "real_context_pair_without_action_change_count": null,
+    "real_llm_direct_dialogue_parser_inference_agreement_rate": null,
+    "real_llm_json_parsing_rate": null,
+    "real_llm_pair_action_difference_rate": null,
+    "real_llm_parser_inference_agreement_rate": null,
+    "real_llm_suggested_action_followthrough_rate": null,
+    "relationship_attributed_strategy_adaptation": 1.0,
+    "relationship_conditioned_decision_rate": 1.0,
+    "relationship_update_correctness": 1.0,
+    "repair_deescalation_preferred": 1.0,
+    "repair_relationship_value_gain": 0.212,
+    "trusted_help_seeking_preferred": 1.0,
+    "valid_relationship_diagnostics_rate": 1.0
+  },
+  "model_identifier": "deterministic-policy",
+  "paired_scenarios": [
+    {
+      "cooperation_weight_delta": 1,
+      "expected": "trusted history increases help seeking",
+      "help_weight_delta": 5,
+      "left": "help_seek_trusted",
+      "name": "trusted_helper_vs_neutral",
+      "preferred_actions_differ": true,
+      "relationship_value_delta": 0.312,
+      "right": "help_seek_neutral"
+    },
+    {
+      "cooperation_weight_delta": 1,
+      "expected": "hostile history suppresses help seeking",
+      "help_weight_delta": 6,
+      "left": "help_seek_trusted",
+      "name": "trusted_helper_vs_hostile",
+      "preferred_actions_differ": true,
+      "relationship_value_delta": 0.453,
+      "right": "help_seek_hostile"
+    },
+    {
+      "cooperation_weight_delta": 3,
+      "expected": "successful cooperation increases cooperation preference",
+      "help_weight_delta": 0,
+      "left": "cooperate_proven",
+      "name": "proven_cooperator_vs_neutral",
+      "preferred_actions_differ": true,
+      "relationship_value_delta": 0.243,
+      "right": "cooperate_neutral"
+    },
+    {
+      "cooperation_weight_delta": 0,
+      "expected": "positive follow-up improves the private relationship state",
+      "help_weight_delta": 0,
+      "left": "conflict_unresolved",
+      "name": "repair_progress",
+      "preferred_actions_differ": true,
+      "relationship_value_delta": -0.212,
+      "right": "conflict_repaired"
+    }
+  ],
+  "scenarios": [
+    {
+      "action_weights": {
+        "argue": 1,
+        "ask_for_help": 10,
+        "chat": 9,
+        "compliment": 1,
+        "cooperate": 2,
+        "offer_help": 2
+      },
+      "counterpart": "Ethan",
+      "history": [
+        "offer_help",
+        "offer_help",
+        "offer_help"
+      ],
+      "name": "help_seek_trusted",
+      "preferred_action": "ask_for_help",
+      "relationship_decision_reasons": [
+        "direct trust supports reliance",
+        "past helpfulness supports asking"
+      ],
+      "relationship_snapshot": {
+        "affinity": 0.18,
+        "cooperation": 0.0,
+        "helpfulness": 0.54,
+        "hostility": -0.12,
+        "interaction_count": 3,
+        "last_interaction_day": 3,
+        "negative_interactions": 0,
+        "positive_interactions": 3,
+        "trust": 0.36
+      },
+      "relationship_weight_adjustments": {
+        "ask_for_help": 5,
+        "cooperate": 1
+      },
+      "retrieved_social_memories": [
+        "Day 3: Ethan offered me help.",
+        "Day 2: Ethan offered me help.",
+        "Day 1: Ethan offered me help."
+      ]
+    },
+    {
+      "action_weights": {
+        "argue": 1,
+        "ask_for_help": 5,
+        "chat": 9,
+        "compliment": 1,
+        "cooperate": 1,
+        "offer_help": 2
+      },
+      "counterpart": "Ethan",
+      "history": [],
+      "name": "help_seek_neutral",
+      "preferred_action": "chat",
+      "relationship_decision_reasons": [],
+      "relationship_snapshot": {
+        "affinity": 0.0,
+        "cooperation": 0.0,
+        "helpfulness": 0.0,
+        "hostility": 0.0,
+        "interaction_count": 0,
+        "last_interaction_day": null,
+        "negative_interactions": 0,
+        "positive_interactions": 0,
+        "trust": 0.0
+      },
+      "relationship_weight_adjustments": {},
+      "retrieved_social_memories": []
+    },
+    {
+      "action_weights": {
+        "apologize": 3,
+        "argue": 3,
+        "ask_for_help": 4,
+        "chat": 11,
+        "compliment": 1,
+        "cooperate": 1,
+        "offer_help": 1
+      },
+      "counterpart": "Ethan",
+      "history": [
+        "argue",
+        "argue",
+        "argue"
+      ],
+      "name": "help_seek_hostile",
+      "preferred_action": "chat",
+      "relationship_decision_reasons": [
+        "conflict history favors caution or repair"
+      ],
+      "relationship_snapshot": {
+        "affinity": -0.24,
+        "cooperation": 0.0,
+        "helpfulness": 0.0,
+        "hostility": 0.3,
+        "interaction_count": 3,
+        "last_interaction_day": 3,
+        "negative_interactions": 3,
+        "positive_interactions": 0,
+        "trust": 0.0
+      },
+      "relationship_weight_adjustments": {
+        "apologize": 2,
+        "argue": 2,
+        "ask_for_help": -1,
+        "chat": 2,
+        "offer_help": -1
+      },
+      "retrieved_social_memories": [
+        "Day 3: I argued with Ethan.",
+        "Day 2: I argued with Ethan.",
+        "Day 1: I argued with Ethan."
+      ]
+    },
+    {
+      "action_weights": {
+        "argue": 1,
+        "ask_for_help": 2,
+        "chat": 8,
+        "compliment": 2,
+        "cooperate": 10,
+        "offer_help": 5
+      },
+      "counterpart": "Ethan",
+      "history": [
+        "cooperate",
+        "cooperate",
+        "cooperate"
+      ],
+      "name": "cooperate_proven",
+      "preferred_action": "cooperate",
+      "relationship_decision_reasons": [
+        "successful cooperation supports another joint action"
+      ],
+      "relationship_snapshot": {
+        "affinity": 0.15,
+        "cooperation": 0.48,
+        "helpfulness": 0.0,
+        "hostility": -0.15,
+        "interaction_count": 3,
+        "last_interaction_day": 3,
+        "negative_interactions": 0,
+        "positive_interactions": 3,
+        "trust": 0.24
+      },
+      "relationship_weight_adjustments": {
+        "cooperate": 3
+      },
+      "retrieved_social_memories": [
+        "Day 3: Ethan and I cooperated.",
+        "Day 2: Ethan and I cooperated.",
+        "Day 1: Ethan and I cooperated."
+      ]
+    },
+    {
+      "action_weights": {
+        "argue": 1,
+        "ask_for_help": 2,
+        "chat": 8,
+        "compliment": 2,
+        "cooperate": 7,
+        "offer_help": 5
+      },
+      "counterpart": "Ethan",
+      "history": [],
+      "name": "cooperate_neutral",
+      "preferred_action": "chat",
+      "relationship_decision_reasons": [],
+      "relationship_snapshot": {
+        "affinity": 0.0,
+        "cooperation": 0.0,
+        "helpfulness": 0.0,
+        "hostility": 0.0,
+        "interaction_count": 0,
+        "last_interaction_day": null,
+        "negative_interactions": 0,
+        "positive_interactions": 0,
+        "trust": 0.0
+      },
+      "relationship_weight_adjustments": {},
+      "retrieved_social_memories": []
+    },
+    {
+      "action_weights": {
+        "apologize": 12,
+        "argue": 1,
+        "ask_for_help": 1,
+        "chat": 12,
+        "compliment": 1,
+        "cooperate": 1,
+        "offer_help": 3
+      },
+      "counterpart": "Ethan",
+      "history": [
+        "insult",
+        "argue",
+        "argue"
+      ],
+      "name": "conflict_unresolved",
+      "preferred_action": "apologize",
+      "relationship_decision_reasons": [
+        "conflict history favors caution or repair"
+      ],
+      "relationship_snapshot": {
+        "affinity": -0.28,
+        "cooperation": 0.0,
+        "helpfulness": 0.0,
+        "hostility": 0.36,
+        "interaction_count": 3,
+        "last_interaction_day": 3,
+        "negative_interactions": 3,
+        "positive_interactions": 0,
+        "trust": 0.0
+      },
+      "relationship_weight_adjustments": {
+        "apologize": 2,
+        "argue": 2,
+        "ask_for_help": -1,
+        "chat": 2,
+        "offer_help": -1
+      },
+      "retrieved_social_memories": [
+        "Day 3: I argued with Ethan.",
+        "Day 2: I argued with Ethan.",
+        "Day 1: I insulted Ethan."
+      ]
+    },
+    {
+      "action_weights": {
+        "argue": 1,
+        "ask_for_help": 1,
+        "chat": 12,
+        "compliment": 1,
+        "cooperate": 1,
+        "offer_help": 3
+      },
+      "counterpart": "Ethan",
+      "history": [
+        "insult",
+        "argue",
+        "argue",
+        "apologize",
+        "offer_help",
+        "cooperate"
+      ],
+      "name": "conflict_repaired",
+      "preferred_action": "chat",
+      "relationship_decision_reasons": [
+        "conflict history favors caution or repair"
+      ],
+      "relationship_snapshot": {
+        "affinity": -0.13,
+        "cooperation": 0.16,
+        "helpfulness": 0.18,
+        "hostility": 0.21,
+        "interaction_count": 6,
+        "last_interaction_day": 6,
+        "negative_interactions": 3,
+        "positive_interactions": 3,
+        "trust": 0.2
+      },
+      "relationship_weight_adjustments": {
+        "argue": 2,
+        "ask_for_help": -1,
+        "chat": 2,
+        "offer_help": -1
+      },
+      "retrieved_social_memories": [
+        "Day 6: Ethan and I cooperated.",
+        "Day 5: Ethan offered me help.",
+        "Day 4: I apologized to Ethan."
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "seed": 42,
+  "strategy_adaptation": {
+    "expected_target": "Lena",
+    "new_strategy": "ask_informed_agent",
+    "new_target_agent": "Lena",
+    "old_strategy": "ask_informed_agent",
+    "old_target_agent": "Ethan",
+    "preserved_progress": 1,
+    "prior_counterpart_memories": [
+      "Ethan refused my request for help.",
+      "Ethan refused my request for help.",
+      "Ethan refused my request for help."
+    ],
+    "relationship_reason": "Direct history with Lena supports this tactic (decision value +0.208).",
+    "relationship_snapshot": {
+      "affinity": 0.12,
+      "cooperation": 0.0,
+      "helpfulness": 0.36,
+      "hostility": -0.08,
+      "interaction_count": 2,
+      "last_interaction_day": 2,
+      "negative_interactions": 0,
+      "positive_interactions": 2,
+      "trust": 0.24
+    },
+    "retrieved_social_memories": [
+      "Lena offered me help.",
+      "Lena offered me help."
+    ],
+    "trigger": "relationship"
+  },
+  "target_choice": {
+    "expected_target": "Ethan",
+    "reason": "Direct history with Ethan supports this tactic (decision value +0.312).",
+    "relationship_influenced": true,
+    "relationship_snapshot": {
+      "affinity": 0.18,
+      "cooperation": 0.0,
+      "helpfulness": 0.54,
+      "hostility": -0.12,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.36
+    },
+    "retrieved_social_memories": [
+      "Ethan offered me help.",
+      "Ethan offered me help.",
+      "Ethan offered me help."
+    ],
+    "selected_strategy": "ask_informed_agent",
+    "selected_target": "Ethan"
+  }
+}

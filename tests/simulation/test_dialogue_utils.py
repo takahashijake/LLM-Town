@@ -46,6 +46,14 @@ def test_is_narration_detects_action_description():
     )
 
 
+def test_is_narration_detects_past_tense_named_action():
+    assert is_narration(
+        "Maya asked if Ethan had seen anything unusual.",
+        "Maya",
+        "Ethan",
+    )
+
+
 def test_is_narration_detects_subjectless_action_summary():
     assert is_narration(
         conversation="Spoke about the art workshop she mentioned earlier.",

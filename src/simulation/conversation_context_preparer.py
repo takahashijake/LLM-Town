@@ -51,6 +51,7 @@ class ConversationContextPreparer:
             speaker.name,
             listener.name,
         )
+        relationship_state = speaker.get_relationship_state(listener.name)
 
         allowed_actions = self.actions.get_allowed_actions_for_relationship(
             old_score,
@@ -63,6 +64,8 @@ class ConversationContextPreparer:
             allowed_actions = [
                 action for action in allowed_actions if action != "share_rumor"
             ]
+        if relationship_state.hostility >= 0.25 and "apologize" not in allowed_actions:
+            allowed_actions.append("apologize")
 
         recent_relationship_events = self.relationship_updater.get_recent_relationship_events(
             relationship_events=relationship_events,
@@ -79,9 +82,19 @@ class ConversationContextPreparer:
             relationship_label=old_relationship_label,
             recent_events=recent_relationship_events,
         )
+        if relationship_state.hostility >= 0.25 and "apologize" in allowed_actions:
+            base_action_weights.setdefault("apologize", 1)
+        (
+            relationship_adjusted_weights,
+            relationship_weight_adjustments,
+            relationship_decision_reasons,
+        ) = self.social_policy.adjust_action_weights_for_relationship_state(
+            weights=base_action_weights,
+            relationship_state=relationship_state,
+        )
 
         intent_adjusted_weights = self.intent_system.adjust_action_weights_for_intent(
-            weights=base_action_weights,
+            weights=relationship_adjusted_weights,
             intent=speaker_intent,
             listener_name=listener.name,
         )
@@ -111,6 +124,12 @@ class ConversationContextPreparer:
             agent_b=listener.name,
             limit=3,
         )
+        relationship_snapshot = relationship_state.to_dict()
+        social_memories = self.relationship_updater.format_social_memories(
+            speaker,
+            listener.name,
+            limit=3,
+        )
 
         context = build_conversation_context(
             speaker=speaker,
@@ -123,6 +142,8 @@ class ConversationContextPreparer:
             allowed_actions=allowed_actions,
             suggested_action=suggested_action,
             relationship_history=relationship_history,
+            relationship_snapshot=relationship_snapshot,
+            social_memories=social_memories,
             speaker_intent=speaker_intent.to_dict() if speaker_intent else None,
             town_arcs=self.town_arc_system.get_relevant_town_arcs_for_context(
                 location_id,
@@ -142,6 +163,11 @@ class ConversationContextPreparer:
             "speaker_intent": speaker_intent,
             "listener_intent": listener_intent,
             "base_action_weights": base_action_weights,
+            "relationship_adjusted_weights": relationship_adjusted_weights,
+            "relationship_weight_adjustments": relationship_weight_adjustments,
+            "relationship_decision_reasons": relationship_decision_reasons,
+            "relationship_snapshot": relationship_snapshot,
+            "social_memories": social_memories,
             "intent_adjusted_weights": intent_adjusted_weights,
             "reputation_adjusted_weights": reputation_adjusted_weights,
             "reputation_weight_adjustments": reputation_weight_adjustments,

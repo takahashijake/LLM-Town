@@ -1,0 +1,276 @@
+[
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 10,
+      "chat": 9,
+      "compliment": 1,
+      "cooperate": 2,
+      "offer_help": 2
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "offer_help",
+      "offer_help",
+      "offer_help"
+    ],
+    "name": "help_seek_trusted",
+    "preferred_action": "ask_for_help",
+    "relationship_decision_reasons": [
+      "direct trust supports reliance",
+      "past helpfulness supports asking"
+    ],
+    "relationship_snapshot": {
+      "affinity": 0.18,
+      "cooperation": 0.0,
+      "helpfulness": 0.54,
+      "hostility": -0.12,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.36
+    },
+    "relationship_weight_adjustments": {
+      "ask_for_help": 5,
+      "cooperate": 1
+    },
+    "retrieved_social_memories": [
+      "Day 3: Ethan offered me help.",
+      "Day 2: Ethan offered me help.",
+      "Day 1: Ethan offered me help."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 5,
+      "chat": 9,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 2
+    },
+    "counterpart": "Ethan",
+    "history": [],
+    "name": "help_seek_neutral",
+    "preferred_action": "chat",
+    "relationship_decision_reasons": [],
+    "relationship_snapshot": {
+      "affinity": 0.0,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.0,
+      "interaction_count": 0,
+      "last_interaction_day": null,
+      "negative_interactions": 0,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {},
+    "retrieved_social_memories": []
+  },
+  {
+    "action_weights": {
+      "apologize": 3,
+      "argue": 3,
+      "ask_for_help": 4,
+      "chat": 11,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 1
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "argue",
+      "argue",
+      "argue"
+    ],
+    "name": "help_seek_hostile",
+    "preferred_action": "chat",
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.24,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.3,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 3,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {
+      "apologize": 2,
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 3: I argued with Ethan.",
+      "Day 2: I argued with Ethan.",
+      "Day 1: I argued with Ethan."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 2,
+      "chat": 8,
+      "compliment": 2,
+      "cooperate": 10,
+      "offer_help": 5
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "cooperate",
+      "cooperate",
+      "cooperate"
+    ],
+    "name": "cooperate_proven",
+    "preferred_action": "cooperate",
+    "relationship_decision_reasons": [
+      "successful cooperation supports another joint action"
+    ],
+    "relationship_snapshot": {
+      "affinity": 0.15,
+      "cooperation": 0.48,
+      "helpfulness": 0.0,
+      "hostility": -0.15,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.24
+    },
+    "relationship_weight_adjustments": {
+      "cooperate": 3
+    },
+    "retrieved_social_memories": [
+      "Day 3: Ethan and I cooperated.",
+      "Day 2: Ethan and I cooperated.",
+      "Day 1: Ethan and I cooperated."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 2,
+      "chat": 8,
+      "compliment": 2,
+      "cooperate": 7,
+      "offer_help": 5
+    },
+    "counterpart": "Ethan",
+    "history": [],
+    "name": "cooperate_neutral",
+    "preferred_action": "chat",
+    "relationship_decision_reasons": [],
+    "relationship_snapshot": {
+      "affinity": 0.0,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.0,
+      "interaction_count": 0,
+      "last_interaction_day": null,
+      "negative_interactions": 0,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {},
+    "retrieved_social_memories": []
+  },
+  {
+    "action_weights": {
+      "apologize": 12,
+      "argue": 1,
+      "ask_for_help": 1,
+      "chat": 12,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 3
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "insult",
+      "argue",
+      "argue"
+    ],
+    "name": "conflict_unresolved",
+    "preferred_action": "apologize",
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.28,
+      "cooperation": 0.0,
+      "helpfulness": 0.0,
+      "hostility": 0.36,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 3,
+      "positive_interactions": 0,
+      "trust": 0.0
+    },
+    "relationship_weight_adjustments": {
+      "apologize": 2,
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 3: I argued with Ethan.",
+      "Day 2: I argued with Ethan.",
+      "Day 1: I insulted Ethan."
+    ]
+  },
+  {
+    "action_weights": {
+      "argue": 1,
+      "ask_for_help": 1,
+      "chat": 12,
+      "compliment": 1,
+      "cooperate": 1,
+      "offer_help": 3
+    },
+    "counterpart": "Ethan",
+    "history": [
+      "insult",
+      "argue",
+      "argue",
+      "apologize",
+      "offer_help",
+      "cooperate"
+    ],
+    "name": "conflict_repaired",
+    "preferred_action": "chat",
+    "relationship_decision_reasons": [
+      "conflict history favors caution or repair"
+    ],
+    "relationship_snapshot": {
+      "affinity": -0.13,
+      "cooperation": 0.16,
+      "helpfulness": 0.18,
+      "hostility": 0.21,
+      "interaction_count": 6,
+      "last_interaction_day": 6,
+      "negative_interactions": 3,
+      "positive_interactions": 3,
+      "trust": 0.2
+    },
+    "relationship_weight_adjustments": {
+      "argue": 2,
+      "ask_for_help": -1,
+      "chat": 2,
+      "offer_help": -1
+    },
+    "retrieved_social_memories": [
+      "Day 6: Ethan and I cooperated.",
+      "Day 5: Ethan offered me help.",
+      "Day 4: I apologized to Ethan."
+    ]
+  }
+]

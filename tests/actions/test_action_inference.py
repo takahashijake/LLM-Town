@@ -112,8 +112,11 @@ def test_infer_common_real_llm_action_language_variants_and_reason():
         "You were excellent with the volunteers.": "compliment",
         "The library shelves are so organized.": "compliment",
         "Let's tackle this together before noon.": "cooperate",
+        "Let's sort these supplies together while we're here.": "cooperate",
+        "Let's sort these boxes together while we're here.": "cooperate",
         "Word is the supplier may be unreliable, though I cannot confirm it.": "share_rumor",
         "Do you have any contacts in the farming community?": "ask_for_help",
+        "Can you tell me more about the town's history?": "ask_for_help",
     }
 
     for dialogue, expected_action in cases.items():

@@ -322,6 +322,16 @@ def _state_metrics(state: dict[str, Any]) -> dict[str, Any]:
     relationship_action_counts = Counter(
         event.get("action", "unknown") for event in relationship_events
     )
+    directed_states = [
+        relationship
+        for agent in agents
+        for relationship in agent.get("relationship_states", {}).values()
+    ]
+    social_memory_counts = [
+        len(memories)
+        for agent in agents
+        for memories in agent.get("social_memories", {}).values()
+    ]
 
     active_intents = state.get("agent_intents", {})
     intent_history = state.get("intent_history", [])
@@ -427,6 +437,12 @@ def _state_metrics(state: dict[str, Any]) -> dict[str, Any]:
                 for event in relationship_events
             ),
             "event_action_counts": dict(sorted(relationship_action_counts.items())),
+            "directed_view_count": len(directed_states),
+            "directed_interaction_count": sum(
+                state.get("interaction_count", 0) for state in directed_states
+            ),
+            "episodic_memory_count": sum(social_memory_counts),
+            "max_episodes_per_counterpart": max(social_memory_counts, default=0),
         },
         "intents": {
             "active": len(active_intents),

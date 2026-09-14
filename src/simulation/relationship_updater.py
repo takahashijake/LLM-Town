@@ -3,10 +3,40 @@ import random
 from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
 from src.agents.relationship_event import RelationshipEvent
-from src.agents.relationships import RelationshipManager
+from src.agents.relationships import RelationshipManager, SocialMemory
 
 
 class RelationshipUpdater:
+    """Apply legacy pair scores and conservative directional social learning."""
+
+    MEMORY_LIMIT = 8
+    RECIPIENT_DELTAS = {
+        "compliment": {"affinity": 0.10},
+        "apologize": {"trust": 0.08, "affinity": 0.08, "hostility": -0.12},
+        "offer_help": {
+            "trust": 0.12, "affinity": 0.06,
+            "helpfulness": 0.18, "hostility": -0.04,
+        },
+        "cooperate": {
+            "trust": 0.12, "affinity": 0.06,
+            "cooperation": 0.20, "helpfulness": 0.04, "hostility": -0.05,
+        },
+        "argue": {"trust": -0.08, "affinity": -0.15, "hostility": 0.15},
+        "insult": {"trust": -0.18, "affinity": -0.25, "hostility": 0.28},
+        "storm_off": {"trust": -0.12, "affinity": -0.18,
+                       "cooperation": -0.12, "hostility": 0.18},
+        "share_rumor": {"trust": -0.04, "hostility": 0.03},
+    }
+    ACTOR_DELTAS = {
+        "apologize": {"affinity": 0.04, "hostility": -0.06},
+        "cooperate": {
+            "trust": 0.08, "affinity": 0.05,
+            "cooperation": 0.16, "hostility": -0.05,
+        },
+        "argue": {"affinity": -0.08, "hostility": 0.10},
+        "insult": {"affinity": -0.12, "hostility": 0.16},
+        "storm_off": {"affinity": -0.10, "hostility": 0.12},
+    }
     def __init__(
         self,
         relationships: RelationshipManager,
@@ -35,6 +65,8 @@ class RelationshipUpdater:
         relationship_label: str,
         conversation: str,
         tags: list[str],
+        outcome: str = "completed",
+        directed_deltas: dict[str, dict[str, float]] | None = None,
     ) -> RelationshipEvent:
         if relationship_change > 0:
             direction = "improved"
@@ -62,7 +94,114 @@ class RelationshipUpdater:
             location=location_id,
             tags=tags,
             conversation=conversation,
+            outcome=outcome,
+            directed_deltas=directed_deltas or {},
         )
+
+    @staticmethod
+    def _summary(
+        owner: Agent,
+        counterpart: Agent,
+        actor: Agent,
+        action: str,
+        outcome: str,
+    ) -> str:
+        if action == "ask_for_help" and outcome in {"refused", "rejected", "failed"}:
+            if owner.name == actor.name:
+                return f"{counterpart.name} refused my request for help."
+            return f"I refused {counterpart.name}'s request for help."
+        reciprocal = {
+            "cooperate": f"{counterpart.name} and I cooperated.",
+        }
+        if action in reciprocal:
+            return reciprocal[action]
+        recipient_phrases = {
+            "compliment": "complimented me",
+            "apologize": "apologized to me",
+            "offer_help": "offered me help",
+            "ask_for_help": "asked me for help",
+            "argue": "argued with me",
+            "insult": "insulted me",
+            "storm_off": "walked away from our conversation",
+            "share_rumor": "shared a rumor with me",
+        }
+        actor_phrases = {
+            "compliment": "complimented",
+            "apologize": "apologized to",
+            "offer_help": "offered help to",
+            "ask_for_help": "asked for help from",
+            "argue": "argued with",
+            "insult": "insulted",
+            "storm_off": "walked away from",
+            "share_rumor": "shared a rumor with",
+        }
+        if owner.name == actor.name:
+            phrase = actor_phrases.get(action, "spoke with")
+            return f"I {phrase} {counterpart.name}."
+        phrase = recipient_phrases.get(action, "spoke with me")
+        return f"{counterpart.name} {phrase}."
+
+    def apply_structured_relationship_update(
+        self,
+        *,
+        day: int,
+        hour: int,
+        speaker: Agent,
+        listener: Agent,
+        action: str,
+        outcome: str = "completed",
+    ) -> dict[str, dict]:
+        """Update both private views using only a finalized action/outcome."""
+        actor_deltas = dict(self.ACTOR_DELTAS.get(action, {}))
+        recipient_deltas = dict(self.RECIPIENT_DELTAS.get(action, {}))
+        if action == "ask_for_help" and outcome in {"refused", "rejected", "failed"}:
+            actor_deltas = {
+                "trust": -0.12, "affinity": -0.08,
+                "helpfulness": -0.18, "cooperation": -0.08,
+            }
+
+        updates: dict[str, dict] = {}
+        for owner, counterpart, deltas in (
+            (speaker, listener, actor_deltas),
+            (listener, speaker, recipient_deltas),
+        ):
+            state = owner.get_relationship_state(counterpart.name)
+            applied = state.apply(deltas, day)
+            memory = None
+            if action != "chat" or applied:
+                memory = SocialMemory(
+                    day=day,
+                    hour=hour,
+                    counterpart=counterpart.name,
+                    actor=speaker.name,
+                    action=action,
+                    outcome=outcome,
+                    summary=self._summary(owner, counterpart, speaker, action, outcome),
+                    deltas=applied,
+                )
+                owner.remember_social_episode(memory, self.MEMORY_LIMIT)
+            updates[owner.name] = {
+                "counterpart": counterpart.name,
+                "delta": applied,
+                "snapshot": state.to_dict(),
+                "memory": memory.to_dict() if memory else None,
+            }
+        return updates
+
+    @staticmethod
+    def relationship_snapshot(agent: Agent, counterpart: str) -> dict:
+        return agent.get_relationship_state(counterpart).to_dict()
+
+    @staticmethod
+    def format_social_memories(
+        agent: Agent,
+        counterpart: str,
+        limit: int = 3,
+    ) -> list[str]:
+        return [
+            f"Day {memory.day}: {memory.summary}"
+            for memory in agent.get_social_memories(counterpart, limit=limit)
+        ]
 
     def record_relationship_event(
         self,
@@ -196,5 +335,3 @@ class RelationshipUpdater:
         )
 
         return new_score, relationship_label
-
-        

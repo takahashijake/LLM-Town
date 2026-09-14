@@ -3,6 +3,7 @@ import random
 from src.agents.journal_entry import JournalEntry
 from src.agents.goal import Goal
 from src.agents.memory import Memory
+from src.agents.relationships import RelationshipState, SocialMemory
 from src.systems.reputation import ReputationBelief
 
 @dataclass
@@ -19,6 +20,8 @@ class Agent:
     memory_summary: str = ""
     recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
+    relationship_states: dict[str, RelationshipState] = field(default_factory=dict)
+    social_memories: dict[str, list[SocialMemory]] = field(default_factory=dict)
     reputation_beliefs: dict[str, dict[str, ReputationBelief]] = field(
         default_factory=dict
     )
@@ -35,6 +38,21 @@ class Agent:
             )
             for index, goal in enumerate(self.goals)
         ]
+        self.relationship_states = {
+            counterpart: (
+                state if isinstance(state, RelationshipState)
+                else RelationshipState.from_dict(state)
+            )
+            for counterpart, state in self.relationship_states.items()
+        }
+        self.social_memories = {
+            counterpart: [
+                memory if isinstance(memory, SocialMemory)
+                else SocialMemory.from_dict(memory)
+                for memory in memories
+            ]
+            for counterpart, memories in self.social_memories.items()
+        }
 
     def get_active_goals(self) -> list[Goal]:
         return [goal for goal in self.goals if isinstance(goal, Goal) and goal.is_active()]
@@ -217,6 +235,28 @@ class Agent:
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
+
+    def get_relationship_state(self, other_name: str) -> RelationshipState:
+        """Return a neutral private state for an unseen counterpart."""
+        if other_name not in self.relationship_states:
+            self.relationship_states[other_name] = RelationshipState()
+        return self.relationship_states[other_name]
+
+    def remember_social_episode(
+        self,
+        memory: SocialMemory,
+        per_counterpart_limit: int = 8,
+    ) -> None:
+        episodes = self.social_memories.setdefault(memory.counterpart, [])
+        episodes.append(memory)
+        self.social_memories[memory.counterpart] = episodes[-per_counterpart_limit:]
+
+    def get_social_memories(
+        self,
+        other_name: str,
+        limit: int = 3,
+    ) -> list[SocialMemory]:
+        return self.social_memories.get(other_name, [])[-limit:][::-1]
 
     def get_reputation_belief(
         self,

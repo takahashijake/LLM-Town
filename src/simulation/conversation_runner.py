@@ -28,6 +28,15 @@ class ConversationRunner:
             speaker_intent = conversation_setup["speaker_intent"]
             listener_intent = conversation_setup["listener_intent"]
             base_action_weights = conversation_setup["base_action_weights"]
+            relationship_adjusted_weights = conversation_setup.get(
+                "relationship_adjusted_weights", base_action_weights
+            )
+            relationship_weight_adjustments = conversation_setup.get(
+                "relationship_weight_adjustments", {}
+            )
+            relationship_decision_reasons = conversation_setup.get(
+                "relationship_decision_reasons", []
+            )
             intent_adjusted_weights = conversation_setup["intent_adjusted_weights"]
             reputation_adjusted_weights = conversation_setup.get(
                 "reputation_adjusted_weights", intent_adjusted_weights
@@ -157,6 +166,18 @@ class ConversationRunner:
                 inferred_action=inferred_action,
                 inference_reason=inference_reason,
                 base_action_weights=base_action_weights,
+                relationship_adjusted_weights=relationship_adjusted_weights,
+                relationship_weight_adjustments=relationship_weight_adjustments,
+                relationship_decision_reasons=relationship_decision_reasons,
+                relationship_snapshot=conversation_setup.get(
+                    "relationship_snapshot", {}
+                ),
+                retrieved_social_memories=conversation_setup.get(
+                    "social_memories", []
+                ),
+                relationship_updates=effects_result.get(
+                    "relationship_updates", {}
+                ),
                 intent_adjusted_weights=intent_adjusted_weights,
                 reputation_adjusted_weights=reputation_adjusted_weights,
                 reputation_weight_adjustments=reputation_weight_adjustments,
@@ -171,6 +192,8 @@ class ConversationRunner:
                     "activity_display": context.get("speaker_activity_display"),
                     "activity_reason": context.get("speaker_activity_reason"),
                     "relationship_history": context.get("relationship_history", []),
+                    "relationship_snapshot": context.get("relationship_snapshot", {}),
+                    "social_memories": context.get("social_memories", []),
                     "reputation": context.get("reputation_context", []),
                     "reputation_rumor": context.get("reputation_rumor_text", ""),
                     "memories": context.get("relevant_memories", []),

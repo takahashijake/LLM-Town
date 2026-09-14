@@ -21,6 +21,10 @@ class AgentIntent:
     parent_goal_id: str | None = None
     strategy: str = ""
     strategy_score: float = 0.0
+    relationship_influenced: bool = False
+    relationship_reason: str = ""
+    relationship_snapshot: dict = field(default_factory=dict)
+    relevant_social_memories: list[str] = field(default_factory=list)
     opportunity_count: int = 0
     expiration_reason: str = ""
     terminal_trigger: str = ""

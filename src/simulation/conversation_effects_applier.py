@@ -64,6 +64,17 @@ class ConversationEffectsApplier:
             relationship_change=relationship_change,
         )
 
+        relationship_updates = (
+            self.relationship_updater.apply_structured_relationship_update(
+                day=day,
+                hour=hour,
+                speaker=speaker,
+                listener=listener,
+                action=action,
+                outcome="completed",
+            )
+        )
+
         relationship_event = None
 
         if self.relationship_updater.should_record_relationship_event(
@@ -82,6 +93,11 @@ class ConversationEffectsApplier:
                 relationship_label=relationship_label,
                 conversation=conversation,
                 tags=conversation_tags,
+                outcome="completed",
+                directed_deltas={
+                    name: update["delta"]
+                    for name, update in relationship_updates.items()
+                },
             )
             relationship_events.append(relationship_event)
 
@@ -125,6 +141,7 @@ class ConversationEffectsApplier:
             "new_score": new_score,
             "relationship_label": relationship_label,
             "relationship_event": relationship_event,
+            "relationship_updates": relationship_updates,
             "memory": memory,
             "reputation_updates": [
                 *direct_reputation_updates,

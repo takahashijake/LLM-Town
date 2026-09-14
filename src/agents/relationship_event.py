@@ -16,6 +16,8 @@ class RelationshipEvent:
     location: str
     tags: list[str]
     conversation: str = ""
+    outcome: str = "observed"
+    directed_deltas: dict[str, dict[str, float]] = field(default_factory=dict)
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def involves(self, agent_name: str) -> bool:

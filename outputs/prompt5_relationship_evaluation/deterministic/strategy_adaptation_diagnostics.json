@@ -1,0 +1,55 @@
+{
+  "adaptation": {
+    "expected_target": "Lena",
+    "new_strategy": "ask_informed_agent",
+    "new_target_agent": "Lena",
+    "old_strategy": "ask_informed_agent",
+    "old_target_agent": "Ethan",
+    "preserved_progress": 1,
+    "prior_counterpart_memories": [
+      "Ethan refused my request for help.",
+      "Ethan refused my request for help.",
+      "Ethan refused my request for help."
+    ],
+    "relationship_reason": "Direct history with Lena supports this tactic (decision value +0.208).",
+    "relationship_snapshot": {
+      "affinity": 0.12,
+      "cooperation": 0.0,
+      "helpfulness": 0.36,
+      "hostility": -0.08,
+      "interaction_count": 2,
+      "last_interaction_day": 2,
+      "negative_interactions": 0,
+      "positive_interactions": 2,
+      "trust": 0.24
+    },
+    "retrieved_social_memories": [
+      "Lena offered me help.",
+      "Lena offered me help."
+    ],
+    "trigger": "relationship"
+  },
+  "target_choice": {
+    "expected_target": "Ethan",
+    "reason": "Direct history with Ethan supports this tactic (decision value +0.312).",
+    "relationship_influenced": true,
+    "relationship_snapshot": {
+      "affinity": 0.18,
+      "cooperation": 0.0,
+      "helpfulness": 0.54,
+      "hostility": -0.12,
+      "interaction_count": 3,
+      "last_interaction_day": 3,
+      "negative_interactions": 0,
+      "positive_interactions": 3,
+      "trust": 0.36
+    },
+    "retrieved_social_memories": [
+      "Ethan offered me help.",
+      "Ethan offered me help.",
+      "Ethan offered me help."
+    ],
+    "selected_strategy": "ask_informed_agent",
+    "selected_target": "Ethan"
+  }
+}

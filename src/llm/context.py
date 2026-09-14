@@ -156,6 +156,7 @@ def _prompt_context_text_chars(context: dict) -> int:
         event.get("name", ""),
         event.get("description", ""),
         *context.get("relationship_history", []),
+        *context.get("social_memories", []),
         *context.get("reputation_context", []),
         context.get("reputation_rumor_text", ""),
         *context.get("relevant_memories", []),
@@ -182,6 +183,7 @@ def _prune_context_to_budget(context: dict) -> None:
         lambda: context.update(recent_journals=[]),
         lambda: context.update(daily_event=None, daily_event_relevant=False),
         lambda: context.update(relationship_history=context["relationship_history"][:1]),
+        lambda: context.update(social_memories=context["social_memories"][:1]),
         lambda: context.update(reputation_context=context["reputation_context"][:1]),
         lambda: context.update(relevant_memories=context["relevant_memories"][:2]),
         lambda: context.update(recent_utterances=context["recent_utterances"][:1]),
@@ -370,6 +372,7 @@ def _focus_options(
     *,
     memories: list[Memory],
     relationship_history: list[str],
+    social_memories: list[str],
     speaker_intent: dict | None,
     listener_name: str,
     location_id: str,
@@ -380,7 +383,7 @@ def _focus_options(
     reputation_rumor: dict | None,
 ) -> list[str]:
     options = []
-    if relationship_history or any(
+    if relationship_history or social_memories or any(
         listener_name in memory.participants for memory in memories
     ):
         options.append("shared history with the listener")
@@ -414,6 +417,8 @@ def build_conversation_context(
     allowed_actions=None,
     suggested_action=None,
     relationship_history=None,
+    relationship_snapshot=None,
+    social_memories=None,
     speaker_intent=None,
     listener_intent=None,
     town_arcs=None,
@@ -422,6 +427,10 @@ def build_conversation_context(
 ):
     del listener_intent  # A listener's private intent is not speaker knowledge.
     relationship_history = relationship_history or []
+    relationship_snapshot = relationship_snapshot or {}
+    social_memories = [
+        _bounded_text(item, 220) for item in (social_memories or [])[:3]
+    ]
     town_arcs = _public_town_arcs(town_arcs or [])
     speaker_intent = _intent_for_interaction(
         speaker_intent,
@@ -504,6 +513,8 @@ def build_conversation_context(
         "relationship_label": relationship_label,
         "relationship_score": relationship_score,
         "relationship_history": relationship_history,
+        "relationship_snapshot": relationship_snapshot,
+        "social_memories": social_memories,
         "reputation_context": reputation_context,
         "reputation_rumor": reputation_rumor,
         "reputation_rumor_text": reputation_rumor_text,
@@ -542,6 +553,7 @@ def build_conversation_context(
     context["focus_options"] = _focus_options(
         memories=prompt_memories,
         relationship_history=context["relationship_history"],
+        social_memories=context["social_memories"],
         speaker_intent=context["speaker_intent"],
         listener_name=listener.name,
         location_id=location_id,
@@ -564,6 +576,7 @@ def build_conversation_context(
         ],
         "journal_days": [journal.day for journal in recent_journals],
         "relationship_history_count": len(context["relationship_history"]),
+        "social_memory_count": len(context["social_memories"]),
         "reputation_belief_count": len(context["reputation_context"]),
         "rumor_evidence_id": (
             context["reputation_rumor"].get("evidence_id")

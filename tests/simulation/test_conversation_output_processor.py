@@ -144,6 +144,35 @@ def test_process_llm_output_replaces_narration_with_agent_fallback():
     assert output["parsed_action"] == "chat"
 
 
+def test_real_mode_narration_fallback_preserves_grounded_suggested_move():
+    processor = build_processor()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    speaker.current_activity = "Review public records"
+
+    output = processor.process_llm_output(
+        raw_output=(
+            '{"dialogue":"Maya asked Ethan for a lead.",'
+            '"action":"ask_for_help","tags":[],"reason":""}'
+        ),
+        allowed_actions=["chat", "ask_for_help"],
+        speaker=speaker,
+        listener=listener,
+        old_relationship_label="neutral",
+        location_id="library",
+        suggested_action="ask_for_help",
+        current_day=2,
+        current_daily_event=None,
+        daily_event_history=[],
+        conversation_context={"speaker_activity": "Review public records"},
+        enforce_information_boundaries=True,
+    )
+
+    assert "advice" in output["conversation"].lower()
+    assert ActionSystem().infer_action(output["conversation"], []) == "ask_for_help"
+    assert output["parsed_action"] == "chat"
+
+
 def test_process_llm_output_replaces_repeated_dialogue_with_fallback():
     repeated_dialogue = "the town feels busy today."
 

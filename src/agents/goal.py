@@ -62,6 +62,7 @@ class Goal:
     success_conditions: list[str] = field(default_factory=list)
     current_intent_id: str | None = None
     current_strategy: str | None = None
+    current_strategy_target: str | None = None
     strategy_started_day: int | None = None
     last_review_day: int | None = None
     last_relationship_score: int | None = None

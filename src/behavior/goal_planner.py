@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.agents.goal import Goal
 from src.systems.reputation import ReputationBelief
@@ -22,6 +22,10 @@ class StrategyCandidate:
     feasible: bool = True
     infeasible_reason: str = ""
     score: float = 0.0
+    relationship_influenced: bool = False
+    relationship_reason: str = ""
+    relationship_snapshot: dict = field(default_factory=dict)
+    relevant_social_memories: tuple[str, ...] = ()
 
 
 class GoalPlanner:
@@ -105,6 +109,25 @@ class GoalPlanner:
             ranked.append((value, goal.id, goal))
         return max(ranked, default=(0, "", None), key=lambda item: (item[0], item[1]))[2]
 
+    def _relationship_rank(self, agent, engine, name: str) -> tuple[float, int]:
+        state = agent.get_relationship_state(name)
+        return (
+            state.decision_value(),
+            engine.relationships.get_score(agent.name, name),
+        )
+
+    def _best_social_target(
+        self,
+        agent,
+        engine,
+        names: list[str],
+    ) -> str | None:
+        return max(
+            sorted(names),
+            key=lambda name: self._relationship_rank(agent, engine, name),
+            default=None,
+        )
+
     def _goal_target(self, goal: Goal, agent, engine) -> str | None:
         available_names = {other.name for other in engine.agents if other.name != agent.name}
         if goal.target_agents:
@@ -114,10 +137,10 @@ class GoalPlanner:
         if not available_names:
             return None
         chooser = max if goal.category == "build_friendship" else min
-        target = chooser(
-            sorted(available_names),
-            key=lambda name: engine.relationships.get_score(agent.name, name),
-        )
+        target = chooser(sorted(available_names), key=lambda name: (
+            agent.get_relationship_state(name).decision_value(),
+            engine.relationships.get_score(agent.name, name),
+        ))
         goal.target_agents = [target]
         return target
 
@@ -141,15 +164,25 @@ class GoalPlanner:
             risk += adverse * belief.confidence * source_weight
         return round(risk, 4)
 
-    def _score(self, candidate: StrategyCandidate, relationship: int, risk: float) -> float:
+    def _score(
+        self,
+        candidate: StrategyCandidate,
+        relationship: int,
+        risk: float,
+        relationship_state=None,
+    ) -> float:
         social_cost = max(0, -relationship) * candidate.social_risk_factor * 0.35
         relationship_bonus = max(0, relationship) * (
             0.15 if candidate.name in {"direct_cooperation", "ask_target_directly"} else 0.05
         )
+        direct_value = relationship_state.decision_value() if relationship_state else 0.0
+        direct_bonus = direct_value * (
+            2.4 if candidate.required_action in {"ask_for_help", "cooperate"} else 1.0
+        )
         return round(
             candidate.expected_progress - social_cost
             - risk * candidate.reputation_risk_factor
-            + candidate.opportunity_relevance + relationship_bonus,
+            + candidate.opportunity_relevance + relationship_bonus + direct_bonus,
             4,
         )
 
@@ -159,9 +192,6 @@ class GoalPlanner:
             other.name for other in engine.agents if other.name != agent.name
         )
         available_locations = {location.id for location in engine.locations}
-        target_exists = not target or target in available_agents
-        relationship = engine.relationships.get_score(agent.name, target) if target_exists and target else 0
-        risk = self.reputation_risk(agent, target)
         intent_type = {
             "increase_knowledge": "investigate",
             "improve_social_support": "socialize",
@@ -185,7 +215,9 @@ class GoalPlanner:
             ]
         elif goal.category in {"investigate", "increase_knowledge"}:
             location = (goal.target_locations or ["library"])[0]
-            alternate = next((name for name in available_agents if name != target), None)
+            alternate = self._best_social_target(
+                agent, engine, [name for name in available_agents if name != target]
+            )
             raw = [
                 StrategyCandidate("ask_target_directly", intent_type, 5.5, target,
                                   required_action="ask_for_help", social_risk_factor=0.5,
@@ -205,6 +237,14 @@ class GoalPlanner:
                 "market" if goal.category == "seek_work" else "cafe"
             ])[0]
             raw = [
+                StrategyCandidate(
+                    "ask_reliable_partner", intent_type, 4.9,
+                    target_agent=self._best_social_target(agent, engine, available_agents),
+                    required_action="ask_for_help", social_risk_factor=0.45,
+                    reputation_risk_factor=0.6, opportunity_relevance=0.4,
+                    feasible=bool(available_agents),
+                    infeasible_reason="no social partner is available" if not available_agents else "",
+                ),
                 StrategyCandidate("direct_participation", intent_type, 5.0,
                                   target_location=location, opportunity_relevance=0.7),
                 StrategyCandidate("low_risk_chat", intent_type, 4.2,
@@ -220,14 +260,46 @@ class GoalPlanner:
                 feasible, reason = False, "target agent is unavailable"
             if candidate.target_location and candidate.target_location not in available_locations:
                 feasible, reason = False, "target location is unavailable"
-            if candidate.required_action and target and candidate.target_agent == target and target_exists:
-                allowed = engine.actions.get_allowed_actions_for_relationship(relationship)
+            candidate_relationship = (
+                engine.relationships.get_score(agent.name, candidate.target_agent)
+                if candidate.target_agent else 0
+            )
+            candidate_state = (
+                agent.get_relationship_state(candidate.target_agent)
+                if candidate.target_agent else None
+            )
+            candidate_risk = self.reputation_risk(agent, candidate.target_agent)
+            if candidate.required_action and candidate.target_agent:
+                allowed = engine.actions.get_allowed_actions_for_relationship(
+                    candidate_relationship
+                )
                 if candidate.required_action not in allowed:
                     feasible, reason = False, "relationship rules disallow required action"
-            score = self._score(candidate, relationship, risk)
+            score = self._score(
+                candidate, candidate_relationship, candidate_risk, candidate_state
+            )
+            direct_value = candidate_state.decision_value() if candidate_state else 0.0
+            relationship_reason = ""
+            if candidate_state and abs(direct_value) > 0.0001:
+                direction = "supports" if direct_value > 0 else "discourages"
+                relationship_reason = (
+                    f"Direct history with {candidate.target_agent} {direction} this tactic "
+                    f"(decision value {direct_value:+.3f})."
+                )
             scored.append(StrategyCandidate(**{
                 **candidate.__dict__, "feasible": feasible,
                 "infeasible_reason": reason, "score": score,
+                "relationship_influenced": bool(relationship_reason),
+                "relationship_reason": relationship_reason,
+                "relationship_snapshot": (
+                    candidate_state.to_dict() if candidate_state else {}
+                ),
+                "relevant_social_memories": tuple(
+                    memory.summary
+                    for memory in agent.get_social_memories(
+                        candidate.target_agent, limit=3
+                    )
+                ) if candidate.target_agent else (),
             }))
         return sorted(scored, key=lambda item: (-item.score, item.name))
 
@@ -241,20 +313,40 @@ class GoalPlanner:
     def should_adapt(self, goal: Goal, intent, agent, engine, current_day: int):
         candidates = self.generate_strategies(goal, agent, engine)
         best = next((candidate for candidate in candidates if candidate.feasible), None)
-        current = next((candidate for candidate in candidates if candidate.name == intent.strategy), None)
+        current = next((
+            candidate for candidate in candidates
+            if candidate.name == intent.strategy
+            and candidate.target_agent == intent.target_agent
+        ), None)
         if best is None:
             return None, "hard_constraint"
         if current is None or not current.feasible:
+            target_still_available = (
+                not intent.target_agent
+                or any(
+                    other.name == intent.target_agent
+                    for other in engine.agents
+                    if other.name != agent.name
+                )
+            )
             trigger = (
                 "relationship"
-                if current and "relationship rules" in current.infeasible_reason
+                if (
+                    (current and "relationship rules" in current.infeasible_reason)
+                    or (current is None and target_still_available and any(
+                        candidate.name == intent.strategy
+                        for candidate in candidates
+                    ))
+                )
                 else "hard_constraint"
             )
             return best, trigger
         committed = current_day - (goal.strategy_started_day or intent.created_day)
         if committed < self.MIN_COMMITMENT_DAYS:
             return None, "commitment_period"
-        target = goal.target_agents[0] if goal.target_agents else None
+        target = intent.target_agent or (
+            goal.target_agents[0] if goal.target_agents else None
+        )
         relationship = engine.relationships.get_score(agent.name, target) if target else 0
         risk = self.reputation_risk(agent, target)
         reputation_changed = abs(risk - goal.last_reputation_risk) >= 0.75
@@ -262,10 +354,34 @@ class GoalPlanner:
             goal.last_relationship_score is not None
             and (relationship // 3) != (goal.last_relationship_score // 3)
         )
-        if best.name != current.name and best.score >= current.score + self.ADAPTATION_MARGIN:
+        snapshot = getattr(intent, "relationship_snapshot", {}) or {}
+        prior_direct_value = (
+            snapshot.get("trust", 0) * 0.3
+            + snapshot.get("affinity", 0) * 0.15
+            + snapshot.get("cooperation", 0) * 0.2
+            + snapshot.get("helpfulness", 0) * 0.25
+            - snapshot.get("hostility", 0) * 0.35
+        )
+        current_direct_value = (
+            agent.get_relationship_state(intent.target_agent).decision_value()
+            if intent.target_agent else 0.0
+        )
+        direct_history_changed = abs(current_direct_value - prior_direct_value) >= 0.15
+        strategy_changed = (
+            best.name != current.name
+            or best.target_agent != intent.target_agent
+        )
+        if strategy_changed and best.score >= current.score + self.ADAPTATION_MARGIN:
             if reputation_changed:
                 return best, "reputation"
-            if relationship_changed:
+            if (
+                relationship_changed
+                or direct_history_changed
+                or (
+                    best.target_agent != intent.target_agent
+                    and best.relationship_influenced
+                )
+            ):
                 return best, "relationship"
         return None, "stable"
 

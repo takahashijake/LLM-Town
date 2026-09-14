@@ -52,6 +52,9 @@ def test_save_and_load_preserves_agent_state(tmp_path, memory_factory):
 
     relationships = RelationshipManager()
     relationships.change_score("Maya", "Ethan", 4)
+    agent.get_relationship_state("Ethan").apply(
+        {"trust": 0.2, "helpfulness": 0.3}, day=2
+    )
 
     fake_engine = SimpleNamespace(
         agents=[agent],
@@ -79,6 +82,8 @@ def test_save_and_load_preserves_agent_state(tmp_path, memory_factory):
     }
     assert loaded_agent["recent_topics"] == ["market"]
     assert loaded_agent["relationships"] == {"Ethan": 4}
+    assert loaded_agent["relationship_states"]["Ethan"]["trust"] == 0.2
+    assert loaded_agent["relationship_states"]["Ethan"]["helpfulness"] == 0.3
     assert loaded_agent["current_activity"] == "Investigate a possible story"
     assert loaded_agent["current_activity_reason"] == (
         "Maya is looking for town stories or rumors."
@@ -561,4 +566,3 @@ def test_loaded_state_reuses_saved_daily_event_for_remaining_hours(monkeypatch):
             "name": "Farmers Market",
         }
     ]
-    

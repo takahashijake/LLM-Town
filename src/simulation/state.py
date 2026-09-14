@@ -61,6 +61,14 @@ class SimulationState:
                     ],
                     "needs" : agent.needs,
                     "relationships": agent.relationships,
+                    "relationship_states": {
+                        counterpart: relationship.to_dict()
+                        for counterpart, relationship in agent.relationship_states.items()
+                    },
+                    "social_memories": {
+                        counterpart: [memory.to_dict() for memory in memories]
+                        for counterpart, memories in agent.social_memories.items()
+                    },
                     "reputation_beliefs": {
                         target: {
                             dimension: belief.to_dict()

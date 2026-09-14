@@ -32,6 +32,8 @@ def is_narration(conversation: str, speaker_name: str, listener_name: str) -> bo
         f"{listener_name.lower()} smiles",
         f"{speaker_name.lower()} asks",
         f"{listener_name.lower()} asks",
+        f"{speaker_name.lower()} asked",
+        f"{listener_name.lower()} asked",
         f"{speaker_name.lower()} says",
         f"{listener_name.lower()} says",
     ]

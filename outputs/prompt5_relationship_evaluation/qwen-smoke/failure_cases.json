@@ -1,0 +1,44 @@
+[
+  {
+    "action_source": "llm",
+    "dialogue": "Could you give me advice about reviewing public records for useful information?",
+    "dialogue_source": "agent_fallback_narration",
+    "final_action": "ask_for_help",
+    "final_action_reason": "trusted_inferred_non_chat",
+    "generation_seed": 142,
+    "inference_reason": "request_marker:could you give me advice",
+    "inferred_action": "ask_for_help",
+    "parsed_action": "chat",
+    "raw_response": "{\"dialogue\": \"Maya asked if Ethan had seen any unusual activity around town lately.\", \"action\": \"ask_for_help\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+    "scenario": "help_seek_trusted",
+    "suggested_action": "ask_for_help",
+    "type": "parser_inference_disagreement"
+  },
+  {
+    "action_source": "llm",
+    "dialogue": "I noticed the old oak tree was pruned last week. Do you know if there were any unusual activities around then?",
+    "dialogue_source": "llm",
+    "final_action": "ask_for_help",
+    "final_action_reason": "trusted_inferred_non_chat",
+    "generation_seed": 142,
+    "inference_reason": "request_marker:do you know if",
+    "inferred_action": "ask_for_help",
+    "parsed_action": "chat",
+    "raw_response": "{\"dialogue\": \"I noticed the old oak tree was pruned last week. Do you know if there were any unusual activities around then?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"reason\": \"brief grounding reason\"}",
+    "scenario": "help_seek_hostile",
+    "suggested_action": "chat",
+    "type": "parser_inference_disagreement"
+  },
+  {
+    "cooperation_weight_delta": 1,
+    "expected": "hostile history suppresses help seeking",
+    "help_weight_delta": 6,
+    "left": "help_seek_trusted",
+    "name": "trusted_helper_vs_hostile",
+    "preferred_actions_differ": true,
+    "real_actions_differ": false,
+    "relationship_value_delta": 0.453,
+    "right": "help_seek_hostile",
+    "type": "real_pair_without_action_difference"
+  }
+]

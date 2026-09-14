@@ -149,6 +149,17 @@ class TransformersLLMClient:
                 f" (strategy: {goal.get('strategy') or 'unselected'}; "
                 f"progress {goal.get('progress', 0)}/{goal.get('progress_target', 0)})"
             )
+        relationship_snapshot = context.get("relationship_snapshot") or {}
+        direct_experience = "Neutral; no direct history"
+        if relationship_snapshot.get("interaction_count", 0):
+            direct_experience = (
+                f"trust {relationship_snapshot.get('trust', 0):+.2f}, "
+                f"affinity {relationship_snapshot.get('affinity', 0):+.2f}, "
+                f"cooperation {relationship_snapshot.get('cooperation', 0):+.2f}, "
+                f"helpfulness {relationship_snapshot.get('helpfulness', 0):+.2f}, "
+                f"hostility {relationship_snapshot.get('hostility', 0):+.2f}; "
+                f"{relationship_snapshot.get('interaction_count', 0)} interactions"
+            )
 
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
@@ -158,11 +169,14 @@ Immediate situation
 - Speaker's occupation: {context.get('occupation') or 'None'}
 - What the speaker is doing: {activity_text}
 - Relationship: {context['relationship_label']} ({context['relationship_score']:+d})
+- Speaker's direct experience: {direct_experience}
 - Voice cue: {context.get('speaker_personality') or 'None'}
 
 What this speaker legitimately knows
 Shared history:
 {lines(context.get('relationship_history', []))}
+Salient interpersonal episodes:
+{lines(context.get('social_memories', []))}
 Relevant memories:
 {lines(context.get('relevant_memories', []))}
 Speaker's beliefs about the listener's general conduct:
@@ -206,6 +220,7 @@ Requirements:
 - Keep past memories and journals in the past. Do not present them as happening today.
 - Match the relationship tone. Tense or hostile speakers should not suddenly flatter, invite, or offer help.
 - The suggested action is a soft direction. Follow it when context supports it; otherwise choose a better allowed action. The words and action must agree: requests for assistance are ask_for_help, direct offers are offer_help, shared-task proposals are cooperate, praise is compliment, regret is apologize, disagreement is argue, and uncertain secondhand claims are share_rumor. Invitations and ordinary questions are chat.
+- If using cooperate, explicitly propose doing a concrete task together with wording such as "let's" or "we can"; merely inviting the listener to look at or attend something is chat.
 - One spoken line, normally under 35 words. No narration, stage directions, speaker name, or hidden reasoning.
 
 Return only valid JSON:

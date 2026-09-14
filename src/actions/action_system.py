@@ -1,3 +1,6 @@
+import re
+
+
 class ActionSystem:
     ACTION_EFFECTS = {
         "chat": 0,
@@ -195,9 +198,16 @@ class ActionSystem:
             "plan this together", "let's tackle this together", "let us tackle this together",
             "let's handle this together", "let us handle this together", "let's collaborate",
             "let us collaborate", "we can tackle this together",
+            "sort these supplies together", "organize these supplies together",
         ))
         if marker:
             return "cooperate", f"cooperation_marker:{marker}"
+        concrete_joint_task = re.search(
+            r"\b(sort|organize|repair|handle|finish|solve|clean)\b.{0,50}\btogether\b",
+            text,
+        )
+        if concrete_joint_task:
+            return "cooperate", f"cooperation_pattern:{concrete_joint_task.group(1)}_together"
     
         # Genuine requests for help, advice, or information
         marker = self._first_match(text, (
@@ -212,6 +222,7 @@ class ActionSystem:
             "i need help figuring", "would you be able to help", "could you assist",
             "can you assist", "i could really use", "i'm looking for advice",
             "i am looking for advice", "please help me", "do you have any contacts",
+            "can you tell me", "could you tell me", "would you tell me",
         ))
         if marker:
             return "ask_for_help", f"request_marker:{marker}"
