@@ -41,6 +41,14 @@ def test_infer_rumor_from_uncertain_information():
     ) == "share_rumor"
 
 
+def test_infer_personal_uncertainty_as_chat_not_rumor():
+    actions = ActionSystem()
+
+    assert actions.infer_action(
+        "I'm not sure this cleanup effort will make much difference.", []
+    ) == "chat"
+
+
 def test_infer_argue_from_disagreement():
     actions = ActionSystem()
 
@@ -93,3 +101,22 @@ def test_infer_recommendation_as_chat_not_offer_help():
     assert actions.infer_action(
         "That discount might be worth checking out.", []
     ) == "chat"
+
+
+def test_infer_common_real_llm_action_language_variants_and_reason():
+    actions = ActionSystem()
+    cases = {
+        "Would you be able to help me check these records?": "ask_for_help",
+        "I'm happy to help with the cleanup.": "offer_help",
+        "I think you're mistaken about the schedule.": "argue",
+        "You were excellent with the volunteers.": "compliment",
+        "The library shelves are so organized.": "compliment",
+        "Let's tackle this together before noon.": "cooperate",
+        "Word is the supplier may be unreliable, though I cannot confirm it.": "share_rumor",
+        "Do you have any contacts in the farming community?": "ask_for_help",
+    }
+
+    for dialogue, expected_action in cases.items():
+        action, reason = actions.infer_action_with_reason(dialogue, [])
+        assert action == expected_action
+        assert reason != "no_action_language"

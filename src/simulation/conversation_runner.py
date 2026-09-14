@@ -71,10 +71,18 @@ class ConversationRunner:
                 parsed_tags=parsed_output.get("tags", []),
             )
 
-            inferred_action = engine.actions.infer_action(
-                conversation,
-                conversation_tags,
-            )
+            infer_with_reason = getattr(engine.actions, "infer_action_with_reason", None)
+            if infer_with_reason:
+                inferred_action, inference_reason = infer_with_reason(
+                    conversation,
+                    conversation_tags,
+                )
+            else:  # Compatibility for lightweight engine doubles and extensions.
+                inferred_action = engine.actions.infer_action(
+                    conversation,
+                    conversation_tags,
+                )
+                inference_reason = "not_available"
 
             action, final_action_reason = engine.choose_final_action_with_reason(
                 conversation=conversation,
@@ -147,6 +155,7 @@ class ConversationRunner:
                 suggested_action=suggested_action,
                 parsed_action=parsed_action,
                 inferred_action=inferred_action,
+                inference_reason=inference_reason,
                 base_action_weights=base_action_weights,
                 intent_adjusted_weights=intent_adjusted_weights,
                 reputation_adjusted_weights=reputation_adjusted_weights,

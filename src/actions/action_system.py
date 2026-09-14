@@ -95,15 +95,33 @@ class ActionSystem:
         return dict(self.REPUTATION_EFFECTS.get(action, {}))
     
     def infer_action(self, conversation: str, tags: list[str]) -> str:
+        """Infer the action expressed by a spoken line.
+
+        ``tags`` remains part of the public API for compatibility.  The action
+        decision intentionally comes from the utterance itself: model-supplied
+        tags are advisory and must not turn ordinary chat into a social act.
+        """
+        return self.infer_action_with_reason(conversation, tags)[0]
+
+    def infer_action_with_reason(
+        self,
+        conversation: str,
+        tags: list[str] | None = None,
+    ) -> tuple[str, str]:
+        """Return an inferred action and the deterministic matching rationale.
+
+        Keep this ordering aligned with the Prompt 4 action-language contract.
+        The first matching category wins, so a supported uncertain claim is
+        still a rumor even if it also contains praise or a request.
+        """
         text = conversation.lower()
-        rumor_markers = [
+        rumor_markers = (
             "rumor",
             "gossip",
             "suspicious",
             "shady",
             "secret",
             "mystery",
-            "not sure",
             "people are saying",
             "someone said",
             "unverified",
@@ -111,216 +129,128 @@ class ActionSystem:
             "might be unreliable",
             "from what i saw",
             "someone told me",
-        ]
-        if any(marker in text for marker in rumor_markers):
-            return "share_rumor"
+            "word is",
+            "i've been told",
+        )
+        marker = self._first_match(text, rumor_markers)
+        if marker:
+            return "share_rumor", f"rumor_marker:{marker}"
+        # A speaker's own uncertainty is ordinary chat; Prompt 4 reserves
+        # share_rumor for uncertain secondhand claims, which need provenance.
         # Apologies
-        if (
-            "sorry" in text
-            or "apologize" in text
-            or "i should have handled" in text
-            or "i should've handled" in text
-            or "my mistake" in text
-            or "i regret" in text
-            or "i was wrong" in text
-        ):
-            return "apologize"
-        if (
-            "rumor" in text
-            or "gossip" in text
-            or "suspicious" in text
-            or "secretive" in text
-            or "strange" in text
-            or "i heard something" in text
-            or "people are saying" in text
-            or "someone said" in text
-            or "not sure it's true" in text
-            or "not sure it is true" in text
-            or "might be unreliable" in text
-            or "seems unreliable" in text
-            or "unverified" in text
-        ):
-            return "share_rumor"
-        if (
-            "good job" in text
-            or "nice work" in text
-            or "you did well" in text
-            or "you seem to know a lot" in text
-            or "you're good at" in text
-            or "you are good at" in text
-            or "impressive" in text
-            or "great work" in text
-            or "well done" in text
-            or "you always know how" in text
-            or "you're really good" in text
-            or "you are really good" in text
-            or "that was thoughtful" in text
-            or "that was kind" in text
-            or "that was smart" in text
-            or "thanks for" in text
-            or "thank you for" in text
-            or "i appreciate" in text
-            or "glad you came" in text
-            or "great to see" in text
-            or "good to see" in text
-            or "this is really helpful" in text
-            or "that helps a lot" in text
-            or "great job" in text
-            or "good work" in text
-            or "really come in handy" in text
-            or "come in handy" in text
-            or "organization skills" in text
-            or "organizing the volunteers" in text
-        ):
-            return "compliment"
+        marker = self._first_match(text, (
+            "sorry", "apologize", "i should have handled", "i should've handled",
+            "my mistake", "i regret", "i was wrong",
+        ))
+        if marker:
+            return "apologize", f"apology_marker:{marker}"
+        marker = self._first_match(text, (
+            "good job", "nice work", "you did well", "you seem to know a lot",
+            "you're good at", "you are good at", "impressive", "great work",
+            "well done", "you always know how", "you're really good",
+            "you are really good", "that was thoughtful", "that was kind",
+            "that was smart", "thanks for", "thank you for", "i appreciate",
+            "glad you came", "great to see", "good to see", "this is really helpful",
+            "that helps a lot", "great job", "good work", "really come in handy",
+            "come in handy", "organization skills", "organizing the volunteers",
+            # Common direct praise variants emitted by instruction-following models.
+            "you were excellent", "you are excellent", "you did an excellent job",
+            "you've done a great", "you have done a great", "i admire",
+            "so organized", "so well organized", "you keep them up",
+        ))
+        if marker:
+            return "compliment", f"compliment_marker:{marker}"
         # Explicit offers of help. Recommendations and third-party staffing
         # observations are ordinary chat unless the speaker offers assistance.
-        if (
-            "i can help" in text
-            or "let me help" in text
-            or "we could help" in text
-            or "lend a hand" in text
-            or "pitching in" in text
-            or "i can show you" in text
-            or "i could show you" in text
-            or "i can give you a hand" in text
-            or "i could give you a hand" in text
-            or "i can lend a hand" in text
-            or "i could lend a hand" in text
-            or "i can help you" in text
-            or "i could help you" in text
-            or "let me help you" in text
-            or "let me take care of" in text
-            or "i can organize" in text
-            or "i could organize" in text
-            or "i can pitch in" in text
-            or "i could pitch in" in text
-            or "need any help" in text
-            or "do you need help" in text
-            or "want me to help" in text
-            or "would you like help" in text
-            or "could i help" in text
-            or "can i help" in text
-            or "need a hand" in text
-            or "want a hand" in text
-        ):
-            return "offer_help"
+        marker = self._first_match(text, (
+            "i can help", "let me help", "we could help", "lend a hand",
+            "pitching in", "i can show you", "i could show you", "i can give you a hand",
+            "i could give you a hand", "i can lend a hand", "i could lend a hand",
+            "i can help you", "i could help you", "let me help you", "let me take care of",
+            "i can organize", "i could organize", "i can pitch in", "i could pitch in",
+            "need any help", "do you need help", "want me to help", "would you like help",
+            "could i help", "can i help", "need a hand", "want a hand",
+            "i'm happy to help", "i am happy to help", "i'd be happy to help",
+            "i would be happy to help", "count on me", "i'm here to help",
+        ))
+        if marker:
+            return "offer_help", f"offer_marker:{marker}"
     
         # Invitations and casual social questions
-        if (
-            "want to check it out" in text
-            or "want to check it out together" in text
-            or "want to join" in text
-            or "want to join me" in text
-            or "want to come" in text
-            or "would you like to join" in text
-            or "would you like to come" in text
-            or "would you want to join" in text
-            or "would you fancy joining" in text
-            or "would you be interested" in text
-            or "interested?" in text
-            or "interested in checking" in text
-            or "maybe we could go" in text
-            or "maybe we could grab" in text
-            or "we could check it out" in text
-            or "what do you think" in text
-        ):
-            return "chat"
-        if (
-            "team up" in text
-            or "work together" in text
-            or "do this together" in text
-            or "pitch in together" in text
-            or "join forces" in text
-            or "coordinate" in text
-            or "let's work" in text
-            or "we could work" in text
-            or "we should work" in text
-            or "want to team" in text
-            or "want to pitch in" in text
-            or "coordinate our efforts" in text
-            or "coordinate our work" in text
-            or "work on this together" in text
-            or "plan this together" in text
-        ):
-            return "cooperate"
+        marker = self._first_match(text, (
+            "want to check it out", "want to check it out together", "want to join",
+            "want to join me", "want to come", "would you like to join",
+            "would you like to come", "would you want to join", "would you fancy joining",
+            "would you be interested", "interested?", "interested in checking",
+            "maybe we could go", "maybe we could grab", "we could check it out",
+            "what do you think",
+        ))
+        if marker:
+            return "chat", f"social_invitation:{marker}"
+        marker = self._first_match(text, (
+            "team up", "work together", "do this together", "pitch in together",
+            "join forces", "coordinate", "let's work", "we could work",
+            "we should work", "want to team", "want to pitch in",
+            "coordinate our efforts", "coordinate our work", "work on this together",
+            "plan this together", "let's tackle this together", "let us tackle this together",
+            "let's handle this together", "let us handle this together", "let's collaborate",
+            "let us collaborate", "we can tackle this together",
+        ))
+        if marker:
+            return "cooperate", f"cooperation_marker:{marker}"
     
         # Genuine requests for help, advice, or information
-        if (
-            "can you help" in text
-            or "could you help" in text
-            or "would you help" in text
-            or "need your help" in text
-            or "i could use your help" in text
-            or "i could use some advice" in text
-            or "any advice" in text
-            or "do you know how" in text
-            or "can you show me" in text
-            or "could you show me" in text
-            or "do you know anything about" in text
-            or "do you know if" in text
-            or "would you know where" in text
-            or "any chance you could tell me" in text
-            or "i'm trying to find out" in text
-            or "could you give me advice" in text
-            or "can you give me advice" in text
-            or "what should i do" in text
-            or "where should i start" in text
-            or "can you explain" in text
-            or "could you explain" in text
-            or "can you teach me" in text
-            or "could you teach me" in text
-            or "would you mind helping" in text
-            or "i need advice" in text
-            or "i need help figuring" in text
-        ):
-            return "ask_for_help"
+        marker = self._first_match(text, (
+            "can you help", "could you help", "would you help", "need your help",
+            "i could use your help", "i could use some advice", "any advice",
+            "do you know how", "can you show me", "could you show me",
+            "do you know anything about", "do you know if", "would you know where",
+            "any chance you could tell me", "i'm trying to find out",
+            "could you give me advice", "can you give me advice", "what should i do",
+            "where should i start", "can you explain", "could you explain",
+            "can you teach me", "could you teach me", "would you mind helping", "i need advice",
+            "i need help figuring", "would you be able to help", "could you assist",
+            "can you assist", "i could really use", "i'm looking for advice",
+            "i am looking for advice", "please help me", "do you have any contacts",
+        ))
+        if marker:
+            return "ask_for_help", f"request_marker:{marker}"
     
         # Romantic confession
-        if (
-            "i love you" in text
-            or "i have feelings for you" in text
-            or "i'm in love with you" in text
-            or "romantic feelings" in text
-        ):
-            return "confess_feelings"
+        marker = self._first_match(text, (
+            "i love you", "i have feelings for you", "i'm in love with you",
+            "romantic feelings",
+        ))
+        if marker:
+            return "confess_feelings", f"confession_marker:{marker}"
     
         # Rumors / gossip
-        if (
-            "rumor" in text
-            or "gossip" in text
-            or "suspicious" in text
-            or "secretive" in text
-            or "strange" in text
-        ):
-            return "share_rumor"
-    
         # Arguments
-        if (
-            "why are you" in text
-            or "argue" in text
-            or "issue" in text
-            or "you are wrong" in text
-            or "you're wrong" in text
-            or "that makes no sense" in text
-            or "that does not make sense" in text
-            or "i disagree" in text
-            or "i do not agree" in text
-            or "i don't agree" in text
-            or "you handled that poorly" in text
-            or "you made this harder" in text
-        ):
-            return "argue"
+        marker = self._first_match(text, (
+            "why are you", "argue", "issue", "you are wrong", "you're wrong",
+            "that makes no sense", "that does not make sense", "i disagree",
+            "i do not agree", "i don't agree", "you handled that poorly",
+            "you made this harder", "i think you're mistaken", "i think you are mistaken",
+            "that is not acceptable", "that's not acceptable", "you should not have",
+        ))
+        if marker:
+            return "argue", f"argument_marker:{marker}"
     
         # Insults
-        if "stupid" in text or "idiot" in text:
-            return "insult"
+        marker = self._first_match(text, ("stupid", "idiot"))
+        if marker:
+            return "insult", f"insult_marker:{marker}"
     
         # Leaving conversation
-        if "bye" in text or "done talking" in text:
-            return "storm_off"
+        marker = self._first_match(text, ("bye", "done talking"))
+        if marker:
+            return "storm_off", f"departure_marker:{marker}"
     
-        return "chat"
+        return "chat", "no_action_language"
+
+    @staticmethod
+    def _first_match(text: str, markers: tuple[str, ...]) -> str | None:
+        return next((marker for marker in markers if marker in text), None)
 
     def get_relationship_effect(self, action: str) -> int:
         return self.ACTION_EFFECTS.get(action, 0)

@@ -104,6 +104,7 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     assert (tmp_path / "transcript.txt").is_file()
     assert (tmp_path / "human_review_sample.json").is_file()
     assert (tmp_path / "review.md").is_file()
+    assert (tmp_path / "strategy_adaptation_diagnostics.json").is_file()
     assert document["model"]["identifier"] == "test/model"
     health = document["dialogue_evaluation"]["response_health"]
     assert health["action_parsing_success_rate"] == 0.5
@@ -112,6 +113,8 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     written_metrics = json.loads((tmp_path / "metrics.json").read_text())
     assert written_metrics["malformed_output"] == {"count": 1, "rate": 0.5}
     assert written_metrics["fallback"]["count"] == 1
+    assert written_metrics["action_language_diagnostics"]["parser_inference_disagreements"] == 0
+    assert written_metrics["strategy_adaptation_diagnostics"]["goals_reviewed"] == 0
     metadata = json.loads((tmp_path / "metadata.json").read_text())
     assert metadata["git_commit"] == "abc"
     assert metadata["python_version"] == "3.test"

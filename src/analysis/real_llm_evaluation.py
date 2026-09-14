@@ -16,7 +16,7 @@ from src.analysis.quality_metrics import (
 )
 
 
-EVALUATION_SCHEMA_VERSION = 1
+EVALUATION_SCHEMA_VERSION = 2
 
 
 TOKEN_RE = re.compile(r"[a-z][a-z'-]{2,}")
@@ -145,6 +145,97 @@ def _repetition(records: list[dict[str, Any]]) -> tuple[dict[str, Any], set[int]
     }, flagged
 
 
+def _action_language_diagnostics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Expose recorded parser/inference/final-action decisions for audit."""
+    inference_reasons = Counter(
+        row.get("inference_reason", "not_recorded") for row in records
+    )
+    disagreements = [
+        row for row in records
+        if row.get("parsed_action") and row.get("inferred_action")
+        and row["parsed_action"] != row["inferred_action"]
+    ]
+    inferred_non_chat_capped = [
+        row for row in records
+        if row.get("inferred_action") not in {"", "chat"}
+        and row.get("action") == "chat"
+    ]
+    return {
+        "parser_inference_disagreements": len(disagreements),
+        "parser_inference_disagreement_pairs": dict(sorted(Counter(
+            f"{row.get('parsed_action', '')}->{row.get('inferred_action', '')}"
+            for row in disagreements
+        ).items())),
+        "inferred_non_chat_finalized_as_chat": len(inferred_non_chat_capped),
+        "inferred_non_chat_finalized_as_chat_reasons": dict(sorted(Counter(
+            row.get("final_action_reason", "not_recorded")
+            for row in inferred_non_chat_capped
+        ).items())),
+        "inference_reason_counts": dict(sorted(inference_reasons.items())),
+        "note": (
+            "A parser/inference disagreement is an audit candidate, not an error: "
+            "the final action also reflects allowed-action and repetition-cap policy."
+        ),
+    }
+
+
+def _strategy_adaptation_diagnostics(state_path: Path) -> dict[str, Any]:
+    """Explain adaptation outcomes from durable goal evidence without mutation."""
+    if not state_path.is_file():
+        return {
+            "goals_reviewed": 0,
+            "adaptations_triggered": 0,
+            "adaptations_not_triggered": 0,
+            "goals": [],
+            "note": "No persisted state artifact was available for goal adaptation review.",
+        }
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    rows = []
+    for agent in state.get("agents", []):
+        for goal in agent.get("structured_goals", []):
+            adaptations = [
+                evidence for evidence in goal.get("evidence", [])
+                if evidence.get("type") == "strategy_adaptation"
+            ]
+            selections = [
+                evidence for evidence in goal.get("evidence", [])
+                if evidence.get("type") == "strategy_selected"
+            ]
+            if adaptations:
+                outcome = "triggered"
+                reason = "Recorded strategy replacement after a terminal tactic trigger."
+            elif goal.get("status") in {"achieved", "blocked", "abandoned"}:
+                outcome = "not_triggered"
+                reason = "Goal reached a terminal state without a recorded strategy replacement."
+            elif selections:
+                outcome = "not_triggered"
+                reason = "Current tactic remained active; no terminal trigger required replacement."
+            else:
+                outcome = "not_applicable"
+                reason = "No feasible strategy was selected for this goal during the run."
+            rows.append({
+                "agent": agent.get("name", ""),
+                "goal_id": goal.get("id", ""),
+                "goal": goal.get("description", ""),
+                "goal_status": goal.get("status", "active"),
+                "outcome": outcome,
+                "reason": reason,
+                "current_strategy": goal.get("current_strategy"),
+                "adaptation_count": len(adaptations),
+                "adaptations": adaptations,
+            })
+    return {
+        "goals_reviewed": len(rows),
+        "adaptations_triggered": sum(row["outcome"] == "triggered" for row in rows),
+        "adaptations_not_triggered": sum(row["outcome"] == "not_triggered" for row in rows),
+        "goals": rows,
+        "note": (
+            "This is derived from persisted goal evidence. It distinguishes a recorded "
+            "replacement from a stable or terminal goal; it does not infer unrecorded causes."
+        ),
+    }
+
+
 def analyze_real_llm_records(
     records: list[dict[str, Any]],
     simulation_metrics: dict[str, Any],
@@ -191,6 +282,7 @@ def analyze_real_llm_records(
         "intent_action_compatibility": simulation_metrics.get(
             "intent_followthrough", {}
         ).get("action_compatibility_rate", 0.0),
+        "action_language_diagnostics": _action_language_diagnostics(records),
         "measurement_note": (
             "Context-use rates are transparent lexical-overlap indicators, not "
             "judgments of naturalness or proof that context was used causally."
@@ -259,6 +351,8 @@ def build_human_review_sample(
             "suggested_action": record.get("suggested_action"),
             "parsed_action": record.get("parsed_action"),
             "inferred_action": record.get("inferred_action"),
+            "inference_reason": record.get("inference_reason", "not_recorded"),
+            "final_action_reason": record.get("final_action_reason", "not_recorded"),
             "final_action": record.get("action"),
             "action_source": record.get("action_source"),
             "dialogue_source": record.get("dialogue_source"),
@@ -362,7 +456,9 @@ def _write_transcript(records: list[dict[str, Any]], path: Path) -> None:
                 f"Day {row.get('day')}, {row.get('hour')}:00 at {row.get('location')}",
                 f"{row.get('speaker')} -> {row.get('listener')}: {row.get('conversation')}",
                 f"Action: {row.get('action')} (suggested {row.get('suggested_action')}, "
-                f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')})",
+                f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')}; "
+                f"inference {row.get('inference_reason', 'not_recorded')}, final "
+                f"{row.get('final_action_reason', 'not_recorded')})",
                 "",
             ]
         )
@@ -390,7 +486,9 @@ def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
                     f"{row['listener']} at {row['location']}: “{row['dialogue']}”",
                     f"  Actions: suggested `{row['suggested_action']}`, parsed "
                     f"`{row['parsed_action']}`, inferred `{row['inferred_action']}`, "
-                    f"final `{row['final_action']}`; action source "
+                    f"final `{row['final_action']}`; inference `"
+                    f"{row['inference_reason']}`, final-selection `"
+                    f"{row['final_action_reason']}`; action source "
                     f"`{row['action_source']}`, dialogue source `{row['dialogue_source']}`.",
                     f"  Context: {json.dumps(context, sort_keys=True, ensure_ascii=False)}",
                     "",
@@ -410,13 +508,21 @@ def write_real_llm_evaluation(
     records = load_jsonl(output_dir / run["artifacts"]["conversations"])
     indicators, repetition_flags = analyze_real_llm_records(records, run["metrics"])
     sample = build_human_review_sample(records, repetition_flags)
+    adaptation_diagnostics = _strategy_adaptation_diagnostics(
+        output_dir / run["artifacts"].get("state", "missing-save-state.json")
+    )
 
     transcript_path = output_dir / "transcript.txt"
     sample_json_path = output_dir / "human_review_sample.json"
     sample_markdown_path = output_dir / "review.md"
+    adaptation_diagnostics_path = output_dir / "strategy_adaptation_diagnostics.json"
     _write_transcript(records, transcript_path)
     sample_json_path.write_text(
         json.dumps(sample, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    adaptation_diagnostics_path.write_text(
+        json.dumps(adaptation_diagnostics, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     _write_review(sample, sample_markdown_path)
@@ -471,6 +577,12 @@ def write_real_llm_evaluation(
             "dialogue_source_counts": health["dialogue_source_counts"],
         },
         "intent_action_compatibility": indicators["intent_action_compatibility"],
+        "action_language_diagnostics": indicators["action_language_diagnostics"],
+        "strategy_adaptation_diagnostics": {
+            "goals_reviewed": adaptation_diagnostics["goals_reviewed"],
+            "adaptations_triggered": adaptation_diagnostics["adaptations_triggered"],
+            "adaptations_not_triggered": adaptation_diagnostics["adaptations_not_triggered"],
+        },
         "daily_event_usage": {
             "count": simulation_metrics.get("conversations", {}).get(
                 "daily_event_related", 0
@@ -543,6 +655,7 @@ def write_real_llm_evaluation(
             "transcript": transcript_path.name,
             "human_review_json": sample_json_path.name,
             "human_review_markdown": sample_markdown_path.name,
+            "strategy_adaptation_diagnostics": adaptation_diagnostics_path.name,
         },
     }
     (output_dir / "evaluation.json").write_text(
