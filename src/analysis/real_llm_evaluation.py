@@ -65,6 +65,8 @@ def _context_values(record: dict[str, Any]) -> dict[str, list[Any]]:
         "journal": context.get("journals", []),
         "goal_or_intent": [
             *context.get("goals", []),
+            (context.get("active_goal") or {}).get("description", ""),
+            (context.get("active_goal") or {}).get("strategy", ""),
             intent.get("description", "") if isinstance(intent, dict) else intent,
         ],
         "occupation": [context.get("occupation") or ""],
@@ -78,6 +80,8 @@ def _context_values(record: dict[str, Any]) -> dict[str, list[Any]]:
             f"{arc.get('name', '')} {arc.get('description', '')}"
             for arc in context.get("town_arcs", [])
         ],
+        "reputation": context.get("reputation", []),
+        "reputation_rumor": [context.get("reputation_rumor", "")],
     }
 
 
@@ -86,6 +90,7 @@ def _lexical_context_use(records: list[dict[str, Any]]) -> dict[str, Any]:
     for category in (
         "relationship_history", "memory", "journal", "goal_or_intent",
         "occupation", "activity", "daily_event", "town_arc",
+        "reputation", "reputation_rumor",
     ):
         opportunities = 0
         matches = 0
@@ -211,6 +216,15 @@ def build_human_review_sample(
         "malformed_or_fallback": [],
         "intent_action_mismatch": [],
         "model_action_or_inference_disagreement": [],
+        "direct_reputation_grounded_interaction": [],
+        "legitimate_rumor_transmission": [],
+        "behavior_influenced_by_reputation": [],
+        "unsupported_rumor_blocked_or_fallback": [],
+        "goal_grounded_dialogue": [],
+        "intent_serving_active_goal": [],
+        "strategy_adaptation": [],
+        "goal_progress": [],
+        "goal_reputation_tension": [],
     }
 
     for index, record in enumerate(records):
@@ -225,6 +239,7 @@ def build_human_review_sample(
             values[name]
             for name in (
                 "relationship_history", "memory", "journal", "daily_event", "town_arc",
+                "reputation", "reputation_rumor",
             )
         ) or bool(context.get("speaker_intent"))
         generic = any(
@@ -253,6 +268,7 @@ def build_human_review_sample(
                 "memories": context.get("memories", [])[:2],
                 "journal": context.get("journals", [])[:1],
                 "goals": context.get("goals", [])[:3],
+                "active_goal": context.get("active_goal"),
                 "intent": intent.get("description") if isinstance(intent, dict) else intent,
                 "daily_event": (
                     {"name": event.get("name"), "description": event.get("description")}
@@ -261,6 +277,8 @@ def build_human_review_sample(
                 "town_arcs": [arc.get("name") for arc in context.get("town_arcs", [])],
                 "recent_topics": context.get("recent_topics", [])[-4:],
                 "recent_utterances": context.get("recent_utterances", [])[:2],
+                "reputation": context.get("reputation", [])[:2],
+                "reputation_rumor": context.get("reputation_rumor", ""),
             },
         }
         memberships = []
@@ -270,6 +288,17 @@ def build_human_review_sample(
             memberships.append("memory_grounded")
         if matches["goal_or_intent"]:
             memberships.append("intent_or_goal_related")
+            if context.get("active_goal"):
+                memberships.append("goal_grounded_dialogue")
+        active_goal = context.get("active_goal") or {}
+        if active_goal and context.get("speaker_intent"):
+            memberships.append("intent_serving_active_goal")
+        if active_goal.get("adaptation_count", 0) > 0:
+            memberships.append("strategy_adaptation")
+        if active_goal.get("progress", 0) > 0:
+            memberships.append("goal_progress")
+        if active_goal and context.get("reputation"):
+            memberships.append("goal_reputation_tension")
         if matches["activity"]:
             memberships.append("activity_grounded")
         if matches["daily_event"]:
@@ -307,6 +336,17 @@ def build_human_review_sample(
             and record.get("parsed_action") != record.get("inferred_action")
         ):
             memberships.append("model_action_or_inference_disagreement")
+        if matches["reputation"] and any(
+            "direct experience" in str(item).lower()
+            for item in values["reputation"]
+        ):
+            memberships.append("direct_reputation_grounded_interaction")
+        if record.get("rumor_transmission"):
+            memberships.append("legitimate_rumor_transmission")
+        if record.get("reputation_influenced"):
+            memberships.append("behavior_influenced_by_reputation")
+        if record.get("dialogue_source") == "policy_fallback_unsourced_hearsay":
+            memberships.append("unsupported_rumor_blocked_or_fallback")
 
         for category in memberships:
             if len(categories[category]) < per_category:
@@ -457,6 +497,9 @@ def write_real_llm_evaluation(
             ]["lexical_match_rate"],
         },
         "context_use_indicators": indicators["context_use_indicators"],
+        "reputation": simulation_metrics.get("reputation", {}),
+        "goals": simulation_metrics.get("goals", {}),
+        "intents": simulation_metrics.get("intents", {}),
         "suspected_generic": {
             "count": indicators["generic_phrase_flags"],
             "rate": indicators["generic_phrase_rate"],

@@ -101,6 +101,9 @@ def test_apply_conversation_effects_updates_relationship_and_memory():
     assert conversation_policy.recent_actions == [
         "compliment",
     ]
+    belief = listener.get_reputation_belief("Maya", "helpfulness")
+    assert belief is not None
+    assert belief.score > 0
 
 
 def test_apply_conversation_effects_records_relationship_event_when_needed():
@@ -165,3 +168,55 @@ def test_apply_conversation_effects_applies_need_effects():
     )
 
     assert speaker.needs["knowledge"] == 52
+
+
+def test_apply_conversation_effects_transmits_only_supplied_rumor_claim():
+    applier, relationship_updater, conversation_policy = build_applier()
+    maya = build_agent("Maya")
+    carlos = build_agent("Carlos")
+    lena = build_agent("Lena")
+    applier.reputation_system.record_direct_action(
+        day=1, hour=8, actor=maya, observer=carlos, action="offer_help"
+    )
+    claim = applier.reputation_system.select_shareable_claim(carlos, lena)
+
+    result = applier.apply_conversation_effects(
+        day=2,
+        hour=8,
+        location_id="library",
+        speaker=carlos,
+        listener=lena,
+        action="share_rumor",
+        conversation="From what I saw, Maya seemed helpful.",
+        conversation_tags=["conversation", "share_rumor"],
+        old_relationship_label="neutral",
+        old_score=0,
+        relationship_events=[],
+        rumor_claim=claim,
+    )
+
+    assert result["rumor_transmission"]["target_agent"] == "Maya"
+    assert lena.get_reputation_belief("Maya", "helpfulness").source_type == "hearsay"
+
+
+def test_apply_conversation_effects_does_not_fabricate_missing_rumor_claim():
+    applier, relationship_updater, conversation_policy = build_applier()
+    speaker = build_agent("Carlos")
+    listener = build_agent("Lena")
+
+    result = applier.apply_conversation_effects(
+        day=2,
+        hour=8,
+        location_id="library",
+        speaker=speaker,
+        listener=listener,
+        action="share_rumor",
+        conversation="I heard something damaging.",
+        conversation_tags=["conversation", "share_rumor"],
+        old_relationship_label="neutral",
+        old_score=0,
+        relationship_events=[],
+    )
+
+    assert result["rumor_transmission"] is None
+    assert listener.reputation_beliefs == {}

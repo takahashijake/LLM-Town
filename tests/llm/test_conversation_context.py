@@ -5,6 +5,8 @@ from src.agents.memory import Memory
 from src.llm.client import TransformersLLMClient
 from src.llm.context import build_conversation_context, select_recent_topics
 from src.town.daily_event import DailyEvent
+from src.actions.action_system import ActionSystem
+from src.systems.reputation import ReputationSystem
 
 
 def agent(name: str) -> Agent:
@@ -358,3 +360,44 @@ def test_internal_arc_and_activity_labels_are_rendered_as_resident_context():
     assert "worked together on Community Project" in prompt
     assert "Progress changed" not in prompt
     assert "through action" not in prompt
+
+
+def test_context_exposes_only_speakers_belief_about_listener():
+    speaker = agent("Maya")
+    listener = agent("Ethan")
+    system = ReputationSystem(ActionSystem())
+    system.record_observation(
+        day=1,
+        observer=speaker,
+        target_agent="Ethan",
+        dimension="trustworthiness",
+        value=1,
+        evidence_id="maya-saw-ethan",
+    )
+    system.record_observation(
+        day=1,
+        observer=listener,
+        target_agent="Maya",
+        dimension="hostility",
+        value=1,
+        evidence_id="ethan-private-belief",
+    )
+
+    reputation_context = system.format_beliefs_for_context(speaker, "Ethan")
+    context = build_conversation_context(
+        speaker,
+        listener,
+        "library",
+        "neutral",
+        0,
+        current_day=2,
+        reputation_context=reputation_context,
+    )
+    prompt = TransformersLLMClient._build_prompt(
+        object.__new__(TransformersLLMClient), context
+    )
+
+    assert "Ethan is slightly trustworthy" in prompt
+    assert "Maya" not in " ".join(context["reputation_context"])
+    assert "The speaker believes Maya" not in prompt
+    assert "0.8" not in prompt

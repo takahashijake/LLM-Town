@@ -52,9 +52,22 @@ class SimulationState:
                         journal.to_dict()
                         for journal in agent.daily_journals
                     ],
-                    "goals" : agent.goals,
+                    # Keep the legacy text field while preserving the complete
+                    # durable model in a backward-compatible sibling field.
+                    "goals": agent.goal_descriptions(),
+                    "structured_goals": [
+                        goal.to_dict() for goal in agent.goals
+                        if hasattr(goal, "to_dict")
+                    ],
                     "needs" : agent.needs,
                     "relationships": agent.relationships,
+                    "reputation_beliefs": {
+                        target: {
+                            dimension: belief.to_dict()
+                            for dimension, belief in dimensions.items()
+                        }
+                        for target, dimensions in agent.reputation_beliefs.items()
+                    },
                     "occupation" : agent.occupation,
                     "recent_topics" : agent.recent_topics,
                     "current_activity": agent.current_activity,
@@ -71,6 +84,9 @@ class SimulationState:
                 event.to_dict() 
                 for event in getattr(engine, "relationship_events", [])
             ],
+            "reputation_updates": list(
+                getattr(engine, "reputation_updates", [])
+            ),
             "agent_intents": {
                 agent_name: intent.to_dict()
                 for agent_name, intent in getattr(engine, "agent_intents", {}).items()

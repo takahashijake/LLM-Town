@@ -8,6 +8,7 @@ from src.agents.memory import Memory
 from src.agents.relationships import RelationshipManager
 from src.analysis.report import SimulationReporter
 from src.behavior.intent_planner import IntentPlanner
+from src.behavior.goal_planner import GoalPlanner
 from src.behavior.planner import ActivityPlanner
 from src.behavior.social_policy import SocialBehaviorPolicy
 from src.llm.client import TransformersLLMClient
@@ -30,6 +31,7 @@ from src.town.daily_event import DailyEvent, choose_daily_event
 from src.town.location import Location
 from src.town.town_arc import TownArc
 from src.utils.logger import TownLogger
+from src.systems.reputation import ReputationSystem
 
 class SimulationEngine:
     def __init__(
@@ -60,6 +62,11 @@ class SimulationEngine:
         self.journal_system = JournalSystem()
         self.llm = llm_client or TransformersLLMClient()
         self.actions = ActionSystem()
+        self.reputation_updates = []
+        self.reputation_system = ReputationSystem(
+            actions=self.actions,
+            update_records=self.reputation_updates,
+        )
         self.relationship_updater = RelationshipUpdater(
             relationships=self.relationships,
             actions=self.actions,
@@ -67,11 +74,13 @@ class SimulationEngine:
         self.activity_planner = ActivityPlanner()
         self.social_policy = SocialBehaviorPolicy()
         self.intent_planner = IntentPlanner() 
+        self.goal_planner = GoalPlanner()
         self.agent_intents = {}
         self.intent_history = []
         self.intent_system = IntentSystem(
             intent_planner=self.intent_planner,
             agent_intents=self.agent_intents,
+            goal_planner=self.goal_planner,
         )
         self.current_daily_event = None
         self.resume_day_complete = False
@@ -109,8 +118,13 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
             conversation_recorder=self.conversation_recorder,
             conversation_policy=self.conversation_policy,
+            reputation_system=self.reputation_system,
         )
         if saved_state:
+            self.reputation_updates = list(
+                saved_state.get("reputation_updates", [])
+            )
+            self.reputation_system.update_records = self.reputation_updates
             self.resume_day_complete = bool(
                 saved_state.get(
                     "day_complete",
@@ -172,6 +186,7 @@ class SimulationEngine:
             conversation_policy=self.conversation_policy,
             relationship_updater=self.relationship_updater,
             town_arc_system=self.town_arc_system,
+            reputation_system=self.reputation_system,
         )
 
     def apply_conversation_effects(
@@ -186,6 +201,7 @@ class SimulationEngine:
         conversation_tags: list[str],
         old_relationship_label: str,
         old_score: int,
+        rumor_claim: dict | None = None,
     ) -> dict:
         self.sync_town_arc_system_refs()
         self.sync_conversation_policy_refs()
@@ -203,6 +219,7 @@ class SimulationEngine:
             old_relationship_label=old_relationship_label,
             old_score=old_score,
             relationship_events=self.relationship_events,
+            rumor_claim=rumor_claim,
         )
 
         self.recent_dialogues = self.conversation_policy.recent_dialogues
@@ -222,6 +239,7 @@ class SimulationEngine:
         conversation_tags: list[str],
     ) -> dict | None:
         self.sync_intent_system_refs()
+        self.intent_system._engine_for_goal_check = self
     
         result = self.intent_system.update_intents_after_conversation(
             day=day,
@@ -276,6 +294,7 @@ class SimulationEngine:
         self.conversation_context_preparer.conversation_policy = self.conversation_policy
         self.conversation_context_preparer.relationship_updater = self.relationship_updater
         self.conversation_context_preparer.town_arc_system = self.town_arc_system
+        self.conversation_context_preparer.reputation_system = self.reputation_system
 
     def sync_conversation_output_processor_refs(self) -> None:
         self.conversation_output_processor.conversation_policy = self.conversation_policy
@@ -304,6 +323,7 @@ class SimulationEngine:
         self.conversation_effects_applier.town_arc_system = self.town_arc_system
         self.conversation_effects_applier.conversation_recorder = self.conversation_recorder
         self.conversation_effects_applier.conversation_policy = self.conversation_policy
+        self.conversation_effects_applier.reputation_system = self.reputation_system
         
 
     def get_initial_conversation_tags(
@@ -658,6 +678,17 @@ class SimulationEngine:
         )
 
         self.activity_records = self.activity_system.activity_records
+        self.sync_intent_system_refs()
+        self.intent_system._engine_for_goal_check = self
+        for agent in self.agents:
+            self.intent_system.update_intent_after_activity(
+                day=day,
+                agent=agent,
+                location_id=agent.location_id,
+                activity_name=agent.current_activity,
+            )
+        self.agent_intents = self.intent_system.agent_intents
+        self.intent_history = self.intent_system.intent_history
         
     def run_tick(self, day: int, hour: int) -> None:
         self.simulation_loop.run_tick(
@@ -805,6 +836,8 @@ class SimulationEngine:
         inferred_action: str = "",
         base_action_weights: dict | None = None,
         intent_adjusted_weights: dict | None = None,
+        reputation_adjusted_weights: dict | None = None,
+        reputation_weight_adjustments: dict | None = None,
         allowed_actions: list[str] | None = None,
         final_action_reason: str = "",
         raw_response: str = "",
@@ -812,6 +845,8 @@ class SimulationEngine:
         context_evidence: dict | None = None,
         context_snapshot: dict | None = None,
         dialogue_source: str = "llm",
+        reputation_updates: list[dict] | None = None,
+        rumor_transmission: dict | None = None,
     ) -> None:
         self.conversation_recorder.log_conversation_event(
             day=day,
@@ -834,6 +869,8 @@ class SimulationEngine:
             inferred_action=inferred_action,
             base_action_weights=base_action_weights,
             intent_adjusted_weights=intent_adjusted_weights,
+            reputation_adjusted_weights=reputation_adjusted_weights,
+            reputation_weight_adjustments=reputation_weight_adjustments,
             allowed_actions=allowed_actions,
             final_action_reason=final_action_reason,
             raw_response=raw_response,
@@ -841,6 +878,8 @@ class SimulationEngine:
             context_evidence=context_evidence,
             context_snapshot=context_snapshot,
             dialogue_source=dialogue_source,
+            reputation_updates=reputation_updates,
+            rumor_transmission=rumor_transmission,
         )
 
     def print_conversation_event(

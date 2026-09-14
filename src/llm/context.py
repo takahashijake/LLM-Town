@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from src.agents.memory import Memory
+from src.systems.reputation import ReputationSystem
 
 
 ACTION_AND_SYSTEM_TAGS = {
@@ -69,7 +70,7 @@ def _intent_for_interaction(
         return None
     if intent.get("target_location") not in (None, location_id):
         return None
-    return {
+    selected = {
         key: (
             None
             if intent[key] is None
@@ -81,14 +82,19 @@ def _intent_for_interaction(
         )
         for key in (
             "intent_type", "description", "target_agent", "target_location",
-            "priority", "progress", "progress_goal",
+            "priority", "progress", "progress_goal", "parent_goal_id", "strategy",
         )
         if key in intent
     }
+    if not selected.get("parent_goal_id"):
+        selected.pop("parent_goal_id", None)
+    if not selected.get("strategy"):
+        selected.pop("strategy", None)
+    return selected
 
 
 def _select_goals(
-    goals: list[str],
+    goals: list,
     *,
     activity: str,
     intent: dict | None,
@@ -146,9 +152,12 @@ def _prompt_context_text_chars(context: dict) -> int:
         context.get("speaker_activity_reason", ""),
         context.get("primary_need", ""),
         intent.get("description", ""),
+        (context.get("active_goal") or {}).get("description", ""),
         event.get("name", ""),
         event.get("description", ""),
         *context.get("relationship_history", []),
+        *context.get("reputation_context", []),
+        context.get("reputation_rumor_text", ""),
         *context.get("relevant_memories", []),
         *context.get("recent_journals", []),
         context.get("memory_summary", ""),
@@ -173,6 +182,7 @@ def _prune_context_to_budget(context: dict) -> None:
         lambda: context.update(recent_journals=[]),
         lambda: context.update(daily_event=None, daily_event_relevant=False),
         lambda: context.update(relationship_history=context["relationship_history"][:1]),
+        lambda: context.update(reputation_context=context["reputation_context"][:1]),
         lambda: context.update(relevant_memories=context["relevant_memories"][:2]),
         lambda: context.update(recent_utterances=context["recent_utterances"][:1]),
         lambda: context.update(recent_topics=context["recent_topics"][:2]),
@@ -366,12 +376,18 @@ def _focus_options(
     daily_event: dict | None,
     daily_event_relevant: bool,
     town_arcs: list[dict],
+    reputation_context: list[str],
+    reputation_rumor: dict | None,
 ) -> list[str]:
     options = []
     if relationship_history or any(
         listener_name in memory.participants for memory in memories
     ):
         options.append("shared history with the listener")
+    if reputation_context:
+        options.append("the speaker's own belief about the listener's conduct")
+    if reputation_rumor:
+        options.append("one supported social observation about a third party")
     if speaker_intent and (
         speaker_intent.get("target_agent") in (None, listener_name)
         and speaker_intent.get("target_location") in (None, location_id)
@@ -401,6 +417,8 @@ def build_conversation_context(
     speaker_intent=None,
     listener_intent=None,
     town_arcs=None,
+    reputation_context=None,
+    reputation_rumor=None,
 ):
     del listener_intent  # A listener's private intent is not speaker knowledge.
     relationship_history = relationship_history or []
@@ -409,6 +427,26 @@ def build_conversation_context(
         speaker_intent,
         listener_name=listener.name,
         location_id=location_id,
+    )
+    active_goal = speaker.get_goal(
+        (speaker_intent or {}).get("parent_goal_id")
+    )
+    active_goal_summary = (
+        {
+            "description": _bounded_text(active_goal.description, 180),
+            "category": active_goal.category,
+            "progress": active_goal.progress,
+            "progress_target": active_goal.progress_target,
+            "strategy": (speaker_intent or {}).get("strategy") or active_goal.current_strategy,
+            "adaptation_count": active_goal.adaptation_count,
+        }
+        if active_goal else None
+    )
+    reputation_context = [
+        _bounded_text(item, 220) for item in (reputation_context or [])[:2]
+    ]
+    reputation_rumor_text = _bounded_text(
+        ReputationSystem.format_rumor_claim(reputation_rumor), 280
     )
     memories = select_conversation_memories(
         speaker=speaker,
@@ -466,7 +504,11 @@ def build_conversation_context(
         "relationship_label": relationship_label,
         "relationship_score": relationship_score,
         "relationship_history": relationship_history,
+        "reputation_context": reputation_context,
+        "reputation_rumor": reputation_rumor,
+        "reputation_rumor_text": reputation_rumor_text,
         "speaker_intent": speaker_intent,
+        "active_goal": active_goal_summary,
         "relevant_memories": formatted_memories,
         "recent_journals": formatted_journals,
         "memory_summary": (
@@ -475,7 +517,7 @@ def build_conversation_context(
             else ""
         ),
         "goals": _select_goals(
-            speaker.goals,
+            speaker.goal_descriptions(),
             activity=activity_text,
             intent=speaker_intent,
             location_id=location_id,
@@ -506,6 +548,8 @@ def build_conversation_context(
         daily_event=context["daily_event"],
         daily_event_relevant=context["daily_event_relevant"],
         town_arcs=context["town_arcs"],
+        reputation_context=context["reputation_context"],
+        reputation_rumor=context["reputation_rumor"],
     )
     context["context_evidence"] = {
         "memories": [
@@ -520,6 +564,11 @@ def build_conversation_context(
         ],
         "journal_days": [journal.day for journal in recent_journals],
         "relationship_history_count": len(context["relationship_history"]),
+        "reputation_belief_count": len(context["reputation_context"]),
+        "rumor_evidence_id": (
+            context["reputation_rumor"].get("evidence_id")
+            if context["reputation_rumor"] else None
+        ),
         "daily_event_relevant": context["daily_event_relevant"],
         "daily_event_id": daily_event.id if daily_event else None,
         "town_arc_ids": [arc.get("id") for arc in context["town_arcs"]],

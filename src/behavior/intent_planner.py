@@ -3,6 +3,27 @@ from src.agents.intent import AgentIntent
 import random 
 
 class IntentPlanner:
+    def create_intent_from_goal(self, goal, strategy, current_day: int) -> AgentIntent:
+        description = (
+            f"{goal.agent_name} is pursuing '{goal.description}' through "
+            f"{strategy.name.replace('_', ' ')}."
+        )
+        return AgentIntent(
+            id=f"intent-{goal.id}-{current_day}-{goal.adaptation_count}-{strategy.name}",
+            agent_name=goal.agent_name,
+            intent_type=strategy.intent_type,
+            description=description,
+            created_day=current_day,
+            expires_day=current_day + 2,
+            priority=goal.priority,
+            target_agent=strategy.target_agent,
+            target_location=strategy.target_location,
+            progress_goal=2,
+            parent_goal_id=goal.id,
+            strategy=strategy.name,
+            strategy_score=strategy.score,
+        )
+
     def create_occupation_intent(
     self,
     agent: Agent,
@@ -13,7 +34,7 @@ class IntentPlanner:
             [
                 agent.occupation,
                 agent.personality,
-                " ".join(agent.goals),
+                " ".join(agent.goal_descriptions()),
             ]
         ).lower()
     

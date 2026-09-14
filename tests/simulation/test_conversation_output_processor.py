@@ -257,3 +257,37 @@ def test_hearsay_is_preserved_when_speaker_has_an_uncertain_source():
     assert output["conversation"] == "I heard the ledger may be missing."
     assert output["parsed_action"] == "share_rumor"
     assert output["dialogue_source"] == "llm"
+
+
+def test_structured_reputation_rumor_replaces_changed_or_damaging_claim():
+    processor = build_processor()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    claim = {
+        "subject_agent": "Carlos",
+        "dimension": "helpfulness",
+        "value": 1,
+        "source_type": "direct_interaction",
+    }
+
+    output = processor.process_llm_output(
+        raw_output='{"dialogue": "Carlos stole the ledger.", "action": "share_rumor", "tags": ["rumor"]}',
+        allowed_actions=["chat", "share_rumor"],
+        speaker=speaker,
+        listener=listener,
+        old_relationship_label="neutral",
+        location_id="library",
+        suggested_action="share_rumor",
+        current_day=2,
+        current_daily_event=None,
+        daily_event_history=[],
+        conversation_context={"reputation_rumor": claim},
+        enforce_information_boundaries=True,
+    )
+
+    assert "stole" not in output["conversation"]
+    assert "Carlos seemed helpful" in output["conversation"]
+    assert output["parsed_action"] == "share_rumor"
+    assert output["dialogue_source"] == (
+        "policy_fallback_structured_reputation_rumor"
+    )

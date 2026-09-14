@@ -5,6 +5,7 @@ from src.simulation.conversation_policy import ConversationPolicy
 from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.relationship_updater import RelationshipUpdater
 from src.simulation.town_arc_system import TownArcSystem
+from src.systems.reputation import ReputationSystem
 
 
 class ConversationEffectsApplier:
@@ -15,12 +16,14 @@ class ConversationEffectsApplier:
         town_arc_system: TownArcSystem,
         conversation_recorder: ConversationRecorder,
         conversation_policy: ConversationPolicy,
+        reputation_system: ReputationSystem | None = None,
     ):
         self.actions = actions
         self.relationship_updater = relationship_updater
         self.town_arc_system = town_arc_system
         self.conversation_recorder = conversation_recorder
         self.conversation_policy = conversation_policy
+        self.reputation_system = reputation_system or ReputationSystem(actions)
 
     def apply_conversation_effects(
         self,
@@ -35,6 +38,7 @@ class ConversationEffectsApplier:
         old_relationship_label: str,
         old_score: int,
         relationship_events: list[RelationshipEvent],
+        rumor_claim: dict | None = None,
     ) -> dict:
         self.town_arc_system.apply_conversation_to_town_arcs(
             day=day,
@@ -86,6 +90,22 @@ class ConversationEffectsApplier:
         for need, amount in need_effects.items():
             speaker.satisfy_need(need, amount)
 
+        direct_reputation_updates = self.reputation_system.record_direct_action(
+            day=day,
+            hour=hour,
+            actor=speaker,
+            observer=listener,
+            action=action,
+        )
+        rumor_update = None
+        if action == "share_rumor":
+            rumor_update = self.reputation_system.transmit_rumor(
+                day=day,
+                speaker=speaker,
+                listener=listener,
+                claim=rumor_claim,
+            )
+
         memory = self.conversation_recorder.remember_conversation_for_agents(
             day=day,
             hour=hour,
@@ -106,6 +126,9 @@ class ConversationEffectsApplier:
             "relationship_label": relationship_label,
             "relationship_event": relationship_event,
             "memory": memory,
+            "reputation_updates": [
+                *direct_reputation_updates,
+                *([rumor_update] if rumor_update else []),
+            ],
+            "rumor_transmission": rumor_update,
         }
-
-        

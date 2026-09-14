@@ -18,6 +18,12 @@ class AgentIntent:
     completed_day: int | None = None
     completion_reason: str = ""
     evidence: list[str] = field(default_factory=list)
+    parent_goal_id: str | None = None
+    strategy: str = ""
+    strategy_score: float = 0.0
+    opportunity_count: int = 0
+    expiration_reason: str = ""
+    terminal_trigger: str = ""
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def is_expired(self, current_day: int) -> bool:
@@ -58,6 +64,13 @@ class AgentIntent:
         self.status = status
         self.completed_day = day
         self.completion_reason = reason
+
+    def mark_superseded(self, day: int, reason: str, trigger: str = "") -> None:
+        self.mark_failed(day=day, reason=reason, status="superseded")
+        self.terminal_trigger = trigger
+
+    def mark_blocked(self, day: int, reason: str) -> None:
+        self.mark_failed(day=day, reason=reason, status="blocked")
 
     def to_dict(self) -> dict:
         return asdict(self)

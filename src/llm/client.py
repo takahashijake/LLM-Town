@@ -1,4 +1,9 @@
 
+import json
+
+from src.systems.reputation import ReputationSystem
+
+
 class FakeLLMClient:
     is_deterministic_fake = True
 
@@ -20,8 +25,12 @@ class FakeLLMClient:
         }
 
         dialogue = dialogue_by_action.get(action, dialogue_by_action["chat"])
+        if action == "share_rumor" and context.get("reputation_rumor"):
+            dialogue = ReputationSystem.format_rumor_dialogue(
+                context["reputation_rumor"]
+            )
 
-        return f'{{"dialogue": "{dialogue}", "action": "{action}"}}'
+        return json.dumps({"dialogue": dialogue, "action": action})
 class TransformersLLMClient:
     def __init__(
         self,
@@ -133,6 +142,14 @@ class TransformersLLMClient:
         if activity_reason:
             activity_text = f"{activity} — {activity_reason}"
 
+        goal = context.get("active_goal") or {}
+        goal_text = goal.get("description", "None")
+        if goal:
+            goal_text += (
+                f" (strategy: {goal.get('strategy') or 'unselected'}; "
+                f"progress {goal.get('progress', 0)}/{goal.get('progress_target', 0)})"
+            )
+
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
 
@@ -148,6 +165,10 @@ Shared history:
 {lines(context.get('relationship_history', []))}
 Relevant memories:
 {lines(context.get('relevant_memories', []))}
+Speaker's beliefs about the listener's general conduct:
+{lines(context.get('reputation_context', []))}
+Supported third-party social claim available to share:
+- {context.get('reputation_rumor_text') or 'None supplied'}
 Latest journal reflection:
 {lines(context.get('recent_journals', []))}
 Long-term memory summary: {context.get('memory_summary') or 'None'}
@@ -156,6 +177,7 @@ Ongoing local situations:
 {lines(arcs)}
 
 Personal direction
+- Active durable goal: {goal_text}
 - Current intent (a preference, not a script): {intent_text}
 - Persistent goals: {', '.join(context.get('goals', [])) or 'None'}
 - Primary unmet need: {context.get('primary_need') or 'None'}
@@ -179,6 +201,7 @@ Requirements:
 - Never repeat raw simulation wording such as "work on intent" or underscore-separated identifiers.
 - Do not reuse a recent line or restart a settled topic unless something has changed.
 - Assert facts only from the immediate situation or the supplied speaker knowledge. Do not invent named people, businesses, events, schedules, shortages, secrets, or rumors. Use hearsay wording only when a supplied source is itself uncertain.
+- Use share_rumor only for the supported third-party social claim above. Keep its subject, dimension, and direction unchanged; present it cautiously rather than as certain fact.
 - Do not default to "I heard" or "Have you heard." Without an explicitly uncertain supplied source, state an observation, opinion, request, or question instead.
 - Keep past memories and journals in the past. Do not present them as happening today.
 - Match the relationship tone. Tense or hostile speakers should not suddenly flatter, invite, or offer help.

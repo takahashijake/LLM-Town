@@ -30,6 +30,11 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
             "action_source": "llm",
             "dialogue_source": "llm",
             "generation_error": "",
+            "reputation_influenced": True,
+            "rumor_transmission": {
+                "target_agent": "Carlos",
+                "dimension": "helpfulness",
+            },
             "context": {
                 "occupation": "journalist",
                 "memories": ["Yesterday Ethan and Maya compared invoice totals."],
@@ -40,6 +45,10 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
                 "daily_event": None,
                 "daily_event_relevant": False,
                 "town_arcs": [],
+                "reputation": [
+                    "The speaker believes Ethan is somewhat helpful."
+                ],
+                "reputation_rumor": "Carlos seems helpful.",
             },
         },
         {
@@ -113,6 +122,8 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     assert sample["memory_grounded"][0]["dialogue"].startswith("Did those")
     assert sample["suspected_repetitive_or_generic"][0]["speaker"] == "Ethan"
     assert sample["malformed_or_fallback"][0]["speaker"] == "Ethan"
+    assert sample["legitimate_rumor_transmission"][0]["speaker"] == "Maya"
+    assert sample["behavior_influenced_by_reputation"][0]["speaker"] == "Maya"
 
 
 def test_analysis_helpers_are_deterministic():

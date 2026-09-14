@@ -6,6 +6,7 @@ from src.agents.intent import AgentIntent
 from src.town.daily_event import DailyEvent
 from src.town.town_arc import TownArc
 from src.agents.journal_entry import JournalEntry
+from src.systems.reputation import ReputationBelief
 
 class SimulationPersistence:
     def load_agent_intents_from_state(
@@ -90,12 +91,23 @@ class SimulationPersistence:
                     [],
                 )
             ]
+            reputation_beliefs = {
+                target: {
+                    dimension: ReputationBelief.from_dict(belief_data)
+                    for dimension, belief_data in dimensions.items()
+                }
+                for target, dimensions in agent_data.get(
+                    "reputation_beliefs", {}
+                ).items()
+            }
             agent = Agent(
                 id=agent_data["id"],
                 name=agent_data["name"],
                 personality=agent_data["personality"],
                 location_id=agent_data["location_id"],
-                goals=agent_data.get("goals", []),
+                goals=agent_data.get(
+                    "structured_goals", agent_data.get("goals", [])
+                ),
                 needs=agent_data.get("needs", {}),
                 memory=memories,
                 memory_archive=memory_archive,
@@ -104,6 +116,7 @@ class SimulationPersistence:
                 occupation=agent_data.get("occupation", "unemployed"),
                 recent_topics=agent_data.get("recent_topics", []),
                 relationships=agent_data.get("relationships", {}),
+                reputation_beliefs=reputation_beliefs,
                 current_activity=agent_data.get("current_activity", "idle"),
                 current_activity_reason=agent_data.get("current_activity_reason", ""),
                 current_activity_tags=agent_data.get("current_activity_tags", []),
@@ -123,4 +136,3 @@ class SimulationPersistence:
         for pair_key, score in relationship_scores.items():
             agent_a, agent_b = pair_key.split("|")
             relationships.scores[(agent_a, agent_b)] = score
-            

@@ -79,6 +79,8 @@ def has_rumor_marker(conversation: str) -> bool:
         "strange about",
         "might be hiding",
         "might be unreliable",
+        "from what i saw",
+        "someone told me",
     ]
 
     return any(marker in text for marker in rumor_markers)

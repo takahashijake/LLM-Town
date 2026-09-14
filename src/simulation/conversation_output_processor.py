@@ -7,6 +7,7 @@ from src.simulation.dialogue_utils import (
     is_narration,
 )
 from src.town.daily_event import DailyEvent
+from src.systems.reputation import ReputationSystem
 
 
 class ConversationOutputProcessor:
@@ -81,6 +82,18 @@ class ConversationOutputProcessor:
             parsed_output["tags"] = []
             dialogue_source = "policy_fallback_unsourced_hearsay"
 
+        reputation_rumor = (conversation_context or {}).get("reputation_rumor")
+        if (
+            enforce_information_boundaries
+            and parsed_action == "share_rumor"
+            and reputation_rumor
+            and not self._matches_reputation_claim(conversation, reputation_rumor)
+        ):
+            conversation = ReputationSystem.format_rumor_dialogue(
+                reputation_rumor
+            )
+            dialogue_source = "policy_fallback_structured_reputation_rumor"
+
         if self.conversation_policy.is_repeated_dialogue(conversation) or (
             enforce_information_boundaries
             and self.conversation_policy.is_near_repeated_dialogue(conversation)
@@ -131,6 +144,8 @@ class ConversationOutputProcessor:
 
     @staticmethod
     def _context_has_uncertain_source(context: dict) -> bool:
+        if context.get("reputation_rumor"):
+            return True
         sources = [
             *context.get("relevant_memories", []),
             *context.get("relationship_history", []),
@@ -145,3 +160,33 @@ class ConversationOutputProcessor:
             for source in sources
             for marker in uncertain_markers
         )
+
+    @staticmethod
+    def _matches_reputation_claim(conversation: str, claim: dict) -> bool:
+        text = conversation.lower()
+        subject = str(claim.get("subject_agent", "")).lower()
+        dimension = claim.get("dimension")
+        positive = float(claim.get("value", 0.0)) > 0
+        descriptors = {
+            "trustworthiness": (
+                ("trustworthy", "reliable", "keeps their word"),
+                ("untrustworthy", "unreliable", "cannot trust"),
+            ),
+            "helpfulness": (
+                ("helpful", "helped", "helps"),
+                ("unhelpful", "wouldn't help", "would not help"),
+            ),
+            "cooperativeness": (
+                ("cooperative", "worked together", "cooperated"),
+                ("uncooperative", "wouldn't cooperate", "would not cooperate"),
+            ),
+            "hostility": (
+                ("hostile", "aggressive", "angry"),
+                ("non-hostile", "calm", "peaceful"),
+            ),
+        }
+        directions = descriptors.get(dimension)
+        if not subject or not directions:
+            return False
+        expected = directions[0 if positive else 1]
+        return subject in text and any(word in text for word in expected)

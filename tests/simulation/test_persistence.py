@@ -82,6 +82,7 @@ def test_persistence_reconstructs_agents_from_saved_state():
     assert isinstance(agent.memory[0], Memory)
     assert agent.memory[0].description == "Maya found a useful record."
     assert agent.memory_archive[0].description == "Archived memory."
+    assert agent.reputation_beliefs == {}
 
 
 def test_persistence_reconstructs_relationship_scores_from_saved_state():

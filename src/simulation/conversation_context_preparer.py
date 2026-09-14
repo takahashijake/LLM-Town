@@ -8,6 +8,7 @@ from src.simulation.intent_system import IntentSystem
 from src.simulation.relationship_updater import RelationshipUpdater
 from src.simulation.town_arc_system import TownArcSystem
 from src.town.daily_event import DailyEvent
+from src.systems.reputation import ReputationSystem
 
 
 class ConversationContextPreparer:
@@ -20,6 +21,7 @@ class ConversationContextPreparer:
         conversation_policy: ConversationPolicy,
         relationship_updater: RelationshipUpdater,
         town_arc_system: TownArcSystem,
+        reputation_system: ReputationSystem | None = None,
     ):
         self.relationships = relationships
         self.actions = actions
@@ -28,6 +30,7 @@ class ConversationContextPreparer:
         self.conversation_policy = conversation_policy
         self.relationship_updater = relationship_updater
         self.town_arc_system = town_arc_system
+        self.reputation_system = reputation_system or ReputationSystem(actions)
 
     def prepare_conversation_context(
         self,
@@ -52,6 +55,14 @@ class ConversationContextPreparer:
         allowed_actions = self.actions.get_allowed_actions_for_relationship(
             old_score,
         )
+        rumor_claim = self.reputation_system.select_shareable_claim(
+            speaker=speaker,
+            listener=listener,
+        )
+        if not rumor_claim:
+            allowed_actions = [
+                action for action in allowed_actions if action != "share_rumor"
+            ]
 
         recent_relationship_events = self.relationship_updater.get_recent_relationship_events(
             relationship_events=relationship_events,
@@ -75,8 +86,17 @@ class ConversationContextPreparer:
             listener_name=listener.name,
         )
 
+        reputation_adjusted_weights, reputation_weight_adjustments = (
+            self.social_policy.adjust_action_weights_for_reputation(
+                weights=intent_adjusted_weights,
+                reputation_beliefs=speaker.reputation_beliefs.get(
+                    listener.name, {}
+                ),
+            )
+        )
+
         arc_adjusted_weights = self.town_arc_system.adjust_action_weights_for_town_arcs(
-            weights=intent_adjusted_weights,
+            weights=reputation_adjusted_weights,
             location_id=location_id,
             conversation_tags=[],
         )
@@ -107,6 +127,11 @@ class ConversationContextPreparer:
             town_arcs=self.town_arc_system.get_relevant_town_arcs_for_context(
                 location_id,
             ),
+            reputation_context=self.reputation_system.format_beliefs_for_context(
+                observer=speaker,
+                target_agent=listener.name,
+            ),
+            reputation_rumor=rumor_claim,
         )
 
         return {
@@ -118,8 +143,11 @@ class ConversationContextPreparer:
             "listener_intent": listener_intent,
             "base_action_weights": base_action_weights,
             "intent_adjusted_weights": intent_adjusted_weights,
+            "reputation_adjusted_weights": reputation_adjusted_weights,
+            "reputation_weight_adjustments": reputation_weight_adjustments,
             "arc_adjusted_weights": arc_adjusted_weights,
             "suggested_action": suggested_action,
             "relationship_history": relationship_history,
             "context": context,
+            "rumor_claim": rumor_claim,
         }

@@ -5,6 +5,12 @@ from src.behavior.activity import Activity
 
 
 class ActivityPlanner:
+    @staticmethod
+    def _goal_texts(agent) -> list[str]:
+        if hasattr(agent, "goal_descriptions"):
+            return agent.goal_descriptions()
+        return [str(goal) for goal in getattr(agent, "goals", [])]
+
     def create_intent_activity(self, current_intent) -> Activity:
         return Activity(
             id=f"intent_{current_intent.intent_type}",
@@ -115,7 +121,7 @@ class ActivityPlanner:
             [
                 agent.occupation,
                 agent.personality,
-                " ".join(agent.goals),
+                " ".join(self._goal_texts(agent)),
                 agent.get_primary_need(),
             ]
         ).lower()
@@ -155,7 +161,7 @@ class ActivityPlanner:
             [
                 agent.occupation,
                 agent.personality,
-                " ".join(agent.goals),
+                " ".join(self._goal_texts(agent)),
                 agent.get_primary_need(),
             ]
         ).lower()

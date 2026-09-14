@@ -29,6 +29,13 @@ class ConversationRunner:
             listener_intent = conversation_setup["listener_intent"]
             base_action_weights = conversation_setup["base_action_weights"]
             intent_adjusted_weights = conversation_setup["intent_adjusted_weights"]
+            reputation_adjusted_weights = conversation_setup.get(
+                "reputation_adjusted_weights", intent_adjusted_weights
+            )
+            reputation_weight_adjustments = conversation_setup.get(
+                "reputation_weight_adjustments", {}
+            )
+            rumor_claim = conversation_setup.get("rumor_claim")
             suggested_action = conversation_setup["suggested_action"]
             context = conversation_setup["context"]
 
@@ -95,6 +102,7 @@ class ConversationRunner:
                 conversation_tags=conversation_tags,
                 old_relationship_label=old_relationship_label,
                 old_score=old_score,
+                rumor_claim=rumor_claim,
             )
 
             relationship_change = effects_result["relationship_change"]
@@ -141,6 +149,8 @@ class ConversationRunner:
                 inferred_action=inferred_action,
                 base_action_weights=base_action_weights,
                 intent_adjusted_weights=intent_adjusted_weights,
+                reputation_adjusted_weights=reputation_adjusted_weights,
+                reputation_weight_adjustments=reputation_weight_adjustments,
                 allowed_actions=allowed_actions,
                 final_action_reason=final_action_reason,
                 raw_response=raw_output,
@@ -152,9 +162,12 @@ class ConversationRunner:
                     "activity_display": context.get("speaker_activity_display"),
                     "activity_reason": context.get("speaker_activity_reason"),
                     "relationship_history": context.get("relationship_history", []),
+                    "reputation": context.get("reputation_context", []),
+                    "reputation_rumor": context.get("reputation_rumor_text", ""),
                     "memories": context.get("relevant_memories", []),
                     "journals": context.get("recent_journals", []),
                     "goals": context.get("goals", []),
+                    "active_goal": context.get("active_goal"),
                     "speaker_intent": context.get("speaker_intent"),
                     "daily_event": context.get("daily_event"),
                     "daily_event_relevant": context.get("daily_event_relevant", False),
@@ -164,6 +177,8 @@ class ConversationRunner:
                     "focus_options": context.get("focus_options", []),
                 },
                 dialogue_source=dialogue_source,
+                reputation_updates=effects_result.get("reputation_updates", []),
+                rumor_transmission=effects_result.get("rumor_transmission"),
             )
 
             engine.print_conversation_event(

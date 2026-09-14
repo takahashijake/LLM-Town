@@ -160,6 +160,13 @@ def _conversation_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
         "town_arc_related": arc_related,
         "town_arc_rate": safe_rate(arc_related, total),
         "arc_relevant_action_counts": dict(sorted(arc_actions.items())),
+        "reputation_influenced_decisions": sum(
+            bool(record.get("reputation_influenced")) for record in records
+        ),
+        "unsupported_rumor_fallbacks": sum(
+            record.get("dialogue_source") == "policy_fallback_unsourced_hearsay"
+            for record in records
+        ),
     }
 
 
@@ -324,6 +331,44 @@ def _state_metrics(state: dict[str, Any]) -> dict[str, Any]:
     intent_outcomes = Counter(
         intent.get("status", "unknown") for intent in intent_history
     )
+    all_intents = [*active_intents.values(), *intent_history]
+    linked_intents = [intent for intent in all_intents if intent.get("parent_goal_id")]
+    intents_per_goal_counts = Counter(
+        intent.get("parent_goal_id") for intent in linked_intents
+    )
+    goals = [
+        goal for agent in agents for goal in agent.get("structured_goals", [])
+    ]
+    goal_statuses = Counter(goal.get("status", "active") for goal in goals)
+    goal_categories = Counter(goal.get("category", "unknown") for goal in goals)
+    achieved_by_category = Counter(
+        goal.get("category", "unknown") for goal in goals
+        if goal.get("status") == "achieved"
+    )
+    terminal_by_category = Counter(
+        goal.get("category", "unknown") for goal in goals
+        if goal.get("status") in {"achieved", "blocked", "abandoned"}
+    )
+    terminal_goals = sum(
+        goal_statuses[status] for status in ("achieved", "blocked", "abandoned")
+    )
+    progress_rates = [
+        safe_rate(goal.get("progress", 0), goal.get("progress_target", 1))
+        for goal in goals
+    ]
+    achievement_times = [
+        goal["completion_day"] - goal.get("created_day", 0)
+        for goal in goals
+        if goal.get("status") == "achieved" and goal.get("completion_day") is not None
+    ]
+    adaptations = [
+        record for goal in goals for record in goal.get("evidence", [])
+        if record.get("type") == "strategy_adaptation"
+    ]
+    progress_records = [
+        record for goal in goals for record in goal.get("evidence", [])
+        if record.get("type") == "progress"
+    ]
 
     arcs = state.get("town_arcs", [])
     journals_per_agent = [len(agent.get("daily_journals", [])) for agent in agents]
@@ -388,7 +433,70 @@ def _state_metrics(state: dict[str, Any]) -> dict[str, Any]:
             "ended": len(intent_history),
             "active_type_counts": dict(sorted(intent_types.items())),
             "outcome_counts": dict(sorted(intent_outcomes.items())),
+            "outcome_rates": {
+                status: safe_rate(intent_outcomes[status], len(intent_history))
+                for status in (
+                    "succeeded", "failed", "superseded", "blocked", "expired"
+                )
+            },
             "success_rate": safe_rate(intent_outcomes["succeeded"], len(intent_history)),
+            "succeeded": intent_outcomes["succeeded"],
+            "failed": intent_outcomes["failed"],
+            "superseded": intent_outcomes["superseded"],
+            "blocked": intent_outcomes["blocked"],
+            "expired": intent_outcomes["expired"],
+            "expiration_no_opportunity": sum(
+                intent.get("expiration_reason") == "no_opportunity"
+                for intent in intent_history
+            ),
+            "expiration_despite_opportunity": sum(
+                intent.get("expiration_reason") == "despite_opportunity"
+                for intent in intent_history
+            ),
+            "average_intents_per_goal": (
+                fmean(intents_per_goal_counts.values()) if intents_per_goal_counts else 0.0
+            ),
+            "average_tactical_progress": (
+                fmean(intent.get("progress", 0) for intent in all_intents)
+                if all_intents else 0.0
+            ),
+        },
+        "goals": {
+            "created": len(goals),
+            "active": goal_statuses["active"],
+            "achieved": goal_statuses["achieved"],
+            "blocked": goal_statuses["blocked"],
+            "abandoned": goal_statuses["abandoned"],
+            "paused": goal_statuses["paused"],
+            "attainment_rate": safe_rate(goal_statuses["achieved"], terminal_goals),
+            "average_progress": fmean(progress_rates) if progress_rates else 0.0,
+            "average_time_to_achievement": (
+                fmean(achievement_times) if achievement_times else 0.0
+            ),
+            "category_counts": dict(sorted(goal_categories.items())),
+            "achievement_by_category": dict(sorted(achieved_by_category.items())),
+            "attainment_rate_by_category": {
+                category: safe_rate(achieved_by_category[category], count)
+                for category, count in sorted(terminal_by_category.items())
+            },
+            "strategy_adaptations": len(adaptations),
+            "reputation_triggered_adaptations": sum(
+                record.get("trigger") == "reputation" for record in adaptations
+            ),
+            "relationship_triggered_adaptations": sum(
+                record.get("trigger") == "relationship" for record in adaptations
+            ),
+            "goals_recovered_after_adaptation": sum(
+                bool(goal.get("recovered_after_adaptation")) for goal in goals
+            ),
+            "applicable_progress_opportunities": sum(
+                int(intent.get("opportunity_count", 0)) for intent in all_intents
+            ),
+            "opportunities_that_produced_progress": len(progress_records),
+            "opportunity_progress_rate": safe_rate(
+                len(progress_records),
+                sum(int(intent.get("opportunity_count", 0)) for intent in all_intents),
+            ),
         },
         "town_arcs": {
             "total": len(arcs),
@@ -408,6 +516,101 @@ def _state_metrics(state: dict[str, Any]) -> dict[str, Any]:
             "maximum_per_agent": max(journals_per_agent, default=0),
             "coverage_rate": safe_rate(total_journals, expected_journals),
         },
+    }
+
+
+def _reputation_metrics(
+    state: dict[str, Any],
+    conversations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    agents = state.get("agents", [])
+    beliefs = []
+    beliefs_per_agent = {}
+    signs_by_subject_dimension: dict[tuple[str, str], set[int]] = {}
+    for agent in agents:
+        count = 0
+        for target, dimensions in agent.get("reputation_beliefs", {}).items():
+            for dimension, belief in dimensions.items():
+                row = {
+                    "observer": agent.get("name", "unknown"),
+                    "target_agent": target,
+                    "dimension": dimension,
+                    **belief,
+                }
+                beliefs.append(row)
+                count += 1
+                score = float(belief.get("score", 0.0))
+                sign = 1 if score > 0 else (-1 if score < 0 else 0)
+                signs_by_subject_dimension.setdefault((target, dimension), set()).add(sign)
+        beliefs_per_agent[agent.get("name", "unknown")] = count
+
+    distributions = {}
+    dimensions = sorted({belief["dimension"] for belief in beliefs})
+    for dimension in dimensions:
+        scores = [
+            float(belief.get("score", 0.0))
+            for belief in beliefs
+            if belief["dimension"] == dimension
+        ]
+        distributions[dimension] = {
+            "count": len(scores),
+            "average": fmean(scores) if scores else 0.0,
+            "minimum": min(scores, default=0.0),
+            "maximum": max(scores, default=0.0),
+        }
+
+    updates = state.get("reputation_updates", [])
+    source_counts = Counter(
+        update.get("source_type", "unknown") for update in updates
+    )
+    hearsay_updates = [
+        update for update in updates if update.get("source_type") == "hearsay"
+    ]
+    confidences = [float(belief.get("confidence", 0.0)) for belief in beliefs]
+    return {
+        "update_count": len(updates),
+        "source_type_counts": dict(sorted(source_counts.items())),
+        "direct_updates": sum(
+            source_counts[source]
+            for source in ("direct_interaction", "direct_observation")
+        ),
+        "hearsay_updates": len(hearsay_updates),
+        "belief_count": len(beliefs),
+        "beliefs_per_agent": dict(sorted(beliefs_per_agent.items())),
+        "score_distribution_by_dimension": distributions,
+        "average_confidence": fmean(confidences) if confidences else 0.0,
+        "rumor_transmissions": sum(
+            record.get("action") == "share_rumor" for record in conversations
+        ),
+        "duplicate_or_rejected_rumor_transmissions": max(
+            0,
+            sum(
+                record.get("action") == "share_rumor"
+                for record in conversations
+            ) - len(hearsay_updates),
+        ),
+        "unique_rumor_subjects": len(
+            {update.get("target_agent") for update in hearsay_updates}
+        ),
+        "maximum_transmission_depth": max(
+            (int(update.get("transmission_depth", 0)) for update in hearsay_updates),
+            default=0,
+        ),
+        "third_party_reputation_changes": sum(
+            bool(update.get("third_party")) for update in updates
+        ),
+        "behavior_decisions_influenced": sum(
+            bool(record.get("reputation_influenced"))
+            for record in conversations
+        ),
+        "unsupported_rumors_blocked": sum(
+            record.get("dialogue_source") == "policy_fallback_unsourced_hearsay"
+            for record in conversations
+        ),
+        "disagreements": sum(
+            1 for signs in signs_by_subject_dimension.values()
+            if 1 in signs and -1 in signs
+        ),
     }
 
 
@@ -584,6 +787,7 @@ def analyze_run(
     arc_changes = arc_changes or []
     metrics = {
         "conversations": _conversation_metrics(conversations),
+        "reputation": _reputation_metrics(state, conversations),
         "intent_followthrough": analyze_intent_followthrough(
             conversations, events
         ),
@@ -619,6 +823,11 @@ KPI_PATHS = (
     "intent_followthrough.action_compatibility_rate",
     "relationships.average_score",
     "intents.success_rate",
+    "goals.attainment_rate",
+    "goals.average_progress",
+    "goals.strategy_adaptations",
+    "goals.reputation_triggered_adaptations",
+    "goals.opportunity_progress_rate",
     "town_arcs.causal_changes",
     "town_arcs.resolved",
     "memory.average_active_per_agent",
@@ -677,6 +886,78 @@ def aggregate_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
         pooled_actions.update(run["metrics"]["conversations"]["action_counts"])
     total_actions = sum(pooled_actions.values())
 
+    reputation_fields = (
+        "update_count",
+        "direct_updates",
+        "hearsay_updates",
+        "belief_count",
+        "average_confidence",
+        "rumor_transmissions",
+        "duplicate_or_rejected_rumor_transmissions",
+        "unique_rumor_subjects",
+        "maximum_transmission_depth",
+        "third_party_reputation_changes",
+        "behavior_decisions_influenced",
+        "unsupported_rumors_blocked",
+        "disagreements",
+    )
+    goal_count_fields = (
+        "created", "active", "achieved", "blocked", "abandoned", "paused",
+        "strategy_adaptations", "reputation_triggered_adaptations",
+        "relationship_triggered_adaptations", "goals_recovered_after_adaptation",
+        "applicable_progress_opportunities", "opportunities_that_produced_progress",
+    )
+    pooled_goal_counts = {
+        field: sum(run["metrics"]["goals"][field] for run in runs)
+        for field in goal_count_fields
+    }
+    pooled_terminal = (
+        pooled_goal_counts["achieved"] + pooled_goal_counts["blocked"]
+        + pooled_goal_counts["abandoned"]
+    )
+    intent_outcome_fields = (
+        "succeeded", "failed", "superseded", "blocked", "expired",
+        "expiration_no_opportunity", "expiration_despite_opportunity",
+    )
+    pooled_intent_outcomes = {
+        field: sum(run["metrics"]["intents"][field] for run in runs)
+        for field in intent_outcome_fields
+    }
+    pooled_ended_intents = sum(
+        pooled_intent_outcomes[field]
+        for field in ("succeeded", "failed", "superseded", "blocked", "expired")
+    )
+    opportunity_counts = {
+        "applicable_interactions": sum(
+            run["metrics"]["intent_followthrough"]["intent_action_opportunities"]
+            for run in runs
+        ),
+        "compatible_actions": sum(
+            run["metrics"]["intent_followthrough"]["compatible_actions"]
+            for run in runs
+        ),
+        "target_agent_opportunities": sum(
+            run["metrics"]["intent_followthrough"]["target_agent_opportunities"]
+            for run in runs
+        ),
+        "target_agent_matches": sum(
+            run["metrics"]["intent_followthrough"]["target_agent_matches"]
+            for run in runs
+        ),
+        "target_agent_unavailable": sum(
+            run["metrics"]["intent_followthrough"]["target_agent_unavailable"]
+            for run in runs
+        ),
+        "target_location_opportunities": sum(
+            run["metrics"]["intent_followthrough"]["target_location_opportunities"]
+            for run in runs
+        ),
+        "target_location_matches": sum(
+            run["metrics"]["intent_followthrough"]["target_location_matches"]
+            for run in runs
+        ),
+    }
+
     return {
         "run_count": len(runs),
         "kpis": kpis,
@@ -685,5 +966,81 @@ def aggregate_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "pooled_action_rates": {
             action: safe_rate(count, total_actions)
             for action, count in sorted(pooled_actions.items())
+        },
+        "reputation": {
+            field: {
+                "mean": fmean(
+                    run["metrics"]["reputation"][field] for run in runs
+                ) if runs else 0.0,
+                "values": [
+                    run["metrics"]["reputation"][field] for run in runs
+                ],
+            }
+            for field in reputation_fields
+        },
+        "goals": {
+            "pooled": {
+                **pooled_goal_counts,
+                "attainment_rate": safe_rate(
+                    pooled_goal_counts["achieved"], pooled_terminal
+                ),
+                "opportunity_progress_rate": safe_rate(
+                    pooled_goal_counts["opportunities_that_produced_progress"],
+                    pooled_goal_counts["applicable_progress_opportunities"],
+                ),
+            },
+            "mean_per_seed": {
+                field: fmean(run["metrics"]["goals"][field] for run in runs)
+                if runs else 0.0
+                for field in (*goal_count_fields, "attainment_rate", "average_progress",
+                              "average_time_to_achievement", "opportunity_progress_rate")
+            },
+        },
+        "intents": {
+            "pooled_outcomes": pooled_intent_outcomes,
+            "pooled_outcome_rates": {
+                field: safe_rate(pooled_intent_outcomes[field], pooled_ended_intents)
+                for field in ("succeeded", "failed", "superseded", "blocked", "expired")
+            },
+            "mean_per_seed": {
+                field: fmean(run["metrics"]["intents"][field] for run in runs)
+                if runs else 0.0
+                for field in (*intent_outcome_fields, "average_intents_per_goal",
+                              "average_tactical_progress")
+            },
+            "mean_per_seed_outcome_rates": {
+                field: fmean(
+                    run["metrics"]["intents"]["outcome_rates"][field]
+                    for run in runs
+                ) if runs else 0.0
+                for field in ("succeeded", "failed", "superseded", "blocked", "expired")
+            },
+        },
+        "opportunities": {
+            "pooled_counts": opportunity_counts,
+            "pooled_rates": {
+                "action_compatibility_rate": safe_rate(
+                    opportunity_counts["compatible_actions"],
+                    opportunity_counts["applicable_interactions"],
+                ),
+                "target_agent_rate": safe_rate(
+                    opportunity_counts["target_agent_matches"],
+                    opportunity_counts["target_agent_opportunities"],
+                ),
+                "target_location_rate": safe_rate(
+                    opportunity_counts["target_location_matches"],
+                    opportunity_counts["target_location_opportunities"],
+                ),
+            },
+            "mean_per_seed_rates": {
+                field: fmean(
+                    run["metrics"]["intent_followthrough"][field]
+                    for run in runs
+                ) if runs else 0.0
+                for field in (
+                    "action_compatibility_rate", "target_agent_rate",
+                    "target_location_rate",
+                )
+            },
         },
     }

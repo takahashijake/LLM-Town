@@ -25,6 +25,17 @@ class ActionSystem:
         "share_rumor": {"knowledge": 1},
         "cooperate": {"social": 2},
     }
+    # Reputation describes perceived conduct, not pair affinity. Ordinary chat,
+    # requests, and rumor speech have no automatic reputation effect.
+    REPUTATION_EFFECTS = {
+        "compliment": {"helpfulness": 0.25},
+        "apologize": {"trustworthiness": 0.40, "hostility": -0.40},
+        "offer_help": {"helpfulness": 1.0},
+        "cooperate": {"cooperativeness": 1.0, "helpfulness": 0.25},
+        "argue": {"hostility": 0.35},
+        "insult": {"hostility": 1.0, "trustworthiness": -0.25},
+        "storm_off": {"hostility": 0.60, "cooperativeness": -0.50},
+    }
     def get_allowed_actions_for_relationship(self, relationship_score: int) -> list[str]:
         if relationship_score <= -7:
             return [
@@ -79,6 +90,9 @@ class ActionSystem:
         
     def get_need_effects(self, action: str) -> dict[str, int]:
         return self.ACTION_NEED_EFFECTS.get(action, {})
+
+    def get_reputation_effects(self, action: str) -> dict[str, float]:
+        return dict(self.REPUTATION_EFFECTS.get(action, {}))
     
     def infer_action(self, conversation: str, tags: list[str]) -> str:
         text = conversation.lower()
@@ -95,6 +109,8 @@ class ActionSystem:
             "unverified",
             "might be hiding",
             "might be unreliable",
+            "from what i saw",
+            "someone told me",
         ]
         if any(marker in text for marker in rumor_markers):
             return "share_rumor"

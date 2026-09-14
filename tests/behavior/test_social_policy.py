@@ -1,5 +1,6 @@
 from src.agents.relationship_event import RelationshipEvent
 from src.behavior.social_policy import SocialBehaviorPolicy
+from src.systems.reputation import ReputationBelief, ReputationEvidence
 
 
 def make_event(
@@ -112,3 +113,36 @@ def test_policy_never_returns_disallowed_actions():
     )
 
     assert set(weights).issubset({"chat", "argue"})
+
+
+def test_reputation_modestly_changes_action_weights_without_adding_actions():
+    policy = SocialBehaviorPolicy()
+    belief = ReputationBelief(
+        target_agent="Carlos",
+        dimension="helpfulness",
+        evidence=[
+            ReputationEvidence(
+                evidence_id="help-1",
+                value=1,
+                confidence=0.9,
+                source_type="direct_interaction",
+                source_agent="Carlos",
+                day=1,
+            ),
+            ReputationEvidence(
+                evidence_id="help-2",
+                value=1,
+                confidence=0.9,
+                source_type="direct_interaction",
+                source_agent="Carlos",
+                day=2,
+            ),
+        ],
+    )
+    weights, deltas = policy.adjust_action_weights_for_reputation(
+        {"chat": 8, "ask_for_help": 2, "argue": 1},
+        {"helpfulness": belief},
+    )
+
+    assert weights == {"chat": 8, "ask_for_help": 3, "argue": 1}
+    assert deltas == {"ask_for_help": 1}

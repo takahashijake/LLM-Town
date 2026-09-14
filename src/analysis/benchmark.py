@@ -281,7 +281,7 @@ def compare_benchmarks(
 
     deltas = {}
     for path in KPI_PATHS:
-        old = baseline["aggregate"]["kpis"][path]["mean"]
+        old = baseline["aggregate"]["kpis"].get(path, {"mean": 0.0})["mean"]
         new = current["aggregate"]["kpis"][path]["mean"]
         deltas[path] = {
             "baseline_mean": old,

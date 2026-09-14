@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field 
 import random 
 from src.agents.journal_entry import JournalEntry
+from src.agents.goal import Goal
 from src.agents.memory import Memory
+from src.systems.reputation import ReputationBelief
 
 @dataclass
 class Agent:
@@ -10,17 +12,41 @@ class Agent:
     personality: str 
     location_id: str 
     occupation: str = "unemployed"
-    goals : list[str] = field(default_factory=list)
+    goals: list[Goal | str] = field(default_factory=list)
     needs: dict[str, int] = field(default_factory=dict)
     memory: list[Memory] = field(default_factory=list)
     memory_archive: list[Memory] = field(default_factory=list) 
     memory_summary: str = ""
     recent_topics: list[str] = field(default_factory=list)
     relationships: dict[str, int] = field(default_factory=dict)
+    reputation_beliefs: dict[str, dict[str, ReputationBelief]] = field(
+        default_factory=dict
+    )
     current_activity: str = "idle" 
     current_activity_reason: str = ""
     current_activity_tags: list[str] = field(default_factory=list)
     daily_journals: list[JournalEntry] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.goals = [
+            goal if isinstance(goal, Goal) else (
+                Goal.from_dict(goal) if isinstance(goal, dict)
+                else Goal.from_legacy(self.name, str(goal), index)
+            )
+            for index, goal in enumerate(self.goals)
+        ]
+
+    def get_active_goals(self) -> list[Goal]:
+        return [goal for goal in self.goals if isinstance(goal, Goal) and goal.is_active()]
+
+    def get_goal(self, goal_id: str | None) -> Goal | None:
+        return next(
+            (goal for goal in self.goals if isinstance(goal, Goal) and goal.id == goal_id),
+            None,
+        )
+
+    def goal_descriptions(self) -> list[str]:
+        return [str(goal) for goal in self.goals]
 
     def upsert_daily_journal(self, journal: JournalEntry) -> None:
         for index, existing in enumerate(self.daily_journals):
@@ -191,6 +217,13 @@ class Agent:
 
     def update_relationship(self, other_name: str, score: int) -> None:
         self.relationships[other_name] = score
+
+    def get_reputation_belief(
+        self,
+        target_agent: str,
+        dimension: str,
+    ) -> ReputationBelief | None:
+        return self.reputation_beliefs.get(target_agent, {}).get(dimension)
         
     def get_recent_memories(self, limit: int = 5): 
         return self.memory[-limit:]
@@ -254,7 +287,3 @@ class Agent:
     def get_primary_need(self) -> str: 
         self.initialize_needs()
         return min(self.needs, key=self.needs.get)
-
-    
-        
-        

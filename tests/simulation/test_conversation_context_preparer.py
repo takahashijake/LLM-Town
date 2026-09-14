@@ -9,6 +9,7 @@ from src.simulation.intent_system import IntentSystem
 from src.simulation.relationship_updater import RelationshipUpdater
 from src.simulation.town_arc_system import TownArcSystem
 from src.town.daily_event import DailyEvent
+from src.systems.reputation import ReputationSystem
 
 
 class FakeIntentPlanner:
@@ -93,10 +94,9 @@ def test_prepare_conversation_context_builds_relationship_and_action_setup():
         "offer_help",
         "ask_for_help",
         "cooperate",
-        "apologize",
-        "argue",
-        "share_rumor",
-    ]
+            "apologize",
+            "argue",
+        ]
 
     assert setup["speaker_intent"] is None
     assert setup["listener_intent"] is None
@@ -151,9 +151,7 @@ def test_prepare_conversation_context_applies_speaker_intent_weights():
     assert setup["intent_adjusted_weights"]["ask_for_help"] == (
         setup["base_action_weights"]["ask_for_help"] + 3
     )
-    assert setup["intent_adjusted_weights"]["share_rumor"] == (
-        setup["base_action_weights"]["share_rumor"] + 2
-    )
+    assert "share_rumor" not in setup["intent_adjusted_weights"]
     assert setup["intent_adjusted_weights"]["chat"] == (
         setup["base_action_weights"]["chat"] + 1
     )
@@ -202,3 +200,32 @@ def test_prepare_conversation_context_includes_daily_event_context():
         "location_id": "library",
         "tags": ["library", "community"],
     }
+
+
+def test_share_rumor_is_allowed_only_with_transmissible_social_evidence():
+    preparer, relationships = build_preparer()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    subject = build_agent("Carlos")
+    preparer.reputation_system.record_direct_action(
+        day=1,
+        hour=8,
+        actor=subject,
+        observer=speaker,
+        action="offer_help",
+    )
+
+    setup = preparer.prepare_conversation_context(
+        location_id="library",
+        speaker=speaker,
+        listener=listener,
+        current_day=2,
+        current_daily_event=None,
+        agent_intents={},
+        relationship_events=[],
+    )
+
+    assert "share_rumor" in setup["allowed_actions"]
+    assert setup["rumor_claim"]["subject_agent"] == "Carlos"
+    assert setup["context"]["reputation_rumor"]["evidence_id"]
+    assert "Carlos seems helpful" in setup["context"]["reputation_rumor_text"]

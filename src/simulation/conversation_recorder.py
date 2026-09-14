@@ -83,6 +83,8 @@ class ConversationRecorder:
         inferred_action: str = "",
         base_action_weights: dict | None = None,
         intent_adjusted_weights: dict | None = None,
+        reputation_adjusted_weights: dict | None = None,
+        reputation_weight_adjustments: dict | None = None,
         allowed_actions: list[str] | None = None,
         final_action_reason: str = "",
         raw_response: str = "",
@@ -90,6 +92,8 @@ class ConversationRecorder:
         context_evidence: dict | None = None,
         context_snapshot: dict | None = None,
         dialogue_source: str = "llm",
+        reputation_updates: list[dict] | None = None,
+        rumor_transmission: dict | None = None,
     ) -> None:
         conversation_record = {
             "day": day,
@@ -109,6 +113,9 @@ class ConversationRecorder:
             "inferred_action": inferred_action,
             "base_action_weights": base_action_weights or {},
             "intent_adjusted_weights": intent_adjusted_weights or {},
+            "reputation_adjusted_weights": reputation_adjusted_weights or {},
+            "reputation_weight_adjustments": reputation_weight_adjustments or {},
+            "reputation_influenced": bool(reputation_weight_adjustments),
             "tags": tags or [],
             "allowed_actions": allowed_actions or [],
             "final_action_reason": final_action_reason,
@@ -116,12 +123,19 @@ class ConversationRecorder:
             "speaker_intent_target_agent": speaker_intent.target_agent if speaker_intent else "",
             "speaker_intent_target_location": speaker_intent.target_location if speaker_intent else "",
             "speaker_intent_description": speaker_intent.description if speaker_intent else "",
+            "speaker_intent_id": speaker_intent.id if speaker_intent else "",
+            "speaker_intent_parent_goal_id": (
+                speaker_intent.parent_goal_id if speaker_intent else ""
+            ),
+            "speaker_intent_strategy": speaker_intent.strategy if speaker_intent else "",
             "listener_intent_type": listener_intent.intent_type if listener_intent else "",
             "raw_response": raw_response,
             "generation_error": generation_error,
             "context_evidence": context_evidence or {},
             "context": context_snapshot or {},
             "dialogue_source": dialogue_source,
+            "reputation_updates": reputation_updates or [],
+            "rumor_transmission": rumor_transmission,
         }
 
         self.logger.log_conversation(conversation_record)

@@ -102,6 +102,61 @@ class SocialBehaviorPolicy:
             if action in allowed and weight > 0
         }
 
+    def adjust_action_weights_for_reputation(
+        self,
+        weights: dict[str, int],
+        reputation_beliefs: dict,
+    ) -> tuple[dict[str, int], dict[str, int]]:
+        """Apply small, interpretable changes without replacing relationships."""
+        adjusted = dict(weights)
+        deltas: dict[str, int] = {}
+
+        def supported_score(dimension: str) -> float:
+            belief = reputation_beliefs.get(dimension)
+            if belief is None or getattr(belief, "confidence", 0.0) < 0.35:
+                return 0.0
+            return float(getattr(belief, "score", 0.0))
+
+        trust = supported_score("trustworthiness")
+        helpfulness = supported_score("helpfulness")
+        cooperation = supported_score("cooperativeness")
+        hostility = supported_score("hostility")
+
+        def change(action: str, amount: int) -> None:
+            if action not in adjusted or amount == 0:
+                return
+            old = adjusted[action]
+            adjusted[action] = max(1, old + amount)
+            actual = adjusted[action] - old
+            if actual:
+                deltas[action] = deltas.get(action, 0) + actual
+
+        if trust >= 1.5:
+            change("cooperate", 1)
+        elif trust <= -1.5:
+            change("cooperate", -1)
+            change("ask_for_help", -1)
+
+        if helpfulness >= 1.5:
+            change("ask_for_help", 1)
+        elif helpfulness <= -1.5:
+            change("ask_for_help", -1)
+
+        if cooperation >= 1.5:
+            change("cooperate", 1)
+        elif cooperation <= -1.5:
+            change("cooperate", -1)
+
+        if hostility >= 1.5:
+            change("chat", 1)
+            change("offer_help", -1)
+            change("cooperate", -1)
+            change("ask_for_help", -1)
+        elif hostility <= -1.5:
+            change("cooperate", 1)
+
+        return adjusted, deltas
+
     def _increase(
         self,
         weights: dict[str, int],
