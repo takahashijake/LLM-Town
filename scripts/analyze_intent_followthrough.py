@@ -69,6 +69,14 @@ def print_report(metrics: dict) -> None:
         "  Conversations with speaker intent: "
         f"{metrics['conversations_with_intent']}"
     )
+    print(
+        "  Applicable intent/action opportunities: "
+        f"{metrics['intent_action_opportunities']}"
+    )
+    print(
+        "  Intent not applicable to this listener/location: "
+        f"{metrics['intent_not_applicable']}"
+    )
     print(f"  Target-agent opportunities: {metrics['target_agent_opportunities']}")
     print(f"  Target-agent conversations: {metrics['target_agent_matches']}")
     print(

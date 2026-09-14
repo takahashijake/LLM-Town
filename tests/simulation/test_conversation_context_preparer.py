@@ -158,7 +158,17 @@ def test_prepare_conversation_context_applies_speaker_intent_weights():
         setup["base_action_weights"]["chat"] + 1
     )
 
-    assert setup["context"]["speaker_intent"] == speaker_intent.to_dict()
+    assert setup["context"]["speaker_intent"] == {
+        "intent_type": "investigate",
+        "description": "Maya wants to gather information.",
+        "target_agent": None,
+        "target_location": "library",
+        "priority": 2,
+        "progress": 0,
+        "progress_goal": 2,
+    }
+    assert "id" not in setup["context"]["speaker_intent"]
+    assert "created_day" not in setup["context"]["speaker_intent"]
 
 
 def test_prepare_conversation_context_includes_daily_event_context():

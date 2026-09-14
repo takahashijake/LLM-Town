@@ -13,8 +13,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.analysis.benchmark import BenchmarkConfig, run_benchmark  # noqa: E402
-from src.analysis.real_llm_evaluation import write_real_llm_evaluation  # noqa: E402
+from src.analysis.benchmark import BenchmarkConfig  # noqa: E402
+from src.analysis.real_llm_evaluation import run_real_llm_evaluation  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,8 +55,9 @@ def main() -> int:
         locations_path=args.locations_path,
     )
     try:
-        benchmark = run_benchmark(config, output_dir, project_root=PROJECT_ROOT)
-        document = write_real_llm_evaluation(benchmark, output_dir)
+        document = run_real_llm_evaluation(
+            config, output_dir, project_root=PROJECT_ROOT
+        )
     except (FileExistsError, FileNotFoundError, ValueError) as error:
         print(f"evaluation error: {error}", file=sys.stderr)
         return 2
@@ -73,8 +74,10 @@ def main() -> int:
     )
     print(f"Action parsing success: {health['action_parsing_success_rate']:.1%}")
     print(f"Intent/action compatibility: {dialogue['intent_action_compatibility']:.1%}")
-    print(f"Evaluation: {output_dir.resolve() / 'evaluation.json'}")
-    print(f"Human review: {output_dir.resolve() / 'human_review_sample.md'}")
+    print(f"Metadata: {output_dir.resolve() / 'metadata.json'}")
+    print(f"Metrics: {output_dir.resolve() / 'metrics.json'}")
+    print(f"Transcript: {output_dir.resolve() / 'transcript.txt'}")
+    print(f"Human review: {output_dir.resolve() / 'review.md'}")
     return 0
 
 

@@ -150,6 +150,7 @@ Relevant memories:
 {lines(context.get('relevant_memories', []))}
 Latest journal reflection:
 {lines(context.get('recent_journals', []))}
+Long-term memory summary: {context.get('memory_summary') or 'None'}
 Public event today: {event_text}
 Ongoing local situations:
 {lines(arcs)}

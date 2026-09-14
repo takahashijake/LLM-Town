@@ -27,6 +27,162 @@ ACTION_AND_SYSTEM_TAGS = {
     "cooperate",
 }
 
+MAX_CONTEXT_TEXT_CHARS = 2_400
+MAX_CONTEXT_ITEM_CHARS = 320
+
+
+def _bounded_text(value: object, limit: int = MAX_CONTEXT_ITEM_CHARS) -> str:
+    """Normalize and deterministically cap one prompt-facing text value."""
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _content_tokens(value: object) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[a-z][a-z'-]{2,}", str(value).lower())
+        if token not in ACTION_AND_SYSTEM_TAGS
+    }
+
+
+def _is_redundant(value: str, existing: list[str]) -> bool:
+    candidate = _content_tokens(value)
+    if not candidate:
+        return True
+    for item in existing:
+        known = _content_tokens(item)
+        if known and len(candidate & known) / min(len(candidate), len(known)) >= 0.7:
+            return True
+    return False
+
+
+def _intent_for_interaction(
+    intent: dict | None,
+    listener_name: str,
+    location_id: str,
+) -> dict | None:
+    if not intent:
+        return None
+    if intent.get("target_agent") not in (None, listener_name):
+        return None
+    if intent.get("target_location") not in (None, location_id):
+        return None
+    return {
+        key: (
+            None
+            if intent[key] is None
+            else (
+                _bounded_text(intent[key], 240)
+                if key in {"description", "target_agent", "target_location"}
+                else intent[key]
+            )
+        )
+        for key in (
+            "intent_type", "description", "target_agent", "target_location",
+            "priority", "progress", "progress_goal",
+        )
+        if key in intent
+    }
+
+
+def _select_goals(
+    goals: list[str],
+    *,
+    activity: str,
+    intent: dict | None,
+    location_id: str,
+    memories: list[str],
+    limit: int = 2,
+) -> list[str]:
+    """Prefer goals connected to the immediate interaction context."""
+    focus_tokens = _content_tokens(
+        " ".join(
+            [
+                activity,
+                location_id,
+                str((intent or {}).get("description", "")),
+                *memories,
+            ]
+        )
+    )
+    ranked = []
+    for index, goal in enumerate(goals):
+        bounded = _bounded_text(goal, 180)
+        overlap = len(_content_tokens(bounded) & focus_tokens)
+        ranked.append((overlap, -index, bounded))
+    relevant = [item for item in sorted(ranked, reverse=True) if item[0] > 0]
+    if relevant:
+        return [item[2] for item in relevant[:limit]]
+    # A single persistent goal is useful when the immediate context is sparse.
+    return [ranked[0][2]] if ranked and not intent and not memories else []
+
+
+def _public_town_arcs(town_arcs: list[dict]) -> list[dict]:
+    """Expose public descriptions, never internal arc progress/tension state."""
+    public = []
+    for arc in town_arcs[:2]:
+        public.append(
+            {
+                key: _bounded_text(arc.get(key), 300)
+                for key in ("id", "name", "description", "location_id")
+                if arc.get(key) is not None
+            }
+        )
+    return public
+
+
+def _prompt_context_text_chars(context: dict) -> int:
+    event = context.get("daily_event") or {}
+    intent = context.get("speaker_intent") or {}
+    values = [
+        context.get("speaker", ""),
+        context.get("listener", ""),
+        context.get("speaker_personality", ""),
+        context.get("location", ""),
+        context.get("occupation", ""),
+        context.get("speaker_activity_display", ""),
+        context.get("speaker_activity_reason", ""),
+        context.get("primary_need", ""),
+        intent.get("description", ""),
+        event.get("name", ""),
+        event.get("description", ""),
+        *context.get("relationship_history", []),
+        *context.get("relevant_memories", []),
+        *context.get("recent_journals", []),
+        context.get("memory_summary", ""),
+        *context.get("goals", []),
+        *context.get("recent_topics", []),
+        *context.get("recent_utterances", []),
+        *(
+            f"{arc.get('name', '')} {arc.get('description', '')}"
+            for arc in context.get("town_arcs", [])
+        ),
+    ]
+    return sum(len(str(value)) for value in values)
+
+
+def _prune_context_to_budget(context: dict) -> None:
+    """Drop lower-priority optional material until the hard budget is met."""
+    reductions = (
+        lambda: context.update(memory_summary=""),
+        lambda: context.update(goals=context["goals"][:1]),
+        lambda: context.update(town_arcs=[]),
+        lambda: context.update(goals=[]),
+        lambda: context.update(recent_journals=[]),
+        lambda: context.update(daily_event=None, daily_event_relevant=False),
+        lambda: context.update(relationship_history=context["relationship_history"][:1]),
+        lambda: context.update(relevant_memories=context["relevant_memories"][:2]),
+        lambda: context.update(recent_utterances=context["recent_utterances"][:1]),
+        lambda: context.update(recent_topics=context["recent_topics"][:2]),
+        lambda: context.update(relevant_memories=context["relevant_memories"][:1]),
+    )
+    for reduce_context in reductions:
+        if _prompt_context_text_chars(context) <= MAX_CONTEXT_TEXT_CHARS:
+            return
+        reduce_context()
+
 
 def _memory_score(
     memory: Memory,
@@ -112,7 +268,7 @@ def select_conversation_memories(
 def select_recent_topics(topics: list[str], limit: int = 4) -> list[str]:
     selected = []
     for topic in reversed(topics):
-        normalized = topic.strip().lower()
+        normalized = _bounded_text(topic.strip().lower(), 80)
         if (
             not normalized
             or normalized in ACTION_AND_SYSTEM_TAGS
@@ -125,7 +281,7 @@ def select_recent_topics(topics: list[str], limit: int = 4) -> list[str]:
     return list(reversed(selected))
 
 
-def select_recent_utterances(speaker, limit: int = 5) -> list[str]:
+def select_recent_utterances(speaker, limit: int = 3) -> list[str]:
     utterances = []
     seen = set()
     for memory in reversed(speaker.memory):
@@ -138,7 +294,7 @@ def select_recent_utterances(speaker, limit: int = 5) -> list[str]:
         normalized = " ".join(memory.description.lower().split())
         if not normalized or normalized in seen:
             continue
-        utterances.append(memory.description.strip())
+        utterances.append(_bounded_text(memory.description, 180))
         seen.add(normalized)
         if len(utterances) >= limit:
             break
@@ -248,7 +404,12 @@ def build_conversation_context(
 ):
     del listener_intent  # A listener's private intent is not speaker knowledge.
     relationship_history = relationship_history or []
-    town_arcs = town_arcs or []
+    town_arcs = _public_town_arcs(town_arcs or [])
+    speaker_intent = _intent_for_interaction(
+        speaker_intent,
+        listener_name=listener.name,
+        location_id=location_id,
+    )
     memories = select_conversation_memories(
         speaker=speaker,
         listener_name=listener.name,
@@ -258,12 +419,24 @@ def build_conversation_context(
 
     memory_descriptions = {memory.description for memory in memories}
     relationship_history = [
-        item
+        _bounded_text(item)
         for item in relationship_history
         if not any(description in item for description in memory_descriptions)
     ][:2]
 
+    formatted_memories = [
+        _bounded_text(_format_memory(memory, current_day)) for memory in memories
+    ]
     recent_journals = speaker.get_recent_journals(current_day=current_day, limit=1)
+    formatted_journals = [
+        f"Day {journal.day}: {_bounded_text(_format_journal(journal.summary), 300)}"
+        for journal in recent_journals
+    ]
+    formatted_journals = [
+        journal
+        for journal in formatted_journals
+        if not _is_redundant(journal, formatted_memories + relationship_history)
+    ]
     activity_text = _display_activity(speaker.current_activity)
     daily_event_relevant = bool(
         daily_event
@@ -276,8 +449,8 @@ def build_conversation_context(
     event_data = (
         {
             "id": daily_event.id,
-            "name": daily_event.name,
-            "description": daily_event.description,
+            "name": _bounded_text(daily_event.name, 120),
+            "description": _bounded_text(daily_event.description, 300),
             "location_id": daily_event.location_id,
             "tags": daily_event.tags,
         }
@@ -286,27 +459,32 @@ def build_conversation_context(
     )
 
     context = {
-        "speaker": speaker.name,
-        "listener": listener.name,
-        "speaker_personality": speaker.personality,
-        "location": location_id,
+        "speaker": _bounded_text(speaker.name, 80),
+        "listener": _bounded_text(listener.name, 80),
+        "speaker_personality": _bounded_text(speaker.personality, 180),
+        "location": _bounded_text(location_id, 80),
         "relationship_label": relationship_label,
         "relationship_score": relationship_score,
         "relationship_history": relationship_history,
         "speaker_intent": speaker_intent,
-        "relevant_memories": [
-            _format_memory(memory, current_day) for memory in memories
-        ],
-        "recent_journals": [
-            f"Day {journal.day}: {_format_journal(journal.summary)}"
-            for journal in recent_journals
-        ],
-        "memory_summary": speaker.memory_summary,
-        "goals": speaker.goals[:3],
-        "occupation": speaker.occupation,
-        "speaker_activity": speaker.current_activity,
-        "speaker_activity_display": activity_text,
-        "speaker_activity_reason": speaker.current_activity_reason,
+        "relevant_memories": formatted_memories,
+        "recent_journals": formatted_journals,
+        "memory_summary": (
+            _bounded_text(speaker.memory_summary, 400)
+            if speaker.memory_summary and not formatted_memories and not formatted_journals
+            else ""
+        ),
+        "goals": _select_goals(
+            speaker.goals,
+            activity=activity_text,
+            intent=speaker_intent,
+            location_id=location_id,
+            memories=formatted_memories,
+        ),
+        "occupation": _bounded_text(speaker.occupation, 100),
+        "speaker_activity": _bounded_text(speaker.current_activity, 180),
+        "speaker_activity_display": _bounded_text(activity_text, 180),
+        "speaker_activity_reason": _bounded_text(speaker.current_activity_reason, 220),
         "speaker_activity_tags": speaker.current_activity_tags,
         "primary_need": speaker.get_primary_need(),
         "recent_topics": select_recent_topics(speaker.recent_topics),
@@ -317,15 +495,17 @@ def build_conversation_context(
         "daily_event": event_data,
         "daily_event_relevant": daily_event_relevant,
     }
+    _prune_context_to_budget(context)
+    prompt_memories = memories[: len(context["relevant_memories"])]
     context["focus_options"] = _focus_options(
-        memories=memories,
-        relationship_history=relationship_history,
-        speaker_intent=speaker_intent,
+        memories=prompt_memories,
+        relationship_history=context["relationship_history"],
+        speaker_intent=context["speaker_intent"],
         listener_name=listener.name,
         location_id=location_id,
-        daily_event=event_data,
-        daily_event_relevant=daily_event_relevant,
-        town_arcs=town_arcs,
+        daily_event=context["daily_event"],
+        daily_event_relevant=context["daily_event_relevant"],
+        town_arcs=context["town_arcs"],
     )
     context["context_evidence"] = {
         "memories": [
@@ -339,9 +519,12 @@ def build_conversation_context(
             for memory in memories
         ],
         "journal_days": [journal.day for journal in recent_journals],
-        "relationship_history_count": len(relationship_history),
-        "daily_event_relevant": daily_event_relevant,
+        "relationship_history_count": len(context["relationship_history"]),
+        "daily_event_relevant": context["daily_event_relevant"],
         "daily_event_id": daily_event.id if daily_event else None,
-        "town_arc_ids": [arc.get("id") for arc in town_arcs],
+        "town_arc_ids": [arc.get("id") for arc in context["town_arcs"]],
     }
+    context["context_evidence"]["prompt_context_text_chars"] = (
+        _prompt_context_text_chars(context)
+    )
     return context

@@ -341,6 +341,26 @@ python scripts/quality_report.py \
     --run-dir outputs/benchmarks/baseline-30-day/seed-1 --json
 ```
 
+## Real-LLM evaluation
+
+Use the deterministic fake-LLM benchmark above for simulation regression
+testing. Its exact-dialogue repetition reflects intentionally fixed fake
+responses and is not a real-model quality measurement.
+
+Evaluate real dialogue separately with:
+
+```bash
+python scripts/evaluate_real_llm.py --days 10 --seed 42
+```
+
+Each run creates a new directory under `outputs/real_llm_evaluations/` and
+rejects an existing destination. It uses isolated state and logs, leaving
+`data/save_state.json`, ordinary logs, benchmarks, and prior evaluations
+untouched. The top-level `metadata.json`, `metrics.json`, `transcript.txt`, and
+`review.md` separate reproducibility metadata, measurable behavior, full text,
+and compact heuristic review samples. Context-use labels are lexical indicators,
+not a subjective quality score or proof of causality.
+
 ---
 
 # Testing

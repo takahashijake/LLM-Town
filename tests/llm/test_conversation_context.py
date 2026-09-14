@@ -90,6 +90,200 @@ def test_context_respects_speaker_information_boundary():
     assert "listener_intent" not in context
 
 
+def test_context_keeps_speaker_private_state_and_shared_public_information():
+    speaker = agent("Maya")
+    listener = agent("Ethan")
+    speaker.upsert_daily_journal(
+        JournalEntry(day=2, summary="I privately decided to verify the red ledger.")
+    )
+    event = DailyEvent(
+        id="public_reading",
+        name="Public Reading",
+        description="Residents are reading together in the library.",
+        location_id="library",
+        tags=["public", "learning"],
+    )
+    intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="investigate",
+        description="Verify the red ledger with Ethan.",
+        created_day=2,
+        expires_day=4,
+        priority=3,
+        target_agent="Ethan",
+        target_location="library",
+    ).to_dict()
+
+    context = build_conversation_context(
+        speaker,
+        listener,
+        "library",
+        "friendly",
+        4,
+        current_day=3,
+        speaker_intent=intent,
+        relationship_history=["Maya and Ethan agreed to compare notes."],
+        daily_event=event,
+    )
+
+    assert context["speaker_intent"]["description"] == intent["description"]
+    assert "privately decided" in context["recent_journals"][0]
+    assert context["relationship_history"] == [
+        "Maya and Ethan agreed to compare notes."
+    ]
+    assert context["daily_event"]["name"] == "Public Reading"
+
+
+def test_irrelevant_speaker_intent_and_private_arc_state_are_not_prompt_context():
+    secret_intent = AgentIntent(
+        agent_name="Maya",
+        intent_type="investigate",
+        description="Question Carlos privately at the market.",
+        created_day=1,
+        expires_day=5,
+        priority=3,
+        target_agent="Carlos",
+        target_location="market",
+    ).to_dict()
+    context = build_conversation_context(
+        agent("Maya"),
+        agent("Ethan"),
+        "library",
+        "neutral",
+        0,
+        current_day=2,
+        speaker_intent=secret_intent,
+        town_arcs=[
+            {
+                "id": "public_questions",
+                "name": "Public Questions",
+                "description": "Residents are asking about town records.",
+                "location_id": "library",
+                "status": "active",
+                "tags": ["private-system-tag"],
+                "tension": 5,
+                "progress": 2,
+                "involved_agents": ["Carlos"],
+            }
+        ],
+    )
+
+    assert context["speaker_intent"] is None
+    assert context["town_arcs"] == [
+        {
+            "id": "public_questions",
+            "name": "Public Questions",
+            "description": "Residents are asking about town records.",
+            "location_id": "library",
+        }
+    ]
+    prompt = TransformersLLMClient._build_prompt(object.__new__(TransformersLLMClient), context)
+    assert "Question Carlos" not in prompt
+    assert "tension" not in prompt.lower()
+    assert "private-system-tag" not in prompt
+
+
+def test_context_is_bounded_and_journal_does_not_duplicate_explicit_memory():
+    speaker = agent("Maya")
+    listener = agent("Ethan")
+    repeated = "Ethan and Maya compared the red ledger totals carefully."
+    speaker.memory = [
+        memory(9, "conversation", repeated + (" detail" * 200), ["Maya", "Ethan"], 5)
+        for _ in range(6)
+    ]
+    speaker.upsert_daily_journal(JournalEntry(day=9, summary=repeated))
+    speaker.memory_summary = "old summary " * 200
+    speaker.goals = ["red ledger totals", "unrelated gardening", "another goal"]
+    context = build_conversation_context(
+        speaker,
+        listener,
+        "library",
+        "friendly",
+        4,
+        current_day=10,
+        relationship_history=["relationship detail " * 100] * 5,
+    )
+
+    assert len(context["relevant_memories"]) == 1
+    assert context["recent_journals"] == []
+    assert context["memory_summary"] == ""
+    assert context["goals"] == ["red ledger totals"]
+    assert len(context["relationship_history"]) == 2
+    assert context["context_evidence"]["prompt_context_text_chars"] <= 2_400
+    assert all(len(item) <= 320 for item in context["relevant_memories"])
+
+
+def test_memory_summary_is_used_only_when_specific_context_is_sparse():
+    speaker = agent("Maya")
+    listener = agent("Ethan")
+    speaker.memory_summary = "Maya has long tracked discrepancies in public records."
+
+    sparse = build_conversation_context(
+        speaker, listener, "library", "neutral", 0, current_day=5
+    )
+    sparse_prompt = TransformersLLMClient._build_prompt(
+        object.__new__(TransformersLLMClient), sparse
+    )
+    assert sparse["memory_summary"] == speaker.memory_summary
+    assert speaker.memory_summary in sparse_prompt
+
+    speaker.memory.append(
+        memory(4, "conversation", "Ethan compared the latest ledger.", ["Maya", "Ethan"])
+    )
+    specific = build_conversation_context(
+        speaker, listener, "library", "neutral", 0, current_day=5
+    )
+    assert specific["memory_summary"] == ""
+
+
+def test_hard_context_budget_counts_all_dynamic_prompt_fields():
+    speaker = agent("Maya")
+    listener = agent("Ethan")
+    speaker.personality = "observant " * 100
+    speaker.current_activity = "Review enormous public records " * 100
+    speaker.current_activity_reason = "A detailed immediate reason " * 100
+    speaker.recent_topics = ["topic " * 100 for _ in range(10)]
+    speaker.memory = [
+        memory(
+            9,
+            "conversation",
+            f"Shared ledger evidence {index} " * 100,
+            ["Maya", "Ethan"],
+            5,
+        )
+        for index in range(4)
+    ]
+    speaker.upsert_daily_journal(JournalEntry(day=9, summary="Journal evidence " * 100))
+    event = DailyEvent(
+        id="large_event",
+        name="Public Records Day " * 20,
+        description="Residents inspect public records together. " * 100,
+        location_id="library",
+        tags=["public"],
+    )
+
+    context = build_conversation_context(
+        speaker,
+        listener,
+        "library",
+        "friendly",
+        5,
+        current_day=10,
+        daily_event=event,
+        relationship_history=["Shared relationship event " * 100] * 3,
+        town_arcs=[
+            {
+                "id": "records_arc",
+                "name": "Records Review " * 20,
+                "description": "A public records issue continues. " * 100,
+                "location_id": "library",
+            }
+        ],
+    )
+
+    assert context["context_evidence"]["prompt_context_text_chars"] <= 2_400
+
+
 def test_recent_topics_are_deduplicated_and_action_tags_are_not_prompt_topics():
     topics = ["market", "offer_help", "MARKET", "books", "chat", "garden"]
 

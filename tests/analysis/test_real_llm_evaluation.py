@@ -1,6 +1,15 @@
 import json
+from pathlib import Path
 
-from src.analysis.real_llm_evaluation import write_real_llm_evaluation
+from src.analysis.benchmark import BenchmarkConfig
+from src.analysis.real_llm_evaluation import (
+    run_real_llm_evaluation,
+    write_real_llm_evaluation,
+)
+from src.llm.client import FakeLLMClient
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
@@ -57,6 +66,7 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     benchmark = {
         "created_at": "2026-01-01T00:00:00+00:00",
         "revision": {"commit": "abc"},
+        "environment": {"python": "3.test"},
         "configuration": {
             "model_name": "test/model",
             "max_new_tokens": 80,
@@ -80,13 +90,99 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     document = write_real_llm_evaluation(benchmark, tmp_path)
 
     assert (tmp_path / "evaluation.json").is_file()
-    assert (tmp_path / "transcript.md").is_file()
+    assert (tmp_path / "metadata.json").is_file()
+    assert (tmp_path / "metrics.json").is_file()
+    assert (tmp_path / "transcript.txt").is_file()
     assert (tmp_path / "human_review_sample.json").is_file()
-    assert (tmp_path / "human_review_sample.md").is_file()
+    assert (tmp_path / "review.md").is_file()
     assert document["model"]["identifier"] == "test/model"
     health = document["dialogue_evaluation"]["response_health"]
     assert health["action_parsing_success_rate"] == 0.5
     assert health["malformed_responses"] == 1
+    assert health["dialogue_fallbacks"] == 1
+    written_metrics = json.loads((tmp_path / "metrics.json").read_text())
+    assert written_metrics["malformed_output"] == {"count": 1, "rate": 0.5}
+    assert written_metrics["fallback"]["count"] == 1
+    metadata = json.loads((tmp_path / "metadata.json").read_text())
+    assert metadata["git_commit"] == "abc"
+    assert metadata["python_version"] == "3.test"
+    assert metadata["days"] == 1
+    assert metadata["hours"] == [8, 12]
+    assert metadata["seed"] == 42
     sample = json.loads((tmp_path / "human_review_sample.json").read_text())
     assert sample["memory_grounded"][0]["dialogue"].startswith("Did those")
     assert sample["suspected_repetitive_or_generic"][0]["speaker"] == "Ethan"
+    assert sample["malformed_or_fallback"][0]["speaker"] == "Ethan"
+
+
+def test_analysis_helpers_are_deterministic():
+    from src.analysis.real_llm_evaluation import (
+        analyze_real_llm_records,
+        build_human_review_sample,
+    )
+
+    rows = [
+        {
+            "conversation": "I can help with the library records.",
+            "action": "offer_help",
+            "action_source": "llm",
+            "dialogue_source": "llm",
+            "speaker_intent_type": "investigate",
+            "context": {"activity_display": "review library records"},
+        }
+    ]
+    simulation = {"intent_followthrough": {"action_compatibility_rate": 0.0}}
+    first_metrics, first_flags = analyze_real_llm_records(rows, simulation)
+    second_metrics, second_flags = analyze_real_llm_records(rows, simulation)
+
+    assert first_metrics == second_metrics
+    assert first_flags == second_flags
+    assert build_human_review_sample(rows, first_flags) == build_human_review_sample(
+        rows, second_flags
+    )
+    assert build_human_review_sample(rows, first_flags)["activity_grounded"]
+    assert build_human_review_sample(rows, first_flags)["intent_action_mismatch"]
+
+
+def test_mocked_real_evaluation_isolated_from_ordinary_state_and_logs(
+    tmp_path, monkeypatch
+):
+    from src.analysis import benchmark as benchmark_module
+
+    ordinary_state = PROJECT_ROOT / "data" / "save_state.json"
+    ordinary_logs = PROJECT_ROOT / "logs"
+    state_before = ordinary_state.read_bytes() if ordinary_state.exists() else None
+    logs_before = {
+        path.relative_to(ordinary_logs): (path.stat().st_mtime_ns, path.stat().st_size)
+        for path in ordinary_logs.rglob("*")
+        if path.is_file()
+    } if ordinary_logs.exists() else {}
+
+    monkeypatch.setattr(benchmark_module, "_build_llm", lambda _config: FakeLLMClient())
+    monkeypatch.setattr(
+        benchmark_module, "_seed_random_generators", lambda *_args, **_kwargs: None
+    )
+    output_dir = tmp_path / "isolated-evaluation"
+    config = BenchmarkConfig(
+        days=1,
+        seeds=(42,),
+        hours=(8,),
+        fake_llm=False,
+        model_name="mock/real-model",
+    )
+
+    document = run_real_llm_evaluation(
+        config, output_dir, project_root=PROJECT_ROOT
+    )
+
+    assert document["model_identifier"] == "mock/real-model"
+    assert {
+        "metadata.json", "metrics.json", "transcript.txt", "review.md"
+    }.issubset(path.name for path in output_dir.iterdir())
+    assert (ordinary_state.read_bytes() if ordinary_state.exists() else None) == state_before
+    logs_after = {
+        path.relative_to(ordinary_logs): (path.stat().st_mtime_ns, path.stat().st_size)
+        for path in ordinary_logs.rglob("*")
+        if path.is_file()
+    } if ordinary_logs.exists() else {}
+    assert logs_after == logs_before

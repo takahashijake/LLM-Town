@@ -9,7 +9,14 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
-from src.analysis.quality_metrics import load_jsonl, safe_rate
+from src.analysis.quality_metrics import (
+    INTENT_COMPATIBLE_ACTIONS,
+    load_jsonl,
+    safe_rate,
+)
+
+
+EVALUATION_SCHEMA_VERSION = 1
 
 
 TOKEN_RE = re.compile(r"[a-z][a-z'-]{2,}")
@@ -61,6 +68,9 @@ def _context_values(record: dict[str, Any]) -> dict[str, list[Any]]:
             intent.get("description", "") if isinstance(intent, dict) else intent,
         ],
         "occupation": [context.get("occupation") or ""],
+        "activity": [
+            context.get("activity_display") or context.get("activity") or ""
+        ],
         "daily_event": [
             f"{event.get('name', '')} {event.get('description', '')}"
         ] if event and context.get("daily_event_relevant") else [],
@@ -75,7 +85,7 @@ def _lexical_context_use(records: list[dict[str, Any]]) -> dict[str, Any]:
     indicators = {}
     for category in (
         "relationship_history", "memory", "journal", "goal_or_intent",
-        "occupation", "daily_event", "town_arc",
+        "occupation", "activity", "daily_event", "town_arc",
     ):
         opportunities = 0
         matches = 0
@@ -147,9 +157,13 @@ def analyze_real_llm_records(
         for row in records
     )
     parsing_successes = action_sources["llm"]
-    fallbacks = sum(
-        row.get("dialogue_source", "llm") != "llm" for row in records
-    )
+    fallback_flags = [
+        row.get("action_source", "llm") != "llm"
+        or row.get("dialogue_source", "llm") != "llm"
+        or bool(row.get("generation_error"))
+        for row in records
+    ]
+    fallbacks = sum(fallback_flags)
 
     return {
         "conversation_count": len(records),
@@ -161,7 +175,9 @@ def analyze_real_llm_records(
             "action_parsing_successes": parsing_successes,
             "action_parsing_success_rate": safe_rate(parsing_successes, len(records)),
             "malformed_responses": malformed,
+            "malformed_response_rate": safe_rate(malformed, len(records)),
             "generation_exceptions": generation_errors,
+            "generation_exception_rate": safe_rate(generation_errors, len(records)),
             "dialogue_fallbacks": fallbacks,
             "dialogue_fallback_rate": safe_rate(fallbacks, len(records)),
         },
@@ -186,13 +202,15 @@ def build_human_review_sample(
     categories = {
         "relationship_grounded": [],
         "memory_grounded": [],
-        "journal_grounded": [],
-        "goal_or_intent_related": [],
-        "town_event": [],
-        "town_arc": [],
-        "little_special_context": [],
+        "intent_or_goal_related": [],
+        "activity_grounded": [],
+        "daily_event_related": [],
+        "town_arc_related": [],
+        "ordinary_low_context": [],
         "suspected_repetitive_or_generic": [],
-        "parser_or_action_mismatch": [],
+        "malformed_or_fallback": [],
+        "intent_action_mismatch": [],
+        "model_action_or_inference_disagreement": [],
     }
 
     for index, record in enumerate(records):
@@ -206,10 +224,9 @@ def build_human_review_sample(
         special = any(
             values[name]
             for name in (
-                "relationship_history", "memory", "journal", "goal_or_intent",
-                "daily_event", "town_arc",
+                "relationship_history", "memory", "journal", "daily_event", "town_arc",
             )
-        )
+        ) or bool(context.get("speaker_intent"))
         generic = any(
             pattern in record.get("conversation", "").lower()
             for pattern in GENERIC_PATTERNS
@@ -251,24 +268,45 @@ def build_human_review_sample(
             memberships.append("relationship_grounded")
         if matches["memory"]:
             memberships.append("memory_grounded")
-        if matches["journal"]:
-            memberships.append("journal_grounded")
         if matches["goal_or_intent"]:
-            memberships.append("goal_or_intent_related")
+            memberships.append("intent_or_goal_related")
+        if matches["activity"]:
+            memberships.append("activity_grounded")
         if matches["daily_event"]:
-            memberships.append("town_event")
-        if values["town_arc"]:
-            memberships.append("town_arc")
+            memberships.append("daily_event_related")
+        if matches["town_arc"]:
+            memberships.append("town_arc_related")
         if not special:
-            memberships.append("little_special_context")
+            memberships.append("ordinary_low_context")
         if index in repetition_flags or generic:
             memberships.append("suspected_repetitive_or_generic")
         if (
-            record.get("parsed_action") != record.get("action")
-            or record.get("suggested_action") != record.get("action")
-            or record.get("action_source") != "llm"
+            record.get("action_source", "llm") != "llm"
+            or record.get("dialogue_source", "llm") != "llm"
+            or bool(record.get("generation_error"))
         ):
-            memberships.append("parser_or_action_mismatch")
+            memberships.append("malformed_or_fallback")
+        intent_type = record.get("speaker_intent_type", "")
+        target_agent = record.get("speaker_intent_target_agent", "")
+        target_location = record.get("speaker_intent_target_location", "")
+        intent_applies = (
+            (not target_agent or target_agent == record.get("listener", ""))
+            and (not target_location or target_location == record.get("location", ""))
+        )
+        if (
+            intent_type
+            and intent_applies
+            and record.get("action") not in INTENT_COMPATIBLE_ACTIONS.get(
+                intent_type, set()
+            )
+        ):
+            memberships.append("intent_action_mismatch")
+        if (
+            record.get("parsed_action")
+            and record.get("inferred_action")
+            and record.get("parsed_action") != record.get("inferred_action")
+        ):
+            memberships.append("model_action_or_inference_disagreement")
 
         for category in memberships:
             if len(categories[category]) < per_category:
@@ -277,16 +315,14 @@ def build_human_review_sample(
 
 
 def _write_transcript(records: list[dict[str, Any]], path: Path) -> None:
-    lines = ["# Real-LLM transcript", ""]
+    lines = ["REAL-LLM TRANSCRIPT", ""]
     for row in records:
         lines.extend(
             [
-                f"## Day {row.get('day')}, {row.get('hour')}:00 — {row.get('location')}",
-                "",
-                f"**{row.get('speaker')} → {row.get('listener')}:** {row.get('conversation')}",
-                "",
-                f"Action: `{row.get('action')}` (suggested `{row.get('suggested_action')}`, "
-                f"parsed `{row.get('parsed_action')}`, inferred `{row.get('inferred_action')}`)",
+                f"Day {row.get('day')}, {row.get('hour')}:00 at {row.get('location')}",
+                f"{row.get('speaker')} -> {row.get('listener')}: {row.get('conversation')}",
+                f"Action: {row.get('action')} (suggested {row.get('suggested_action')}, "
+                f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')})",
                 "",
             ]
         )
@@ -295,9 +331,10 @@ def _write_transcript(records: list[dict[str, Any]], path: Path) -> None:
 
 def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
     lines = [
-        "# Human review sample",
+        "# Real-LLM human review",
         "",
-        "Categories use lexical/context heuristics only. Read the dialogue and context to judge naturalness.",
+        "Categories use conservative lexical and recorded-pipeline heuristics. "
+        "They identify review candidates, not proven causal context use or subjective quality.",
         "",
     ]
     for category, rows in sample.items():
@@ -313,7 +350,8 @@ def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
                     f"{row['listener']} at {row['location']}: “{row['dialogue']}”",
                     f"  Actions: suggested `{row['suggested_action']}`, parsed "
                     f"`{row['parsed_action']}`, inferred `{row['inferred_action']}`, "
-                    f"final `{row['final_action']}`.",
+                    f"final `{row['final_action']}`; action source "
+                    f"`{row['action_source']}`, dialogue source `{row['dialogue_source']}`.",
                     f"  Context: {json.dumps(context, sort_keys=True, ensure_ascii=False)}",
                     "",
                 ]
@@ -333,9 +371,9 @@ def write_real_llm_evaluation(
     indicators, repetition_flags = analyze_real_llm_records(records, run["metrics"])
     sample = build_human_review_sample(records, repetition_flags)
 
-    transcript_path = output_dir / "transcript.md"
+    transcript_path = output_dir / "transcript.txt"
     sample_json_path = output_dir / "human_review_sample.json"
-    sample_markdown_path = output_dir / "human_review_sample.md"
+    sample_markdown_path = output_dir / "review.md"
     _write_transcript(records, transcript_path)
     sample_json_path.write_text(
         json.dumps(sample, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
@@ -344,29 +382,119 @@ def write_real_llm_evaluation(
     _write_review(sample, sample_markdown_path)
 
     config = benchmark["configuration"]
-    document = {
-        "schema_version": 1,
+    metadata = {
+        "schema_version": EVALUATION_SCHEMA_VERSION,
         "kind": "llm-town-real-llm-evaluation",
-        "created_at": benchmark["created_at"],
-        "revision": benchmark["revision"],
+        "timestamp": benchmark["created_at"],
+        "git_commit": benchmark.get("revision", {}).get("commit", "unknown"),
+        "git_dirty": benchmark.get("revision", {}).get("dirty"),
+        "python_version": benchmark.get("environment", {}).get("python", "unknown"),
+        "model_identifier": config["model_name"],
+        "generation_settings": {
+            "max_new_tokens": config["max_new_tokens"],
+            "do_sample": True,
+            "temperature": config["temperature"],
+            "top_p": config["top_p"],
+        },
+        "days": config["days"],
+        "hours": config["hours"],
+        "seed": run["seed"],
+    }
+    simulation_metrics = run["metrics"]
+    health = indicators["response_health"]
+    metrics = {
+        "schema_version": EVALUATION_SCHEMA_VERSION,
+        "total_conversations": indicators["conversation_count"],
+        "exact_repetition": {
+            "count": indicators["dialogue_repetition"]["exact_repeated_instances"],
+            "rate": indicators["dialogue_repetition"]["exact_repetition_rate"],
+        },
+        "near_repetition": {
+            "count": indicators["dialogue_repetition"]["near_repeated_instances"],
+            "rate": indicators["dialogue_repetition"]["near_repetition_rate"],
+        },
+        "action_distribution": simulation_metrics.get("conversations", {}).get(
+            "action_counts", {}
+        ),
+        "action_parse": {
+            "success_count": health["action_parsing_successes"],
+            "success_rate": health["action_parsing_success_rate"],
+            "source_counts": health["action_source_counts"],
+        },
+        "malformed_output": {
+            "count": health["malformed_responses"],
+            "rate": health["malformed_response_rate"],
+        },
+        "fallback": {
+            "count": health["dialogue_fallbacks"],
+            "rate": health["dialogue_fallback_rate"],
+            "dialogue_source_counts": health["dialogue_source_counts"],
+        },
+        "intent_action_compatibility": indicators["intent_action_compatibility"],
+        "daily_event_usage": {
+            "count": simulation_metrics.get("conversations", {}).get(
+                "daily_event_related", 0
+            ),
+            "rate": simulation_metrics.get("conversations", {}).get(
+                "daily_event_rate", 0.0
+            ),
+        },
+        "town_arc_usage": {
+            "count": indicators["context_use_indicators"]["town_arc"][
+                "lexical_matches"
+            ],
+            "rate": safe_rate(
+                indicators["context_use_indicators"]["town_arc"][
+                    "lexical_matches"
+                ],
+                indicators["conversation_count"],
+            ),
+            "opportunities": indicators["context_use_indicators"]["town_arc"][
+                "opportunities"
+            ],
+            "opportunity_match_rate": indicators["context_use_indicators"][
+                "town_arc"
+            ]["lexical_match_rate"],
+        },
+        "context_use_indicators": indicators["context_use_indicators"],
+        "suspected_generic": {
+            "count": indicators["generic_phrase_flags"],
+            "rate": indicators["generic_phrase_rate"],
+        },
+        "exceptions_errors": {
+            "generation_exception_count": health["generation_exceptions"],
+            "generation_exception_rate": health["generation_exception_rate"],
+            "examples": [
+                row.get("generation_error")
+                for row in records
+                if row.get("generation_error")
+            ][:10],
+        },
+        "measurement_note": indicators["measurement_note"],
+    }
+    metadata_path = output_dir / "metadata.json"
+    metrics_path = output_dir / "metrics.json"
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    metrics_path.write_text(
+        json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    # Keep one combined index for compatibility with interrupted Part 2 tooling.
+    document = {
+        **metadata,
         "model": {
-            "identifier": config["model_name"],
-            "generation": {
-                "max_new_tokens": config["max_new_tokens"],
-                "do_sample": True,
-                "temperature": config["temperature"],
-                "top_p": config["top_p"],
-            },
+            "identifier": metadata["model_identifier"],
+            "generation": metadata["generation_settings"],
         },
-        "simulation": {
-            "days": config["days"],
-            "hours": config["hours"],
-            "seed": run["seed"],
-            "metrics": run["metrics"],
-        },
+        "simulation": {"metrics": simulation_metrics},
         "dialogue_evaluation": indicators,
+        "metrics": metrics,
         "artifacts": {
             "benchmark": "benchmark.json",
+            "metadata": metadata_path.name,
+            "metrics": metrics_path.name,
             "raw_conversations": run["artifacts"]["conversations"],
             "simulation_output": run["artifacts"]["simulation_output"],
             "transcript": transcript_path.name,
@@ -379,3 +507,16 @@ def write_real_llm_evaluation(
         encoding="utf-8",
     )
     return document
+
+
+def run_real_llm_evaluation(config, output_dir: str | Path, *, project_root="."):
+    """Run one isolated real-model seed and write the evaluation artifacts."""
+    if config.fake_llm:
+        raise ValueError("real-LLM evaluation cannot use the deterministic fake LLM")
+    if len(config.seeds) != 1:
+        raise ValueError("real-LLM evaluation requires exactly one seed")
+
+    from src.analysis.benchmark import run_benchmark
+
+    benchmark = run_benchmark(config, output_dir, project_root=project_root)
+    return write_real_llm_evaluation(benchmark, output_dir)

@@ -52,9 +52,9 @@ ARC_KEYWORDS = {
 
 INTENT_COMPATIBLE_ACTIONS = {
     "build_friendship": {"chat", "compliment", "offer_help", "cooperate"},
-    "repair_relationship": {"chat", "apologize", "offer_help"},
+    "repair_relationship": {"chat", "apologize", "offer_help", "cooperate"},
     "investigate": {"chat", "ask_for_help", "share_rumor"},
-    "socialize": {"chat", "compliment", "offer_help", "cooperate"},
+    "socialize": {"chat", "compliment", "offer_help", "ask_for_help", "cooperate"},
     "seek_work": {"chat", "ask_for_help", "cooperate", "offer_help"},
 }
 
@@ -183,6 +183,8 @@ def analyze_intent_followthrough(
     }
 
     with_intent = 0
+    intent_action_opportunities = 0
+    intent_not_applicable = 0
     target_agent_opportunities = 0
     target_agent_matches = 0
     target_agent_unavailable = 0
@@ -228,29 +230,42 @@ def analyze_intent_followthrough(
         intent_counts[intent_type] += 1
         action_by_intent[(intent_type, action)] += 1
         location_by_intent[(intent_type, row.get("location", ""))] += 1
-        if action in INTENT_COMPATIBLE_ACTIONS.get(intent_type, set()):
-            compatible_actions += 1
-
         target_agent = row.get("speaker_intent_target_agent", "")
+        intent_target_location = row.get("speaker_intent_target_location", "")
+        intent_applies = (
+            (not target_agent or target_agent == row.get("listener", ""))
+            and (
+                not intent_target_location
+                or intent_target_location == row.get("location", "")
+            )
+        )
+        if intent_applies:
+            intent_action_opportunities += 1
+            if action in INTENT_COMPATIBLE_ACTIONS.get(intent_type, set()):
+                compatible_actions += 1
+        else:
+            intent_not_applicable += 1
+
         if target_agent:
-            target_location = locations_by_tick.get(
+            target_agent_location = locations_by_tick.get(
                 (row.get("day"), row.get("hour"), target_agent), ""
             )
-            if target_location == row.get("location", ""):
+            if target_agent_location == row.get("location", ""):
                 target_agent_opportunities += 1
                 if row.get("listener", "") == target_agent:
                     target_agent_matches += 1
             else:
                 target_agent_unavailable += 1
 
-        target_location = row.get("speaker_intent_target_location", "")
-        if target_location:
+        if intent_target_location:
             target_location_opportunities += 1
-            if row.get("location", "") == target_location:
+            if row.get("location", "") == intent_target_location:
                 target_location_matches += 1
 
     return {
         "conversations_with_intent": with_intent,
+        "intent_action_opportunities": intent_action_opportunities,
+        "intent_not_applicable": intent_not_applicable,
         "intent_counts": dict(sorted(intent_counts.items())),
         "target_agent_opportunities": target_agent_opportunities,
         "target_agent_matches": target_agent_matches,
@@ -264,7 +279,9 @@ def analyze_intent_followthrough(
             target_location_matches, target_location_opportunities
         ),
         "compatible_actions": compatible_actions,
-        "action_compatibility_rate": safe_rate(compatible_actions, with_intent),
+        "action_compatibility_rate": safe_rate(
+            compatible_actions, intent_action_opportunities
+        ),
         "actions_by_intent": _nested_counts(action_by_intent),
         "locations_by_intent": _nested_counts(location_by_intent),
         "action_pipeline": {

@@ -114,6 +114,46 @@ def test_compliment_quality_check_uses_documented_five_percent_floor():
     assert check["passed"] is False
 
 
+def test_intent_action_compatibility_uses_only_applicable_intents():
+    conversations = [
+        {
+            "speaker": "Maya",
+            "listener": "Ethan",
+            "location": "library",
+            "conversation": "Could you advise me?",
+            "action": "ask_for_help",
+            "speaker_intent_type": "socialize",
+            "speaker_intent_target_location": "cafe",
+        },
+        {
+            "speaker": "Maya",
+            "listener": "Ethan",
+            "location": "cafe",
+            "conversation": "Could you advise me?",
+            "action": "ask_for_help",
+            "speaker_intent_type": "socialize",
+            "speaker_intent_target_location": "cafe",
+        },
+        {
+            "speaker": "Maya",
+            "listener": "Ethan",
+            "location": "cafe",
+            "conversation": "We can work together.",
+            "action": "cooperate",
+            "speaker_intent_type": "repair_relationship",
+            "speaker_intent_target_agent": "Ethan",
+        },
+    ]
+
+    metrics = analyze_run(conversations, build_state())["intent_followthrough"]
+
+    assert metrics["conversations_with_intent"] == 3
+    assert metrics["intent_action_opportunities"] == 2
+    assert metrics["intent_not_applicable"] == 1
+    assert metrics["compatible_actions"] == 2
+    assert metrics["action_compatibility_rate"] == 1.0
+
+
 def test_empty_run_marks_conversation_checks_as_no_data():
     metrics = analyze_run([], {})
 

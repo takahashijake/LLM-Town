@@ -69,7 +69,7 @@ def test_get_non_repeated_fallback_dialogue_skips_recent_candidate():
     speaker = build_agent("Maya")
     listener = build_agent("Ethan")
 
-    first_candidate = "I can help with reviewing records and numbers if you need another pair of hands."
+    first_candidate = "I can help with review records and numbers if you need another pair of hands."
 
     policy = build_policy(
         recent_dialogues=[
