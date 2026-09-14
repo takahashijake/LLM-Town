@@ -287,6 +287,62 @@ python main.py \
 
 ---
 
+# Reproducible Benchmarks
+
+Run the same configuration across several seeds with the fake LLM:
+
+```bash
+python scripts/benchmark_simulation.py \
+    --fake-llm \
+    --days 30 \
+    --seeds 1 2 3 4 5
+```
+
+Each invocation creates a new directory under `outputs/benchmarks/`. Every
+seed gets isolated state, event logs, conversation logs, town-arc logs, and a
+captured simulation transcript. The suite-level `benchmark.json` records the
+Git revision, complete run configuration, input-file hashes, per-seed metrics,
+and cross-seed aggregates. Benchmark runs never load, clear, or write the
+ordinary `data/save_state.json` and `logs/` paths.
+
+Use an explicit new destination when a stable experiment name is useful:
+
+```bash
+python scripts/benchmark_simulation.py \
+    --fake-llm --days 30 --seeds 1 2 3 4 5 \
+    --output-dir outputs/benchmarks/baseline-30-day
+```
+
+Existing output directories are rejected to prevent accidental mixing or
+overwriting. To compare a change against that baseline, run the same days,
+hours, seeds, LLM mode, and inputs:
+
+```bash
+python scripts/benchmark_simulation.py \
+    --fake-llm --days 30 --seeds 1 2 3 4 5 \
+    --output-dir outputs/benchmarks/candidate-30-day \
+    --compare-to outputs/benchmarks/baseline-30-day
+```
+
+The comparison writes `comparison.json`. Its verdict is based on quality-check
+pass-rate transitions across matching seeds; metric changes that do not cross
+a quality threshold are reported as `different`, not automatically better or
+worse. Mixed improvements and regressions are reported as `mixed`, and
+configuration mismatches as `incomparable`.
+
+The quality report uses the same metric definitions and can inspect either an
+ordinary run or one benchmark seed:
+
+```bash
+python scripts/quality_report.py
+python scripts/quality_report.py \
+    --run-dir outputs/benchmarks/baseline-30-day/seed-1
+python scripts/quality_report.py \
+    --run-dir outputs/benchmarks/baseline-30-day/seed-1 --json
+```
+
+---
+
 # Testing
 
 Run all tests:

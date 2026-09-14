@@ -4,8 +4,8 @@ from datetime import datetime
 
 
 class TownLogger:
-    def __init__(self):
-        self.logs_dir = Path("logs")
+    def __init__(self, logs_dir: str | Path = "logs"):
+        self.logs_dir = Path(logs_dir)
 
         self.events_file = self.logs_dir / "events" / "events.jsonl"
         self.conversations_file = (

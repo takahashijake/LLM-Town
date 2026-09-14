@@ -12,9 +12,11 @@ class TownArcSystem:
         self,
         town_arcs: list[TownArc],
         town_arc_change_records: list[dict],
+        arc_changes_path: str | Path = "logs/town_arc_changes.jsonl",
     ):
         self.town_arcs = town_arcs
         self.town_arc_change_records = town_arc_change_records
+        self.arc_changes_path = Path(arc_changes_path)
 
     def get_active_town_arcs(self) -> list[TownArc]:
         return [
@@ -341,7 +343,7 @@ class TownArcSystem:
 
                 self.town_arc_change_records.append(record)
 
-                arc_change_log = Path("logs/town_arc_changes.jsonl")
+                arc_change_log = self.arc_changes_path
                 arc_change_log.parent.mkdir(parents=True, exist_ok=True)
 
                 with arc_change_log.open("a", encoding="utf-8") as file:
@@ -416,4 +418,3 @@ class TownArcSystem:
                 adjusted["share_rumor"] += 1
 
         return adjusted
-        

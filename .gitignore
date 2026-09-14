@@ -6,3 +6,4 @@ logs/
 debug_bundle*.txt
 .env
 .venv/
+outputs/benchmarks/

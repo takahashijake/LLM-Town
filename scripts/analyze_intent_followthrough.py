@@ -1,324 +1,119 @@
+#!/usr/bin/env python3
+"""Inspect intent follow-through using the benchmark metric definitions."""
+
+from __future__ import annotations
+
+import argparse
 import json
-from collections import Counter
+import sys
+from pathlib import Path
 
 
-INTENT_COMPATIBLE_ACTIONS = {
-    "build_friendship": {
-        "chat",
-        "compliment",
-        "offer_help",
-        "cooperate",
-    },
-    "repair_relationship": {
-        "chat",
-        "apologize",
-        "offer_help",
-    },
-    "investigate": {
-        "chat",
-        "ask_for_help",
-        "share_rumor",
-    },
-    "socialize": {
-        "chat",
-        "compliment",
-        "offer_help",
-        "cooperate",
-    },
-    "seek_work": {
-        "chat",
-        "ask_for_help",
-        "cooperate",
-        "offer_help",
-    },
-}
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.analysis.quality_metrics import (  # noqa: E402
+    analyze_intent_followthrough,
+    load_jsonl,
+)
 
 
-def load_jsonl(path):
-    rows = []
-
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-
-            if line:
-                rows.append(json.loads(line))
-
-    return rows
-
-
-def safe_rate(numerator, denominator):
-    if denominator == 0:
-        return 0.0
-
-    return numerator / denominator
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Analyze agent intent follow-through.")
+    parser.add_argument(
+        "--run-dir",
+        type=Path,
+        help="Run directory containing logs/ (including a benchmark seed directory).",
+    )
+    parser.add_argument("--conversations-path", type=Path)
+    parser.add_argument("--events-path", type=Path)
+    parser.add_argument("--json", action="store_true")
+    return parser.parse_args()
 
 
-def build_agent_locations_by_tick(events):
-    locations_by_tick = {}
-
-    for row in events:
-        if row.get("type") != "activity":
-            continue
-
-        key = (
-            row.get("day"),
-            row.get("hour"),
-            row.get("agent"),
-        )
-
-        locations_by_tick[key] = row.get("location", "")
-
-    return locations_by_tick
+def resolve_paths(args: argparse.Namespace) -> tuple[Path, Path]:
+    conversations_path = args.conversations_path or (
+        args.run_dir / "logs" / "conversations" / "conversations.jsonl"
+        if args.run_dir
+        else Path("logs/conversations/conversations.jsonl")
+    )
+    events_path = args.events_path or (
+        args.run_dir / "logs" / "events" / "events.jsonl"
+        if args.run_dir
+        else Path("logs/events/events.jsonl")
+    )
+    return conversations_path, events_path
 
 
-def main():
-    conversations = load_jsonl("logs/conversations/conversations.jsonl")
-    events = load_jsonl("logs/events/events.jsonl")
-    locations_by_tick = build_agent_locations_by_tick(events)
+def _print_counts(title: str, counts: dict[str, int]) -> None:
+    print(f"\n{title}:")
+    for name, count in sorted(counts.items(), key=lambda item: (-item[1], item[0])):
+        print(f"  {name}: {count}")
 
-    total_with_intent = 0
 
-    target_agent_opportunities = 0
-    target_agent_matches = 0
-    target_agent_unavailable = 0
+def _print_transitions(title: str, transitions: dict[str, dict[str, int]]) -> None:
+    print(f"\n{title}:")
+    rows = [
+        (count, source, final)
+        for source, final_counts in transitions.items()
+        for final, count in final_counts.items()
+    ]
+    for count, source, final in sorted(rows, key=lambda item: (-item[0], item[1:])):
+        print(f"  {source} -> {final}: {count}")
 
-    target_location_opportunities = 0
-    target_location_matches = 0
 
-    action_match_count = 0
-
-    intent_counts = Counter()
-    action_by_intent = Counter()
-    location_by_intent = Counter()
-    target_agent_by_intent = Counter()
-    target_location_by_intent = Counter()
-
-    missed_target_agents = Counter()
-    missed_target_locations = Counter()
-    unavailable_target_agents = Counter()
-
-    suggested_action_counts = Counter()
-    parsed_action_counts = Counter()
-    inferred_action_counts = Counter()
-    final_action_counts = Counter()
-
-    suggested_to_final = Counter()
-    parsed_to_final = Counter()
-    inferred_to_final = Counter()
-
-    suggested_by_intent = Counter()
-    final_by_suggested_and_intent = Counter()
-
-    final_action_reason_counts = Counter()
-    
-    for row in conversations:
-        intent_type = row.get("speaker_intent_type", "")
-        target_agent = row.get("speaker_intent_target_agent", "")
-        target_location = row.get("speaker_intent_target_location", "")
-
-        listener = row.get("listener", "")
-        location = row.get("location", "")
-        action = row.get("action", "")
-
-        suggested_action = row.get("suggested_action", "")
-        parsed_action = row.get("parsed_action", "")
-        inferred_action = row.get("inferred_action", "")
-        final_action_reason = row.get("final_action_reason", "")
-        
-        final_action_counts[action] += 1
-
-        if final_action_reason: 
-            final_action_reason_counts[final_action_reason] += 1
-            
-        if suggested_action:
-            suggested_action_counts[suggested_action] += 1
-            suggested_to_final[(suggested_action, action)] += 1
-            suggested_by_intent[(intent_type, suggested_action)] += 1
-            final_by_suggested_and_intent[(intent_type, suggested_action, action)] += 1
-
-        if parsed_action:
-            parsed_action_counts[parsed_action] += 1
-            parsed_to_final[(parsed_action, action)] += 1
-
-        if inferred_action:
-            inferred_action_counts[inferred_action] += 1
-            inferred_to_final[(inferred_action, action)] += 1
-
-        
-
-            
-        if not intent_type:
-            continue
-
-        total_with_intent += 1
-
-        intent_counts[intent_type] += 1
-        action_by_intent[(intent_type, action)] += 1
-        location_by_intent[(intent_type, location)] += 1
-
-        expected_actions = INTENT_COMPATIBLE_ACTIONS.get(intent_type, set())
-
-        if action in expected_actions:
-            action_match_count += 1
-
-        if target_agent:
-            target_agent_location = locations_by_tick.get(
-                (
-                    row.get("day"),
-                    row.get("hour"),
-                    target_agent,
-                ),
-                "",
-            )
-
-            target_available = target_agent_location == location
-
-            if target_available:
-                target_agent_opportunities += 1
-                target_agent_by_intent[(intent_type, target_agent)] += 1
-
-                if listener == target_agent:
-                    target_agent_matches += 1
-                else:
-                    missed_target_agents[(intent_type, target_agent, listener)] += 1
-            else:
-                target_agent_unavailable += 1
-                unavailable_target_agents[
-                    (
-                        intent_type,
-                        target_agent,
-                        target_agent_location or "unknown",
-                        location,
-                    )
-                ] += 1
-
-        if target_location:
-            target_location_opportunities += 1
-            target_location_by_intent[(intent_type, target_location)] += 1
-
-            if location == target_location:
-                target_location_matches += 1
-            else:
-                missed_target_locations[(intent_type, target_location, location)] += 1
-
+def print_report(metrics: dict) -> None:
     print("Intent follow-through report")
-    print(f"  Conversations with speaker intent: {total_with_intent}")
-
-    print(f"  Target-agent opportunities: {target_agent_opportunities}")
-    print(f"  Target-agent conversations: {target_agent_matches}")
-    print(f"  Target-agent unavailable/skipped: {target_agent_unavailable}")
     print(
-        "  Target-agent rate: "
-        f"{safe_rate(target_agent_matches, target_agent_opportunities):.1%}"
+        "  Conversations with speaker intent: "
+        f"{metrics['conversations_with_intent']}"
     )
-
-    print(f"  Target-location opportunities: {target_location_opportunities}")
-    print(f"  Target-location conversations: {target_location_matches}")
+    print(f"  Target-agent opportunities: {metrics['target_agent_opportunities']}")
+    print(f"  Target-agent conversations: {metrics['target_agent_matches']}")
     print(
-        "  Target-location rate: "
-        f"{safe_rate(target_location_matches, target_location_opportunities):.1%}"
+        "  Target-agent unavailable/skipped: "
+        f"{metrics['target_agent_unavailable']}"
     )
-
-    print(f"  Intent-compatible actions: {action_match_count}")
+    print(f"  Target-agent rate: {metrics['target_agent_rate']:.1%}")
+    print(
+        "  Target-location opportunities: "
+        f"{metrics['target_location_opportunities']}"
+    )
+    print(f"  Target-location conversations: {metrics['target_location_matches']}")
+    print(f"  Target-location rate: {metrics['target_location_rate']:.1%}")
+    print(f"  Intent-compatible actions: {metrics['compatible_actions']}")
     print(
         "  Intent-action compatibility: "
-        f"{safe_rate(action_match_count, total_with_intent):.1%}"
+        f"{metrics['action_compatibility_rate']:.1%}"
     )
 
-    print("\nIntents:")
-    for intent_type, count in intent_counts.most_common():
-        print(f"  {intent_type}: {count}")
+    _print_counts("Intents", metrics["intent_counts"])
+    for intent_type, counts in metrics["actions_by_intent"].items():
+        _print_counts(f"Actions for {intent_type}", counts)
 
-    print("\nActions by intent:")
-    for (intent_type, action), count in action_by_intent.most_common():
-        print(f"  {intent_type} -> {action}: {count}")
+    pipeline = metrics["action_pipeline"]
+    _print_counts("Suggested actions", pipeline["suggested_counts"])
+    _print_counts("Parsed actions", pipeline["parsed_counts"])
+    _print_counts("Inferred actions", pipeline["inferred_counts"])
+    _print_counts("Final actions", pipeline["final_counts"])
+    _print_transitions("Suggested -> final", pipeline["suggested_to_final"])
+    _print_transitions("Parsed -> final", pipeline["parsed_to_final"])
+    _print_transitions("Inferred -> final", pipeline["inferred_to_final"])
+    _print_counts("Final action reasons", pipeline["final_reason_counts"])
 
-    print("\nLocations by intent:")
-    for (intent_type, location), count in location_by_intent.most_common():
-        print(f"  {intent_type} @ {location}: {count}")
 
-    if target_agent_by_intent:
-        print("\nTarget agents by intent:")
-        for (intent_type, target_agent), count in target_agent_by_intent.most_common():
-            print(f"  {intent_type} -> {target_agent}: {count}")
+def main() -> None:
+    args = parse_args()
+    conversations_path, events_path = resolve_paths(args)
+    metrics = analyze_intent_followthrough(
+        load_jsonl(conversations_path), load_jsonl(events_path)
+    )
+    if args.json:
+        print(json.dumps(metrics, indent=2, sort_keys=True))
+    else:
+        print_report(metrics)
 
-    if target_location_by_intent:
-        print("\nTarget locations by intent:")
-        for (intent_type, target_location), count in target_location_by_intent.most_common():
-            print(f"  {intent_type} -> {target_location}: {count}")
-
-    if missed_target_agents:
-        print("\nMost common missed target-agent conversations:")
-        for (intent_type, target_agent, actual_listener), count in missed_target_agents.most_common(5):
-            print(
-                f"  {intent_type}: wanted {target_agent}, "
-                f"talked to {actual_listener}: {count}"
-            )
-
-    if unavailable_target_agents:
-        print("\nMost common unavailable target-agent cases:")
-        for (
-            intent_type,
-            target_agent,
-            target_agent_location,
-            speaker_location,
-        ), count in unavailable_target_agents.most_common(5):
-            print(
-                f"  {intent_type}: wanted {target_agent}, "
-                f"target at {target_agent_location}, "
-                f"speaker conversation at {speaker_location}: {count}"
-            )
-
-    if missed_target_locations:
-        print("\nMost common missed target-location conversations:")
-        for (intent_type, target_location, actual_location), count in missed_target_locations.most_common(5):
-            print(
-                f"  {intent_type}: wanted {target_location}, "
-                f"conversation at {actual_location}: {count}"
-            )
-
-        print("\nAction pipeline:")
-
-    print("  Suggested actions:")
-    for action, count in suggested_action_counts.most_common():
-        print(f"    {action}: {count}")
-
-    print("  Parsed actions:")
-    for action, count in parsed_action_counts.most_common():
-        print(f"    {action}: {count}")
-
-    print("  Inferred actions:")
-    for action, count in inferred_action_counts.most_common():
-        print(f"    {action}: {count}")
-
-    print("  Final actions:")
-    for action, count in final_action_counts.most_common():
-        print(f"    {action}: {count}")
-
-    print("\nSuggested -> final:")
-    for (suggested, final), count in suggested_to_final.most_common(10):
-        print(f"  {suggested} -> {final}: {count}")
-
-    print("\nParsed -> final:")
-    for (parsed, final), count in parsed_to_final.most_common(10):
-        print(f"  {parsed} -> {final}: {count}")
-
-    print("\nInferred -> final:")
-    for (inferred, final), count in inferred_to_final.most_common(10):
-        print(f"  {inferred} -> {final}: {count}")
-
-    print("\nSuggested actions by intent:")
-    for (intent_type, suggested), count in suggested_by_intent.most_common(10):
-        print(f"  {intent_type} -> suggested {suggested}: {count}")
-
-    print("\nIntent + suggested -> final:")
-    for (intent_type, suggested, final), count in final_by_suggested_and_intent.most_common(10):
-        print(f"  {intent_type}: suggested {suggested} -> final {final}: {count}")
-
-    print("\nFinal action reasons:")
-    for reason, count in final_action_reason_counts.most_common():
-        print(f"  {reason}: {count}")
 
 if __name__ == "__main__":
     main()

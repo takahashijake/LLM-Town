@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from src.simulation.journal_system import JournalSystem
 from src.actions.action_system import ActionSystem
 from src.agents.agent import Agent
@@ -37,9 +38,13 @@ class SimulationEngine:
         locations_path: str,
         load_state: bool = False,
         llm_client=None,
+        state_path: str | Path = "data/save_state.json",
+        logs_dir: str | Path = "logs",
     ):
+        self.state_path = Path(state_path)
+        self.logs_dir = Path(logs_dir)
         self.locations = self.load_locations(locations_path)
-        self.logger = TownLogger()
+        self.logger = TownLogger(logs_dir=self.logs_dir)
         self.conversation_recorder = ConversationRecorder(
             logger=self.logger,
         )
@@ -49,7 +54,7 @@ class SimulationEngine:
         self.conversation_selector = ConversationSelector(
             relationships=self.relationships,
         )
-        self.state = SimulationState()
+        self.state = SimulationState(path=self.state_path)
         self.persistence = SimulationPersistence()
         self.simulation_loop = SimulationLoop()
         self.journal_system = JournalSystem()
@@ -96,6 +101,7 @@ class SimulationEngine:
         self.town_arc_system = TownArcSystem(
             town_arcs=self.town_arcs,
             town_arc_change_records=self.town_arc_change_records,
+            arc_changes_path=self.logs_dir / "town_arc_changes.jsonl",
         )
         self.conversation_effects_applier = ConversationEffectsApplier(
             actions=self.actions,
@@ -145,6 +151,7 @@ class SimulationEngine:
                 town_arc_change_records=(
                     self.town_arc_change_records
                 ),
+                arc_changes_path=self.logs_dir / "town_arc_changes.jsonl",
             )
         
             self.sync_agent_relationships_from_manager()
