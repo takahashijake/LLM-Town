@@ -106,6 +106,18 @@ class RelationshipUpdater:
         action: str,
         outcome: str,
     ) -> str:
+        if outcome == "declined" and action in {
+            "offer_help", "ask_for_help", "cooperate"
+        }:
+            descriptions = {
+                "offer_help": "offer of help",
+                "ask_for_help": "request for help",
+                "cooperate": "proposal to cooperate",
+            }
+            subject = descriptions[action]
+            if owner.name == actor.name:
+                return f"{counterpart.name} declined my {subject}."
+            return f"I declined {counterpart.name}'s {subject}."
         if action == "ask_for_help" and outcome in {"refused", "rejected", "failed"}:
             if owner.name == actor.name:
                 return f"{counterpart.name} refused my request for help."
@@ -154,6 +166,11 @@ class RelationshipUpdater:
         """Update both private views using only a finalized action/outcome."""
         actor_deltas = dict(self.ACTOR_DELTAS.get(action, {}))
         recipient_deltas = dict(self.RECIPIENT_DELTAS.get(action, {}))
+        if action in {"offer_help", "ask_for_help", "cooperate"} and outcome in {
+            "declined", "unresolved"
+        }:
+            actor_deltas = {}
+            recipient_deltas = {}
         if action == "ask_for_help" and outcome in {"refused", "rejected", "failed"}:
             actor_deltas = {
                 "trust": -0.12, "affinity": -0.08,

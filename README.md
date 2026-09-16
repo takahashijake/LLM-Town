@@ -153,7 +153,9 @@ Events influence:
 
 ## Conversations
 
-Agents generate conversations using an LLM.
+Agents generate bounded, alternating conversation sessions using an LLM. The
+default limit is four utterances; configure it with
+`--max-conversation-turns 4`.
 
 Conversation context includes:
 
@@ -164,6 +166,11 @@ Conversation context includes:
 - Goals
 - Needs
 - Daily event
+- The bounded transcript and most recent utterance for the current session
+
+Private context is rebuilt for the current speaker on every turn. The shared
+transcript does not expose the other participant's memories, journals, goals,
+intent, or reputation beliefs.
 
 The LLM returns:
 
@@ -175,6 +182,14 @@ The LLM returns:
 ```
 
 Actions are parsed and used to update simulation state.
+
+Help and cooperation actions can receive conservative deterministic outcomes:
+`accepted`, `declined`, `answered`, `acknowledged`, or `unresolved`. Sessions
+end at the configured limit or on storm-off, explicit closure, repetition,
+generation failure, or policy termination. Turn diagnostics remain in
+`conversations.jsonl`; reconstructable session records are written to
+`sessions.jsonl`. Each participant receives one coherent long-term memory per
+session rather than one memory per utterance.
 
 ---
 
@@ -359,7 +374,7 @@ responses and is not a real-model quality measurement.
 Evaluate real dialogue separately with:
 
 ```bash
-python scripts/evaluate_real_llm.py --days 10 --seed 42
+python scripts/evaluate_real_llm.py --days 10 --seed 42 --max-conversation-turns 4
 ```
 
 Each run creates a new directory under `outputs/real_llm_evaluations/` and

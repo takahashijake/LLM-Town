@@ -42,6 +42,7 @@ class SimulationEngine:
         llm_client=None,
         state_path: str | Path = "data/save_state.json",
         logs_dir: str | Path = "logs",
+        max_conversation_turns: int = 4,
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
@@ -50,7 +51,10 @@ class SimulationEngine:
         self.conversation_recorder = ConversationRecorder(
             logger=self.logger,
         )
-        self.conversation_runner = ConversationRunner()
+        self.max_conversation_turns = max(1, int(max_conversation_turns))
+        self.conversation_runner = ConversationRunner(
+            max_turns=self.max_conversation_turns
+        )
         self.conversation_tagger = ConversationTagger()
         self.relationships = RelationshipManager()
         self.conversation_selector = ConversationSelector(
@@ -202,6 +206,8 @@ class SimulationEngine:
         old_relationship_label: str,
         old_score: int,
         rumor_claim: dict | None = None,
+        outcome: str = "completed",
+        remember: bool = True,
     ) -> dict:
         self.sync_town_arc_system_refs()
         self.sync_conversation_policy_refs()
@@ -220,6 +226,8 @@ class SimulationEngine:
             old_score=old_score,
             relationship_events=self.relationship_events,
             rumor_claim=rumor_claim,
+            outcome=outcome,
+            remember=remember,
         )
 
         self.recent_dialogues = self.conversation_policy.recent_dialogues
@@ -342,6 +350,7 @@ class SimulationEngine:
         speaker: Agent,
         listener: Agent,
         current_day: int,
+        session_transcript: list[dict] | None = None,
     ) -> dict:
         self.sync_intent_system_refs()
         self.sync_town_arc_system_refs()
@@ -356,6 +365,7 @@ class SimulationEngine:
             current_daily_event=self.current_daily_event,
             agent_intents=self.agent_intents,
             relationship_events=self.relationship_events,
+            session_transcript=session_transcript,
         )
         
     def finalize_conversation_tags(
@@ -854,6 +864,11 @@ class SimulationEngine:
         dialogue_source: str = "llm",
         reputation_updates: list[dict] | None = None,
         rumor_transmission: dict | None = None,
+        session_id: str = "",
+        turn_index: int = 0,
+        response_to_turn: int | None = None,
+        response_outcome: str | None = None,
+        termination_reason: str = "",
     ) -> None:
         self.conversation_recorder.log_conversation_event(
             day=day,
@@ -894,6 +909,11 @@ class SimulationEngine:
             dialogue_source=dialogue_source,
             reputation_updates=reputation_updates,
             rumor_transmission=rumor_transmission,
+            session_id=session_id,
+            turn_index=turn_index,
+            response_to_turn=response_to_turn,
+            response_outcome=response_outcome,
+            termination_reason=termination_reason,
         )
 
     def print_conversation_event(

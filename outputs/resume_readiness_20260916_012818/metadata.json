@@ -1,0 +1,23 @@
+{
+  "days": 5,
+  "generation_settings": {
+    "do_sample": true,
+    "max_new_tokens": 150,
+    "temperature": 0.4,
+    "top_p": 0.9
+  },
+  "git_commit": "19db6c24ceda2cf314a3975be65012e9c4607984",
+  "git_dirty": false,
+  "hours": [
+    8,
+    12,
+    18,
+    22
+  ],
+  "kind": "llm-town-real-llm-evaluation",
+  "model_identifier": "Qwen/Qwen2.5-3B-Instruct",
+  "python_version": "3.13.11",
+  "schema_version": 2,
+  "seed": 42,
+  "timestamp": "2026-09-16T01:28:43.588670+00:00"
+}

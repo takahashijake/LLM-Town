@@ -61,6 +61,50 @@ class ConversationRecorder:
 
         return memory
 
+    def remember_session_for_agents(
+        self,
+        *,
+        day: int,
+        hour: int,
+        location_id: str,
+        participants: list[Agent],
+        turns: list[dict],
+        relationship_change: int,
+        tags: list[str],
+        session_id: str,
+    ) -> list[Memory]:
+        """Store one coherent memory per participant, not one per utterance."""
+        transcript = " ".join(
+            f"{turn['speaker']}: {turn['dialogue']}" for turn in turns
+        )
+        unique_lines = list(dict.fromkeys(turn["dialogue"] for turn in turns))
+        # A repetition-terminated session containing one duplicated line is
+        # coherently represented by that line and remains load-compatible.
+        description = (
+            unique_lines[0]
+            if len(unique_lines) == 1
+            else f"Conversation {session_id}: {transcript}"
+        )
+        memories = []
+        names = [agent.name for agent in participants]
+        for owner in participants:
+            owner.remember_topics(tags)
+            ordered = [owner.name, *[name for name in names if name != owner.name]]
+            memory = Memory(
+                day=day,
+                hour=hour,
+                type="conversation",
+                description=description,
+                participants=ordered,
+                location=location_id,
+                importance=2,
+                sentiment=relationship_change,
+                tags=list(dict.fromkeys(["conversation", *tags, session_id])),
+            )
+            owner.remember(memory)
+            memories.append(memory)
+        return memories
+
     def log_conversation_event(
         self,
         day: int,
@@ -101,6 +145,11 @@ class ConversationRecorder:
         dialogue_source: str = "llm",
         reputation_updates: list[dict] | None = None,
         rumor_transmission: dict | None = None,
+        session_id: str = "",
+        turn_index: int = 0,
+        response_to_turn: int | None = None,
+        response_outcome: str | None = None,
+        termination_reason: str = "",
     ) -> None:
         intent_relationship_applies = bool(
             speaker_intent
@@ -108,6 +157,8 @@ class ConversationRecorder:
             and speaker_intent.target_agent in (None, listener.name)
         )
         conversation_record = {
+            "session_id": session_id,
+            "turn_index": turn_index,
             "day": day,
             "hour": hour,
             "location": location_id,
@@ -161,6 +212,9 @@ class ConversationRecorder:
             "dialogue_source": dialogue_source,
             "reputation_updates": reputation_updates or [],
             "rumor_transmission": rumor_transmission,
+            "response_to_turn": response_to_turn,
+            "response_outcome": response_outcome,
+            "termination_reason": termination_reason,
         }
 
         self.logger.log_conversation(conversation_record)

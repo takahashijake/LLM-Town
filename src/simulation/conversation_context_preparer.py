@@ -41,6 +41,7 @@ class ConversationContextPreparer:
         current_daily_event: DailyEvent | None,
         agent_intents: dict,
         relationship_events: list,
+        session_transcript: list[dict] | None = None,
     ) -> dict:
         old_score = self.relationships.get_score(
             speaker.name,
@@ -153,6 +154,10 @@ class ConversationContextPreparer:
                 target_agent=listener.name,
             ),
             reputation_rumor=rumor_claim,
+            session_transcript=session_transcript,
+            most_recent_utterance=(
+                session_transcript[-1]["dialogue"] if session_transcript else ""
+            ),
         )
 
         return {

@@ -173,6 +173,7 @@ class ActionSystem:
             "i can organize", "i could organize", "i can pitch in", "i could pitch in",
             "need any help", "do you need help", "want me to help", "would you like help",
             "could i help", "can i help", "need a hand", "want a hand",
+            "would you like some help", "would you like me to help",
             "i'm happy to help", "i am happy to help", "i'd be happy to help",
             "i would be happy to help", "count on me", "i'm here to help",
         ))
@@ -208,6 +209,12 @@ class ActionSystem:
         )
         if concrete_joint_task:
             return "cooperate", f"cooperation_pattern:{concrete_joint_task.group(1)}_together"
+        tentative_joint_task = re.search(
+            r"\blet(?:'s| us) see if we can\b.{0,50}\b(sort|organize|repair|handle|finish|solve|clean|fix|find)\b",
+            text,
+        )
+        if tentative_joint_task:
+            return "cooperate", f"cooperation_pattern:lets_see_{tentative_joint_task.group(1)}"
     
         # Genuine requests for help, advice, or information
         marker = self._first_match(text, (
@@ -223,6 +230,7 @@ class ActionSystem:
             "can you assist", "i could really use", "i'm looking for advice",
             "i am looking for advice", "please help me", "do you have any contacts",
             "can you tell me", "could you tell me", "would you tell me",
+            "could you recommend", "can you recommend", "would you recommend",
         ))
         if marker:
             return "ask_for_help", f"request_marker:{marker}"

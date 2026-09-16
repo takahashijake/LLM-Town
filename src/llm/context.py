@@ -166,6 +166,11 @@ def _prompt_context_text_chars(context: dict) -> int:
         *context.get("recent_topics", []),
         *context.get("recent_utterances", []),
         *(
+            turn.get("dialogue", "")
+            for turn in context.get("session_transcript", [])
+        ),
+        context.get("most_recent_utterance", ""),
+        *(
             f"{arc.get('name', '')} {arc.get('description', '')}"
             for arc in context.get("town_arcs", [])
         ),
@@ -188,6 +193,7 @@ def _prune_context_to_budget(context: dict) -> None:
         lambda: context.update(relevant_memories=context["relevant_memories"][:2]),
         lambda: context.update(recent_utterances=context["recent_utterances"][:1]),
         lambda: context.update(recent_topics=context["recent_topics"][:2]),
+        lambda: context.update(session_transcript=context.get("session_transcript", [])[-2:]),
         lambda: context.update(relevant_memories=context["relevant_memories"][:1]),
     )
     for reduce_context in reductions:
@@ -424,6 +430,8 @@ def build_conversation_context(
     town_arcs=None,
     reputation_context=None,
     reputation_rumor=None,
+    session_transcript=None,
+    most_recent_utterance="",
 ):
     del listener_intent  # A listener's private intent is not speaker knowledge.
     relationship_history = relationship_history or []
@@ -544,6 +552,10 @@ def build_conversation_context(
         "recent_utterances": select_recent_utterances(speaker),
         "allowed_actions": allowed_actions or ["chat"],
         "suggested_action": suggested_action or "chat",
+        # Shared spoken knowledge. This is intentionally separate from the
+        # current speaker's private memories and journals.
+        "session_transcript": list(session_transcript or [])[-4:],
+        "most_recent_utterance": _bounded_text(most_recent_utterance, 320),
         "town_arcs": town_arcs,
         "daily_event": event_data,
         "daily_event_relevant": daily_event_relevant,

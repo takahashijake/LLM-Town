@@ -39,15 +39,22 @@ class ConversationEffectsApplier:
         old_score: int,
         relationship_events: list[RelationshipEvent],
         rumor_claim: dict | None = None,
+        outcome: str = "completed",
+        remember: bool = True,
     ) -> dict:
-        self.town_arc_system.apply_conversation_to_town_arcs(
-            day=day,
-            location_id=location_id,
-            speaker=speaker,
-            listener=listener,
-            action=action,
-            conversation_tags=conversation_tags,
-        )
+        responsive_actions = {"offer_help", "ask_for_help", "cooperate"}
+        outcome_allows_completion = outcome in {
+            "completed", "accepted", "answered", "acknowledged"
+        }
+        if action not in responsive_actions or outcome_allows_completion:
+            self.town_arc_system.apply_conversation_to_town_arcs(
+                day=day,
+                location_id=location_id,
+                speaker=speaker,
+                listener=listener,
+                action=action,
+                conversation_tags=conversation_tags,
+            )
 
         relationship_change = self.relationship_updater.calculate_relationship_change(
             action=action,
@@ -57,6 +64,8 @@ class ConversationEffectsApplier:
                 relationship_label=old_relationship_label,
             ),
         )
+        if action in responsive_actions and not outcome_allows_completion:
+            relationship_change = 0
 
         new_score, relationship_label = self.relationship_updater.apply_relationship_change(
             speaker=speaker,
@@ -71,7 +80,7 @@ class ConversationEffectsApplier:
                 speaker=speaker,
                 listener=listener,
                 action=action,
-                outcome="completed",
+                outcome=outcome,
             )
         )
 
@@ -93,7 +102,7 @@ class ConversationEffectsApplier:
                 relationship_label=relationship_label,
                 conversation=conversation,
                 tags=conversation_tags,
-                outcome="completed",
+                outcome=outcome,
                 directed_deltas={
                     name: update["delta"]
                     for name, update in relationship_updates.items()
@@ -101,18 +110,20 @@ class ConversationEffectsApplier:
             )
             relationship_events.append(relationship_event)
 
-        need_effects = self.actions.get_need_effects(action)
+        need_effects = (
+            self.actions.get_need_effects(action)
+            if action not in responsive_actions or outcome_allows_completion
+            else {}
+        )
 
         for need, amount in need_effects.items():
             speaker.satisfy_need(need, amount)
 
-        direct_reputation_updates = self.reputation_system.record_direct_action(
-            day=day,
-            hour=hour,
-            actor=speaker,
-            observer=listener,
-            action=action,
-        )
+        direct_reputation_updates = []
+        if action not in responsive_actions or outcome_allows_completion:
+            direct_reputation_updates = self.reputation_system.record_direct_action(
+                day=day, hour=hour, actor=speaker, observer=listener, action=action
+            )
         rumor_update = None
         if action == "share_rumor":
             rumor_update = self.reputation_system.transmit_rumor(
@@ -122,16 +133,13 @@ class ConversationEffectsApplier:
                 claim=rumor_claim,
             )
 
-        memory = self.conversation_recorder.remember_conversation_for_agents(
-            day=day,
-            hour=hour,
-            location_id=location_id,
-            speaker=speaker,
-            listener=listener,
-            conversation=conversation,
-            relationship_change=relationship_change,
-            tags=conversation_tags,
-        )
+        memory = None
+        if remember:
+            memory = self.conversation_recorder.remember_conversation_for_agents(
+                day=day, hour=hour, location_id=location_id,
+                speaker=speaker, listener=listener, conversation=conversation,
+                relationship_change=relationship_change, tags=conversation_tags,
+            )
 
         self.conversation_policy.remember_dialogue(conversation)
         self.conversation_policy.remember_action(action)

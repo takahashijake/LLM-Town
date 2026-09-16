@@ -103,6 +103,17 @@ def test_infer_recommendation_as_chat_not_offer_help():
     ) == "chat"
 
 
+def test_infer_real_model_help_and_cooperation_variants():
+    actions = ActionSystem()
+    cases = {
+        "Would you like some help checking the market records?": "offer_help",
+        "Could you recommend a reliable place to begin?": "ask_for_help",
+        "Let's see if we can fix these inventory totals together.": "cooperate",
+    }
+    for dialogue, expected in cases.items():
+        assert actions.infer_action(dialogue, []) == expected
+
+
 def test_infer_common_real_llm_action_language_variants_and_reason():
     actions = ActionSystem()
     cases = {

@@ -134,6 +134,11 @@ class TransformersLLMClient:
             for arc in context.get("town_arcs", [])
         ]
         recent_utterances = context.get("recent_utterances", [])
+        session_transcript = context.get("session_transcript", [])
+        transcript_lines = [
+            f"{turn.get('speaker', 'Unknown')}: {turn.get('dialogue', '')}"
+            for turn in session_transcript
+        ]
         activity = context.get(
             "speaker_activity_display", context.get("speaker_activity", "idle")
         )
@@ -203,6 +208,10 @@ Avoid unnecessary repetition
 - Recent topics: {', '.join(context.get('recent_topics', [])) or 'None'}
 - Recent lines by this speaker:
 {lines(recent_utterances)}
+
+Current conversation (shared spoken transcript; answer the latest line naturally):
+{lines(transcript_lines)}
+- Most recent utterance: {context.get('most_recent_utterance') or 'None; begin the conversation'}
 
 Social move
 - Allowed actions: {', '.join(allowed_actions)}

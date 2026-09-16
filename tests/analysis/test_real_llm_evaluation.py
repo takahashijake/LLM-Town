@@ -115,6 +115,8 @@ def test_real_llm_evaluation_writes_metrics_transcript_and_review(tmp_path):
     assert written_metrics["fallback"]["count"] == 1
     assert written_metrics["action_language_diagnostics"]["parser_inference_disagreements"] == 0
     assert written_metrics["strategy_adaptation_diagnostics"]["goals_reviewed"] == 0
+    assert written_metrics["conversation_sessions"]["conversation_session_count"] == 2
+    assert "=== Conversation Session 1" in (tmp_path / "transcript.txt").read_text()
     metadata = json.loads((tmp_path / "metadata.json").read_text())
     assert metadata["git_commit"] == "abc"
     assert metadata["python_version"] == "3.test"

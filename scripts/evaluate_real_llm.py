@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=150)
     parser.add_argument("--temperature", type=float, default=0.4)
     parser.add_argument("--top-p", type=float, default=0.9)
+    parser.add_argument("--max-conversation-turns", type=int, default=4)
     parser.add_argument("--agents-path", default="data/agents.json")
     parser.add_argument("--locations-path", default="data/locations.json")
     parser.add_argument("--output-dir", type=Path)
@@ -53,6 +54,7 @@ def main() -> int:
         top_p=args.top_p,
         agents_path=args.agents_path,
         locations_path=args.locations_path,
+        max_conversation_turns=args.max_conversation_turns,
     )
     try:
         document = run_real_llm_evaluation(

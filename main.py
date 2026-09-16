@@ -68,6 +68,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not clear previous logs/output before running.",
     )
+    parser.add_argument(
+        "--max-conversation-turns", type=int, default=4,
+        help="Maximum utterances in each conversation session (default: 4).",
+    )
 
     return parser.parse_args()
 
@@ -95,6 +99,7 @@ def main() -> None:
         locations_path=args.locations_path,
         load_state=args.load_state,
         llm_client=llm_client,
+        max_conversation_turns=args.max_conversation_turns,
     )
 
     engine.run(days=args.days, hours=args.hours)

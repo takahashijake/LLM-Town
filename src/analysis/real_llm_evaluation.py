@@ -273,9 +273,58 @@ def analyze_real_llm_records(
         and bool(row.get("relationship_decision_reasons"))
         for row in records
     )
+    sessions = {}
+    for row in records:
+        session_id = row.get("session_id") or f"legacy-{len(sessions)}"
+        sessions.setdefault(session_id, []).append(row)
+    turn_distribution = Counter(len(rows) for rows in sessions.values())
+    termination_counts = Counter(
+        rows[-1].get("termination_reason") or "legacy_single_turn"
+        for rows in sessions.values()
+    )
+    alternation_correct = sum(
+        all(
+            rows[index].get("speaker") == rows[index - 1].get("listener")
+            and rows[index].get("listener") == rows[index - 1].get("speaker")
+            for index in range(1, len(rows))
+        )
+        for rows in sessions.values()
+    )
+    outcomes = Counter(
+        row.get("response_outcome")
+        for row in records
+        if row.get("response_outcome")
+    )
+    multi_turn_rows = [row for rows in sessions.values() if len(rows) > 1 for row in rows]
+    session_metrics = {
+        "conversation_session_count": len(sessions),
+        "turn_count_distribution": dict(sorted(turn_distribution.items())),
+        "average_turns_per_session": safe_rate(len(records), len(sessions)),
+        "termination_reason_counts": dict(sorted(termination_counts.items())),
+        "sessions_reaching_max_turns": termination_counts["max_turns"],
+        "generation_failure_sessions": termination_counts["generation_failure"],
+        "repetition_terminated_sessions": termination_counts["repetition"],
+        "per_turn_action_parsing_success": safe_rate(parsing_successes, len(records)),
+        "multi_turn_fallback_rate": safe_rate(
+            sum(
+                row.get("action_source", "llm") != "llm"
+                or row.get("dialogue_source", "llm") != "llm"
+                or bool(row.get("generation_error"))
+                for row in multi_turn_rows
+            ),
+            len(multi_turn_rows),
+        ),
+        "speaker_alternation_correct_sessions": alternation_correct,
+        "speaker_alternation_correctness": safe_rate(alternation_correct, len(sessions)),
+        "response_outcome_resolution_counts": dict(sorted(outcomes.items())),
+        "accepted_social_action_outcomes": outcomes["accepted"],
+        "declined_social_action_outcomes": outcomes["declined"],
+        "unresolved_social_action_outcomes": outcomes["unresolved"],
+    }
 
     return {
         "conversation_count": len(records),
+        "session_metrics": session_metrics,
         "dialogue_repetition": repetition,
         "context_use_indicators": _lexical_context_use(records),
         "response_health": {
@@ -346,6 +395,18 @@ def build_human_review_sample(
         "goal_reputation_tension": [],
         "relationship_conditioned_decision": [],
     }
+    sessions = {}
+    for record in records:
+        session_id = record.get("session_id")
+        if session_id:
+            sessions.setdefault(session_id, []).append({
+                "turn_index": record.get("turn_index"),
+                "speaker": record.get("speaker"),
+                "listener": record.get("listener"),
+                "dialogue": record.get("conversation"),
+                "action": record.get("action"),
+                "response_outcome": record.get("response_outcome"),
+            })
 
     for index, record in enumerate(records):
         values = _context_values(record)
@@ -376,6 +437,9 @@ def build_human_review_sample(
             "speaker": record.get("speaker"),
             "listener": record.get("listener"),
             "dialogue": record.get("conversation"),
+            "session_id": record.get("session_id"),
+            "session_turns": sessions.get(record.get("session_id"), []),
+            "termination_reason": record.get("termination_reason"),
             "suggested_action": record.get("suggested_action"),
             "parsed_action": record.get("parsed_action"),
             "inferred_action": record.get("inferred_action"),
@@ -480,15 +544,29 @@ def build_human_review_sample(
 
 def _write_transcript(records: list[dict[str, Any]], path: Path) -> None:
     lines = ["REAL-LLM TRANSCRIPT", ""]
+    sessions = {}
     for row in records:
+        sessions.setdefault(row.get("session_id") or f"legacy-{len(sessions) + 1}", []).append(row)
+    for number, (session_id, rows) in enumerate(sessions.items(), 1):
+        first = rows[0]
+        lines.extend([
+            f"=== Conversation Session {number} ({session_id}) ===",
+            f"Day {first.get('day')}, {first.get('hour')}:00 — {first.get('location')}",
+        ])
+        for row in rows:
+            lines.extend(
+                [
+                    f"{row.get('speaker')} -> {row.get('listener')}: {row.get('conversation')}",
+                    f"Action: {row.get('action')} (suggested {row.get('suggested_action')}, "
+                    f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')}; "
+                    f"inference {row.get('inference_reason', 'not_recorded')}, final "
+                    f"{row.get('final_action_reason', 'not_recorded')}, outcome "
+                    f"{row.get('response_outcome') or 'n/a'})",
+                ]
+            )
         lines.extend(
             [
-                f"Day {row.get('day')}, {row.get('hour')}:00 at {row.get('location')}",
-                f"{row.get('speaker')} -> {row.get('listener')}: {row.get('conversation')}",
-                f"Action: {row.get('action')} (suggested {row.get('suggested_action')}, "
-                f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')}; "
-                f"inference {row.get('inference_reason', 'not_recorded')}, final "
-                f"{row.get('final_action_reason', 'not_recorded')})",
+                f"Termination: {rows[-1].get('termination_reason') or 'legacy_single_turn'}",
                 "",
             ]
         )
@@ -521,6 +599,8 @@ def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
                     f"{row['final_action_reason']}`; action source "
                     f"`{row['action_source']}`, dialogue source `{row['dialogue_source']}`.",
                     f"  Context: {json.dumps(context, sort_keys=True, ensure_ascii=False)}",
+                    f"  Full session: {json.dumps(row.get('session_turns', []), ensure_ascii=False)}",
+                    f"  Termination: {row.get('termination_reason') or 'legacy/not recorded'}",
                     "",
                 ]
             )
@@ -581,6 +661,7 @@ def write_real_llm_evaluation(
     metrics = {
         "schema_version": EVALUATION_SCHEMA_VERSION,
         "total_conversations": indicators["conversation_count"],
+        "conversation_sessions": indicators["session_metrics"],
         "exact_repetition": {
             "count": indicators["dialogue_repetition"]["exact_repeated_instances"],
             "rate": indicators["dialogue_repetition"]["exact_repetition_rate"],

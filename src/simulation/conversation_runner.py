@@ -1,228 +1,262 @@
-class ConversationRunner:
-    def generate_conversations(
-        self,
-        engine,
-        day: int,
-        hour: int,
-    ) -> None:
-        agents_by_location = engine.group_agents_by_location()
-        conversations_created = 0
+"""Orchestrate bounded, alternating conversation sessions."""
 
-        for location_id, agents_here in agents_by_location.items():
+from __future__ import annotations
+
+from difflib import SequenceMatcher
+
+from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
+
+
+class ConversationRunner:
+    def __init__(self, max_turns: int = 4):
+        self.max_turns = max(1, int(max_turns))
+        self.outcomes = ResponseOutcomeResolver()
+
+    def generate_conversations(self, engine, day: int, hour: int) -> None:
+        created = 0
+        for location_id, agents_here in engine.group_agents_by_location().items():
             if len(agents_here) < 2:
                 continue
+            created += 1
+            initiator, other = engine.choose_conversation_pair(agents_here)
+            session = ConversationSession(
+                session_id=self._session_id(day, hour, location_id, initiator.name, other.name),
+                day=day, hour=hour, location=location_id,
+                participants=[initiator.name, other.name], initiating_agent=initiator.name,
+            )
+            self._generate_session(engine, session, initiator, other)
+            self._apply_and_record(engine, session, initiator, other)
+        if created == 0:
+            print("No conversations this tick")
 
-            conversations_created = conversations_created + 1
-            speaker, listener = engine.choose_conversation_pair(agents_here)
-
-            conversation_setup = engine.prepare_conversation_context(
-                location_id=location_id,
-                speaker=speaker,
-                listener=listener,
-                current_day=day,
-            )
-
-            old_score = conversation_setup["old_score"]
-            old_relationship_label = conversation_setup["old_relationship_label"]
-            allowed_actions = conversation_setup["allowed_actions"]
-            speaker_intent = conversation_setup["speaker_intent"]
-            listener_intent = conversation_setup["listener_intent"]
-            base_action_weights = conversation_setup["base_action_weights"]
-            relationship_adjusted_weights = conversation_setup.get(
-                "relationship_adjusted_weights", base_action_weights
-            )
-            relationship_weight_adjustments = conversation_setup.get(
-                "relationship_weight_adjustments", {}
-            )
-            relationship_decision_reasons = conversation_setup.get(
-                "relationship_decision_reasons", []
-            )
-            intent_adjusted_weights = conversation_setup["intent_adjusted_weights"]
-            reputation_adjusted_weights = conversation_setup.get(
-                "reputation_adjusted_weights", intent_adjusted_weights
-            )
-            reputation_weight_adjustments = conversation_setup.get(
-                "reputation_weight_adjustments", {}
-            )
-            rumor_claim = conversation_setup.get("rumor_claim")
-            suggested_action = conversation_setup["suggested_action"]
-            context = conversation_setup["context"]
-
+    def _generate_session(self, engine, session, initiator, other) -> None:
+        speaker, listener = initiator, other
+        transcript = []
+        for turn_index in range(self.max_turns):
+            try:
+                setup = engine.prepare_conversation_context(
+                    location_id=session.location, speaker=speaker, listener=listener,
+                    current_day=session.day, session_transcript=transcript,
+                )
+            except TypeError:  # Compatibility with existing lightweight doubles.
+                setup = engine.prepare_conversation_context(
+                    location_id=session.location, speaker=speaker, listener=listener,
+                    current_day=session.day,
+                )
+            context = setup["context"]
+            context["session_transcript"] = list(transcript)
+            context["most_recent_utterance"] = transcript[-1]["dialogue"] if transcript else ""
             generation_error = ""
             try:
                 raw_output = engine.llm.generate_conversation(context)
-            except Exception as error:  # A single model failure must not end a long run.
+            except Exception as error:
                 raw_output = ""
                 generation_error = f"{type(error).__name__}: {error}"
-
-            processed_output = engine.process_conversation_output(
-                raw_output=raw_output,
-                allowed_actions=allowed_actions,
-                speaker=speaker,
-                listener=listener,
-                old_relationship_label=old_relationship_label,
-                location_id=location_id,
-                suggested_action=suggested_action,
-                current_day=day,
-                conversation_context=context,
-                enforce_information_boundaries=not getattr(
-                    engine.llm, "is_deterministic_fake", False
-                ),
+            processed = engine.process_conversation_output(
+                raw_output=raw_output, allowed_actions=setup["allowed_actions"],
+                speaker=speaker, listener=listener,
+                old_relationship_label=setup["old_relationship_label"],
+                location_id=session.location, suggested_action=setup["suggested_action"],
+                current_day=session.day, conversation_context=context,
+                enforce_information_boundaries=not getattr(engine.llm, "is_deterministic_fake", False),
             )
-
-            parsed_output = processed_output["parsed_output"]
-            conversation = processed_output["conversation"]
-            parsed_action = processed_output["parsed_action"]
-            dialogue_source = processed_output["dialogue_source"]
-
-            conversation_tags = engine.get_initial_conversation_tags(
-                conversation=conversation,
-                parsed_tags=parsed_output.get("tags", []),
+            parsed = processed["parsed_output"]
+            dialogue = processed["conversation"]
+            tags = engine.get_initial_conversation_tags(
+                conversation=dialogue, parsed_tags=parsed.get("tags", []),
             )
-
-            infer_with_reason = getattr(engine.actions, "infer_action_with_reason", None)
-            if infer_with_reason:
-                inferred_action, inference_reason = infer_with_reason(
-                    conversation,
-                    conversation_tags,
-                )
-            else:  # Compatibility for lightweight engine doubles and extensions.
-                inferred_action = engine.actions.infer_action(
-                    conversation,
-                    conversation_tags,
-                )
+            infer = getattr(engine.actions, "infer_action_with_reason", None)
+            if infer:
+                inferred, inference_reason = infer(dialogue, tags)
+            else:
+                inferred = engine.actions.infer_action(dialogue, tags)
                 inference_reason = "not_available"
-
-            action, final_action_reason = engine.choose_final_action_with_reason(
-                conversation=conversation,
-                parsed_action=parsed_action,
-                conversation_tags=conversation_tags,
-                allowed_actions=allowed_actions,
-                inferred_action=inferred_action,
+            action, final_reason = engine.choose_final_action_with_reason(
+                conversation=dialogue, parsed_action=processed["parsed_action"],
+                conversation_tags=tags, allowed_actions=setup["allowed_actions"],
+                inferred_action=inferred,
             )
-
-            conversation_tags = engine.finalize_conversation_tags(
-                conversation=conversation,
-                conversation_tags=conversation_tags,
-                relationship_label=old_relationship_label,
-                action=action,
+            tags = engine.finalize_conversation_tags(
+                conversation=dialogue, conversation_tags=tags,
+                relationship_label=setup["old_relationship_label"], action=action,
             )
-
-            effects_result = engine.apply_conversation_effects(
-                day=day,
-                hour=hour,
-                location_id=location_id,
-                speaker=speaker,
-                listener=listener,
-                action=action,
-                conversation=conversation,
-                conversation_tags=conversation_tags,
-                old_relationship_label=old_relationship_label,
-                old_score=old_score,
-                rumor_claim=rumor_claim,
-            )
-
-            relationship_change = effects_result["relationship_change"]
-            new_score = effects_result["new_score"]
-            relationship_label = effects_result["relationship_label"]
-
-            intent_update = engine.update_intents_after_conversation(
-                day=day,
-                location_id=location_id,
-                speaker=speaker,
-                listener=listener,
-                action=action,
-                relationship_change=relationship_change,
-                new_score=new_score,
-                conversation_tags=conversation_tags,
-            )
-            
-            if intent_update:
-                print(
-                    "Intent update: "
-                    f"{intent_update['agent']} {intent_update['intent_type']} "
-                    f"{intent_update['status']} "
-                    f"({intent_update['progress']}/{intent_update['progress_goal']})"
-                )
-    
-            engine.log_conversation_event(
-                day,
-                hour,
-                location_id,
-                speaker,
-                listener,
-                conversation,
-                relationship_change,
-                new_score,
-                relationship_label,
-                action,
-                parsed_output.get("action_source", ""),
-                parsed_output.get("reason", ""),
-                conversation_tags,
-                speaker_intent=speaker_intent,
-                listener_intent=listener_intent,
-                suggested_action=suggested_action,
-                parsed_action=parsed_action,
-                inferred_action=inferred_action,
-                inference_reason=inference_reason,
-                base_action_weights=base_action_weights,
-                relationship_adjusted_weights=relationship_adjusted_weights,
-                relationship_weight_adjustments=relationship_weight_adjustments,
-                relationship_decision_reasons=relationship_decision_reasons,
-                relationship_snapshot=conversation_setup.get(
-                    "relationship_snapshot", {}
-                ),
-                retrieved_social_memories=conversation_setup.get(
-                    "social_memories", []
-                ),
-                relationship_updates=effects_result.get(
-                    "relationship_updates", {}
-                ),
-                intent_adjusted_weights=intent_adjusted_weights,
-                reputation_adjusted_weights=reputation_adjusted_weights,
-                reputation_weight_adjustments=reputation_weight_adjustments,
-                allowed_actions=allowed_actions,
-                final_action_reason=final_action_reason,
-                raw_response=raw_output,
-                generation_error=generation_error,
+            response_to = None
+            outcome = None
+            if session.turns and session.turns[-1].final_action in self.outcomes.RESPONSIVE_ACTIONS:
+                previous = session.turns[-1]
+                outcome = self.outcomes.resolve(previous.final_action, dialogue)
+                response_to = previous.turn_index
+                previous.response_outcome = outcome
+            turn = ConversationTurn(
+                turn_index=turn_index, speaker=speaker.name, listener=listener.name,
+                dialogue=dialogue, suggested_action=setup["suggested_action"],
+                parsed_action=processed["parsed_action"], inferred_action=inferred,
+                inference_reason=inference_reason, final_action=action,
+                final_action_reason=final_reason,
+                action_source=parsed.get("action_source", ""),
+                dialogue_source=processed["dialogue_source"],
+                generation_error=generation_error, response_to_turn=response_to,
+                response_outcome=None,
                 context_evidence=context.get("context_evidence", {}),
-                context_snapshot={
-                    "occupation": context.get("occupation"),
-                    "activity": context.get("speaker_activity"),
-                    "activity_display": context.get("speaker_activity_display"),
-                    "activity_reason": context.get("speaker_activity_reason"),
-                    "relationship_history": context.get("relationship_history", []),
-                    "relationship_snapshot": context.get("relationship_snapshot", {}),
-                    "social_memories": context.get("social_memories", []),
-                    "reputation": context.get("reputation_context", []),
-                    "reputation_rumor": context.get("reputation_rumor_text", ""),
-                    "memories": context.get("relevant_memories", []),
-                    "journals": context.get("recent_journals", []),
-                    "goals": context.get("goals", []),
-                    "active_goal": context.get("active_goal"),
-                    "speaker_intent": context.get("speaker_intent"),
-                    "daily_event": context.get("daily_event"),
-                    "daily_event_relevant": context.get("daily_event_relevant", False),
-                    "town_arcs": context.get("town_arcs", []),
-                    "recent_topics": context.get("recent_topics", []),
-                    "recent_utterances": context.get("recent_utterances", []),
-                    "focus_options": context.get("focus_options", []),
-                },
-                dialogue_source=dialogue_source,
-                reputation_updates=effects_result.get("reputation_updates", []),
-                rumor_transmission=effects_result.get("rumor_transmission"),
+                context_snapshot=self._context_snapshot(context),
+                diagnostics=self._diagnostics(setup, parsed, tags, raw_output),
             )
+            turn._speaker_intent = setup.get("speaker_intent")
+            turn._listener_intent = setup.get("listener_intent")
+            session.turns.append(turn)
+            transcript.append({"turn_index": turn_index, "speaker": speaker.name,
+                               "listener": listener.name, "dialogue": dialogue})
+            reason = self._termination_reason(engine, session, turn)
+            if reason:
+                session.termination_reason = reason
+                break
+            speaker, listener = listener, speaker
+        if not session.termination_reason:
+            session.termination_reason = "max_turns"
 
+    def _apply_and_record(self, engine, session, initiator, other) -> None:
+        agents = {initiator.name: initiator, other.name: other}
+        applied_actions = set()
+        total_change = 0
+        all_tags = []
+        for turn in session.turns:
+            d = turn.diagnostics
+            outcome = turn.response_outcome or (
+                "unresolved" if turn.final_action in self.outcomes.RESPONSIVE_ACTIONS else "completed"
+            )
+            if turn.final_action not in applied_actions:
+                applied_actions.add(turn.final_action)
+                effects = engine.apply_conversation_effects(
+                    day=session.day, hour=session.hour, location_id=session.location,
+                    speaker=agents[turn.speaker], listener=agents[turn.listener],
+                    action=turn.final_action, conversation=turn.dialogue,
+                    conversation_tags=d["tags"],
+                    old_relationship_label=d["old_relationship_label"],
+                    old_score=(engine.relationships.get_score(turn.speaker, turn.listener)
+                               if hasattr(engine, "relationships") else d["old_score"]),
+                    rumor_claim=d.get("rumor_claim"), outcome=outcome, remember=False,
+                )
+                total_change += effects["relationship_change"]
+                if not (
+                    turn.final_action in self.outcomes.RESPONSIVE_ACTIONS
+                    and outcome not in {"accepted", "answered", "acknowledged"}
+                ):
+                    engine.update_intents_after_conversation(
+                        day=session.day, location_id=session.location,
+                        speaker=agents[turn.speaker], listener=agents[turn.listener],
+                        action=turn.final_action,
+                        relationship_change=effects["relationship_change"],
+                        new_score=effects["new_score"], conversation_tags=d["tags"],
+                    )
+            else:
+                score = (engine.relationships.get_score(turn.speaker, turn.listener)
+                         if hasattr(engine, "relationships") else d["old_score"])
+                effects = {"relationship_change": 0, "new_score": score,
+                           "relationship_label": d["old_relationship_label"],
+                           "relationship_updates": {}, "reputation_updates": [],
+                           "rumor_transmission": None}
+            all_tags.extend(d["tags"])
+            self._log_turn(engine, session, turn, agents, effects)
             engine.print_conversation_event(
-                day,
-                hour,
-                location_id,
-                conversation,
-                relationship_label,
-                new_score,
-                relationship_change,
-                action,
+                session.day, session.hour, session.location, turn.dialogue,
+                effects["relationship_label"], effects["new_score"],
+                effects["relationship_change"], turn.final_action,
             )
+        recorder = getattr(engine, "conversation_recorder", None)
+        if recorder and hasattr(recorder, "remember_session_for_agents"):
+            recorder.remember_session_for_agents(
+                day=session.day, hour=session.hour, location_id=session.location,
+                participants=[initiator, other], turns=[turn.to_dict() for turn in session.turns],
+                relationship_change=total_change, tags=list(dict.fromkeys(all_tags)),
+                session_id=session.session_id,
+            )
+            log_session = getattr(recorder.logger, "log_conversation_session", None)
+            if log_session:
+                log_session(session.to_dict())
 
-        if conversations_created == 0:
-            print("No conversations this tick")
+    @staticmethod
+    def _log_turn(engine, session, turn, agents, effects) -> None:
+        d = turn.diagnostics
+        engine.log_conversation_event(
+            session.day, session.hour, session.location,
+            agents[turn.speaker], agents[turn.listener], turn.dialogue,
+            effects["relationship_change"], effects["new_score"],
+            effects["relationship_label"], turn.final_action,
+            turn.action_source, d["action_reason"], d["tags"],
+            speaker_intent=getattr(turn, "_speaker_intent", None),
+            listener_intent=getattr(turn, "_listener_intent", None),
+            suggested_action=turn.suggested_action, parsed_action=turn.parsed_action,
+            inferred_action=turn.inferred_action, inference_reason=turn.inference_reason,
+            base_action_weights=d["base_action_weights"],
+            relationship_adjusted_weights=d["relationship_adjusted_weights"],
+            relationship_weight_adjustments=d["relationship_weight_adjustments"],
+            relationship_decision_reasons=d["relationship_decision_reasons"],
+            relationship_snapshot=d["relationship_snapshot"],
+            retrieved_social_memories=d["social_memories"],
+            relationship_updates=effects.get("relationship_updates", {}),
+            intent_adjusted_weights=d["intent_adjusted_weights"],
+            reputation_adjusted_weights=d["reputation_adjusted_weights"],
+            reputation_weight_adjustments=d["reputation_weight_adjustments"],
+            allowed_actions=d["allowed_actions"], final_action_reason=turn.final_action_reason,
+            raw_response=d["raw_response"], generation_error=turn.generation_error,
+            context_evidence=turn.context_evidence, context_snapshot=turn.context_snapshot,
+            dialogue_source=turn.dialogue_source,
+            reputation_updates=effects.get("reputation_updates", []),
+            rumor_transmission=effects.get("rumor_transmission"),
+            session_id=session.session_id, turn_index=turn.turn_index,
+            response_to_turn=turn.response_to_turn,
+            response_outcome=turn.response_outcome,
+            termination_reason=session.termination_reason,
+        )
+
+    @staticmethod
+    def _diagnostics(setup, parsed, tags, raw_output):
+        return {
+            "tags": tags, "raw_response": raw_output,
+            "action_reason": parsed.get("reason", ""), "old_score": setup["old_score"],
+            "old_relationship_label": setup["old_relationship_label"],
+            "allowed_actions": setup["allowed_actions"],
+            "base_action_weights": setup.get("base_action_weights", {}),
+            "relationship_adjusted_weights": setup.get("relationship_adjusted_weights", {}),
+            "relationship_weight_adjustments": setup.get("relationship_weight_adjustments", {}),
+            "relationship_decision_reasons": setup.get("relationship_decision_reasons", []),
+            "relationship_snapshot": setup.get("relationship_snapshot", {}),
+            "social_memories": setup.get("social_memories", []),
+            "intent_adjusted_weights": setup.get("intent_adjusted_weights", {}),
+            "reputation_adjusted_weights": setup.get("reputation_adjusted_weights", {}),
+            "reputation_weight_adjustments": setup.get("reputation_weight_adjustments", {}),
+            "rumor_claim": setup.get("rumor_claim"),
+        }
+
+    @staticmethod
+    def _termination_reason(engine, session, turn) -> str:
+        if turn.generation_error:
+            return "generation_failure"
+        if turn.final_action == "storm_off":
+            return "storm_off"
+        text = " ".join(turn.dialogue.lower().split())
+        if any(marker in text for marker in ("goodbye", "see you later", "nothing more to add")):
+            return "conversation_closed"
+        prior = [" ".join(item.dialogue.lower().split()) for item in session.turns[:-1]]
+        if any(SequenceMatcher(None, text, old).ratio() >= 0.9 for old in prior):
+            return "repetition"
+        if turn.dialogue_source == "policy_fallback_repetition":
+            return "repetition"
+        policy_hook = getattr(engine, "should_terminate_conversation", None)
+        if policy_hook and policy_hook(session):
+            return "policy_termination"
+        return ""
+
+    @staticmethod
+    def _session_id(day, hour, location, first, second) -> str:
+        return f"d{day}-h{hour:02d}-{'-'.join(str(location).lower().split())}-{first.lower()}-{second.lower()}"
+
+    @staticmethod
+    def _context_snapshot(context):
+        keys = ("occupation", "speaker_activity", "speaker_activity_display", "speaker_activity_reason",
+                "relationship_history", "relationship_snapshot", "social_memories",
+                "reputation_context", "reputation_rumor_text", "relevant_memories",
+                "recent_journals", "goals", "active_goal", "speaker_intent", "daily_event",
+                "daily_event_relevant", "town_arcs", "recent_topics", "recent_utterances",
+                "focus_options", "session_transcript", "most_recent_utterance")
+        return {key: context.get(key) for key in keys}

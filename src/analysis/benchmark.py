@@ -34,6 +34,7 @@ class BenchmarkConfig:
     top_p: float = 0.9
     agents_path: str = "data/agents.json"
     locations_path: str = "data/locations.json"
+    max_conversation_turns: int = 4
 
     def validate(self) -> None:
         if self.days < 1:
@@ -50,6 +51,8 @@ class BenchmarkConfig:
             raise ValueError("hours must be between 0 and 23")
         if self.max_new_tokens < 1:
             raise ValueError("max_new_tokens must be at least 1")
+        if self.max_conversation_turns < 1:
+            raise ValueError("max_conversation_turns must be at least 1")
         if self.temperature <= 0:
             raise ValueError("temperature must be greater than 0")
         if not 0 < self.top_p <= 1:
@@ -149,6 +152,7 @@ def _run_one(
                 llm_client=llm,
                 state_path=state_path,
                 logs_dir=logs_dir,
+                max_conversation_turns=config.max_conversation_turns,
             )
             engine.run(days=config.days, hours=list(config.hours))
     elapsed = time.perf_counter() - started
@@ -178,6 +182,9 @@ def _run_one(
             ),
             "events": f"{run_dir.name}/logs/events/events.jsonl",
             "town_arc_changes": f"{run_dir.name}/logs/town_arc_changes.jsonl",
+            "conversation_sessions": (
+                f"{run_dir.name}/logs/conversations/sessions.jsonl"
+            ),
         },
         "metrics": metrics,
     }

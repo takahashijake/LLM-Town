@@ -1,0 +1,5775 @@
+{
+  "current_day": 5,
+  "current_hour": 22,
+  "day_complete": true,
+  "current_daily_event": {
+    "id": "book_club",
+    "name": "Book Club",
+    "description": "Residents are gathering to discuss a new book at the library.",
+    "location_id": "library",
+    "tags": [
+      "learning",
+      "social",
+      "community"
+    ]
+  },
+  "daily_event_history": [
+    {
+      "day": 1,
+      "id": "town_cleanup",
+      "name": "Town Cleanup"
+    },
+    {
+      "day": 2,
+      "id": "cooking_class",
+      "name": "Cooking Class"
+    },
+    {
+      "day": 3,
+      "id": "street_music_night",
+      "name": "Street Music Night"
+    },
+    {
+      "day": 4,
+      "id": "merchant_inspection",
+      "name": "Merchant Inspection"
+    },
+    {
+      "day": 5,
+      "id": "book_club",
+      "name": "Book Club"
+    }
+  ],
+  "recent_dialogues": [
+    "ethan, i noticed you're looking for supplies. would you like some help organizing the shelves?",
+    "could you show me where they keep the most useful books?",
+    "from what i saw, carlos seemed helpful, though you should judge for yourself.",
+    "let's try the strawberry shortcake recipe you learned. i could use some fresh ideas for our next community potluck.",
+    "could you point me to where they store the most useful books?",
+    "my work as an accountant has kept me busy near the town square.",
+    "i noticed you've been listening to all these musicians. it's quite a change from your usual work, huh?",
+    "maya leaned closer to lena, suggesting they could find some good spots to capture the music.",
+    "i noticed some stalls have unusually low prices. do you think there might be any scams going on?",
+    "i saw some stalls offering items way below market price. do you think there's a chance of fraud?",
+    "could you recommend any good books on community organizing? i'm looking for some insights.",
+    "let's see if we can find some new recipes for the upcoming festival.",
+    "my work as a local journalist has kept me busy near the market.",
+    "carlos, have you seen if they need any volunteers for today's event?",
+    "i have been focused on review records and numbers today.",
+    "have you heard what they're talking about at the book club today?",
+    "i noticed the street music night was really popular last week. did you get a chance to check it out?"
+  ],
+  "recent_actions": [
+    "offer_help",
+    "ask_for_help",
+    "share_rumor",
+    "cooperate",
+    "ask_for_help",
+    "chat",
+    "chat",
+    "chat",
+    "chat",
+    "chat",
+    "chat",
+    "cooperate",
+    "chat",
+    "ask_for_help",
+    "chat",
+    "chat",
+    "chat"
+  ],
+  "activity_records": [
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 8,
+      "agent": "Maya",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Maya is pursuing 'learn town secrets' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 8,
+      "agent": "Ethan",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
+      "location": "cafe",
+      "reason": "Ethan wants more social contact.",
+      "tags": [
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 8,
+      "agent": "Lena",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Town Cleanup",
+      "location": "town_square",
+      "reason": "Lena is interested in today's event: Town Cleanup.",
+      "tags": [
+        "event",
+        "town_cleanup",
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 8,
+      "agent": "Carlos",
+      "activity_id": "intent_seek_work",
+      "activity_name": "Work on intent: seek_work",
+      "location": "market",
+      "reason": "Carlos is pursuing 'find business opportunities' through direct participation.",
+      "tags": [
+        "intent",
+        "seek_work",
+        "wealth",
+        "business",
+        "market"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 12,
+      "agent": "Maya",
+      "activity_id": "check_records",
+      "activity_name": "Check records for leads",
+      "location": "library",
+      "reason": "Maya is looking for background information.",
+      "tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 12,
+      "agent": "Ethan",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Ethan wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 12,
+      "agent": "Lena",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Town Cleanup",
+      "location": "town_square",
+      "reason": "Lena is interested in today's event: Town Cleanup.",
+      "tags": [
+        "event",
+        "town_cleanup",
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 12,
+      "agent": "Carlos",
+      "activity_id": "intent_seek_work",
+      "activity_name": "Work on intent: seek_work",
+      "location": "market",
+      "reason": "Carlos is pursuing 'find business opportunities' through direct participation.",
+      "tags": [
+        "intent",
+        "seek_work",
+        "wealth",
+        "business",
+        "market"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 18,
+      "agent": "Maya",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Maya is pursuing 'learn town secrets' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 18,
+      "agent": "Ethan",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Ethan is pursuing 'find reliable allies' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 18,
+      "agent": "Lena",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Town Cleanup",
+      "location": "town_square",
+      "reason": "Lena is interested in today's event: Town Cleanup.",
+      "tags": [
+        "event",
+        "town_cleanup",
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 18,
+      "agent": "Carlos",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Carlos wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 22,
+      "agent": "Maya",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Maya is pursuing 'learn town secrets' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 22,
+      "agent": "Ethan",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Ethan is pursuing 'find reliable allies' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 22,
+      "agent": "Lena",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Lena wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 1,
+      "hour": 22,
+      "agent": "Carlos",
+      "activity_id": "network",
+      "activity_name": "Network with townspeople",
+      "location": "cafe",
+      "reason": "Carlos wants to grow influence through relationships.",
+      "tags": [
+        "business",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 8,
+      "agent": "Maya",
+      "activity_id": "intent_investigate",
+      "activity_name": "Work on intent: investigate",
+      "location": "library",
+      "reason": "Maya is pursuing 'learn town secrets' through seek information at location.",
+      "tags": [
+        "intent",
+        "investigate",
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 8,
+      "agent": "Ethan",
+      "activity_id": "public_socialize",
+      "activity_name": "Talk with people in the town square",
+      "location": "town_square",
+      "reason": "Ethan wants to be around people.",
+      "tags": [
+        "social",
+        "town_life"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 8,
+      "agent": "Lena",
+      "activity_id": "meet_residents",
+      "activity_name": "Meet residents",
+      "location": "cafe",
+      "reason": "Lena wants to build goodwill with residents.",
+      "tags": [
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 8,
+      "agent": "Carlos",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
+      "location": "cafe",
+      "reason": "Carlos wants more social contact.",
+      "tags": [
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 12,
+      "agent": "Maya",
+      "activity_id": "investigate_story",
+      "activity_name": "Investigate a possible story",
+      "location": "town_square",
+      "reason": "Maya is looking for town stories or rumors.",
+      "tags": [
+        "journalism",
+        "rumor",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 12,
+      "agent": "Ethan",
+      "activity_id": "review_records",
+      "activity_name": "Review records and numbers",
+      "location": "library",
+      "reason": "Ethan wants reliable information before trusting others.",
+      "tags": [
+        "accounting",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 12,
+      "agent": "Lena",
+      "activity_id": "meet_residents",
+      "activity_name": "Meet residents",
+      "location": "cafe",
+      "reason": "Lena wants to build goodwill with residents.",
+      "tags": [
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 12,
+      "agent": "Carlos",
+      "activity_id": "intent_seek_work",
+      "activity_name": "Work on intent: seek_work",
+      "location": "market",
+      "reason": "Carlos is pursuing 'find business opportunities' through direct participation.",
+      "tags": [
+        "intent",
+        "seek_work",
+        "wealth",
+        "business",
+        "market"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 18,
+      "agent": "Maya",
+      "activity_id": "check_records",
+      "activity_name": "Check records for leads",
+      "location": "library",
+      "reason": "Maya is looking for background information.",
+      "tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 18,
+      "agent": "Ethan",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Ethan wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 18,
+      "agent": "Lena",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Lena wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 18,
+      "agent": "Carlos",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Carlos wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 22,
+      "agent": "Maya",
+      "activity_id": "investigate_story",
+      "activity_name": "Investigate a possible story",
+      "location": "town_square",
+      "reason": "Maya is looking for town stories or rumors.",
+      "tags": [
+        "journalism",
+        "rumor",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 22,
+      "agent": "Ethan",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
+      "location": "cafe",
+      "reason": "Ethan wants more social contact.",
+      "tags": [
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 22,
+      "agent": "Lena",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Lena wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 2,
+      "hour": 22,
+      "agent": "Carlos",
+      "activity_id": "pursue_business",
+      "activity_name": "Look for business opportunities",
+      "location": "market",
+      "reason": "Carlos wants to find business opportunities.",
+      "tags": [
+        "business",
+        "market",
+        "wealth"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 8,
+      "agent": "Maya",
+      "activity_id": "investigate_story",
+      "activity_name": "Investigate a possible story",
+      "location": "town_square",
+      "reason": "Maya is looking for town stories or rumors.",
+      "tags": [
+        "journalism",
+        "rumor",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 8,
+      "agent": "Ethan",
+      "activity_id": "public_socialize",
+      "activity_name": "Talk with people in the town square",
+      "location": "town_square",
+      "reason": "Ethan wants to be around people.",
+      "tags": [
+        "social",
+        "town_life"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 8,
+      "agent": "Lena",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Street Music Night",
+      "location": "town_square",
+      "reason": "Lena is interested in today's event: Street Music Night.",
+      "tags": [
+        "event",
+        "street_music_night",
+        "music",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 8,
+      "agent": "Carlos",
+      "activity_id": "public_socialize",
+      "activity_name": "Talk with people in the town square",
+      "location": "town_square",
+      "reason": "Carlos wants to be around people.",
+      "tags": [
+        "social",
+        "town_life"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 12,
+      "agent": "Maya",
+      "activity_id": "check_records",
+      "activity_name": "Check records for leads",
+      "location": "library",
+      "reason": "Maya is looking for background information.",
+      "tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 12,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Street Music Night",
+      "location": "town_square",
+      "reason": "Ethan is interested in today's event: Street Music Night.",
+      "tags": [
+        "event",
+        "street_music_night",
+        "music",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 12,
+      "agent": "Lena",
+      "activity_id": "organize_community",
+      "activity_name": "Organize community support",
+      "location": "town_square",
+      "reason": "Lena wants to help the town community.",
+      "tags": [
+        "community",
+        "volunteer",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 12,
+      "agent": "Carlos",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "cafe",
+      "reason": "Carlos is pursuing 'grow his influence' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 18,
+      "agent": "Maya",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Street Music Night",
+      "location": "town_square",
+      "reason": "Maya is interested in today's event: Street Music Night.",
+      "tags": [
+        "event",
+        "street_music_night",
+        "music",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 18,
+      "agent": "Ethan",
+      "activity_id": "observe_market",
+      "activity_name": "Observe business activity",
+      "location": "market",
+      "reason": "Ethan is watching for financial opportunities or risks.",
+      "tags": [
+        "accounting",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 18,
+      "agent": "Lena",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "town_square",
+      "reason": "Lena is pursuing 'help the town community' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 18,
+      "agent": "Carlos",
+      "activity_id": "network",
+      "activity_name": "Network with townspeople",
+      "location": "cafe",
+      "reason": "Carlos wants to grow influence through relationships.",
+      "tags": [
+        "business",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 22,
+      "agent": "Maya",
+      "activity_id": "check_records",
+      "activity_name": "Check records for leads",
+      "location": "library",
+      "reason": "Maya is looking for background information.",
+      "tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 22,
+      "agent": "Ethan",
+      "activity_id": "observe_market",
+      "activity_name": "Observe business activity",
+      "location": "market",
+      "reason": "Ethan is watching for financial opportunities or risks.",
+      "tags": [
+        "accounting",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 22,
+      "agent": "Lena",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "town_square",
+      "reason": "Lena is pursuing 'help the town community' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 3,
+      "hour": 22,
+      "agent": "Carlos",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "cafe",
+      "reason": "Carlos is pursuing 'grow his influence' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 8,
+      "agent": "Maya",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Maya wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 8,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Ethan is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 8,
+      "agent": "Lena",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "town_square",
+      "reason": "Lena is pursuing 'help the town community' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 8,
+      "agent": "Carlos",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Carlos is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 12,
+      "agent": "Maya",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Maya is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 12,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Ethan is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 12,
+      "agent": "Lena",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Lena wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 12,
+      "agent": "Carlos",
+      "activity_id": "intent_socialize",
+      "activity_name": "Work on intent: socialize",
+      "location": "cafe",
+      "reason": "Carlos is pursuing 'grow his influence' through direct participation.",
+      "tags": [
+        "intent",
+        "socialize",
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 18,
+      "agent": "Maya",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
+      "location": "cafe",
+      "reason": "Maya wants more social contact.",
+      "tags": [
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 18,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Ethan is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 18,
+      "agent": "Lena",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Lena wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 18,
+      "agent": "Carlos",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Carlos wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 22,
+      "agent": "Maya",
+      "activity_id": "investigate_story",
+      "activity_name": "Investigate a possible story",
+      "location": "town_square",
+      "reason": "Maya is looking for town stories or rumors.",
+      "tags": [
+        "journalism",
+        "rumor",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 22,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Merchant Inspection",
+      "location": "market",
+      "reason": "Ethan is interested in today's event: Merchant Inspection.",
+      "tags": [
+        "event",
+        "merchant_inspection",
+        "market",
+        "wealth",
+        "rules"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 22,
+      "agent": "Lena",
+      "activity_id": "meet_residents",
+      "activity_name": "Meet residents",
+      "location": "cafe",
+      "reason": "Lena wants to build goodwill with residents.",
+      "tags": [
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 4,
+      "hour": 22,
+      "agent": "Carlos",
+      "activity_id": "network",
+      "activity_name": "Network with townspeople",
+      "location": "cafe",
+      "reason": "Carlos wants to grow influence through relationships.",
+      "tags": [
+        "business",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 8,
+      "agent": "Maya",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Maya wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 8,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Book Club",
+      "location": "library",
+      "reason": "Ethan is interested in today's event: Book Club.",
+      "tags": [
+        "event",
+        "book_club",
+        "learning",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 8,
+      "agent": "Lena",
+      "activity_id": "seek_work",
+      "activity_name": "Look for work or business opportunities",
+      "location": "market",
+      "reason": "Lena wants to improve wealth.",
+      "tags": [
+        "wealth",
+        "business"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 8,
+      "agent": "Carlos",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Book Club",
+      "location": "library",
+      "reason": "Carlos is interested in today's event: Book Club.",
+      "tags": [
+        "event",
+        "book_club",
+        "learning",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 12,
+      "agent": "Maya",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Book Club",
+      "location": "library",
+      "reason": "Maya is interested in today's event: Book Club.",
+      "tags": [
+        "event",
+        "book_club",
+        "learning",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 12,
+      "agent": "Ethan",
+      "activity_id": "review_records",
+      "activity_name": "Review records and numbers",
+      "location": "library",
+      "reason": "Ethan wants reliable information before trusting others.",
+      "tags": [
+        "accounting",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 12,
+      "agent": "Lena",
+      "activity_id": "meet_residents",
+      "activity_name": "Meet residents",
+      "location": "cafe",
+      "reason": "Lena wants to build goodwill with residents.",
+      "tags": [
+        "community",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 12,
+      "agent": "Carlos",
+      "activity_id": "pursue_business",
+      "activity_name": "Look for business opportunities",
+      "location": "market",
+      "reason": "Carlos wants to find business opportunities.",
+      "tags": [
+        "business",
+        "market",
+        "wealth"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 18,
+      "agent": "Maya",
+      "activity_id": "socialize",
+      "activity_name": "Socialize with townspeople",
+      "location": "cafe",
+      "reason": "Maya wants more social contact.",
+      "tags": [
+        "social",
+        "relationship"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 18,
+      "agent": "Ethan",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Book Club",
+      "location": "library",
+      "reason": "Ethan is interested in today's event: Book Club.",
+      "tags": [
+        "event",
+        "book_club",
+        "learning",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 18,
+      "agent": "Lena",
+      "activity_id": "organize_community",
+      "activity_name": "Organize community support",
+      "location": "town_square",
+      "reason": "Lena wants to help the town community.",
+      "tags": [
+        "community",
+        "volunteer",
+        "social"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 18,
+      "agent": "Carlos",
+      "activity_id": "attend_event",
+      "activity_name": "Attend Book Club",
+      "location": "library",
+      "reason": "Carlos is interested in today's event: Book Club.",
+      "tags": [
+        "event",
+        "book_club",
+        "learning",
+        "social",
+        "community"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 22,
+      "agent": "Maya",
+      "activity_id": "check_records",
+      "activity_name": "Check records for leads",
+      "location": "library",
+      "reason": "Maya is looking for background information.",
+      "tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 22,
+      "agent": "Ethan",
+      "activity_id": "review_records",
+      "activity_name": "Review records and numbers",
+      "location": "library",
+      "reason": "Ethan wants reliable information before trusting others.",
+      "tags": [
+        "accounting",
+        "knowledge"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 22,
+      "agent": "Lena",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Lena wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "type": "activity",
+      "day": 5,
+      "hour": 22,
+      "agent": "Carlos",
+      "activity_id": "learn",
+      "activity_name": "Look for information",
+      "location": "library",
+      "reason": "Carlos wants to learn something useful.",
+      "tags": [
+        "knowledge",
+        "learning"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent_001",
+      "name": "Maya",
+      "personality": "curious",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c7269078-0270-456c-8f57-c1fda3cc286f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_cleanup",
+            "community",
+            "social"
+          ],
+          "id": "d71022ac-78d0-400d-9d5d-41f6406746f1",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you show me where they keep the most useful books?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "06b15b56-d574-40ce-be9e-abccf9072568",
+          "last_accessed_day": 2,
+          "strength": 2
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "From what I saw, Carlos seemed helpful, though you should judge for yourself.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "share_rumor"
+          ],
+          "id": "57898450-d791-406e-937b-523652fc0783",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "013548bc-db07-4e73-b259-599a2fde4b64",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you point me to where they store the most useful books?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "d446def3-9c06-49e3-b1b3-df2eed367af7",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "1f099127-61ce-499d-b47f-3d365fe1f048",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "id": "0b7270a6-e19f-4b25-a063-cc9913c9e6fa",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Maya leaned closer to Lena, suggesting they could find some good spots to capture the music.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "event",
+            "street_music_night",
+            "neutral",
+            "chat"
+          ],
+          "id": "ef7bc21e-169d-4aa0-9375-66387f97757e",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "e28819eb-ad33-45cd-aae7-1a3747742f51",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "f29bc406-88ef-494c-aecf-5e8cc4cbbfe3",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ],
+          "id": "713ad6f8-e82f-43cd-9c0b-1a1d6d0ec348",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed some stalls have unusually low prices. Do you think there might be any scams going on?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "2adac578-170a-4389-b201-5c5903fd5f7c",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I saw some stalls offering items way below market price. Do you think there's a chance of fraud?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "c91db436-8aa2-4983-bd95-d930fd38fd61",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "participants": [],
+          "location": "library",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "id": "5f56768b-f6a1-492f-a271-e6aaf772f4e2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "My work as a local journalist has kept me busy near the market.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "974327e4-3e84-47c1-ab52-b64f12732f88",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 5,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I have been focused on review records and numbers today.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "928787fe-1aed-4d6f-98a6-893494ae1bed",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed the street music night was really popular last week. Did you get a chance to check it out?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "1c05bd92-fdcd-4f15-9a3b-bc8c7a4001fe",
+          "last_accessed_day": null,
+          "strength": 1
+        }
+      ],
+      "memory_archive": [],
+      "memory_summary": "",
+      "daily_journals": [
+        {
+          "day": 1,
+          "summary": "Maya spent the day Work on intent: investigate, then Check records for leads. Important interactions involved Carlos, Ethan. The relationship with Carlos did not substantially change. The relationship with Ethan worsened.",
+          "important_people": [
+            "Carlos",
+            "Ethan"
+          ],
+          "important_locations": [
+            "library",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+            "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square."
+          ],
+          "relationship_changes": {
+            "Carlos": 0,
+            "Ethan": -1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "town_cleanup",
+            "learning",
+            "ask_for_help"
+          ]
+        },
+        {
+          "day": 2,
+          "summary": "Maya spent the day Work on intent: investigate, then Investigate a possible story, then Check records for leads. Important interactions involved Carlos. The relationship with Carlos improved. Intent outcomes: investigate: succeeded. Target-location activity advanced the tactic.",
+          "important_people": [
+            "Carlos"
+          ],
+          "important_locations": [
+            "library",
+            "town_square",
+            "cafe"
+          ],
+          "important_events": [
+            "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients."
+          ],
+          "relationship_changes": {
+            "Carlos": 1
+          },
+          "completed_intents": [
+            "investigate: succeeded. Target-location activity advanced the tactic."
+          ],
+          "unresolved_topics": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social",
+            "ask_for_help"
+          ]
+        },
+        {
+          "day": 3,
+          "summary": "Maya spent the day Investigate a possible story, then Check records for leads, then Attend Street Music Night. Important interactions involved Lena. The relationship with Lena improved.",
+          "important_people": [
+            "Lena"
+          ],
+          "important_locations": [
+            "town_square",
+            "library"
+          ],
+          "important_events": [
+            "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 2.",
+            "Town event today: Street Music Night. Musicians are performing near the town square in the evening."
+          ],
+          "relationship_changes": {
+            "Lena": 1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "street_music_night",
+            "music"
+          ]
+        },
+        {
+          "day": 4,
+          "summary": "Maya spent the day Look for work or business opportunities, then Attend Merchant Inspection, then Socialize with townspeople. Important interactions involved Ethan, Lena.",
+          "important_people": [
+            "Ethan",
+            "Lena"
+          ],
+          "important_locations": [
+            "market",
+            "cafe",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+            "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+            "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records."
+          ],
+          "relationship_changes": {},
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business"
+          ]
+        },
+        {
+          "day": 5,
+          "summary": "Maya spent the day Look for work or business opportunities, then Attend Book Club, then Socialize with townspeople. Important interactions involved Lena, Ethan. The relationship with Lena improved.",
+          "important_people": [
+            "Lena",
+            "Ethan"
+          ],
+          "important_locations": [
+            "market",
+            "library",
+            "cafe"
+          ],
+          "important_events": [
+            "Town event today: Book Club. Residents are gathering to discuss a new book at the library."
+          ],
+          "relationship_changes": {
+            "Lena": 1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community",
+            "market"
+          ]
+        }
+      ],
+      "goals": [
+        "learn town secrets",
+        "build close friendships"
+      ],
+      "structured_goals": [
+        {
+          "id": "goal-9a5625d15ebb",
+          "agent_name": "Maya",
+          "description": "learn town secrets",
+          "category": "investigate",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "active",
+          "progress": 2,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "library"
+          ],
+          "success_conditions": [
+            "Reach investigate progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": "seek_information_at_location",
+          "current_strategy_target": null,
+          "strategy_started_day": 1,
+          "last_review_day": 1,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 1,
+              "strategy": "seek_information_at_location",
+              "score": 5.3,
+              "intent_id": "intent-goal-9a5625d15ebb-1-0-seek_information_at_location",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 0,
+              "new_progress": 1,
+              "intent_id": "intent-goal-9a5625d15ebb-1-0-seek_information_at_location",
+              "strategy": "seek_information_at_location",
+              "activity": "Work on intent: investigate",
+              "location": "library"
+            },
+            {
+              "type": "progress",
+              "day": 2,
+              "old_progress": 1,
+              "new_progress": 2,
+              "intent_id": "intent-goal-9a5625d15ebb-1-0-seek_information_at_location",
+              "strategy": "seek_information_at_location",
+              "activity": "Work on intent: investigate",
+              "location": "library"
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-c4293236bf34",
+          "agent_name": "Maya",
+          "description": "build close friendships",
+          "category": "build_friendship",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "active",
+          "progress": 0,
+          "progress_target": 4,
+          "target_agents": [
+            "Carlos"
+          ],
+          "target_locations": [],
+          "success_conditions": [
+            "Reach build_friendship progress target"
+          ],
+          "current_intent_id": "intent-goal-c4293236bf34-3-0-direct_cooperation",
+          "current_strategy": "direct_cooperation",
+          "current_strategy_target": "Carlos",
+          "strategy_started_day": 3,
+          "last_review_day": 3,
+          "last_relationship_score": 1,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 3,
+              "strategy": "direct_cooperation",
+              "score": 6.65,
+              "intent_id": "intent-goal-c4293236bf34-3-0-direct_cooperation",
+              "target_agent": "Carlos",
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {
+                "trust": 0.0,
+                "affinity": 0.0,
+                "cooperation": 0.0,
+                "helpfulness": 0.0,
+                "hostility": 0.0,
+                "interaction_count": 2,
+                "positive_interactions": 0,
+                "negative_interactions": 0,
+                "last_interaction_day": 2
+              },
+              "relevant_social_memories": [
+                "I asked for help from Carlos.",
+                "Carlos asked me for help."
+              ]
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        }
+      ],
+      "needs": {
+        "social": 48,
+        "wealth": 44,
+        "knowledge": 86
+      },
+      "relationships": {
+        "Carlos": 1,
+        "Ethan": -1,
+        "Lena": 2
+      },
+      "relationship_states": {
+        "Carlos": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 2,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 2
+        },
+        "Ethan": {
+          "trust": -0.04,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.03,
+          "interaction_count": 3,
+          "positive_interactions": 0,
+          "negative_interactions": 1,
+          "last_interaction_day": 5
+        },
+        "Lena": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 4,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 5
+        }
+      },
+      "social_memories": {
+        "Carlos": [
+          {
+            "day": 1,
+            "hour": 18,
+            "counterpart": "Carlos",
+            "actor": "Carlos",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "Carlos asked me for help.",
+            "deltas": {}
+          },
+          {
+            "day": 2,
+            "hour": 18,
+            "counterpart": "Carlos",
+            "actor": "Maya",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "I asked for help from Carlos.",
+            "deltas": {}
+          }
+        ],
+        "Ethan": [
+          {
+            "day": 1,
+            "hour": 22,
+            "counterpart": "Ethan",
+            "actor": "Ethan",
+            "action": "share_rumor",
+            "outcome": "completed",
+            "summary": "Ethan shared a rumor with me.",
+            "deltas": {
+              "trust": -0.04,
+              "hostility": 0.03
+            }
+          }
+        ]
+      },
+      "reputation_beliefs": {
+        "Carlos": {
+          "helpfulness": {
+            "target_agent": "Carlos",
+            "dimension": "helpfulness",
+            "score": 0.4488,
+            "confidence": 0.45,
+            "source_type": "hearsay",
+            "last_updated_day": 1,
+            "evidence": [
+              {
+                "evidence_id": "conversation:1:12:Carlos:Ethan:offer_help:helpfulness",
+                "value": 1.0,
+                "confidence": 0.45,
+                "source_type": "hearsay",
+                "source_agent": "Ethan",
+                "day": 1,
+                "transmission_depth": 1,
+                "transmission_chain": [
+                  "Ethan",
+                  "Maya"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "occupation": "local journalist",
+      "recent_topics": [
+        "share_rumor",
+        "learning",
+        "ask_for_help",
+        "event",
+        "street_music_night",
+        "business",
+        "market",
+        "business",
+        "market",
+        "market"
+      ],
+      "current_activity": "Check records for leads",
+      "current_activity_reason": "Maya is looking for background information.",
+      "current_activity_tags": [
+        "journalism",
+        "learning"
+      ]
+    },
+    {
+      "id": "agent_002",
+      "name": "Ethan",
+      "personality": "skeptical",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c7269078-0270-456c-8f57-c1fda3cc286f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_cleanup",
+            "community",
+            "social"
+          ],
+          "id": "d71022ac-78d0-400d-9d5d-41f6406746f1",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Ethan, I noticed you're looking for supplies. Would you like some help organizing the shelves?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "offer_help"
+          ],
+          "id": "65da1837-57c1-4a21-9c24-0e11eb628fd0",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 1,
+          "hour": 22,
+          "type": "conversation",
+          "description": "From what I saw, Carlos seemed helpful, though you should judge for yourself.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "share_rumor"
+          ],
+          "id": "57898450-d791-406e-937b-523652fc0783",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "013548bc-db07-4e73-b259-599a2fde4b64",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 2.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "1f099127-61ce-499d-b47f-3d365fe1f048",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "id": "0b7270a6-e19f-4b25-a063-cc9913c9e6fa",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "My work as an accountant has kept me busy near the town square.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "ebf03168-6752-4947-957f-be81af389bdc",
+          "last_accessed_day": 3,
+          "strength": 2
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I noticed you've been listening to all these musicians. It's quite a change from your usual work, huh?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "event",
+            "street_music_night",
+            "neutral",
+            "chat"
+          ],
+          "id": "7e255c37-009c-4601-81a2-feff1eb5f3c8",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "e28819eb-ad33-45cd-aae7-1a3747742f51",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "f29bc406-88ef-494c-aecf-5e8cc4cbbfe3",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ],
+          "id": "713ad6f8-e82f-43cd-9c0b-1a1d6d0ec348",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 8,
+          "type": "conversation",
+          "description": "I noticed some stalls have unusually low prices. Do you think there might be any scams going on?",
+          "participants": [
+            "Maya",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "2adac578-170a-4389-b201-5c5903fd5f7c",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "participants": [],
+          "location": "library",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "id": "5f56768b-f6a1-492f-a271-e6aaf772f4e2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, have you seen if they need any volunteers for today's event?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "1ead182b-2a7b-4821-83e0-f3ac8eb86962",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 5,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I have been focused on review records and numbers today.",
+          "participants": [
+            "Ethan",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "928787fe-1aed-4d6f-98a6-893494ae1bed",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you heard what they're talking about at the Book Club today?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "event",
+            "book_club",
+            "neutral",
+            "chat"
+          ],
+          "id": "93beb993-0929-44c5-bf54-7f0904076bcb",
+          "last_accessed_day": null,
+          "strength": 1
+        }
+      ],
+      "memory_archive": [],
+      "memory_summary": "",
+      "daily_journals": [
+        {
+          "day": 1,
+          "summary": "Ethan spent the day Socialize with townspeople, then Look for work or business opportunities, then Work on intent: investigate. Important interactions involved Carlos, Maya. The relationship with Carlos did not substantially change. The relationship with Maya worsened. Intent outcomes: investigate: succeeded. Intent 'investigate' reached its progress goal.",
+          "important_people": [
+            "Carlos",
+            "Maya"
+          ],
+          "important_locations": [
+            "cafe",
+            "market",
+            "library",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+            "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square."
+          ],
+          "relationship_changes": {
+            "Carlos": 0,
+            "Maya": -1
+          },
+          "completed_intents": [
+            "investigate: succeeded. Intent 'investigate' reached its progress goal."
+          ],
+          "unresolved_topics": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "town_cleanup",
+            "offer_help",
+            "share_rumor"
+          ]
+        },
+        {
+          "day": 2,
+          "summary": "Ethan spent the day Talk with people in the town square, then Review records and numbers, then Look for work or business opportunities.",
+          "important_people": [],
+          "important_locations": [
+            "town_square",
+            "library",
+            "market",
+            "cafe"
+          ],
+          "important_events": [
+            "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients."
+          ],
+          "relationship_changes": {},
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ]
+        },
+        {
+          "day": 3,
+          "summary": "Ethan spent the day Talk with people in the town square, then Attend Street Music Night, then Observe business activity. Important interactions involved Lena. The relationship with Lena worsened.",
+          "important_people": [
+            "Lena"
+          ],
+          "important_locations": [
+            "town_square",
+            "market"
+          ],
+          "important_events": [
+            "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 2.",
+            "Town event today: Street Music Night. Musicians are performing near the town square in the evening."
+          ],
+          "relationship_changes": {
+            "Lena": -1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "street_music_night",
+            "music"
+          ]
+        },
+        {
+          "day": 4,
+          "summary": "Ethan spent the day Attend Merchant Inspection. Important interactions involved Maya.",
+          "important_people": [
+            "Maya"
+          ],
+          "important_locations": [
+            "market",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+            "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+            "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records."
+          ],
+          "relationship_changes": {},
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business"
+          ]
+        },
+        {
+          "day": 5,
+          "summary": "Ethan spent the day Attend Book Club, then Review records and numbers. Important interactions involved Carlos, Maya. The relationship with Carlos did not substantially change. Intent outcomes: investigate: expired. Intent expired before reaching enough progress. investigate: succeeded. Parent goal achieved.",
+          "important_people": [
+            "Carlos",
+            "Maya"
+          ],
+          "important_locations": [
+            "library"
+          ],
+          "important_events": [
+            "Town event today: Book Club. Residents are gathering to discuss a new book at the library."
+          ],
+          "relationship_changes": {
+            "Carlos": 0
+          },
+          "completed_intents": [
+            "investigate: expired. Intent expired before reaching enough progress.",
+            "investigate: succeeded. Parent goal achieved."
+          ],
+          "unresolved_topics": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community",
+            "ask_for_help"
+          ]
+        }
+      ],
+      "goals": [
+        "protect himself from betrayal",
+        "find reliable allies"
+      ],
+      "structured_goals": [
+        {
+          "id": "goal-3a168f111126",
+          "agent_name": "Ethan",
+          "description": "protect himself from betrayal",
+          "category": "investigate",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "active",
+          "progress": 0,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "library"
+          ],
+          "success_conditions": [
+            "Reach investigate progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": null,
+          "current_strategy_target": null,
+          "strategy_started_day": null,
+          "last_review_day": null,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-5021e800965b",
+          "agent_name": "Ethan",
+          "description": "find reliable allies",
+          "category": "investigate",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "achieved",
+          "progress": 3,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "library"
+          ],
+          "success_conditions": [
+            "Reach investigate progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": "ask_informed_agent",
+          "current_strategy_target": "Carlos",
+          "strategy_started_day": 5,
+          "last_review_day": 5,
+          "last_relationship_score": 0,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 1,
+              "strategy": "seek_information_at_location",
+              "score": 5.3,
+              "intent_id": "intent-goal-5021e800965b-1-0-seek_information_at_location",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 0,
+              "new_progress": 1,
+              "intent_id": "intent-goal-5021e800965b-1-0-seek_information_at_location",
+              "strategy": "seek_information_at_location",
+              "activity": "Work on intent: investigate",
+              "location": "library"
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 1,
+              "new_progress": 2,
+              "intent_id": "intent-goal-5021e800965b-1-0-seek_information_at_location",
+              "strategy": "seek_information_at_location",
+              "action": "share_rumor",
+              "target_agent": "Maya",
+              "location": "library"
+            },
+            {
+              "type": "strategy_adaptation",
+              "day": 2,
+              "trigger": "relationship",
+              "old_strategy": "seek_information_at_location",
+              "new_strategy": "ask_informed_agent",
+              "old_target_agent": null,
+              "preserved_progress": 2,
+              "new_target_agent": "Carlos",
+              "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.104).",
+              "relationship_snapshot": {
+                "trust": 0.12,
+                "affinity": 0.06,
+                "cooperation": 0.0,
+                "helpfulness": 0.18,
+                "hostility": -0.04,
+                "interaction_count": 1,
+                "positive_interactions": 1,
+                "negative_interactions": 0,
+                "last_interaction_day": 1
+              },
+              "relevant_social_memories": [
+                "Carlos offered me help."
+              ],
+              "prior_counterpart_memories": []
+            },
+            {
+              "type": "strategy_selected",
+              "day": 2,
+              "strategy": "ask_informed_agent",
+              "score": 5.4496,
+              "intent_id": "intent-goal-5021e800965b-2-1-ask_informed_agent",
+              "target_agent": "Carlos",
+              "relationship_influenced": true,
+              "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.104).",
+              "relationship_snapshot": {
+                "trust": 0.12,
+                "affinity": 0.06,
+                "cooperation": 0.0,
+                "helpfulness": 0.18,
+                "hostility": -0.04,
+                "interaction_count": 1,
+                "positive_interactions": 1,
+                "negative_interactions": 0,
+                "last_interaction_day": 1
+              },
+              "relevant_social_memories": [
+                "Carlos offered me help."
+              ]
+            },
+            {
+              "type": "intent_terminal",
+              "day": 5,
+              "intent_id": "intent-goal-5021e800965b-2-1-ask_informed_agent",
+              "status": "expired",
+              "expiration_reason": "no_opportunity"
+            },
+            {
+              "type": "strategy_selected",
+              "day": 5,
+              "strategy": "ask_informed_agent",
+              "score": 5.4496,
+              "intent_id": "intent-goal-5021e800965b-5-1-ask_informed_agent",
+              "target_agent": "Carlos",
+              "relationship_influenced": true,
+              "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.104).",
+              "relationship_snapshot": {
+                "trust": 0.12,
+                "affinity": 0.06,
+                "cooperation": 0.0,
+                "helpfulness": 0.18,
+                "hostility": -0.04,
+                "interaction_count": 1,
+                "positive_interactions": 1,
+                "negative_interactions": 0,
+                "last_interaction_day": 1
+              },
+              "relevant_social_memories": [
+                "Carlos offered me help."
+              ]
+            },
+            {
+              "type": "progress",
+              "day": 5,
+              "old_progress": 2,
+              "new_progress": 3,
+              "intent_id": "intent-goal-5021e800965b-5-1-ask_informed_agent",
+              "strategy": "ask_informed_agent",
+              "action": "ask_for_help",
+              "target_agent": "Carlos",
+              "location": "library"
+            },
+            {
+              "type": "achievement",
+              "day": 5,
+              "reason": "Deterministic investigate progress target reached."
+            }
+          ],
+          "completion_day": 5,
+          "adaptation_count": 1,
+          "recovered_after_adaptation": true
+        }
+      ],
+      "needs": {
+        "social": 54,
+        "wealth": 60,
+        "knowledge": 61
+      },
+      "relationships": {
+        "Carlos": 0,
+        "Maya": -1,
+        "Lena": 0
+      },
+      "relationship_states": {
+        "Carlos": {
+          "trust": 0.12,
+          "affinity": 0.06,
+          "cooperation": 0.0,
+          "helpfulness": 0.18,
+          "hostility": -0.04,
+          "interaction_count": 3,
+          "positive_interactions": 1,
+          "negative_interactions": 0,
+          "last_interaction_day": 5
+        },
+        "Lena": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 2,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 3
+        },
+        "Maya": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 3,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 5
+        }
+      },
+      "social_memories": {
+        "Carlos": [
+          {
+            "day": 1,
+            "hour": 12,
+            "counterpart": "Carlos",
+            "actor": "Carlos",
+            "action": "offer_help",
+            "outcome": "completed",
+            "summary": "Carlos offered me help.",
+            "deltas": {
+              "trust": 0.12,
+              "affinity": 0.06,
+              "helpfulness": 0.18,
+              "hostility": -0.04
+            }
+          },
+          {
+            "day": 5,
+            "hour": 8,
+            "counterpart": "Carlos",
+            "actor": "Ethan",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "I asked for help from Carlos.",
+            "deltas": {}
+          }
+        ],
+        "Maya": [
+          {
+            "day": 1,
+            "hour": 22,
+            "counterpart": "Maya",
+            "actor": "Ethan",
+            "action": "share_rumor",
+            "outcome": "completed",
+            "summary": "I shared a rumor with Maya.",
+            "deltas": {}
+          }
+        ]
+      },
+      "reputation_beliefs": {
+        "Carlos": {
+          "helpfulness": {
+            "target_agent": "Carlos",
+            "dimension": "helpfulness",
+            "score": 0.8904,
+            "confidence": 0.9,
+            "source_type": "direct_interaction",
+            "last_updated_day": 1,
+            "evidence": [
+              {
+                "evidence_id": "conversation:1:12:Carlos:Ethan:offer_help:helpfulness",
+                "value": 1.0,
+                "confidence": 0.9,
+                "source_type": "direct_interaction",
+                "source_agent": "Carlos",
+                "day": 1,
+                "transmission_depth": 0,
+                "transmission_chain": [
+                  "Ethan"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "occupation": "accountant",
+      "recent_topics": [
+        "offer_help",
+        "share_rumor",
+        "event",
+        "street_music_night",
+        "business",
+        "market",
+        "ask_for_help",
+        "learning",
+        "event",
+        "book_club"
+      ],
+      "current_activity": "Review records and numbers",
+      "current_activity_reason": "Ethan wants reliable information before trusting others.",
+      "current_activity_tags": [
+        "accounting",
+        "knowledge"
+      ]
+    },
+    {
+      "id": "agent_003",
+      "name": "Lena",
+      "personality": "friendly",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c7269078-0270-456c-8f57-c1fda3cc286f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_cleanup",
+            "community",
+            "social"
+          ],
+          "id": "d71022ac-78d0-400d-9d5d-41f6406746f1",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "013548bc-db07-4e73-b259-599a2fde4b64",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Let's try the strawberry shortcake recipe you learned. I could use some fresh ideas for our next community potluck.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ],
+          "id": "1bca8666-6deb-4571-a225-f3f2b5eca267",
+          "last_accessed_day": 4,
+          "strength": 3
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "id": "0b7270a6-e19f-4b25-a063-cc9913c9e6fa",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 8,
+          "type": "conversation",
+          "description": "My work as an accountant has kept me busy near the town square.",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "ebf03168-6752-4947-957f-be81af389bdc",
+          "last_accessed_day": 3,
+          "strength": 2
+        },
+        {
+          "day": 3,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I noticed you've been listening to all these musicians. It's quite a change from your usual work, huh?",
+          "participants": [
+            "Ethan",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": -1,
+          "tags": [
+            "conversation",
+            "event",
+            "street_music_night",
+            "neutral",
+            "chat"
+          ],
+          "id": "7e255c37-009c-4601-81a2-feff1eb5f3c8",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Maya leaned closer to Lena, suggesting they could find some good spots to capture the music.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "town_square",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "event",
+            "street_music_night",
+            "neutral",
+            "chat"
+          ],
+          "id": "ef7bc21e-169d-4aa0-9375-66387f97757e",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "e28819eb-ad33-45cd-aae7-1a3747742f51",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "f29bc406-88ef-494c-aecf-5e8cc4cbbfe3",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ],
+          "id": "713ad6f8-e82f-43cd-9c0b-1a1d6d0ec348",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 12,
+          "type": "conversation",
+          "description": "I saw some stalls offering items way below market price. Do you think there's a chance of fraud?",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "business",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "c91db436-8aa2-4983-bd95-d930fd38fd61",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 4,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you recommend any good books on community organizing? I'm looking for some insights.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "chat"
+          ],
+          "id": "bc564d77-7abc-4f0a-81a1-8c61d605a385",
+          "last_accessed_day": 4,
+          "strength": 2
+        },
+        {
+          "day": 4,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's see if we can find some new recipes for the upcoming festival.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ],
+          "id": "7aadf7bf-0719-46cb-b7a4-e0e3c38f05c4",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "participants": [],
+          "location": "library",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "id": "5f56768b-f6a1-492f-a271-e6aaf772f4e2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "My work as a local journalist has kept me busy near the market.",
+          "participants": [
+            "Maya",
+            "Lena"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "market",
+            "neutral",
+            "chat"
+          ],
+          "id": "974327e4-3e84-47c1-ab52-b64f12732f88",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 5,
+          "hour": 22,
+          "type": "conversation",
+          "description": "I noticed the street music night was really popular last week. Did you get a chance to check it out?",
+          "participants": [
+            "Lena",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "chat"
+          ],
+          "id": "1c05bd92-fdcd-4f15-9a3b-bc8c7a4001fe",
+          "last_accessed_day": null,
+          "strength": 1
+        }
+      ],
+      "memory_archive": [],
+      "memory_summary": "",
+      "daily_journals": [
+        {
+          "day": 1,
+          "summary": "Lena spent the day Attend Town Cleanup, then Look for work or business opportunities.",
+          "important_people": [],
+          "important_locations": [
+            "town_square",
+            "market"
+          ],
+          "important_events": [
+            "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+            "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square."
+          ],
+          "relationship_changes": {},
+          "completed_intents": [],
+          "unresolved_topics": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "town_cleanup"
+          ]
+        },
+        {
+          "day": 2,
+          "summary": "Lena spent the day Meet residents, then Look for information. Important interactions involved Carlos. The relationship with Carlos improved. Intent outcomes: socialize: succeeded. Intent 'socialize' reached its progress goal.",
+          "important_people": [
+            "Carlos"
+          ],
+          "important_locations": [
+            "cafe",
+            "library"
+          ],
+          "important_events": [
+            "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients."
+          ],
+          "relationship_changes": {
+            "Carlos": 1
+          },
+          "completed_intents": [
+            "socialize: succeeded. Intent 'socialize' reached its progress goal."
+          ],
+          "unresolved_topics": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social",
+            "cooperate"
+          ]
+        },
+        {
+          "day": 3,
+          "summary": "Lena spent the day Attend Street Music Night, then Organize community support, then Work on intent: socialize. Important interactions involved Ethan, Maya. The relationship with Ethan worsened. The relationship with Maya improved.",
+          "important_people": [
+            "Ethan",
+            "Maya"
+          ],
+          "important_locations": [
+            "town_square"
+          ],
+          "important_events": [
+            "Town event today: Street Music Night. Musicians are performing near the town square in the evening."
+          ],
+          "relationship_changes": {
+            "Ethan": -1,
+            "Maya": 1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ]
+        },
+        {
+          "day": 4,
+          "summary": "Lena spent the day Work on intent: socialize, then Look for work or business opportunities, then Look for information. Important interactions involved Carlos, Maya. The relationship with Carlos improved. Intent outcomes: socialize: succeeded. Parent goal achieved.",
+          "important_people": [
+            "Carlos",
+            "Maya"
+          ],
+          "important_locations": [
+            "town_square",
+            "market",
+            "library",
+            "cafe"
+          ],
+          "important_events": [
+            "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+            "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+            "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records."
+          ],
+          "relationship_changes": {
+            "Carlos": 1
+          },
+          "completed_intents": [
+            "socialize: succeeded. Parent goal achieved."
+          ],
+          "unresolved_topics": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business"
+          ]
+        },
+        {
+          "day": 5,
+          "summary": "Lena spent the day Look for work or business opportunities, then Meet residents, then Organize community support. Important interactions involved Maya. The relationship with Maya improved.",
+          "important_people": [
+            "Maya"
+          ],
+          "important_locations": [
+            "market",
+            "cafe",
+            "town_square",
+            "library"
+          ],
+          "important_events": [
+            "Town event today: Book Club. Residents are gathering to discuss a new book at the library."
+          ],
+          "relationship_changes": {
+            "Maya": 1
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community",
+            "market"
+          ]
+        }
+      ],
+      "goals": [
+        "be liked by others",
+        "help the town community",
+        "Find a useful work opportunity"
+      ],
+      "structured_goals": [
+        {
+          "id": "goal-27ed079d6fda",
+          "agent_name": "Lena",
+          "description": "be liked by others",
+          "category": "socialize",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "active",
+          "progress": 0,
+          "progress_target": 4,
+          "target_agents": [],
+          "target_locations": [
+            "cafe"
+          ],
+          "success_conditions": [
+            "Reach socialize progress target"
+          ],
+          "current_intent_id": "intent-goal-27ed079d6fda-5-0-ask_reliable_partner",
+          "current_strategy": "ask_reliable_partner",
+          "current_strategy_target": "Carlos",
+          "strategy_started_day": 5,
+          "last_review_day": 5,
+          "last_relationship_score": 2,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 5,
+              "strategy": "ask_reliable_partner",
+              "score": 5.8656,
+              "intent_id": "intent-goal-27ed079d6fda-5-0-ask_reliable_partner",
+              "target_agent": "Carlos",
+              "relationship_influenced": true,
+              "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.194).",
+              "relationship_snapshot": {
+                "trust": 0.2,
+                "affinity": 0.11,
+                "cooperation": 0.36,
+                "helpfulness": 0.04,
+                "hostility": -0.1,
+                "interaction_count": 3,
+                "positive_interactions": 2,
+                "negative_interactions": 0,
+                "last_interaction_day": 4
+              },
+              "relevant_social_memories": [
+                "Carlos and I cooperated.",
+                "Carlos and I cooperated."
+              ]
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-57ca6ad0c879",
+          "agent_name": "Lena",
+          "description": "help the town community",
+          "category": "improve_social_support",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "achieved",
+          "progress": 4,
+          "progress_target": 4,
+          "target_agents": [],
+          "target_locations": [
+            "town_square"
+          ],
+          "success_conditions": [
+            "Reach improve_social_support progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": "direct_participation",
+          "current_strategy_target": null,
+          "strategy_started_day": 3,
+          "last_review_day": 3,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 1,
+              "strategy": "direct_participation",
+              "score": 5.7,
+              "intent_id": "intent-goal-57ca6ad0c879-1-0-direct_participation",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 0,
+              "new_progress": 1,
+              "intent_id": "intent-goal-57ca6ad0c879-1-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Attend Town Cleanup",
+              "location": "town_square"
+            },
+            {
+              "type": "progress",
+              "day": 2,
+              "old_progress": 1,
+              "new_progress": 2,
+              "intent_id": "intent-goal-57ca6ad0c879-1-0-direct_participation",
+              "strategy": "direct_participation",
+              "action": "cooperate",
+              "target_agent": "Carlos",
+              "location": "cafe"
+            },
+            {
+              "type": "strategy_selected",
+              "day": 3,
+              "strategy": "direct_participation",
+              "score": 5.7,
+              "intent_id": "intent-goal-57ca6ad0c879-3-0-direct_participation",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 3,
+              "old_progress": 2,
+              "new_progress": 3,
+              "intent_id": "intent-goal-57ca6ad0c879-3-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Attend Street Music Night",
+              "location": "town_square"
+            },
+            {
+              "type": "progress",
+              "day": 4,
+              "old_progress": 3,
+              "new_progress": 4,
+              "intent_id": "intent-goal-57ca6ad0c879-3-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Work on intent: socialize",
+              "location": "town_square"
+            },
+            {
+              "type": "achievement",
+              "day": 4,
+              "reason": "Deterministic improve_social_support progress target reached."
+            }
+          ],
+          "completion_day": 4,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-ba8607d69df1",
+          "agent_name": "Lena",
+          "description": "Find a useful work opportunity",
+          "category": "seek_work",
+          "priority": 2,
+          "created_day": 5,
+          "review_day": 12,
+          "status": "active",
+          "progress": 0,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "market"
+          ],
+          "success_conditions": [
+            "Reach seek_work progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": null,
+          "current_strategy_target": null,
+          "strategy_started_day": null,
+          "last_review_day": null,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        }
+      ],
+      "needs": {
+        "social": 78,
+        "wealth": 45,
+        "knowledge": 46
+      },
+      "relationships": {
+        "Carlos": 2,
+        "Ethan": 0,
+        "Maya": 2
+      },
+      "relationship_states": {
+        "Carlos": {
+          "trust": 0.2,
+          "affinity": 0.11,
+          "cooperation": 0.36,
+          "helpfulness": 0.04,
+          "hostility": -0.1,
+          "interaction_count": 3,
+          "positive_interactions": 2,
+          "negative_interactions": 0,
+          "last_interaction_day": 4
+        },
+        "Ethan": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 2,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 3
+        },
+        "Maya": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 4,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 5
+        }
+      },
+      "social_memories": {
+        "Carlos": [
+          {
+            "day": 2,
+            "hour": 8,
+            "counterpart": "Carlos",
+            "actor": "Lena",
+            "action": "cooperate",
+            "outcome": "completed",
+            "summary": "Carlos and I cooperated.",
+            "deltas": {
+              "trust": 0.08,
+              "affinity": 0.05,
+              "cooperation": 0.16,
+              "hostility": -0.05
+            }
+          },
+          {
+            "day": 4,
+            "hour": 22,
+            "counterpart": "Carlos",
+            "actor": "Carlos",
+            "action": "cooperate",
+            "outcome": "completed",
+            "summary": "Carlos and I cooperated.",
+            "deltas": {
+              "trust": 0.12,
+              "affinity": 0.06,
+              "cooperation": 0.2,
+              "helpfulness": 0.04,
+              "hostility": -0.05
+            }
+          }
+        ]
+      },
+      "reputation_beliefs": {
+        "Carlos": {
+          "cooperativeness": {
+            "target_agent": "Carlos",
+            "dimension": "cooperativeness",
+            "score": 0.8904,
+            "confidence": 0.9,
+            "source_type": "direct_interaction",
+            "last_updated_day": 4,
+            "evidence": [
+              {
+                "evidence_id": "conversation:4:22:Carlos:Lena:cooperate:cooperativeness",
+                "value": 1.0,
+                "confidence": 0.9,
+                "source_type": "direct_interaction",
+                "source_agent": "Carlos",
+                "day": 4,
+                "transmission_depth": 0,
+                "transmission_chain": [
+                  "Lena"
+                ]
+              }
+            ]
+          },
+          "helpfulness": {
+            "target_agent": "Carlos",
+            "dimension": "helpfulness",
+            "score": 0.2248,
+            "confidence": 0.9,
+            "source_type": "direct_interaction",
+            "last_updated_day": 4,
+            "evidence": [
+              {
+                "evidence_id": "conversation:4:22:Carlos:Lena:cooperate:helpfulness",
+                "value": 0.25,
+                "confidence": 0.9,
+                "source_type": "direct_interaction",
+                "source_agent": "Carlos",
+                "day": 4,
+                "transmission_depth": 0,
+                "transmission_chain": [
+                  "Lena"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "occupation": "community organizer",
+      "recent_topics": [
+        "cooperate",
+        "event",
+        "street_music_night",
+        "event",
+        "street_music_night",
+        "business",
+        "market",
+        "learning",
+        "cooperate",
+        "market"
+      ],
+      "current_activity": "Look for information",
+      "current_activity_reason": "Lena wants to learn something useful.",
+      "current_activity_tags": [
+        "knowledge",
+        "learning"
+      ]
+    },
+    {
+      "id": "agent_004",
+      "name": "Carlos",
+      "personality": "ambitious",
+      "location_id": "library",
+      "memory": [
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c7269078-0270-456c-8f57-c1fda3cc286f",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "town_cleanup",
+            "community",
+            "social"
+          ],
+          "id": "d71022ac-78d0-400d-9d5d-41f6406746f1",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 1,
+          "hour": 12,
+          "type": "conversation",
+          "description": "Ethan, I noticed you're looking for supplies. Would you like some help organizing the shelves?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "market",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "offer_help"
+          ],
+          "id": "65da1837-57c1-4a21-9c24-0e11eb628fd0",
+          "last_accessed_day": 5,
+          "strength": 3
+        },
+        {
+          "day": 1,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you show me where they keep the most useful books?",
+          "participants": [
+            "Carlos",
+            "Maya"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "06b15b56-d574-40ce-be9e-abccf9072568",
+          "last_accessed_day": 2,
+          "strength": 2
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "c6c5b928-cac6-41c5-b56a-999a20789f67",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients.",
+          "participants": [],
+          "location": "cafe",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "cooking_class",
+            "food",
+            "learning",
+            "social"
+          ],
+          "id": "013548bc-db07-4e73-b259-599a2fde4b64",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 2,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Let's try the strawberry shortcake recipe you learned. I could use some fresh ideas for our next community potluck.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ],
+          "id": "1bca8666-6deb-4571-a225-f3f2b5eca267",
+          "last_accessed_day": 4,
+          "strength": 3
+        },
+        {
+          "day": 2,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you point me to where they store the most useful books?",
+          "participants": [
+            "Maya",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "d446def3-9c06-49e3-b1b3-df2eed367af7",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 3,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Street Music Night. Musicians are performing near the town square in the evening.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "id": "0b7270a6-e19f-4b25-a063-cc9913c9e6fa",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+          "participants": [],
+          "location": "town_square",
+          "importance": 3,
+          "sentiment": 1,
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social"
+          ],
+          "id": "e28819eb-ad33-45cd-aae7-1a3747742f51",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "town_arc",
+          "description": "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 2,
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business",
+            "wealth"
+          ],
+          "id": "f29bc406-88ef-494c-aecf-5e8cc4cbbfe3",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records.",
+          "participants": [],
+          "location": "market",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "merchant_inspection",
+            "market",
+            "wealth",
+            "rules"
+          ],
+          "id": "713ad6f8-e82f-43cd-9c0b-1a1d6d0ec348",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 4,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Could you recommend any good books on community organizing? I'm looking for some insights.",
+          "participants": [
+            "Lena",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "neutral",
+            "chat"
+          ],
+          "id": "bc564d77-7abc-4f0a-81a1-8c61d605a385",
+          "last_accessed_day": 4,
+          "strength": 2
+        },
+        {
+          "day": 4,
+          "hour": 22,
+          "type": "conversation",
+          "description": "Let's see if we can find some new recipes for the upcoming festival.",
+          "participants": [
+            "Carlos",
+            "Lena"
+          ],
+          "location": "cafe",
+          "importance": 2,
+          "sentiment": 1,
+          "tags": [
+            "conversation",
+            "neutral",
+            "cooperate"
+          ],
+          "id": "7aadf7bf-0719-46cb-b7a4-e0e3c38f05c4",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 0,
+          "type": "daily_event",
+          "description": "Town event today: Book Club. Residents are gathering to discuss a new book at the library.",
+          "participants": [],
+          "location": "library",
+          "importance": 3,
+          "sentiment": 0,
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "id": "5f56768b-f6a1-492f-a271-e6aaf772f4e2",
+          "last_accessed_day": null,
+          "strength": 1
+        },
+        {
+          "day": 5,
+          "hour": 8,
+          "type": "conversation",
+          "description": "Carlos, have you seen if they need any volunteers for today's event?",
+          "participants": [
+            "Ethan",
+            "Carlos"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "neutral",
+            "ask_for_help"
+          ],
+          "id": "1ead182b-2a7b-4821-83e0-f3ac8eb86962",
+          "last_accessed_day": 5,
+          "strength": 2
+        },
+        {
+          "day": 5,
+          "hour": 18,
+          "type": "conversation",
+          "description": "Have you heard what they're talking about at the Book Club today?",
+          "participants": [
+            "Carlos",
+            "Ethan"
+          ],
+          "location": "library",
+          "importance": 2,
+          "sentiment": 0,
+          "tags": [
+            "conversation",
+            "learning",
+            "event",
+            "book_club",
+            "neutral",
+            "chat"
+          ],
+          "id": "93beb993-0929-44c5-bf54-7f0904076bcb",
+          "last_accessed_day": null,
+          "strength": 1
+        }
+      ],
+      "memory_archive": [],
+      "memory_summary": "",
+      "daily_journals": [
+        {
+          "day": 1,
+          "summary": "Carlos spent the day Work on intent: seek_work, then Look for information, then Network with townspeople. Important interactions involved Ethan, Maya. The relationship with Ethan did not substantially change. The relationship with Maya did not substantially change. Intent outcomes: seek_work: succeeded. Intent 'seek_work' reached its progress goal.",
+          "important_people": [
+            "Ethan",
+            "Maya"
+          ],
+          "important_locations": [
+            "market",
+            "library",
+            "cafe",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc created: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 1. Progress: 0.",
+            "Town event today: Town Cleanup. Volunteers are meeting to clean up the town square."
+          ],
+          "relationship_changes": {
+            "Ethan": 0,
+            "Maya": 0
+          },
+          "completed_intents": [
+            "seek_work: succeeded. Intent 'seek_work' reached its progress goal."
+          ],
+          "unresolved_topics": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "created",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "town_cleanup",
+            "offer_help",
+            "learning"
+          ]
+        },
+        {
+          "day": 2,
+          "summary": "Carlos spent the day Socialize with townspeople, then Work on intent: seek_work, then Look for information. Important interactions involved Lena, Maya. The relationship with Lena improved. The relationship with Maya improved. Intent outcomes: seek_work: succeeded. Parent goal achieved.",
+          "important_people": [
+            "Lena",
+            "Maya"
+          ],
+          "important_locations": [
+            "cafe",
+            "market",
+            "library",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc updated: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: active. Tension: 0. Progress: 1.",
+            "Town event today: Cooking Class. Residents are learning simple recipes using local ingredients."
+          ],
+          "relationship_changes": {
+            "Lena": 1,
+            "Maya": 1
+          },
+          "completed_intents": [
+            "seek_work: succeeded. Parent goal achieved."
+          ],
+          "unresolved_topics": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "updated",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "event",
+            "cooking_class",
+            "food",
+            "learning"
+          ]
+        },
+        {
+          "day": 3,
+          "summary": "Carlos spent the day Talk with people in the town square, then Work on intent: socialize, then Network with townspeople.",
+          "important_people": [],
+          "important_locations": [
+            "town_square",
+            "cafe"
+          ],
+          "important_events": [
+            "Town event today: Street Music Night. Musicians are performing near the town square in the evening."
+          ],
+          "relationship_changes": {},
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "street_music_night",
+            "music",
+            "social",
+            "community"
+          ]
+        },
+        {
+          "day": 4,
+          "summary": "Carlos spent the day Attend Merchant Inspection, then Work on intent: socialize, then Look for information. Important interactions involved Lena. The relationship with Lena improved. Intent outcomes: socialize: succeeded. Target-location activity advanced the tactic.",
+          "important_people": [
+            "Lena"
+          ],
+          "important_locations": [
+            "market",
+            "cafe",
+            "library",
+            "town_square"
+          ],
+          "important_events": [
+            "Town arc resolved: Community Project. Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation. Status: resolved. Tension: 1. Progress: 3.",
+            "Town arc created: Market Pressure. Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly. Status: active. Tension: 2. Progress: 0.",
+            "Town event today: Merchant Inspection. Market stalls are being checked for fair prices and proper records."
+          ],
+          "relationship_changes": {
+            "Lena": 1
+          },
+          "completed_intents": [
+            "socialize: succeeded. Target-location activity advanced the tactic."
+          ],
+          "unresolved_topics": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer"
+          ],
+          "tags": [
+            "town_arc",
+            "resolved",
+            "arc_community_project_day_1",
+            "community",
+            "volunteer",
+            "social",
+            "created",
+            "arc_market_pressure_day_4",
+            "market",
+            "business"
+          ]
+        },
+        {
+          "day": 5,
+          "summary": "Carlos spent the day Attend Book Club, then Look for business opportunities, then Look for information. Important interactions involved Ethan. The relationship with Ethan did not substantially change.",
+          "important_people": [
+            "Ethan"
+          ],
+          "important_locations": [
+            "library",
+            "market"
+          ],
+          "important_events": [
+            "Town event today: Book Club. Residents are gathering to discuss a new book at the library."
+          ],
+          "relationship_changes": {
+            "Ethan": 0
+          },
+          "completed_intents": [],
+          "unresolved_topics": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community"
+          ],
+          "tags": [
+            "event",
+            "book_club",
+            "learning",
+            "social",
+            "community",
+            "ask_for_help"
+          ]
+        }
+      ],
+      "goals": [
+        "grow his influence",
+        "find business opportunities",
+        "Build useful knowledge about town activity"
+      ],
+      "structured_goals": [
+        {
+          "id": "goal-872a5539a455",
+          "agent_name": "Carlos",
+          "description": "grow his influence",
+          "category": "socialize",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "active",
+          "progress": 2,
+          "progress_target": 4,
+          "target_agents": [],
+          "target_locations": [
+            "cafe"
+          ],
+          "success_conditions": [
+            "Reach socialize progress target"
+          ],
+          "current_intent_id": "intent-goal-872a5539a455-5-1-ask_reliable_partner",
+          "current_strategy": "ask_reliable_partner",
+          "current_strategy_target": "Lena",
+          "strategy_started_day": 5,
+          "last_review_day": 5,
+          "last_relationship_score": 2,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 3,
+              "strategy": "direct_participation",
+              "score": 5.7,
+              "intent_id": "intent-goal-872a5539a455-3-0-direct_participation",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 3,
+              "old_progress": 0,
+              "new_progress": 1,
+              "intent_id": "intent-goal-872a5539a455-3-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Work on intent: socialize",
+              "location": "cafe"
+            },
+            {
+              "type": "progress",
+              "day": 4,
+              "old_progress": 1,
+              "new_progress": 2,
+              "intent_id": "intent-goal-872a5539a455-3-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Work on intent: socialize",
+              "location": "cafe"
+            },
+            {
+              "type": "strategy_adaptation",
+              "day": 5,
+              "trigger": "relationship",
+              "old_strategy": "direct_participation",
+              "new_strategy": "ask_reliable_partner",
+              "old_target_agent": null,
+              "preserved_progress": 2,
+              "new_target_agent": "Lena",
+              "relationship_reason": "Direct history with Lena supports this tactic (decision value +0.194).",
+              "relationship_snapshot": {
+                "trust": 0.2,
+                "affinity": 0.11,
+                "cooperation": 0.36,
+                "helpfulness": 0.04,
+                "hostility": -0.1,
+                "interaction_count": 3,
+                "positive_interactions": 2,
+                "negative_interactions": 0,
+                "last_interaction_day": 4
+              },
+              "relevant_social_memories": [
+                "Lena and I cooperated.",
+                "Lena and I cooperated."
+              ],
+              "prior_counterpart_memories": []
+            },
+            {
+              "type": "strategy_selected",
+              "day": 5,
+              "strategy": "ask_reliable_partner",
+              "score": 5.8656,
+              "intent_id": "intent-goal-872a5539a455-5-1-ask_reliable_partner",
+              "target_agent": "Lena",
+              "relationship_influenced": true,
+              "relationship_reason": "Direct history with Lena supports this tactic (decision value +0.194).",
+              "relationship_snapshot": {
+                "trust": 0.2,
+                "affinity": 0.11,
+                "cooperation": 0.36,
+                "helpfulness": 0.04,
+                "hostility": -0.1,
+                "interaction_count": 3,
+                "positive_interactions": 2,
+                "negative_interactions": 0,
+                "last_interaction_day": 4
+              },
+              "relevant_social_memories": [
+                "Lena and I cooperated.",
+                "Lena and I cooperated."
+              ]
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 1,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-aa8b6f2aeefd",
+          "agent_name": "Carlos",
+          "description": "find business opportunities",
+          "category": "seek_work",
+          "priority": 3,
+          "created_day": 0,
+          "review_day": 7,
+          "status": "achieved",
+          "progress": 3,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "market"
+          ],
+          "success_conditions": [
+            "Reach seek_work progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": "direct_participation",
+          "current_strategy_target": null,
+          "strategy_started_day": 2,
+          "last_review_day": 2,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            },
+            {
+              "type": "strategy_selected",
+              "day": 1,
+              "strategy": "direct_participation",
+              "score": 5.7,
+              "intent_id": "intent-goal-aa8b6f2aeefd-1-0-direct_participation",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 0,
+              "new_progress": 1,
+              "intent_id": "intent-goal-aa8b6f2aeefd-1-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Work on intent: seek_work",
+              "location": "market"
+            },
+            {
+              "type": "progress",
+              "day": 1,
+              "old_progress": 1,
+              "new_progress": 2,
+              "intent_id": "intent-goal-aa8b6f2aeefd-1-0-direct_participation",
+              "strategy": "direct_participation",
+              "action": "offer_help",
+              "target_agent": "Ethan",
+              "location": "market"
+            },
+            {
+              "type": "strategy_selected",
+              "day": 2,
+              "strategy": "direct_participation",
+              "score": 5.7,
+              "intent_id": "intent-goal-aa8b6f2aeefd-2-0-direct_participation",
+              "target_agent": null,
+              "relationship_influenced": false,
+              "relationship_reason": "",
+              "relationship_snapshot": {},
+              "relevant_social_memories": []
+            },
+            {
+              "type": "progress",
+              "day": 2,
+              "old_progress": 2,
+              "new_progress": 3,
+              "intent_id": "intent-goal-aa8b6f2aeefd-2-0-direct_participation",
+              "strategy": "direct_participation",
+              "activity": "Work on intent: seek_work",
+              "location": "market"
+            },
+            {
+              "type": "achievement",
+              "day": 2,
+              "reason": "Deterministic seek_work progress target reached."
+            }
+          ],
+          "completion_day": 2,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        },
+        {
+          "id": "goal-ea2f51926069",
+          "agent_name": "Carlos",
+          "description": "Build useful knowledge about town activity",
+          "category": "increase_knowledge",
+          "priority": 2,
+          "created_day": 4,
+          "review_day": 11,
+          "status": "active",
+          "progress": 0,
+          "progress_target": 3,
+          "target_agents": [],
+          "target_locations": [
+            "library"
+          ],
+          "success_conditions": [
+            "Reach increase_knowledge progress target"
+          ],
+          "current_intent_id": null,
+          "current_strategy": null,
+          "current_strategy_target": null,
+          "strategy_started_day": null,
+          "last_review_day": null,
+          "last_relationship_score": null,
+          "last_reputation_risk": 0.0,
+          "evidence": [
+            {
+              "type": "legacy_conversion",
+              "day": 0
+            }
+          ],
+          "completion_day": null,
+          "adaptation_count": 0,
+          "recovered_after_adaptation": false
+        }
+      ],
+      "needs": {
+        "social": 64,
+        "wealth": 70,
+        "knowledge": 52
+      },
+      "relationships": {
+        "Ethan": 0,
+        "Maya": 1,
+        "Lena": 2
+      },
+      "relationship_states": {
+        "Ethan": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 3,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 5
+        },
+        "Lena": {
+          "trust": 0.2,
+          "affinity": 0.11,
+          "cooperation": 0.36,
+          "helpfulness": 0.04,
+          "hostility": -0.1,
+          "interaction_count": 3,
+          "positive_interactions": 2,
+          "negative_interactions": 0,
+          "last_interaction_day": 4
+        },
+        "Maya": {
+          "trust": 0.0,
+          "affinity": 0.0,
+          "cooperation": 0.0,
+          "helpfulness": 0.0,
+          "hostility": 0.0,
+          "interaction_count": 2,
+          "positive_interactions": 0,
+          "negative_interactions": 0,
+          "last_interaction_day": 2
+        }
+      },
+      "social_memories": {
+        "Ethan": [
+          {
+            "day": 1,
+            "hour": 12,
+            "counterpart": "Ethan",
+            "actor": "Carlos",
+            "action": "offer_help",
+            "outcome": "completed",
+            "summary": "I offered help to Ethan.",
+            "deltas": {}
+          },
+          {
+            "day": 5,
+            "hour": 8,
+            "counterpart": "Ethan",
+            "actor": "Ethan",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "Ethan asked me for help.",
+            "deltas": {}
+          }
+        ],
+        "Maya": [
+          {
+            "day": 1,
+            "hour": 18,
+            "counterpart": "Maya",
+            "actor": "Carlos",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "I asked for help from Maya.",
+            "deltas": {}
+          },
+          {
+            "day": 2,
+            "hour": 18,
+            "counterpart": "Maya",
+            "actor": "Maya",
+            "action": "ask_for_help",
+            "outcome": "completed",
+            "summary": "Maya asked me for help.",
+            "deltas": {}
+          }
+        ],
+        "Lena": [
+          {
+            "day": 2,
+            "hour": 8,
+            "counterpart": "Lena",
+            "actor": "Lena",
+            "action": "cooperate",
+            "outcome": "completed",
+            "summary": "Lena and I cooperated.",
+            "deltas": {
+              "trust": 0.12,
+              "affinity": 0.06,
+              "cooperation": 0.2,
+              "helpfulness": 0.04,
+              "hostility": -0.05
+            }
+          },
+          {
+            "day": 4,
+            "hour": 22,
+            "counterpart": "Lena",
+            "actor": "Carlos",
+            "action": "cooperate",
+            "outcome": "completed",
+            "summary": "Lena and I cooperated.",
+            "deltas": {
+              "trust": 0.08,
+              "affinity": 0.05,
+              "cooperation": 0.16,
+              "hostility": -0.05
+            }
+          }
+        ]
+      },
+      "reputation_beliefs": {
+        "Lena": {
+          "cooperativeness": {
+            "target_agent": "Lena",
+            "dimension": "cooperativeness",
+            "score": 0.8904,
+            "confidence": 0.9,
+            "source_type": "direct_interaction",
+            "last_updated_day": 2,
+            "evidence": [
+              {
+                "evidence_id": "conversation:2:8:Lena:Carlos:cooperate:cooperativeness",
+                "value": 1.0,
+                "confidence": 0.9,
+                "source_type": "direct_interaction",
+                "source_agent": "Lena",
+                "day": 2,
+                "transmission_depth": 0,
+                "transmission_chain": [
+                  "Carlos"
+                ]
+              }
+            ]
+          },
+          "helpfulness": {
+            "target_agent": "Lena",
+            "dimension": "helpfulness",
+            "score": 0.2248,
+            "confidence": 0.9,
+            "source_type": "direct_interaction",
+            "last_updated_day": 2,
+            "evidence": [
+              {
+                "evidence_id": "conversation:2:8:Lena:Carlos:cooperate:helpfulness",
+                "value": 0.25,
+                "confidence": 0.9,
+                "source_type": "direct_interaction",
+                "source_agent": "Lena",
+                "day": 2,
+                "transmission_depth": 0,
+                "transmission_chain": [
+                  "Carlos"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "occupation": "merchant",
+      "recent_topics": [
+        "ask_for_help",
+        "cooperate",
+        "learning",
+        "ask_for_help",
+        "learning",
+        "cooperate",
+        "ask_for_help",
+        "learning",
+        "event",
+        "book_club"
+      ],
+      "current_activity": "Look for information",
+      "current_activity_reason": "Carlos wants to learn something useful.",
+      "current_activity_tags": [
+        "knowledge",
+        "learning"
+      ]
+    }
+  ],
+  "relationship_scores": {
+    "Carlos|Ethan": 0,
+    "Carlos|Maya": 1,
+    "Ethan|Maya": -1,
+    "Carlos|Lena": 2,
+    "Ethan|Lena": 0,
+    "Lena|Maya": 2
+  },
+  "relationship_events": [
+    {
+      "day": 1,
+      "hour": 12,
+      "agent_a": "Carlos",
+      "agent_b": "Ethan",
+      "action": "offer_help",
+      "relationship_change": 0,
+      "relationship_score": 0,
+      "relationship_label": "neutral",
+      "description": "Carlos used action 'offer_help' with Ethan. Their relationship stayed the same by +0; score is now +0 (neutral).",
+      "location": "market",
+      "tags": [
+        "conversation",
+        "neutral",
+        "offer_help"
+      ],
+      "conversation": "Ethan, I noticed you're looking for supplies. Would you like some help organizing the shelves?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Carlos": {},
+        "Ethan": {
+          "trust": 0.12,
+          "affinity": 0.06,
+          "helpfulness": 0.18,
+          "hostility": -0.04
+        }
+      },
+      "id": "ce86fbf8-1288-4d72-a904-97e9f2550f18"
+    },
+    {
+      "day": 1,
+      "hour": 18,
+      "agent_a": "Carlos",
+      "agent_b": "Maya",
+      "action": "ask_for_help",
+      "relationship_change": 0,
+      "relationship_score": 0,
+      "relationship_label": "neutral",
+      "description": "Carlos used action 'ask_for_help' with Maya. Their relationship stayed the same by +0; score is now +0 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "learning",
+        "neutral",
+        "ask_for_help"
+      ],
+      "conversation": "Could you show me where they keep the most useful books?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Carlos": {},
+        "Maya": {}
+      },
+      "id": "a6230fda-2665-42c3-9009-ea8511a7554c"
+    },
+    {
+      "day": 1,
+      "hour": 22,
+      "agent_a": "Ethan",
+      "agent_b": "Maya",
+      "action": "share_rumor",
+      "relationship_change": -1,
+      "relationship_score": -1,
+      "relationship_label": "neutral",
+      "description": "Ethan used action 'share_rumor' with Maya. Their relationship worsened by -1; score is now -1 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "neutral",
+        "share_rumor"
+      ],
+      "conversation": "From what I saw, Carlos seemed helpful, though you should judge for yourself.",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Ethan": {},
+        "Maya": {
+          "trust": -0.04,
+          "hostility": 0.03
+        }
+      },
+      "id": "6af743fd-9b54-4534-b748-100623aae6da"
+    },
+    {
+      "day": 2,
+      "hour": 8,
+      "agent_a": "Lena",
+      "agent_b": "Carlos",
+      "action": "cooperate",
+      "relationship_change": 1,
+      "relationship_score": 1,
+      "relationship_label": "neutral",
+      "description": "Lena used action 'cooperate' with Carlos. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "cafe",
+      "tags": [
+        "conversation",
+        "neutral",
+        "cooperate"
+      ],
+      "conversation": "Let's try the strawberry shortcake recipe you learned. I could use some fresh ideas for our next community potluck.",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Lena": {
+          "trust": 0.08,
+          "affinity": 0.05,
+          "cooperation": 0.16,
+          "hostility": -0.05
+        },
+        "Carlos": {
+          "trust": 0.12,
+          "affinity": 0.06,
+          "cooperation": 0.2,
+          "helpfulness": 0.04,
+          "hostility": -0.05
+        }
+      },
+      "id": "c1d8d0c5-3702-495f-a1e3-3c6712356910"
+    },
+    {
+      "day": 2,
+      "hour": 18,
+      "agent_a": "Maya",
+      "agent_b": "Carlos",
+      "action": "ask_for_help",
+      "relationship_change": 1,
+      "relationship_score": 1,
+      "relationship_label": "neutral",
+      "description": "Maya used action 'ask_for_help' with Carlos. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "learning",
+        "neutral",
+        "ask_for_help"
+      ],
+      "conversation": "Could you point me to where they store the most useful books?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Maya": {},
+        "Carlos": {}
+      },
+      "id": "0fd9b5fe-b7ca-4a37-a498-442f68f6451b"
+    },
+    {
+      "day": 3,
+      "hour": 12,
+      "agent_a": "Ethan",
+      "agent_b": "Lena",
+      "action": "chat",
+      "relationship_change": -1,
+      "relationship_score": -1,
+      "relationship_label": "neutral",
+      "description": "Ethan used action 'chat' with Lena. Their relationship worsened by -1; score is now -1 (neutral).",
+      "location": "town_square",
+      "tags": [
+        "conversation",
+        "event",
+        "street_music_night",
+        "neutral",
+        "chat"
+      ],
+      "conversation": "I noticed you've been listening to all these musicians. It's quite a change from your usual work, huh?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Ethan": {},
+        "Lena": {}
+      },
+      "id": "20784b4f-1e31-4eee-a459-3dc9e2ad609f"
+    },
+    {
+      "day": 3,
+      "hour": 18,
+      "agent_a": "Maya",
+      "agent_b": "Lena",
+      "action": "chat",
+      "relationship_change": 1,
+      "relationship_score": 1,
+      "relationship_label": "neutral",
+      "description": "Maya used action 'chat' with Lena. Their relationship improved by +1; score is now +1 (neutral).",
+      "location": "town_square",
+      "tags": [
+        "conversation",
+        "event",
+        "street_music_night",
+        "neutral",
+        "chat"
+      ],
+      "conversation": "Maya leaned closer to Lena, suggesting they could find some good spots to capture the music.",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Maya": {},
+        "Lena": {}
+      },
+      "id": "93398805-99b8-4364-a940-f668a06d219d"
+    },
+    {
+      "day": 4,
+      "hour": 22,
+      "agent_a": "Carlos",
+      "agent_b": "Lena",
+      "action": "cooperate",
+      "relationship_change": 1,
+      "relationship_score": 2,
+      "relationship_label": "neutral",
+      "description": "Carlos used action 'cooperate' with Lena. Their relationship improved by +1; score is now +2 (neutral).",
+      "location": "cafe",
+      "tags": [
+        "conversation",
+        "neutral",
+        "cooperate"
+      ],
+      "conversation": "Let's see if we can find some new recipes for the upcoming festival.",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Carlos": {
+          "trust": 0.08,
+          "affinity": 0.05,
+          "cooperation": 0.16,
+          "hostility": -0.05
+        },
+        "Lena": {
+          "trust": 0.12,
+          "affinity": 0.06,
+          "cooperation": 0.2,
+          "helpfulness": 0.04,
+          "hostility": -0.05
+        }
+      },
+      "id": "c8b05607-1ff8-4a15-94b9-474b082911df"
+    },
+    {
+      "day": 5,
+      "hour": 8,
+      "agent_a": "Ethan",
+      "agent_b": "Carlos",
+      "action": "ask_for_help",
+      "relationship_change": 0,
+      "relationship_score": 0,
+      "relationship_label": "neutral",
+      "description": "Ethan used action 'ask_for_help' with Carlos. Their relationship stayed the same by +0; score is now +0 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "neutral",
+        "ask_for_help"
+      ],
+      "conversation": "Carlos, have you seen if they need any volunteers for today's event?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Ethan": {},
+        "Carlos": {}
+      },
+      "id": "62c6030c-cb09-4e31-a6d0-6a3357fe6a5d"
+    },
+    {
+      "day": 5,
+      "hour": 22,
+      "agent_a": "Lena",
+      "agent_b": "Maya",
+      "action": "chat",
+      "relationship_change": 1,
+      "relationship_score": 2,
+      "relationship_label": "neutral",
+      "description": "Lena used action 'chat' with Maya. Their relationship improved by +1; score is now +2 (neutral).",
+      "location": "library",
+      "tags": [
+        "conversation",
+        "neutral",
+        "chat"
+      ],
+      "conversation": "I noticed the street music night was really popular last week. Did you get a chance to check it out?",
+      "outcome": "completed",
+      "directed_deltas": {
+        "Lena": {},
+        "Maya": {}
+      },
+      "id": "9bdfcde9-5b38-45a2-837d-000868c1a640"
+    }
+  ],
+  "reputation_updates": [
+    {
+      "observer": "Ethan",
+      "target_agent": "Carlos",
+      "dimension": "helpfulness",
+      "old_score": 0.0,
+      "new_score": 0.8904,
+      "old_confidence": 0.0,
+      "new_confidence": 0.9,
+      "evidence_confidence": 0.9,
+      "source_type": "direct_interaction",
+      "source_agent": "Carlos",
+      "evidence_id": "conversation:1:12:Carlos:Ethan:offer_help:helpfulness",
+      "day": 1,
+      "transmission_depth": 0,
+      "third_party": false
+    },
+    {
+      "observer": "Maya",
+      "target_agent": "Carlos",
+      "dimension": "helpfulness",
+      "old_score": 0.0,
+      "new_score": 0.4488,
+      "old_confidence": 0.0,
+      "new_confidence": 0.45,
+      "evidence_confidence": 0.45,
+      "source_type": "hearsay",
+      "source_agent": "Ethan",
+      "evidence_id": "conversation:1:12:Carlos:Ethan:offer_help:helpfulness",
+      "day": 1,
+      "transmission_depth": 1,
+      "third_party": true
+    },
+    {
+      "observer": "Carlos",
+      "target_agent": "Lena",
+      "dimension": "cooperativeness",
+      "old_score": 0.0,
+      "new_score": 0.8904,
+      "old_confidence": 0.0,
+      "new_confidence": 0.9,
+      "evidence_confidence": 0.9,
+      "source_type": "direct_interaction",
+      "source_agent": "Lena",
+      "evidence_id": "conversation:2:8:Lena:Carlos:cooperate:cooperativeness",
+      "day": 2,
+      "transmission_depth": 0,
+      "third_party": false
+    },
+    {
+      "observer": "Carlos",
+      "target_agent": "Lena",
+      "dimension": "helpfulness",
+      "old_score": 0.0,
+      "new_score": 0.2248,
+      "old_confidence": 0.0,
+      "new_confidence": 0.9,
+      "evidence_confidence": 0.9,
+      "source_type": "direct_interaction",
+      "source_agent": "Lena",
+      "evidence_id": "conversation:2:8:Lena:Carlos:cooperate:helpfulness",
+      "day": 2,
+      "transmission_depth": 0,
+      "third_party": false
+    },
+    {
+      "observer": "Lena",
+      "target_agent": "Carlos",
+      "dimension": "cooperativeness",
+      "old_score": 0.0,
+      "new_score": 0.8904,
+      "old_confidence": 0.0,
+      "new_confidence": 0.9,
+      "evidence_confidence": 0.9,
+      "source_type": "direct_interaction",
+      "source_agent": "Carlos",
+      "evidence_id": "conversation:4:22:Carlos:Lena:cooperate:cooperativeness",
+      "day": 4,
+      "transmission_depth": 0,
+      "third_party": false
+    },
+    {
+      "observer": "Lena",
+      "target_agent": "Carlos",
+      "dimension": "helpfulness",
+      "old_score": 0.0,
+      "new_score": 0.2248,
+      "old_confidence": 0.0,
+      "new_confidence": 0.9,
+      "evidence_confidence": 0.9,
+      "source_type": "direct_interaction",
+      "source_agent": "Carlos",
+      "evidence_id": "conversation:4:22:Carlos:Lena:cooperate:helpfulness",
+      "day": 4,
+      "transmission_depth": 0,
+      "third_party": false
+    }
+  ],
+  "agent_intents": {
+    "Maya": {
+      "agent_name": "Maya",
+      "intent_type": "build_friendship",
+      "description": "Maya is pursuing 'build close friendships' through direct cooperation.",
+      "created_day": 3,
+      "expires_day": 5,
+      "priority": 3,
+      "target_agent": "Carlos",
+      "target_location": null,
+      "status": "active",
+      "progress": 0,
+      "progress_goal": 2,
+      "completed_day": null,
+      "completion_reason": "",
+      "evidence": [],
+      "parent_goal_id": "goal-c4293236bf34",
+      "strategy": "direct_cooperation",
+      "strategy_score": 6.65,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {
+        "trust": 0.0,
+        "affinity": 0.0,
+        "cooperation": 0.0,
+        "helpfulness": 0.0,
+        "hostility": 0.0,
+        "interaction_count": 2,
+        "positive_interactions": 0,
+        "negative_interactions": 0,
+        "last_interaction_day": 2
+      },
+      "relevant_social_memories": [
+        "I asked for help from Carlos.",
+        "Carlos asked me for help."
+      ],
+      "opportunity_count": 0,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-c4293236bf34-3-0-direct_cooperation"
+    },
+    "Lena": {
+      "agent_name": "Lena",
+      "intent_type": "socialize",
+      "description": "Lena is pursuing 'be liked by others' through ask reliable partner.",
+      "created_day": 5,
+      "expires_day": 7,
+      "priority": 3,
+      "target_agent": "Carlos",
+      "target_location": null,
+      "status": "active",
+      "progress": 0,
+      "progress_goal": 2,
+      "completed_day": null,
+      "completion_reason": "",
+      "evidence": [],
+      "parent_goal_id": "goal-27ed079d6fda",
+      "strategy": "ask_reliable_partner",
+      "strategy_score": 5.8656,
+      "relationship_influenced": true,
+      "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.194).",
+      "relationship_snapshot": {
+        "trust": 0.2,
+        "affinity": 0.11,
+        "cooperation": 0.36,
+        "helpfulness": 0.04,
+        "hostility": -0.1,
+        "interaction_count": 3,
+        "positive_interactions": 2,
+        "negative_interactions": 0,
+        "last_interaction_day": 4
+      },
+      "relevant_social_memories": [
+        "Carlos and I cooperated.",
+        "Carlos and I cooperated."
+      ],
+      "opportunity_count": 0,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-27ed079d6fda-5-0-ask_reliable_partner"
+    },
+    "Carlos": {
+      "agent_name": "Carlos",
+      "intent_type": "socialize",
+      "description": "Carlos is pursuing 'grow his influence' through ask reliable partner.",
+      "created_day": 5,
+      "expires_day": 7,
+      "priority": 3,
+      "target_agent": "Lena",
+      "target_location": null,
+      "status": "active",
+      "progress": 0,
+      "progress_goal": 2,
+      "completed_day": null,
+      "completion_reason": "",
+      "evidence": [],
+      "parent_goal_id": "goal-872a5539a455",
+      "strategy": "ask_reliable_partner",
+      "strategy_score": 5.8656,
+      "relationship_influenced": true,
+      "relationship_reason": "Direct history with Lena supports this tactic (decision value +0.194).",
+      "relationship_snapshot": {
+        "trust": 0.2,
+        "affinity": 0.11,
+        "cooperation": 0.36,
+        "helpfulness": 0.04,
+        "hostility": -0.1,
+        "interaction_count": 3,
+        "positive_interactions": 2,
+        "negative_interactions": 0,
+        "last_interaction_day": 4
+      },
+      "relevant_social_memories": [
+        "Lena and I cooperated.",
+        "Lena and I cooperated."
+      ],
+      "opportunity_count": 0,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-872a5539a455-5-1-ask_reliable_partner"
+    }
+  },
+  "intent_history": [
+    {
+      "agent_name": "Carlos",
+      "intent_type": "seek_work",
+      "description": "Carlos is pursuing 'find business opportunities' through direct participation.",
+      "created_day": 1,
+      "expires_day": 3,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "market",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 1,
+      "completion_reason": "Intent 'seek_work' reached its progress goal.",
+      "evidence": [
+        "Day 1: reached target location market during 'Work on intent: seek_work'.",
+        "Day 1: Carlos used action 'offer_help' with Ethan at market; relationship change +0."
+      ],
+      "parent_goal_id": "goal-aa8b6f2aeefd",
+      "strategy": "direct_participation",
+      "strategy_score": 5.7,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 3,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-aa8b6f2aeefd-1-0-direct_participation"
+    },
+    {
+      "agent_name": "Ethan",
+      "intent_type": "investigate",
+      "description": "Ethan is pursuing 'find reliable allies' through seek information at location.",
+      "created_day": 1,
+      "expires_day": 3,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "library",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 1,
+      "completion_reason": "Intent 'investigate' reached its progress goal.",
+      "evidence": [
+        "Day 1: reached target location library during 'Work on intent: investigate'.",
+        "Day 1: Ethan used action 'share_rumor' with Maya at library; relationship change -1."
+      ],
+      "parent_goal_id": "goal-5021e800965b",
+      "strategy": "seek_information_at_location",
+      "strategy_score": 5.3,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 3,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-5021e800965b-1-0-seek_information_at_location"
+    },
+    {
+      "agent_name": "Maya",
+      "intent_type": "investigate",
+      "description": "Maya is pursuing 'learn town secrets' through seek information at location.",
+      "created_day": 1,
+      "expires_day": 3,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "library",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 2,
+      "completion_reason": "Target-location activity advanced the tactic.",
+      "evidence": [
+        "Day 1: reached target location library during 'Work on intent: investigate'.",
+        "Day 2: reached target location library during 'Work on intent: investigate'."
+      ],
+      "parent_goal_id": "goal-9a5625d15ebb",
+      "strategy": "seek_information_at_location",
+      "strategy_score": 5.3,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 5,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-9a5625d15ebb-1-0-seek_information_at_location"
+    },
+    {
+      "agent_name": "Lena",
+      "intent_type": "socialize",
+      "description": "Lena is pursuing 'help the town community' through direct participation.",
+      "created_day": 1,
+      "expires_day": 3,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "town_square",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 2,
+      "completion_reason": "Intent 'socialize' reached its progress goal.",
+      "evidence": [
+        "Day 1: reached target location town_square during 'Attend Town Cleanup'.",
+        "Day 2: Lena used action 'cooperate' with Carlos at cafe; relationship change +1."
+      ],
+      "parent_goal_id": "goal-57ca6ad0c879",
+      "strategy": "direct_participation",
+      "strategy_score": 5.7,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 3,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-57ca6ad0c879-1-0-direct_participation"
+    },
+    {
+      "agent_name": "Carlos",
+      "intent_type": "seek_work",
+      "description": "Carlos is pursuing 'find business opportunities' through direct participation.",
+      "created_day": 2,
+      "expires_day": 4,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "market",
+      "status": "succeeded",
+      "progress": 1,
+      "progress_goal": 2,
+      "completed_day": 2,
+      "completion_reason": "Parent goal achieved.",
+      "evidence": [
+        "Day 2: reached target location market during 'Work on intent: seek_work'."
+      ],
+      "parent_goal_id": "goal-aa8b6f2aeefd",
+      "strategy": "direct_participation",
+      "strategy_score": 5.7,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 1,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-aa8b6f2aeefd-2-0-direct_participation"
+    },
+    {
+      "agent_name": "Lena",
+      "intent_type": "socialize",
+      "description": "Lena is pursuing 'help the town community' through direct participation.",
+      "created_day": 3,
+      "expires_day": 5,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "town_square",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 4,
+      "completion_reason": "Parent goal achieved.",
+      "evidence": [
+        "Day 3: reached target location town_square during 'Attend Street Music Night'.",
+        "Day 4: reached target location town_square during 'Work on intent: socialize'."
+      ],
+      "parent_goal_id": "goal-57ca6ad0c879",
+      "strategy": "direct_participation",
+      "strategy_score": 5.7,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 5,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-57ca6ad0c879-3-0-direct_participation"
+    },
+    {
+      "agent_name": "Carlos",
+      "intent_type": "socialize",
+      "description": "Carlos is pursuing 'grow his influence' through direct participation.",
+      "created_day": 3,
+      "expires_day": 5,
+      "priority": 3,
+      "target_agent": null,
+      "target_location": "cafe",
+      "status": "succeeded",
+      "progress": 2,
+      "progress_goal": 2,
+      "completed_day": 4,
+      "completion_reason": "Target-location activity advanced the tactic.",
+      "evidence": [
+        "Day 3: reached target location cafe during 'Work on intent: socialize'.",
+        "Day 4: reached target location cafe during 'Work on intent: socialize'."
+      ],
+      "parent_goal_id": "goal-872a5539a455",
+      "strategy": "direct_participation",
+      "strategy_score": 5.7,
+      "relationship_influenced": false,
+      "relationship_reason": "",
+      "relationship_snapshot": {},
+      "relevant_social_memories": [],
+      "opportunity_count": 4,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-872a5539a455-3-0-direct_participation"
+    },
+    {
+      "agent_name": "Ethan",
+      "intent_type": "investigate",
+      "description": "Ethan is pursuing 'find reliable allies' through ask informed agent.",
+      "created_day": 2,
+      "expires_day": 4,
+      "priority": 3,
+      "target_agent": "Carlos",
+      "target_location": null,
+      "status": "expired",
+      "progress": 0,
+      "progress_goal": 2,
+      "completed_day": 5,
+      "completion_reason": "Intent expired before reaching enough progress.",
+      "evidence": [],
+      "parent_goal_id": "goal-5021e800965b",
+      "strategy": "ask_informed_agent",
+      "strategy_score": 5.4496,
+      "relationship_influenced": true,
+      "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.104).",
+      "relationship_snapshot": {
+        "trust": 0.12,
+        "affinity": 0.06,
+        "cooperation": 0.0,
+        "helpfulness": 0.18,
+        "hostility": -0.04,
+        "interaction_count": 1,
+        "positive_interactions": 1,
+        "negative_interactions": 0,
+        "last_interaction_day": 1
+      },
+      "relevant_social_memories": [
+        "Carlos offered me help."
+      ],
+      "opportunity_count": 0,
+      "expiration_reason": "no_opportunity",
+      "terminal_trigger": "",
+      "id": "intent-goal-5021e800965b-2-1-ask_informed_agent"
+    },
+    {
+      "agent_name": "Ethan",
+      "intent_type": "investigate",
+      "description": "Ethan is pursuing 'find reliable allies' through ask informed agent.",
+      "created_day": 5,
+      "expires_day": 7,
+      "priority": 3,
+      "target_agent": "Carlos",
+      "target_location": null,
+      "status": "succeeded",
+      "progress": 1,
+      "progress_goal": 2,
+      "completed_day": 5,
+      "completion_reason": "Parent goal achieved.",
+      "evidence": [
+        "Day 5: Ethan used action 'ask_for_help' with Carlos at library; relationship change +0."
+      ],
+      "parent_goal_id": "goal-5021e800965b",
+      "strategy": "ask_informed_agent",
+      "strategy_score": 5.4496,
+      "relationship_influenced": true,
+      "relationship_reason": "Direct history with Carlos supports this tactic (decision value +0.104).",
+      "relationship_snapshot": {
+        "trust": 0.12,
+        "affinity": 0.06,
+        "cooperation": 0.0,
+        "helpfulness": 0.18,
+        "hostility": -0.04,
+        "interaction_count": 1,
+        "positive_interactions": 1,
+        "negative_interactions": 0,
+        "last_interaction_day": 1
+      },
+      "relevant_social_memories": [
+        "Carlos offered me help."
+      ],
+      "opportunity_count": 1,
+      "expiration_reason": "",
+      "terminal_trigger": "",
+      "id": "intent-goal-5021e800965b-5-1-ask_informed_agent"
+    }
+  ],
+  "town_arcs": [
+    {
+      "id": "arc_community_project_day_1",
+      "name": "Community Project",
+      "description": "Residents are becoming more involved in shared town projects, repairs, volunteering, and public cooperation.",
+      "status": "resolved",
+      "location_id": "town_square",
+      "involved_agents": [],
+      "tags": [
+        "community",
+        "volunteer",
+        "social"
+      ],
+      "tension": 1,
+      "progress": 3,
+      "created_day": 1,
+      "updated_day": 4,
+      "resolved_day": 4
+    },
+    {
+      "id": "arc_market_pressure_day_4",
+      "name": "Market Pressure",
+      "description": "Residents are paying closer attention to market prices, business opportunities, and whether local merchants are acting fairly.",
+      "status": "active",
+      "location_id": "market",
+      "involved_agents": [],
+      "tags": [
+        "market",
+        "business",
+        "wealth"
+      ],
+      "tension": 3,
+      "progress": 0,
+      "created_day": 4,
+      "updated_day": 5,
+      "resolved_day": null
+    }
+  ]
+}

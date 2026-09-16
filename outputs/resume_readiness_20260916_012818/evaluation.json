@@ -1,0 +1,837 @@
+{
+  "artifacts": {
+    "benchmark": "benchmark.json",
+    "human_review_json": "human_review_sample.json",
+    "human_review_markdown": "review.md",
+    "metadata": "metadata.json",
+    "metrics": "metrics.json",
+    "raw_conversations": "seed-42/logs/conversations/conversations.jsonl",
+    "simulation_output": "seed-42/simulation.log",
+    "strategy_adaptation_diagnostics": "strategy_adaptation_diagnostics.json",
+    "transcript": "transcript.txt"
+  },
+  "days": 5,
+  "dialogue_evaluation": {
+    "action_language_diagnostics": {
+      "inference_reason_counts": {
+        "no_action_language": 15,
+        "request_marker:could you show me": 1,
+        "rumor_marker:from what i saw": 1
+      },
+      "inferred_non_chat_finalized_as_chat": 0,
+      "inferred_non_chat_finalized_as_chat_reasons": {},
+      "note": "A parser/inference disagreement is an audit candidate, not an error: the final action also reflects allowed-action and repetition-cap policy.",
+      "parser_inference_disagreement_pairs": {
+        "ask_for_help->chat": 4,
+        "cooperate->chat": 2,
+        "offer_help->ask_for_help": 1,
+        "offer_help->chat": 2
+      },
+      "parser_inference_disagreements": 9
+    },
+    "context_use_indicators": {
+      "activity": {
+        "lexical_match_rate": 0.35294117647058826,
+        "lexical_matches": 6,
+        "opportunities": 17
+      },
+      "daily_event": {
+        "lexical_match_rate": 0.7,
+        "lexical_matches": 7,
+        "opportunities": 10
+      },
+      "goal_or_intent": {
+        "lexical_match_rate": 0.16666666666666666,
+        "lexical_matches": 2,
+        "opportunities": 12
+      },
+      "journal": {
+        "lexical_match_rate": 0.6428571428571429,
+        "lexical_matches": 9,
+        "opportunities": 14
+      },
+      "memory": {
+        "lexical_match_rate": 0.8181818181818182,
+        "lexical_matches": 9,
+        "opportunities": 11
+      },
+      "occupation": {
+        "lexical_match_rate": 0.23529411764705882,
+        "lexical_matches": 4,
+        "opportunities": 17
+      },
+      "relationship_history": {
+        "lexical_match_rate": 1.0,
+        "lexical_matches": 1,
+        "opportunities": 1
+      },
+      "reputation": {
+        "lexical_match_rate": 1.0,
+        "lexical_matches": 3,
+        "opportunities": 3
+      },
+      "reputation_rumor": {
+        "lexical_match_rate": 0.7777777777777778,
+        "lexical_matches": 7,
+        "opportunities": 9
+      },
+      "town_arc": {
+        "lexical_match_rate": 0.5,
+        "lexical_matches": 3,
+        "opportunities": 6
+      }
+    },
+    "conversation_count": 17,
+    "dialogue_repetition": {
+      "exact_repeated_instances": 0,
+      "exact_repetition_rate": 0.0,
+      "near_repeat_pairs": [],
+      "near_repeated_instances": 0,
+      "near_repetition_rate": 0.0
+    },
+    "generic_phrase_flags": 3,
+    "generic_phrase_rate": 0.17647058823529413,
+    "intent_action_compatibility": 1.0,
+    "measurement_note": "Context-use rates are transparent lexical-overlap indicators, not judgments of naturalness or proof that context was used causally.",
+    "relationship_conditioning_diagnostics": {
+      "context_present_without_measurable_policy_influence": 10,
+      "influenced_decision_rate": 0.09090909090909091,
+      "influenced_decisions": 1,
+      "opportunities": 11,
+      "valid_diagnostics": 1,
+      "valid_diagnostics_rate": 0.09090909090909091
+    },
+    "response_health": {
+      "action_parsing_success_rate": 1.0,
+      "action_parsing_successes": 17,
+      "action_source_counts": {
+        "llm": 17
+      },
+      "dialogue_fallback_rate": 0.23529411764705882,
+      "dialogue_fallbacks": 4,
+      "dialogue_source_counts": {
+        "agent_fallback_narration": 1,
+        "llm": 13,
+        "policy_fallback_repetition": 2,
+        "policy_fallback_structured_reputation_rumor": 1
+      },
+      "generation_exception_rate": 0.0,
+      "generation_exceptions": 0,
+      "malformed_response_rate": 0.0,
+      "malformed_responses": 0
+    }
+  },
+  "generation_settings": {
+    "do_sample": true,
+    "max_new_tokens": 150,
+    "temperature": 0.4,
+    "top_p": 0.9
+  },
+  "git_commit": "19db6c24ceda2cf314a3975be65012e9c4607984",
+  "git_dirty": false,
+  "hours": [
+    8,
+    12,
+    18,
+    22
+  ],
+  "kind": "llm-town-real-llm-evaluation",
+  "metrics": {
+    "action_distribution": {
+      "ask_for_help": 3,
+      "chat": 10,
+      "cooperate": 2,
+      "offer_help": 1,
+      "share_rumor": 1
+    },
+    "action_language_diagnostics": {
+      "inference_reason_counts": {
+        "no_action_language": 15,
+        "request_marker:could you show me": 1,
+        "rumor_marker:from what i saw": 1
+      },
+      "inferred_non_chat_finalized_as_chat": 0,
+      "inferred_non_chat_finalized_as_chat_reasons": {},
+      "note": "A parser/inference disagreement is an audit candidate, not an error: the final action also reflects allowed-action and repetition-cap policy.",
+      "parser_inference_disagreement_pairs": {
+        "ask_for_help->chat": 4,
+        "cooperate->chat": 2,
+        "offer_help->ask_for_help": 1,
+        "offer_help->chat": 2
+      },
+      "parser_inference_disagreements": 9
+    },
+    "action_parse": {
+      "source_counts": {
+        "llm": 17
+      },
+      "success_count": 17,
+      "success_rate": 1.0
+    },
+    "context_use_indicators": {
+      "activity": {
+        "lexical_match_rate": 0.35294117647058826,
+        "lexical_matches": 6,
+        "opportunities": 17
+      },
+      "daily_event": {
+        "lexical_match_rate": 0.7,
+        "lexical_matches": 7,
+        "opportunities": 10
+      },
+      "goal_or_intent": {
+        "lexical_match_rate": 0.16666666666666666,
+        "lexical_matches": 2,
+        "opportunities": 12
+      },
+      "journal": {
+        "lexical_match_rate": 0.6428571428571429,
+        "lexical_matches": 9,
+        "opportunities": 14
+      },
+      "memory": {
+        "lexical_match_rate": 0.8181818181818182,
+        "lexical_matches": 9,
+        "opportunities": 11
+      },
+      "occupation": {
+        "lexical_match_rate": 0.23529411764705882,
+        "lexical_matches": 4,
+        "opportunities": 17
+      },
+      "relationship_history": {
+        "lexical_match_rate": 1.0,
+        "lexical_matches": 1,
+        "opportunities": 1
+      },
+      "reputation": {
+        "lexical_match_rate": 1.0,
+        "lexical_matches": 3,
+        "opportunities": 3
+      },
+      "reputation_rumor": {
+        "lexical_match_rate": 0.7777777777777778,
+        "lexical_matches": 7,
+        "opportunities": 9
+      },
+      "town_arc": {
+        "lexical_match_rate": 0.5,
+        "lexical_matches": 3,
+        "opportunities": 6
+      }
+    },
+    "daily_event_usage": {
+      "count": 3,
+      "rate": 0.17647058823529413
+    },
+    "exact_repetition": {
+      "count": 0,
+      "rate": 0.0
+    },
+    "exceptions_errors": {
+      "examples": [],
+      "generation_exception_count": 0,
+      "generation_exception_rate": 0.0
+    },
+    "fallback": {
+      "count": 4,
+      "dialogue_source_counts": {
+        "agent_fallback_narration": 1,
+        "llm": 13,
+        "policy_fallback_repetition": 2,
+        "policy_fallback_structured_reputation_rumor": 1
+      },
+      "rate": 0.23529411764705882
+    },
+    "goals": {
+      "abandoned": 0,
+      "achieved": 3,
+      "achievement_by_category": {
+        "improve_social_support": 1,
+        "investigate": 1,
+        "seek_work": 1
+      },
+      "active": 7,
+      "applicable_progress_opportunities": 25,
+      "attainment_rate": 1.0,
+      "attainment_rate_by_category": {
+        "improve_social_support": 1.0,
+        "investigate": 1.0,
+        "seek_work": 1.0
+      },
+      "average_progress": 0.4166666666666667,
+      "average_time_to_achievement": 3.6666666666666665,
+      "blocked": 0,
+      "category_counts": {
+        "build_friendship": 1,
+        "improve_social_support": 1,
+        "increase_knowledge": 1,
+        "investigate": 3,
+        "seek_work": 2,
+        "socialize": 2
+      },
+      "created": 10,
+      "goals_recovered_after_adaptation": 1,
+      "opportunities_that_produced_progress": 14,
+      "opportunity_progress_rate": 0.56,
+      "paused": 0,
+      "relationship_triggered_adaptations": 2,
+      "reputation_triggered_adaptations": 0,
+      "strategy_adaptations": 2
+    },
+    "intent_action_compatibility": 1.0,
+    "intents": {
+      "active": 3,
+      "active_type_counts": {
+        "build_friendship": 1,
+        "socialize": 2
+      },
+      "average_intents_per_goal": 1.7142857142857142,
+      "average_tactical_progress": 1.1666666666666667,
+      "blocked": 0,
+      "ended": 9,
+      "expiration_despite_opportunity": 0,
+      "expiration_no_opportunity": 1,
+      "expired": 1,
+      "failed": 0,
+      "outcome_counts": {
+        "expired": 1,
+        "succeeded": 8
+      },
+      "outcome_rates": {
+        "blocked": 0.0,
+        "expired": 0.1111111111111111,
+        "failed": 0.0,
+        "succeeded": 0.8888888888888888,
+        "superseded": 0.0
+      },
+      "succeeded": 8,
+      "success_rate": 0.8888888888888888,
+      "superseded": 0
+    },
+    "malformed_output": {
+      "count": 0,
+      "rate": 0.0
+    },
+    "measurement_note": "Context-use rates are transparent lexical-overlap indicators, not judgments of naturalness or proof that context was used causally.",
+    "near_repetition": {
+      "count": 0,
+      "rate": 0.0
+    },
+    "reputation": {
+      "average_confidence": 0.8250000000000001,
+      "behavior_decisions_influenced": 0,
+      "belief_count": 6,
+      "beliefs_per_agent": {
+        "Carlos": 2,
+        "Ethan": 1,
+        "Lena": 2,
+        "Maya": 1
+      },
+      "direct_updates": 5,
+      "disagreements": 0,
+      "duplicate_or_rejected_rumor_transmissions": 0,
+      "hearsay_updates": 1,
+      "maximum_transmission_depth": 1,
+      "rumor_transmissions": 1,
+      "score_distribution_by_dimension": {
+        "cooperativeness": {
+          "average": 0.8904,
+          "count": 2,
+          "maximum": 0.8904,
+          "minimum": 0.8904
+        },
+        "helpfulness": {
+          "average": 0.4472,
+          "count": 4,
+          "maximum": 0.8904,
+          "minimum": 0.2248
+        }
+      },
+      "source_type_counts": {
+        "direct_interaction": 5,
+        "hearsay": 1
+      },
+      "third_party_reputation_changes": 1,
+      "unique_rumor_subjects": 1,
+      "unsupported_rumors_blocked": 0,
+      "update_count": 6
+    },
+    "schema_version": 2,
+    "strategy_adaptation_diagnostics": {
+      "adaptations_not_triggered": 5,
+      "adaptations_triggered": 2,
+      "goals_reviewed": 10
+    },
+    "suspected_generic": {
+      "count": 3,
+      "rate": 0.17647058823529413
+    },
+    "total_conversations": 17,
+    "town_arc_usage": {
+      "count": 3,
+      "opportunities": 6,
+      "opportunity_match_rate": 0.5,
+      "rate": 0.17647058823529413
+    }
+  },
+  "model": {
+    "generation": {
+      "do_sample": true,
+      "max_new_tokens": 150,
+      "temperature": 0.4,
+      "top_p": 0.9
+    },
+    "identifier": "Qwen/Qwen2.5-3B-Instruct"
+  },
+  "model_identifier": "Qwen/Qwen2.5-3B-Instruct",
+  "python_version": "3.13.11",
+  "schema_version": 2,
+  "seed": 42,
+  "simulation": {
+    "metrics": {
+      "activities": {
+        "activity_counts": {
+          "Attend Book Club": 5,
+          "Attend Merchant Inspection": 6,
+          "Attend Street Music Night": 3,
+          "Attend Town Cleanup": 3,
+          "Check records for leads": 5,
+          "Investigate a possible story": 4,
+          "Look for business opportunities": 2,
+          "Look for information": 8,
+          "Look for work or business opportunities": 7,
+          "Meet residents": 4,
+          "Network with townspeople": 3,
+          "Observe business activity": 2,
+          "Organize community support": 2,
+          "Review records and numbers": 3,
+          "Socialize with townspeople": 5,
+          "Talk with people in the town square": 3,
+          "Work on intent: investigate": 6,
+          "Work on intent: seek_work": 3,
+          "Work on intent: socialize": 6
+        },
+        "location_counts": {
+          "cafe": 15,
+          "library": 27,
+          "market": 20,
+          "town_square": 18
+        },
+        "total": 80
+      },
+      "conversations": {
+        "action_counts": {
+          "ask_for_help": 3,
+          "chat": 10,
+          "cooperate": 2,
+          "offer_help": 1,
+          "share_rumor": 1
+        },
+        "action_rates": {
+          "ask_for_help": 0.17647058823529413,
+          "chat": 0.5882352941176471,
+          "cooperate": 0.11764705882352941,
+          "offer_help": 0.058823529411764705,
+          "share_rumor": 0.058823529411764705
+        },
+        "arc_relevant_action_counts": {
+          "ask_for_help": 2
+        },
+        "daily_event_rate": 0.17647058823529413,
+        "daily_event_related": 3,
+        "most_repeated_dialogues": [],
+        "repeated_instances": 0,
+        "repetition_rate": 0.0,
+        "reputation_influenced_decisions": 0,
+        "total": 17,
+        "town_arc_rate": 0.4117647058823529,
+        "town_arc_related": 7,
+        "unique_dialogues": 17,
+        "unsupported_rumor_fallbacks": 0
+      },
+      "goals": {
+        "abandoned": 0,
+        "achieved": 3,
+        "achievement_by_category": {
+          "improve_social_support": 1,
+          "investigate": 1,
+          "seek_work": 1
+        },
+        "active": 7,
+        "applicable_progress_opportunities": 25,
+        "attainment_rate": 1.0,
+        "attainment_rate_by_category": {
+          "improve_social_support": 1.0,
+          "investigate": 1.0,
+          "seek_work": 1.0
+        },
+        "average_progress": 0.4166666666666667,
+        "average_time_to_achievement": 3.6666666666666665,
+        "blocked": 0,
+        "category_counts": {
+          "build_friendship": 1,
+          "improve_social_support": 1,
+          "increase_knowledge": 1,
+          "investigate": 3,
+          "seek_work": 2,
+          "socialize": 2
+        },
+        "created": 10,
+        "goals_recovered_after_adaptation": 1,
+        "opportunities_that_produced_progress": 14,
+        "opportunity_progress_rate": 0.56,
+        "paused": 0,
+        "relationship_triggered_adaptations": 2,
+        "reputation_triggered_adaptations": 0,
+        "strategy_adaptations": 2
+      },
+      "intent_followthrough": {
+        "action_compatibility_rate": 1.0,
+        "action_pipeline": {
+          "final_counts": {
+            "ask_for_help": 3,
+            "chat": 10,
+            "cooperate": 2,
+            "offer_help": 1,
+            "share_rumor": 1
+          },
+          "final_reason_counts": {
+            "capped_ask_for_help": 2,
+            "capped_offer_help": 1,
+            "trusted_inferred_non_chat": 2,
+            "trusted_parsed_non_chat": 5,
+            "used_parsed_action": 7
+          },
+          "inferred_counts": {
+            "ask_for_help": 1,
+            "chat": 15,
+            "share_rumor": 1
+          },
+          "inferred_to_final": {
+            "ask_for_help": {
+              "ask_for_help": 1
+            },
+            "chat": {
+              "ask_for_help": 2,
+              "chat": 10,
+              "cooperate": 2,
+              "offer_help": 1
+            },
+            "share_rumor": {
+              "share_rumor": 1
+            }
+          },
+          "parsed_counts": {
+            "ask_for_help": 4,
+            "chat": 7,
+            "cooperate": 2,
+            "offer_help": 3,
+            "share_rumor": 1
+          },
+          "parsed_to_final": {
+            "ask_for_help": {
+              "ask_for_help": 2,
+              "chat": 2
+            },
+            "chat": {
+              "chat": 7
+            },
+            "cooperate": {
+              "cooperate": 2
+            },
+            "offer_help": {
+              "ask_for_help": 1,
+              "chat": 1,
+              "offer_help": 1
+            },
+            "share_rumor": {
+              "share_rumor": 1
+            }
+          },
+          "suggested_counts": {
+            "ask_for_help": 4,
+            "chat": 7,
+            "cooperate": 2,
+            "offer_help": 4
+          },
+          "suggested_to_final": {
+            "ask_for_help": {
+              "ask_for_help": 2,
+              "chat": 2
+            },
+            "chat": {
+              "chat": 7
+            },
+            "cooperate": {
+              "cooperate": 2
+            },
+            "offer_help": {
+              "ask_for_help": 1,
+              "chat": 1,
+              "offer_help": 1,
+              "share_rumor": 1
+            }
+          }
+        },
+        "actions_by_intent": {
+          "build_friendship": {
+            "chat": 4
+          },
+          "investigate": {
+            "ask_for_help": 1,
+            "chat": 2,
+            "share_rumor": 1
+          },
+          "seek_work": {
+            "offer_help": 1
+          },
+          "socialize": {
+            "chat": 2,
+            "cooperate": 1
+          }
+        },
+        "compatible_actions": 3,
+        "conversations_with_intent": 12,
+        "intent_action_opportunities": 3,
+        "intent_counts": {
+          "build_friendship": 4,
+          "investigate": 4,
+          "seek_work": 1,
+          "socialize": 3
+        },
+        "intent_not_applicable": 9,
+        "locations_by_intent": {
+          "build_friendship": {
+            "market": 3,
+            "town_square": 1
+          },
+          "investigate": {
+            "library": 2,
+            "town_square": 2
+          },
+          "seek_work": {
+            "market": 1
+          },
+          "socialize": {
+            "cafe": 1,
+            "library": 2
+          }
+        },
+        "target_agent_matches": 1,
+        "target_agent_opportunities": 4,
+        "target_agent_rate": 0.25,
+        "target_agent_unavailable": 5,
+        "target_location_matches": 2,
+        "target_location_opportunities": 3,
+        "target_location_rate": 0.6666666666666666
+      },
+      "intents": {
+        "active": 3,
+        "active_type_counts": {
+          "build_friendship": 1,
+          "socialize": 2
+        },
+        "average_intents_per_goal": 1.7142857142857142,
+        "average_tactical_progress": 1.1666666666666667,
+        "blocked": 0,
+        "ended": 9,
+        "expiration_despite_opportunity": 0,
+        "expiration_no_opportunity": 1,
+        "expired": 1,
+        "failed": 0,
+        "outcome_counts": {
+          "expired": 1,
+          "succeeded": 8
+        },
+        "outcome_rates": {
+          "blocked": 0.0,
+          "expired": 0.1111111111111111,
+          "failed": 0.0,
+          "succeeded": 0.8888888888888888,
+          "superseded": 0.0
+        },
+        "succeeded": 8,
+        "success_rate": 0.8888888888888888,
+        "superseded": 0
+      },
+      "journals": {
+        "average_per_agent": 5.0,
+        "coverage_rate": 1.0,
+        "maximum_per_agent": 5,
+        "minimum_per_agent": 5,
+        "total": 20
+      },
+      "memory": {
+        "agent_count": 4,
+        "average_active_per_agent": 17.25,
+        "average_archived_per_agent": 0.0,
+        "max_active_per_agent": 18,
+        "max_archived_per_agent": 0,
+        "type_counts": {
+          "conversation": 34,
+          "daily_event": 20,
+          "town_arc": 15
+        }
+      },
+      "needs": {
+        "averages": {
+          "knowledge": 61.25,
+          "social": 61.0,
+          "wealth": 54.75
+        }
+      },
+      "quality": {
+        "applicable": 10,
+        "checks": {
+          "average_active_memories": {
+            "expectation": "at most 150 per agent",
+            "passed": true,
+            "status": "pass",
+            "value": 17.25
+          },
+          "chat_rate": {
+            "expectation": "between 60% and 80%",
+            "passed": false,
+            "status": "warn",
+            "value": 0.5882352941176471
+          },
+          "compliment_rate": {
+            "expectation": "between 5% and 15%",
+            "passed": false,
+            "status": "warn",
+            "value": 0.0
+          },
+          "conversation_memories": {
+            "expectation": "at least one",
+            "passed": true,
+            "status": "pass",
+            "value": 34
+          },
+          "daily_event_memories": {
+            "expectation": "at least one",
+            "passed": true,
+            "status": "pass",
+            "value": 20
+          },
+          "daily_event_rate": {
+            "expectation": "between 20% and 40%",
+            "passed": false,
+            "status": "warn",
+            "value": 0.17647058823529413
+          },
+          "journal_coverage": {
+            "expectation": "one journal per agent per completed day",
+            "passed": true,
+            "status": "pass",
+            "value": 1.0
+          },
+          "max_active_memories": {
+            "expectation": "at most 200 per agent",
+            "passed": true,
+            "status": "pass",
+            "value": 18
+          },
+          "repetition_rate": {
+            "expectation": "at most 5%",
+            "passed": true,
+            "status": "pass",
+            "value": 0.0
+          },
+          "town_arc_participation_memories": {
+            "expectation": "at least one",
+            "passed": false,
+            "status": "warn",
+            "value": 0
+          }
+        },
+        "pass_rate": 0.6,
+        "passed": 6
+      },
+      "relationships": {
+        "average_score": 0.6666666666666666,
+        "directed_interaction_count": 34,
+        "directed_view_count": 12,
+        "episodic_memory_count": 14,
+        "event_action_counts": {
+          "ask_for_help": 3,
+          "chat": 3,
+          "cooperate": 2,
+          "offer_help": 1,
+          "share_rumor": 1
+        },
+        "event_count": 10,
+        "label_counts": {
+          "close friends": 0,
+          "enemies": 0,
+          "friendly": 0,
+          "neutral": 6,
+          "tense": 0
+        },
+        "max_episodes_per_counterpart": 2,
+        "maximum_score": 2,
+        "minimum_score": -1,
+        "negative_events": 2,
+        "neutral_events": 3,
+        "pair_count": 6,
+        "positive_events": 5
+      },
+      "reputation": {
+        "average_confidence": 0.8250000000000001,
+        "behavior_decisions_influenced": 0,
+        "belief_count": 6,
+        "beliefs_per_agent": {
+          "Carlos": 2,
+          "Ethan": 1,
+          "Lena": 2,
+          "Maya": 1
+        },
+        "direct_updates": 5,
+        "disagreements": 0,
+        "duplicate_or_rejected_rumor_transmissions": 0,
+        "hearsay_updates": 1,
+        "maximum_transmission_depth": 1,
+        "rumor_transmissions": 1,
+        "score_distribution_by_dimension": {
+          "cooperativeness": {
+            "average": 0.8904,
+            "count": 2,
+            "maximum": 0.8904,
+            "minimum": 0.8904
+          },
+          "helpfulness": {
+            "average": 0.4472,
+            "count": 4,
+            "maximum": 0.8904,
+            "minimum": 0.2248
+          }
+        },
+        "source_type_counts": {
+          "direct_interaction": 5,
+          "hearsay": 1
+        },
+        "third_party_reputation_changes": 1,
+        "unique_rumor_subjects": 1,
+        "unsupported_rumors_blocked": 0,
+        "update_count": 6
+      },
+      "town_arcs": {
+        "active": 1,
+        "causal_changes": 0,
+        "change_action_counts": {},
+        "change_arc_counts": {},
+        "changes_by_arc": {},
+        "progress_increases": 0,
+        "resolved": 1,
+        "tension_decreases": 0,
+        "tension_increases": 0,
+        "total": 2,
+        "type_counts": {
+          "Community Project": 1,
+          "Market Pressure": 1
+        }
+      }
+    }
+  },
+  "timestamp": "2026-09-16T01:28:43.588670+00:00"
+}
