@@ -286,6 +286,26 @@ class ActionSystem:
             return "ask_for_help", f"request_marker:{marker}"
         if re.search(r"\bcould you (?:maybe |perhaps )?point me\b", text):
             return "ask_for_help", "request_pattern:point_me_to_resource"
+        direct_assistance_request = re.search(
+            r"\b(?:can|could|would) you (?:please )?"
+            r"(?:check|show|explain|teach|tell|recommend|grab|bring|find|review|"
+            r"look|walk|help|use)\b",
+            text,
+        )
+        if direct_assistance_request:
+            return "ask_for_help", "request_pattern:direct_assistance"
+        polite_assistance_request = re.search(
+            r"\bwould you mind (?:showing|checking|explaining|teaching|telling|"
+            r"recommending|grabbing|bringing|finding|reviewing|looking|walking|"
+            r"helping|using)\b",
+            text,
+        )
+        if polite_assistance_request:
+            return "ask_for_help", "request_pattern:polite_assistance"
+        if re.search(r"\bcould you (?:give|share) me (?:some )?tips\b", text):
+            return "ask_for_help", "request_pattern:tips"
+        if re.search(r"\bdo you know where\b", text):
+            return "ask_for_help", "request_pattern:resource_location"
     
         # Romantic confession
         marker = self._first_match(text, (

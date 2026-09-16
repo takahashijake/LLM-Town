@@ -1,4 +1,4 @@
-# Prompt 5: relationship-conditioned social memory
+# Relationship-conditioned social memory
 
 ## Integration path
 
@@ -91,8 +91,9 @@ state diagnostics, adaptation diagnostics, and failure cases.
 
 ## Known limitations
 
-Prompt 5 uses recent fixed-size episodes rather than semantic retrieval. The
-one-line conversation model does not simulate a separate listener response, so
-acceptance or refusal must be an explicit structured outcome when available.
-The legacy pair score remains symmetric, and the new private profiles do not
-propagate through factions, rumor networks, romance, or city-wide politics.
+The system uses recent fixed-size episodes rather than semantic retrieval.
+Conversation sessions are bounded and alternating, while response outcomes remain
+deliberately conservative deterministic interpretations. The legacy pair score
+remains symmetric, and private profiles do not propagate through factions,
+romance, or city-wide politics. Reputation hearsay is a separate system with
+explicit provenance.

@@ -6,8 +6,8 @@ logs/
 debug_bundle*.txt
 .env
 .venv/
-outputs/benchmarks/
-outputs/real_llm_evaluations/
-outputs/resume_readiness_*/
-# Generated evaluation/benchmark runs belong under an ignored named family.
-# Curated historical fixtures already tracked under outputs/ remain visible.
+# Generated evaluation and benchmark runs are local artifacts. The small,
+# structured relationship evaluation below is intentionally curated evidence.
+outputs/*
+!outputs/prompt5_relationship_evaluation/
+!outputs/prompt5_relationship_evaluation/**

@@ -157,3 +157,20 @@ def test_infer_prompt7_real_run_variants_conservatively():
 
     for dialogue, expected_action in cases.items():
         assert actions.infer_action(dialogue, []) == expected_action
+
+
+def test_infer_direct_assistance_requests_from_free_form_model_language():
+    actions = ActionSystem()
+    requests = [
+        "Could you use your binoculars to check the square?",
+        "Could you check stall H for me?",
+        "Could you give me some tips on growing tomatoes?",
+        "Would you mind showing me how to use this tiller?",
+        "Could you walk me through accessing the logs?",
+        "Do you know where I should start with this work?",
+    ]
+
+    for dialogue in requests:
+        action, reason = actions.infer_action_with_reason(dialogue, [])
+        assert action == "ask_for_help"
+        assert reason.startswith("request_")

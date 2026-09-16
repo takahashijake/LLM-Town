@@ -60,6 +60,7 @@ class ConversationPolicy:
         activity = self._describe_activity(
             getattr(speaker, "current_activity", "current task")
         )
+        activity_phrase = self._as_activity_phrase(activity)
         occupation = getattr(speaker, "occupation", "resident")
         location_text = location_id or getattr(speaker, "location_id", "town")
         location_phrase = location_text.replace("_", " ")
@@ -69,20 +70,20 @@ class ConversationPolicy:
             "compliment": [
                 f"You handled the work near the {location_phrase} well.",
                 f"You seem to understand this situation better than most people.",
-                f"Your help with {activity.lower()} has been useful.",
+                f"Your help with {activity_phrase.lower()} has been useful.",
             ],
             "offer_help": [
-                f"I can help with {activity.lower()} if you need another pair of hands.",
+                f"I can help with {activity_phrase.lower()} if you need another pair of hands.",
                 f"I can take care of part of this work at {location_text}.",
                 f"I can help you sort through this before it gets harder.",
             ],
             "ask_for_help": [
-                f"Could you give me advice about {self._as_activity_phrase(activity).lower()}?",
+                f"Could you give me advice about {activity_phrase.lower()}?",
                 f"Do you know where I should start with this work at {location_text}?",
                 f"Can you help me understand what people need here?",
             ],
             "cooperate": [
-                f"We could work together on {activity.lower()} today.",
+                f"We could work together on {activity_phrase.lower()} today.",
                 f"If we coordinate at {location_text}, this will go smoother.",
                 f"Let's split up the work and handle this together.",
             ],
@@ -93,7 +94,7 @@ class ConversationPolicy:
             ],
             "argue": [
                 f"I disagree with how this is being handled at {location_text}.",
-                f"That plan for {activity.lower()} does not make sense to me.",
+                f"That plan for {activity_phrase.lower()} does not make sense to me.",
                 f"I think you are overlooking the real problem here.",
             ],
             "apologize": [
@@ -103,10 +104,10 @@ class ConversationPolicy:
             ],
             "chat": [
                 f"My work as {article} {occupation} has kept me busy near the {location_phrase}.",
-                f"I have been focused on {activity.lower()} today.",
+                f"I have been focused on {activity_phrase.lower()} today.",
                 f"{location_text.replace('_', ' ').title()} has been important to my plans today.",
-                f"I keep noticing small changes while working on {activity.lower()}.",
-                f"This part of town feels different when I am focused on {activity.lower()}.",
+                f"I keep noticing small changes while focused on {activity_phrase.lower()}.",
+                f"This part of town feels different when I focus on {activity_phrase.lower()}.",
             ],
         }
 
@@ -115,7 +116,7 @@ class ConversationPolicy:
         if relationship_label == "tense":
             candidates = [
                 f"I am still not sure we agree about what is happening at {location_text}.",
-                f"I would rather keep this focused on {activity.lower()}.",
+                f"I would rather keep this focused on {activity_phrase.lower()}.",
             ] + candidates
 
         if relationship_label == "enemies":
@@ -130,7 +131,7 @@ class ConversationPolicy:
             ):
                 return candidate
 
-        return f"I am focused on {activity.lower()} right now."
+        return f"I am focused on {activity_phrase.lower()} right now."
 
     def get_grounded_fallback_dialogue(
         self,
@@ -200,6 +201,11 @@ class ConversationPolicy:
             "socialize ": "socializing ",
             "meet ": "meeting ",
             "check ": "checking ",
+            "investigate ": "investigating ",
+            "network ": "networking ",
+            "find ": "finding ",
+            "help ": "helping ",
+            "serve ": "serving ",
         }
         for prefix, replacement in verb_forms.items():
             if text.lower().startswith(prefix):

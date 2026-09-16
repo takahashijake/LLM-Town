@@ -1,5 +1,8 @@
 # LLM-Town
 
+The current v1 verification record is in
+[`docs/v1_freeze_report.md`](docs/v1_freeze_report.md).
+
 LLM-Town is a persistent, text-based social simulation in which four residents
 plan activities, pursue goals, remember events, and hold bounded multi-turn
 conversations. It uses a hybrid architecture: deterministic code owns simulation
@@ -53,7 +56,7 @@ src/agents/        agents, goals, intents, memories, relationships
 src/behavior/      activity, goal, intent, and social policy
 src/llm/           prompt construction, local-model client, parser
 src/simulation/    orchestration, sessions, effects, persistence, town arcs
-src/systems/       reputation (economy/crime/justice are placeholders only)
+src/systems/       reputation and provenance-preserving hearsay
 src/analysis/      benchmarks, metrics, and real-LLM review artifacts
 tests/             deterministic unit and integration tests
 ```
@@ -107,6 +110,9 @@ python scripts/benchmark_simulation.py \
 Each seed receives isolated logs and save state under `outputs/benchmarks/`. The
 benchmark records configuration, input hashes, revision metadata, per-run metrics,
 and aggregate results without touching ordinary `logs/` or `data/save_state.json`.
+Generated benchmark and evaluation directories are ignored; the compact structured
+relationship evaluation under `outputs/prompt5_relationship_evaluation/` is kept as
+curated reproducibility evidence.
 
 Run a controlled real-model evaluation:
 

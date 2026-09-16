@@ -69,7 +69,7 @@ def test_get_non_repeated_fallback_dialogue_skips_recent_candidate():
     speaker = build_agent("Maya")
     listener = build_agent("Ethan")
 
-    first_candidate = "I can help with review records and numbers if you need another pair of hands."
+    first_candidate = "I can help with reviewing records and numbers if you need another pair of hands."
 
     policy = build_policy(
         recent_dialogues=[
@@ -87,6 +87,34 @@ def test_get_non_repeated_fallback_dialogue_skips_recent_candidate():
 
     assert fallback != first_candidate
     assert "library" in fallback or "harder" in fallback
+
+
+def test_fallback_dialogue_renders_activity_as_a_gerund_phrase():
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    policy = build_policy(
+        recent_dialogues=[
+            "my work as an accountant has kept me busy near the town square."
+        ]
+    )
+
+    cases = [
+        ("Investigate a possible story", "offer_help", "investigating a possible story"),
+        ("Talk with people in the town square", "cooperate", "talking with people"),
+        ("Look for information", "chat", "looking for information"),
+        ("Network with townspeople", "cooperate", "networking with townspeople"),
+    ]
+
+    for activity, action, expected_phrase in cases:
+        speaker.current_activity = activity
+        fallback = policy.get_non_repeated_fallback_dialogue(
+            speaker=speaker,
+            listener=listener,
+            relationship_label="neutral",
+            location_id="town_square",
+            suggested_action=action,
+        )
+        assert expected_phrase in fallback.lower()
 
 
 def test_remember_action_limits_history():
