@@ -1,3 +1,5 @@
+import re
+
 from src.agents.agent import Agent
 from src.llm.parser import parse_llm_conversation_output
 from src.simulation.conversation_policy import ConversationPolicy
@@ -40,6 +42,13 @@ class ConversationOutputProcessor:
         conversation = parsed_output["dialogue"]
         parsed_action = parsed_output["action"]
         dialogue_source = "llm"
+
+        if conversation.strip().lower() in {
+            "spoken line",
+            "short line of dialogue",
+            "dialogue",
+        }:
+            conversation = ""
 
         if not conversation:
             conversation = speaker.speak_to(listener, old_relationship_label)
@@ -151,8 +160,49 @@ class ConversationOutputProcessor:
         )
         if not any(marker in text for marker in hearsay_markers):
             return False
+        structured_claim = context.get("reputation_rumor")
+        if structured_claim:
+            return not ConversationOutputProcessor._matches_reputation_claim(
+                conversation,
+                structured_claim,
+            )
+        return not ConversationOutputProcessor._matches_uncertain_text_source(
+            conversation,
+            context,
+        )
 
-        return not ConversationOutputProcessor._context_has_uncertain_source(context)
+    @staticmethod
+    def _matches_uncertain_text_source(conversation: str, context: dict) -> bool:
+        uncertain_markers = (
+            "rumor", "rumour", "gossip", "uncertain", "not sure",
+            "someone said", "people are saying", "suspicious", "i heard",
+            "might be hiding", "might be unreliable",
+        )
+        sources = [
+            *context.get("relevant_memories", []),
+            *context.get("relationship_history", []),
+            *context.get("recent_journals", []),
+        ]
+        uncertain_sources = [
+            str(source).lower()
+            for source in sources
+            if any(marker in str(source).lower() for marker in uncertain_markers)
+        ]
+        if not uncertain_sources:
+            return False
+        ignored = {
+            "about", "heard", "rumor", "rumour", "gossip", "someone",
+            "people", "saying", "might", "could", "should", "would",
+            "their", "there", "these", "those", "something", "today",
+        }
+        claim_tokens = {
+            token for token in re.findall(r"[a-z][a-z'-]{3,}", conversation.lower())
+            if token not in ignored
+        }
+        return any(
+            claim_tokens & set(re.findall(r"[a-z][a-z'-]{3,}", source))
+            for source in uncertain_sources
+        )
 
     @staticmethod
     def _context_has_uncertain_source(context: dict) -> bool:

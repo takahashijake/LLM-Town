@@ -150,6 +150,11 @@ class ConversationRecorder:
         response_to_turn: int | None = None,
         response_outcome: str | None = None,
         termination_reason: str = "",
+        generation_attempt_count: int = 1,
+        regenerated_for_repetition: bool = False,
+        effect_applied: bool = True,
+        effect_suppressed: bool = False,
+        effect_suppression_reason: str = "",
     ) -> None:
         intent_relationship_applies = bool(
             speaker_intent
@@ -215,6 +220,11 @@ class ConversationRecorder:
             "response_to_turn": response_to_turn,
             "response_outcome": response_outcome,
             "termination_reason": termination_reason,
+            "generation_attempt_count": generation_attempt_count,
+            "regenerated_for_repetition": regenerated_for_repetition,
+            "effect_applied": effect_applied,
+            "effect_suppressed": effect_suppressed,
+            "effect_suppression_reason": effect_suppression_reason,
         }
 
         self.logger.log_conversation(conversation_record)

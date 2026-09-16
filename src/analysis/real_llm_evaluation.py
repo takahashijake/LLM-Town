@@ -61,8 +61,8 @@ def _context_values(record: dict[str, Any]) -> dict[str, list[Any]]:
     intent = context.get("speaker_intent") or {}
     return {
         "relationship_history": context.get("relationship_history", []),
-        "memory": context.get("memories", []),
-        "journal": context.get("journals", []),
+        "memory": context.get("relevant_memories", context.get("memories", [])),
+        "journal": context.get("recent_journals", context.get("journals", [])),
         "goal_or_intent": [
             *context.get("goals", []),
             (context.get("active_goal") or {}).get("description", ""),
@@ -80,8 +80,10 @@ def _context_values(record: dict[str, Any]) -> dict[str, list[Any]]:
             f"{arc.get('name', '')} {arc.get('description', '')}"
             for arc in context.get("town_arcs", [])
         ],
-        "reputation": context.get("reputation", []),
-        "reputation_rumor": [context.get("reputation_rumor", "")],
+        "reputation": context.get("reputation_context", context.get("reputation", [])),
+        "reputation_rumor": [
+            context.get("reputation_rumor_text", context.get("reputation_rumor", ""))
+        ],
     }
 
 
@@ -145,6 +147,37 @@ def _repetition(records: list[dict[str, Any]]) -> tuple[dict[str, Any], set[int]
     }, flagged
 
 
+def _adjacent_repetition(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Measure only adjacent turns inside a session, not global phrase reuse."""
+    sessions: dict[str, list[dict[str, Any]]] = {}
+    for index, row in enumerate(records):
+        session_id = row.get("session_id") or f"legacy-{index}"
+        sessions.setdefault(session_id, []).append(row)
+    pairs = 0
+    exact = 0
+    near = 0
+    for rows in sessions.values():
+        for previous, current in zip(rows, rows[1:]):
+            first = " ".join(previous.get("conversation", "").lower().split())
+            second = " ".join(current.get("conversation", "").lower().split())
+            if not first or not second:
+                continue
+            pairs += 1
+            if first == second:
+                exact += 1
+            elif min(len(first), len(second)) >= 20 and (
+                SequenceMatcher(None, first, second).ratio() >= 0.90
+            ):
+                near += 1
+    return {
+        "adjacent_turn_pairs": pairs,
+        "adjacent_exact_echo_count": exact,
+        "adjacent_exact_echo_rate": safe_rate(exact, pairs),
+        "adjacent_near_echo_count": near,
+        "adjacent_near_echo_rate": safe_rate(near, pairs),
+    }
+
+
 def _action_language_diagnostics(records: list[dict[str, Any]]) -> dict[str, Any]:
     """Expose recorded parser/inference/final-action decisions for audit."""
     inference_reasons = Counter(
@@ -172,9 +205,23 @@ def _action_language_diagnostics(records: list[dict[str, Any]]) -> dict[str, Any
             for row in inferred_non_chat_capped
         ).items())),
         "inference_reason_counts": dict(sorted(inference_reasons.items())),
+        "parsed_action_semantic_validation_failure_count": sum(
+            row.get("final_action_reason") in {
+                "parsed_action_failed_semantic_validation",
+                "parsed_rumor_without_marker",
+            }
+            for row in records
+        ),
+        "parsed_inferred_final_triples": dict(sorted(Counter(
+            f"{row.get('parsed_action', 'not_recorded')}->"
+            f"{row.get('inferred_action', 'not_recorded')}->"
+            f"{row.get('action', 'not_recorded')}"
+            for row in records
+        ).items())),
         "note": (
             "A parser/inference disagreement is an audit candidate, not an error: "
-            "the final action also reflects allowed-action and repetition-cap policy."
+            "the final action also reflects deterministic semantic validation and "
+            "the allowed-action policy. Effect suppression is reported separately."
         ),
     }
 
@@ -295,6 +342,25 @@ def analyze_real_llm_records(
         for row in records
         if row.get("response_outcome")
     )
+    responsive_rows = [
+        row for row in records
+        if row.get("action") in {"offer_help", "ask_for_help", "cooperate"}
+    ]
+    semantic_actions = Counter(row.get("action", "unknown") for row in records)
+    effect_actions = Counter(
+        row.get("action", "unknown")
+        for row in records
+        if row.get("effect_applied", True)
+    )
+    suppression_reasons = Counter(
+        row.get("effect_suppression_reason") or "unspecified"
+        for row in records
+        if row.get("effect_suppressed", False)
+    )
+    regeneration_count = sum(
+        bool(row.get("regenerated_for_repetition")) for row in records
+    )
+    adjacent_repetition = _adjacent_repetition(records)
     multi_turn_rows = [row for rows in sessions.values() if len(rows) > 1 for row in rows]
     session_metrics = {
         "conversation_session_count": len(sessions),
@@ -320,12 +386,31 @@ def analyze_real_llm_records(
         "accepted_social_action_outcomes": outcomes["accepted"],
         "declined_social_action_outcomes": outcomes["declined"],
         "unresolved_social_action_outcomes": outcomes["unresolved"],
+        "responsive_action_outcome_resolution_rate": safe_rate(
+            sum(
+                row.get("response_outcome")
+                in {"accepted", "declined", "answered", "acknowledged"}
+                for row in responsive_rows
+            ),
+            len(responsive_rows),
+        ),
     }
 
     return {
         "conversation_count": len(records),
         "session_metrics": session_metrics,
         "dialogue_repetition": repetition,
+        "adjacent_echo": adjacent_repetition,
+        "generation_retries": {
+            "regeneration_count": regeneration_count,
+            "regeneration_rate": safe_rate(regeneration_count, len(records)),
+            "generation_attempt_count_distribution": dict(sorted(Counter(
+                row.get("generation_attempt_count", 1) for row in records
+            ).items())),
+        },
+        "semantic_action_distribution": dict(sorted(semantic_actions.items())),
+        "effect_applied_action_distribution": dict(sorted(effect_actions.items())),
+        "effect_suppression_counts": dict(sorted(suppression_reasons.items())),
         "context_use_indicators": _lexical_context_use(records),
         "response_health": {
             "action_source_counts": dict(sorted(action_sources.items())),
@@ -394,11 +479,22 @@ def build_human_review_sample(
         "goal_progress": [],
         "goal_reputation_tension": [],
         "relationship_conditioned_decision": [],
+        "possible_turn_discontinuity": [],
+        "echo_or_repetition": [],
+        "resolved_social_action": [],
+        "unresolved_social_action": [],
+        "semantic_action_correction": [],
+        "effect_suppressed_but_semantic_action_preserved": [],
+        "goal_grounded_session": [],
+        "relationship_grounded_session": [],
+        "reputation_or_rumor_grounded_session": [],
     }
     sessions = {}
+    raw_sessions = {}
     for record in records:
         session_id = record.get("session_id")
         if session_id:
+            raw_sessions.setdefault(session_id, []).append(record)
             sessions.setdefault(session_id, []).append({
                 "turn_index": record.get("turn_index"),
                 "speaker": record.get("speaker"),
@@ -406,7 +502,19 @@ def build_human_review_sample(
                 "dialogue": record.get("conversation"),
                 "action": record.get("action"),
                 "response_outcome": record.get("response_outcome"),
+                "effect_applied": record.get("effect_applied", True),
+                "effect_suppression_reason": record.get("effect_suppression_reason", ""),
+                "regenerated_for_repetition": record.get(
+                    "regenerated_for_repetition", False
+                ),
             })
+
+    previous_by_record = {}
+    for rows in raw_sessions.values():
+        for previous, current in zip(rows, rows[1:]):
+            previous_by_record[id(current)] = previous
+    for speaker in sorted({str(row.get("speaker", "")) for row in records if row.get("speaker")}):
+        categories[f"speaker_{speaker.lower()}"] = []
 
     for index, record in enumerate(records):
         values = _context_values(record)
@@ -448,11 +556,29 @@ def build_human_review_sample(
             "final_action": record.get("action"),
             "action_source": record.get("action_source"),
             "dialogue_source": record.get("dialogue_source"),
+            "generation_attempt_count": record.get("generation_attempt_count", 1),
+            "regenerated_for_repetition": record.get(
+                "regenerated_for_repetition", False
+            ),
+            "effect_applied": record.get("effect_applied", True),
+            "effect_suppressed": record.get("effect_suppressed", False),
+            "effect_suppression_reason": record.get(
+                "effect_suppression_reason", ""
+            ),
             "context": {
-                "activity": context.get("activity_display") or context.get("activity"),
+                "activity": (
+                    context.get("speaker_activity_display")
+                    or context.get("activity_display")
+                    or context.get("speaker_activity")
+                    or context.get("activity")
+                ),
                 "relationship_history": context.get("relationship_history", [])[:1],
-                "memories": context.get("memories", [])[:2],
-                "journal": context.get("journals", [])[:1],
+                "memories": context.get(
+                    "relevant_memories", context.get("memories", [])
+                )[:2],
+                "journal": context.get(
+                    "recent_journals", context.get("journals", [])
+                )[:1],
                 "goals": context.get("goals", [])[:3],
                 "active_goal": context.get("active_goal"),
                 "intent": intent.get("description") if isinstance(intent, dict) else intent,
@@ -463,19 +589,25 @@ def build_human_review_sample(
                 "town_arcs": [arc.get("name") for arc in context.get("town_arcs", [])],
                 "recent_topics": context.get("recent_topics", [])[-4:],
                 "recent_utterances": context.get("recent_utterances", [])[:2],
-                "reputation": context.get("reputation", [])[:2],
-                "reputation_rumor": context.get("reputation_rumor", ""),
+                "reputation": context.get(
+                    "reputation_context", context.get("reputation", [])
+                )[:2],
+                "reputation_rumor": context.get(
+                    "reputation_rumor_text", context.get("reputation_rumor", "")
+                ),
             },
         }
         memberships = []
         if matches["relationship_history"]:
             memberships.append("relationship_grounded")
+            memberships.append("relationship_grounded_session")
         if matches["memory"]:
             memberships.append("memory_grounded")
         if matches["goal_or_intent"]:
             memberships.append("intent_or_goal_related")
             if context.get("active_goal"):
                 memberships.append("goal_grounded_dialogue")
+                memberships.append("goal_grounded_session")
         active_goal = context.get("active_goal") or {}
         if active_goal and context.get("speaker_intent"):
             memberships.append("intent_serving_active_goal")
@@ -495,6 +627,12 @@ def build_human_review_sample(
             memberships.append("ordinary_low_context")
         if index in repetition_flags or generic:
             memberships.append("suspected_repetitive_or_generic")
+        if (
+            index in repetition_flags
+            or record.get("regenerated_for_repetition")
+            or record.get("termination_reason") == "repetition"
+        ):
+            memberships.append("echo_or_repetition")
         if (
             record.get("action_source", "llm") != "llm"
             or record.get("dialogue_source", "llm") != "llm"
@@ -522,6 +660,16 @@ def build_human_review_sample(
             and record.get("parsed_action") != record.get("inferred_action")
         ):
             memberships.append("model_action_or_inference_disagreement")
+        if (
+            record.get("final_action_reason")
+            == "parsed_action_failed_semantic_validation"
+            or (
+                record.get("parsed_action")
+                and record.get("parsed_action") != record.get("action")
+                and record.get("inferred_action") == record.get("action")
+            )
+        ):
+            memberships.append("semantic_action_correction")
         if matches["reputation"] and any(
             "direct experience" in str(item).lower()
             for item in values["reputation"]
@@ -529,12 +677,40 @@ def build_human_review_sample(
             memberships.append("direct_reputation_grounded_interaction")
         if record.get("rumor_transmission"):
             memberships.append("legitimate_rumor_transmission")
+            memberships.append("reputation_or_rumor_grounded_session")
         if record.get("reputation_influenced"):
             memberships.append("behavior_influenced_by_reputation")
         if record.get("relationship_influenced"):
             memberships.append("relationship_conditioned_decision")
         if record.get("dialogue_source") == "policy_fallback_unsourced_hearsay":
             memberships.append("unsupported_rumor_blocked_or_fallback")
+        if record.get("effect_suppressed") and record.get("action") != "chat":
+            memberships.append("effect_suppressed_but_semantic_action_preserved")
+        if record.get("action") in {"offer_help", "ask_for_help", "cooperate"}:
+            if record.get("response_outcome") in {
+                "accepted", "declined", "answered", "acknowledged"
+            }:
+                memberships.append("resolved_social_action")
+            elif record.get("response_outcome") == "unresolved":
+                memberships.append("unresolved_social_action")
+        previous = previous_by_record.get(id(record))
+        if previous and previous.get("conversation", "").rstrip().endswith("?"):
+            previous_tokens = _tokens(previous.get("conversation", ""))
+            current_tokens = _tokens(record.get("conversation", ""))
+            looks_like_answer = bool(re.search(
+                r"\b(yes|no|maybe|perhaps|sure|because|i think|i don't|i do not|"
+                r"i have|i haven't|i know|i'm not sure|not sure)\b",
+                record.get("conversation", "").lower(),
+            ))
+            if (
+                record.get("conversation", "").rstrip().endswith("?")
+                and not looks_like_answer
+                and not (previous_tokens & current_tokens)
+            ):
+                memberships.append("possible_turn_discontinuity")
+        speaker_category = f"speaker_{str(record.get('speaker', '')).lower()}"
+        if speaker_category in categories:
+            memberships.append(speaker_category)
 
         for category in memberships:
             if len(categories[category]) < per_category:
@@ -561,7 +737,10 @@ def _write_transcript(records: list[dict[str, Any]], path: Path) -> None:
                     f"parsed {row.get('parsed_action')}, inferred {row.get('inferred_action')}; "
                     f"inference {row.get('inference_reason', 'not_recorded')}, final "
                     f"{row.get('final_action_reason', 'not_recorded')}, outcome "
-                    f"{row.get('response_outcome') or 'n/a'})",
+                    f"{row.get('response_outcome') or 'n/a'}; effect "
+                    f"{'applied' if row.get('effect_applied', True) else 'suppressed'}"
+                    f"{': ' + row.get('effect_suppression_reason', '') if row.get('effect_suppressed') else ''}; "
+                    f"generation attempts {row.get('generation_attempt_count', 1)})",
                 ]
             )
         lines.extend(
@@ -588,6 +767,10 @@ def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
             continue
         for row in rows:
             context = row["context"]
+            suppression_text = (
+                f" ({row['effect_suppression_reason']})"
+                if row["effect_suppressed"] else ""
+            )
             lines.extend(
                 [
                     f"- Day {row['day']} {row['hour']}:00, {row['speaker']} → "
@@ -598,6 +781,10 @@ def _write_review(sample: dict[str, list[dict[str, Any]]], path: Path) -> None:
                     f"{row['inference_reason']}`, final-selection `"
                     f"{row['final_action_reason']}`; action source "
                     f"`{row['action_source']}`, dialogue source `{row['dialogue_source']}`.",
+                    f"  Effect: {'applied' if row['effect_applied'] else 'suppressed'}"
+                    f"{suppression_text}; "
+                    f"generation attempts: {row['generation_attempt_count']}; regenerated for "
+                    f"repetition: {row['regenerated_for_repetition']}.",
                     f"  Context: {json.dumps(context, sort_keys=True, ensure_ascii=False)}",
                     f"  Full session: {json.dumps(row.get('session_turns', []), ensure_ascii=False)}",
                     f"  Termination: {row.get('termination_reason') or 'legacy/not recorded'}",
@@ -670,9 +857,17 @@ def write_real_llm_evaluation(
             "count": indicators["dialogue_repetition"]["near_repeated_instances"],
             "rate": indicators["dialogue_repetition"]["near_repetition_rate"],
         },
-        "action_distribution": simulation_metrics.get("conversations", {}).get(
-            "action_counts", {}
-        ),
+        "adjacent_echo": indicators["adjacent_echo"],
+        "generation_retries": indicators["generation_retries"],
+        "semantic_action_distribution": indicators[
+            "semantic_action_distribution"
+        ],
+        "effect_applied_action_distribution": indicators[
+            "effect_applied_action_distribution"
+        ],
+        "effect_suppression_counts": indicators["effect_suppression_counts"],
+        # Compatibility alias retained for existing metric consumers.
+        "action_distribution": indicators["semantic_action_distribution"],
         "action_parse": {
             "success_count": health["action_parsing_successes"],
             "success_rate": health["action_parsing_success_rate"],

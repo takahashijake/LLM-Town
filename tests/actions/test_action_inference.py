@@ -134,3 +134,26 @@ def test_infer_common_real_llm_action_language_variants_and_reason():
         action, reason = actions.infer_action_with_reason(dialogue, [])
         assert action == expected_action
         assert reason != "no_action_language"
+
+
+def test_infer_prompt7_real_run_variants_conservatively():
+    actions = ActionSystem()
+    cases = {
+        "You've got a knack for finding great deals.": "compliment",
+        "Could use some help setting up the display.": "ask_for_help",
+        "I was wondering if you could show me around.": "ask_for_help",
+        "Do you have any tips for setting up a stall?": "ask_for_help",
+        "Let me grab a few books to help out.": "offer_help",
+        "Let's split up and cover different areas.": "cooperate",
+        "Thanks for offering to help.": "chat",
+        "Could you point me toward someone who knows about this?": "ask_for_help",
+        "Could you perhaps point me towards some loan resources?": "ask_for_help",
+        "Can you check if there are any bins nearby?": "ask_for_help",
+        "Could you use my laptop to take notes?": "offer_help",
+        "Let's brainstorm some ideas for new merchandise.": "cooperate",
+        "Do you think we could find some new suppliers?": "cooperate",
+        "Let's discuss the process and see if we can spot any issues.": "chat",
+    }
+
+    for dialogue, expected_action in cases.items():
+        assert actions.infer_action(dialogue, []) == expected_action

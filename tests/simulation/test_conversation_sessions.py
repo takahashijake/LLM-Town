@@ -109,6 +109,11 @@ def test_response_outcomes_are_conservative():
     assert resolver.resolve("offer_help", "Yeah, I'd appreciate that.") == "accepted"
     assert resolver.resolve("offer_help", "No thanks, I've got it.") == "declined"
     assert resolver.resolve("offer_help", "Perhaps we can discuss the records.") == "unresolved"
+    assert resolver.resolve("cooperate", "Thanks, the library looks welcoming.") == "unresolved"
+    assert resolver.resolve("ask_for_help", "That sounds good to me.") == "unresolved"
+    assert resolver.resolve("ask_for_help", "Sure thing, I'll check the printer.") == "answered"
+    assert resolver.resolve("offer_help", "Thanks, I appreciate your help.") == "accepted"
+    assert resolver.resolve("cooperate", "Let's grab some trash bags first.") == "accepted"
 
 
 def test_repeated_semantic_action_effect_is_applied_once(tmp_path):
@@ -146,3 +151,113 @@ def test_scripted_session_is_reproducible(tmp_path):
         )
         outputs.append(rows)
     assert outputs[0] == outputs[1]
+
+
+def test_rate_capped_offer_keeps_semantics_and_listener_can_decline(tmp_path):
+    llm = ScriptedLLM([
+        {"dialogue": "Would you like some help with those bins?", "action": "offer_help"},
+        {"dialogue": "No thanks, I've got it.", "action": "chat"},
+    ])
+    engine, maya, ethan = build_engine(tmp_path, llm, max_turns=2)
+    engine.recent_actions = ["offer_help", "offer_help", "offer_help", "chat", "chat"]
+    before = engine.relationships.get_score(maya.name, ethan.name)
+
+    engine.generate_conversations(1, 8)
+
+    rows = read_jsonl(engine.logger.conversations_file)
+    assert rows[0]["action"] == "offer_help"
+    assert rows[0]["effect_applied"] is False
+    assert rows[0]["effect_suppression_reason"] == "action_rate_cap"
+    assert rows[0]["response_outcome"] == "declined"
+    assert engine.relationships.get_score(maya.name, ethan.name) == before
+
+
+def test_rate_capped_rumor_keeps_semantics_without_double_effects(tmp_path):
+    llm = ScriptedLLM([
+        {"dialogue": "Someone said the market account might be unreliable.", "action": "share_rumor"},
+    ])
+    engine, maya, ethan = build_engine(tmp_path, llm, max_turns=1)
+    carlos = next(agent for agent in engine.agents if agent.name not in {maya.name, ethan.name})
+    engine.reputation_system.record_observation(
+        day=1,
+        observer=maya,
+        target_agent=carlos.name,
+        dimension="trustworthiness",
+        value=-1,
+        evidence_id="test-observation",
+    )
+    engine.recent_actions = ["share_rumor", "chat", "chat", "chat", "chat"]
+    before = engine.relationships.get_score(maya.name, ethan.name)
+
+    engine.generate_conversations(1, 8)
+
+    row = read_jsonl(engine.logger.conversations_file)[0]
+    assert row["action"] == "share_rumor"
+    assert row["effect_applied"] is False
+    assert row["effect_suppression_reason"] == "action_rate_cap"
+    assert engine.relationships.get_score(maya.name, ethan.name) == before
+
+
+class RegeneratingLLM(ScriptedLLM):
+    is_deterministic_fake = False
+
+
+def test_exact_echo_regenerates_once_and_accepts_fresh_retry(tmp_path):
+    llm = RegeneratingLLM([
+        {"dialogue": "The gardening workshop starts here today.", "action": "chat"},
+        {"dialogue": "The gardening workshop starts here today.", "action": "chat"},
+        {"dialogue": "Yes, I noticed the seed table is already set up.", "action": "chat"},
+    ])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=2)
+
+    engine.generate_conversations(1, 8)
+
+    rows = read_jsonl(engine.logger.conversations_file)
+    assert len(llm.contexts) == 3
+    assert rows[1]["generation_attempt_count"] == 2
+    assert rows[1]["regenerated_for_repetition"] is True
+    assert rows[1]["conversation"].startswith("Yes, I noticed")
+    assert llm.contexts[-1]["anti_echo_retry"] is True
+
+
+def test_near_echo_regenerates_once(tmp_path):
+    llm = RegeneratingLLM([
+        {"dialogue": "The library has become a warm and welcoming place for everyone.", "action": "chat"},
+        {"dialogue": "The library has become such a warm and welcoming place for everyone.", "action": "chat"},
+        {"dialogue": "It has; the quieter reading corner seems especially useful.", "action": "chat"},
+    ])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=2)
+
+    engine.generate_conversations(1, 8)
+
+    rows = read_jsonl(engine.logger.conversations_file)
+    assert rows[1]["generation_attempt_count"] == 2
+    assert rows[1]["termination_reason"] == "max_turns"
+
+
+def test_persistent_echo_gets_one_retry_then_terminates(tmp_path):
+    repeated = {"dialogue": "The spice rack looks much better organized now.", "action": "chat"}
+    llm = RegeneratingLLM([repeated, repeated, repeated])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=4)
+
+    engine.generate_conversations(1, 8)
+
+    rows = read_jsonl(engine.logger.conversations_file)
+    assert len(llm.contexts) == 3
+    assert rows[-1]["generation_attempt_count"] == 2
+    assert rows[-1]["termination_reason"] == "repetition"
+
+
+def test_normal_real_model_dialogue_does_not_regenerate(tmp_path):
+    llm = RegeneratingLLM([
+        {"dialogue": "Have you checked the new arrivals?", "action": "chat"},
+        {"dialogue": "Yes, the history shelf has two useful titles.", "action": "chat"},
+    ])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=2)
+
+    engine.generate_conversations(1, 8)
+
+    rows = read_jsonl(engine.logger.conversations_file)
+    assert len(llm.contexts) == 2
+    assert rows[1]["generation_attempt_count"] == 1
+    assert rows[1]["regenerated_for_repetition"] is False

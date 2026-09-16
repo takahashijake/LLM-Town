@@ -41,7 +41,42 @@ class ConversationEffectsApplier:
         rumor_claim: dict | None = None,
         outcome: str = "completed",
         remember: bool = True,
+        effect_eligible: bool = True,
+        effect_suppression_reason: str = "",
     ) -> dict:
+        if not effect_eligible:
+            memory = None
+            if remember:
+                memory = self.conversation_recorder.remember_conversation_for_agents(
+                    day=day, hour=hour, location_id=location_id,
+                    speaker=speaker, listener=listener, conversation=conversation,
+                    relationship_change=0, tags=conversation_tags,
+                )
+            self.conversation_policy.remember_dialogue(conversation)
+            self.conversation_policy.remember_action(action)
+            current_score = self.relationship_updater.relationships.get_score(
+                speaker.name,
+                listener.name,
+            )
+            return {
+                "relationship_change": 0,
+                "new_score": current_score,
+                "relationship_label": self.relationship_updater.relationships.describe_relationship(
+                    speaker.name,
+                    listener.name,
+                ),
+                "relationship_event": None,
+                "relationship_updates": {},
+                "memory": memory,
+                "reputation_updates": [],
+                "rumor_transmission": None,
+                "effect_applied": False,
+                "effect_suppressed": True,
+                "effect_suppression_reason": (
+                    effect_suppression_reason or "effect_not_eligible"
+                ),
+            }
+
         responsive_actions = {"offer_help", "ask_for_help", "cooperate"}
         outcome_allows_completion = outcome in {
             "completed", "accepted", "answered", "acknowledged"
@@ -156,4 +191,7 @@ class ConversationEffectsApplier:
                 *([rumor_update] if rumor_update else []),
             ],
             "rumor_transmission": rumor_update,
+            "effect_applied": True,
+            "effect_suppressed": False,
+            "effect_suppression_reason": "",
         }

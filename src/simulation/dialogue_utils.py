@@ -36,6 +36,10 @@ def is_narration(conversation: str, speaker_name: str, listener_name: str) -> bo
         f"{listener_name.lower()} asked",
         f"{speaker_name.lower()} says",
         f"{listener_name.lower()} says",
+        f"{speaker_name.lower()} leaned",
+        f"{listener_name.lower()} leaned",
+        f"{speaker_name.lower()} studied",
+        f"{listener_name.lower()} studied",
     ]
 
     return any(pattern in text for pattern in narration_patterns)

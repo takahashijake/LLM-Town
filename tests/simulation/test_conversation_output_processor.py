@@ -234,6 +234,37 @@ def test_process_malformed_output_uses_spoken_agent_fallback():
     assert output["parsed_output"]["action_source"] == "fallback_no_json"
 
 
+def test_placeholder_and_third_person_narration_use_safe_fallbacks():
+    processor = build_processor()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    common = {
+        "allowed_actions": ["chat"],
+        "speaker": speaker,
+        "listener": listener,
+        "old_relationship_label": "neutral",
+        "location_id": "library",
+        "suggested_action": "chat",
+        "current_day": 2,
+        "current_daily_event": None,
+        "daily_event_history": [],
+    }
+
+    placeholder = processor.process_llm_output(
+        raw_output='{"dialogue": "spoken line", "action": "chat"}',
+        **common,
+    )
+    narration = processor.process_llm_output(
+        raw_output=(
+            '{"dialogue": "Maya leaned closer to the map.", "action": "chat"}'
+        ),
+        **common,
+    )
+
+    assert placeholder["dialogue_source"] == "agent_fallback_empty"
+    assert narration["dialogue_source"] == "agent_fallback_narration"
+
+
 def test_unsourced_hearsay_is_not_saved_as_real_model_dialogue():
     processor = build_processor()
     speaker = build_agent("Maya")
@@ -286,6 +317,72 @@ def test_hearsay_is_preserved_when_speaker_has_an_uncertain_source():
     assert output["conversation"] == "I heard the ledger may be missing."
     assert output["parsed_action"] == "share_rumor"
     assert output["dialogue_source"] == "llm"
+
+
+def test_unrelated_uncertain_source_does_not_license_invented_hearsay():
+    processor = build_processor()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+
+    output = processor.process_llm_output(
+        raw_output=(
+            '{"dialogue": "I heard Lena stole from the bakery.", '
+            '"action": "argue", "tags": []}'
+        ),
+        allowed_actions=["chat", "argue", "share_rumor"],
+        speaker=speaker,
+        listener=listener,
+        old_relationship_label="neutral",
+        location_id="library",
+        suggested_action="chat",
+        current_day=2,
+        current_daily_event=None,
+        daily_event_history=[],
+        conversation_context={
+            "relevant_memories": [
+                "Someone said the market supplier might be unreliable."
+            ]
+        },
+        enforce_information_boundaries=True,
+    )
+
+    assert "bakery" not in output["conversation"].lower()
+    assert output["parsed_action"] == "chat"
+    assert output["dialogue_source"] == "policy_fallback_unsourced_hearsay"
+
+
+def test_structured_claim_blocks_mismatched_hearsay_even_with_wrong_model_action():
+    processor = build_processor()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    claim = {
+        "subject_agent": "Lena",
+        "dimension": "helpfulness",
+        "value": 1,
+        "source_type": "direct_interaction",
+    }
+
+    output = processor.process_llm_output(
+        raw_output=(
+            '{"dialogue": "I heard Lena was caught stealing from the bakery.", '
+            '"action": "argue", "tags": []}'
+        ),
+        allowed_actions=["chat", "argue", "share_rumor"],
+        speaker=speaker,
+        listener=listener,
+        old_relationship_label="neutral",
+        location_id="library",
+        suggested_action="chat",
+        current_day=2,
+        current_daily_event=None,
+        daily_event_history=[],
+        conversation_context={"reputation_rumor": claim},
+        enforce_information_boundaries=True,
+    )
+
+    assert "stealing" not in output["conversation"].lower()
+    assert output["parsed_action"] == "chat"
+    assert output["dialogue_source"] == "policy_fallback_unsourced_hearsay"
 
 
 def test_structured_reputation_rumor_replaces_changed_or_damaging_claim():

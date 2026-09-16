@@ -117,6 +117,16 @@ def _relationship_label(score: int) -> str:
 def _conversation_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(records)
     actions = Counter(record.get("action", "unknown") for record in records)
+    applied_actions = Counter(
+        record.get("action", "unknown")
+        for record in records
+        if record.get("effect_applied", True)
+    )
+    suppression_reasons = Counter(
+        record.get("effect_suppression_reason") or "unspecified"
+        for record in records
+        if record.get("effect_suppressed", False)
+    )
     dialogue_counts = Counter(
         record.get("conversation", "").strip()
         for record in records
@@ -141,6 +151,9 @@ def _conversation_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "total": total,
         "action_counts": dict(sorted(actions.items())),
+        "semantic_action_counts": dict(sorted(actions.items())),
+        "effect_applied_action_counts": dict(sorted(applied_actions.items())),
+        "effect_suppression_counts": dict(sorted(suppression_reasons.items())),
         "action_rates": {
             action: safe_rate(count, total)
             for action, count in sorted(actions.items())

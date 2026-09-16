@@ -253,21 +253,29 @@ class ConversationPolicy:
                 conversation_tags,
             )
 
-        if parsed_action == "share_rumor" and inferred_action == "chat":
-            if has_rumor_marker(conversation):
-                final_action = "share_rumor"
-                reason = "parsed_rumor_with_marker"
-            else:
-                final_action = "chat"
-                reason = "parsed_rumor_without_marker"
-
-        elif inferred_action != "chat" and inferred_action in allowed_actions:
+        if inferred_action != "chat" and inferred_action in allowed_actions:
             final_action = inferred_action
             reason = "trusted_inferred_non_chat"
 
         elif parsed_action != "chat" and parsed_action in allowed_actions:
-            final_action = parsed_action
-            reason = "trusted_parsed_non_chat"
+            supported, _validation_reason = self.actions.validate_action_semantics(
+                parsed_action,
+                conversation,
+            )
+            if supported:
+                final_action = parsed_action
+                reason = (
+                    "parsed_rumor_with_marker"
+                    if parsed_action == "share_rumor" and has_rumor_marker(conversation)
+                    else "trusted_parsed_non_chat"
+                )
+            else:
+                final_action = "chat"
+                reason = (
+                    "parsed_rumor_without_marker"
+                    if parsed_action == "share_rumor"
+                    else "parsed_action_failed_semantic_validation"
+                )
 
         elif parsed_action in allowed_actions:
             final_action = parsed_action
@@ -276,9 +284,6 @@ class ConversationPolicy:
         else:
             final_action = "chat"
             reason = "fallback_chat_action_not_allowed"
-
-        if self.should_cap_action(final_action):
-            return "chat", f"capped_{final_action}"
 
         return final_action, reason
 

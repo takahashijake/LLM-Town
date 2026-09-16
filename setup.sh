@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 echo "Setting up LLM-Town GPU environment..."
 
@@ -9,13 +9,7 @@ source .venv/bin/activate
 
 python -m pip install --upgrade pip setuptools wheel
 
-pip install \
-  torch \
-  transformers \
-  accelerate \
-  sentencepiece \
-  protobuf \
-  numpy
+python -m pip install -r requirements.txt -r requirements-dev.txt
 
 echo ""
 echo "Setup complete."
@@ -23,4 +17,4 @@ echo "To activate later, run:"
 echo "source .venv/bin/activate"
 echo ""
 echo "Test with:"
-echo "python main.py"
+echo "python main.py --fake-llm --days 1 --hours 8"

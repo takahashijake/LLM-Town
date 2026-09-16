@@ -208,6 +208,8 @@ class SimulationEngine:
         rumor_claim: dict | None = None,
         outcome: str = "completed",
         remember: bool = True,
+        effect_eligible: bool = True,
+        effect_suppression_reason: str = "",
     ) -> dict:
         self.sync_town_arc_system_refs()
         self.sync_conversation_policy_refs()
@@ -228,6 +230,8 @@ class SimulationEngine:
             rumor_claim=rumor_claim,
             outcome=outcome,
             remember=remember,
+            effect_eligible=effect_eligible,
+            effect_suppression_reason=effect_suppression_reason,
         )
 
         self.recent_dialogues = self.conversation_policy.recent_dialogues
@@ -869,6 +873,11 @@ class SimulationEngine:
         response_to_turn: int | None = None,
         response_outcome: str | None = None,
         termination_reason: str = "",
+        generation_attempt_count: int = 1,
+        regenerated_for_repetition: bool = False,
+        effect_applied: bool = True,
+        effect_suppressed: bool = False,
+        effect_suppression_reason: str = "",
     ) -> None:
         self.conversation_recorder.log_conversation_event(
             day=day,
@@ -914,6 +923,11 @@ class SimulationEngine:
             response_to_turn=response_to_turn,
             response_outcome=response_outcome,
             termination_reason=termination_reason,
+            generation_attempt_count=generation_attempt_count,
+            regenerated_for_repetition=regenerated_for_repetition,
+            effect_applied=effect_applied,
+            effect_suppressed=effect_suppressed,
+            effect_suppression_reason=effect_suppression_reason,
         )
 
     def print_conversation_event(

@@ -160,6 +160,70 @@ def test_analysis_helpers_are_deterministic():
     assert build_human_review_sample(rows, first_flags)["intent_action_mismatch"]
 
 
+def test_evaluation_separates_semantic_actions_from_applied_effects():
+    from src.analysis.real_llm_evaluation import (
+        analyze_real_llm_records,
+        build_human_review_sample,
+    )
+
+    rows = [
+        {
+            "session_id": "session-1",
+            "turn_index": 0,
+            "speaker": "Maya",
+            "listener": "Ethan",
+            "conversation": "Would you like some help with those bins?",
+            "action": "offer_help",
+            "parsed_action": "offer_help",
+            "inferred_action": "offer_help",
+            "final_action_reason": "trusted_inferred_non_chat",
+            "effect_applied": False,
+            "effect_suppressed": True,
+            "effect_suppression_reason": "action_rate_cap",
+            "response_outcome": "declined",
+            "generation_attempt_count": 1,
+            "action_source": "llm",
+            "dialogue_source": "llm",
+            "context": {},
+        },
+        {
+            "session_id": "session-1",
+            "turn_index": 1,
+            "speaker": "Ethan",
+            "listener": "Maya",
+            "conversation": "No thanks, I've got it.",
+            "action": "chat",
+            "parsed_action": "chat",
+            "inferred_action": "chat",
+            "effect_applied": True,
+            "response_outcome": None,
+            "generation_attempt_count": 2,
+            "regenerated_for_repetition": True,
+            "action_source": "llm",
+            "dialogue_source": "llm",
+            "termination_reason": "max_turns",
+            "context": {},
+        },
+    ]
+
+    diagnostics, flags = analyze_real_llm_records(rows, {})
+
+    assert diagnostics["semantic_action_distribution"] == {
+        "chat": 1,
+        "offer_help": 1,
+    }
+    assert diagnostics["effect_applied_action_distribution"] == {"chat": 1}
+    assert diagnostics["effect_suppression_counts"] == {"action_rate_cap": 1}
+    assert diagnostics["generation_retries"]["regeneration_count"] == 1
+    assert diagnostics["session_metrics"]["declined_social_action_outcomes"] == 1
+
+    sample = build_human_review_sample(rows, flags)
+    assert sample["effect_suppressed_but_semantic_action_preserved"]
+    assert sample["resolved_social_action"]
+    assert sample["speaker_maya"]
+    assert sample["speaker_ethan"]
+
+
 def test_mocked_real_evaluation_isolated_from_ordinary_state_and_logs(
     tmp_path, monkeypatch
 ):

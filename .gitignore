@@ -8,3 +8,6 @@ debug_bundle*.txt
 .venv/
 outputs/benchmarks/
 outputs/real_llm_evaluations/
+outputs/resume_readiness_*/
+# Generated evaluation/benchmark runs belong under an ignored named family.
+# Curated historical fixtures already tracked under outputs/ remain visible.

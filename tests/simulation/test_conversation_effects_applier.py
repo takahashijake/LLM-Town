@@ -220,3 +220,33 @@ def test_apply_conversation_effects_does_not_fabricate_missing_rumor_claim():
 
     assert result["rumor_transmission"] is None
     assert listener.reputation_beliefs == {}
+
+
+def test_suppressed_semantic_action_is_remembered_but_has_no_effects():
+    applier, relationship_updater, conversation_policy = build_applier()
+    speaker = build_agent("Maya")
+    listener = build_agent("Ethan")
+    before_need = speaker.needs["social"]
+
+    result = applier.apply_conversation_effects(
+        day=1,
+        hour=8,
+        location_id="library",
+        speaker=speaker,
+        listener=listener,
+        action="offer_help",
+        conversation="I can help you with those records.",
+        conversation_tags=["conversation", "offer_help"],
+        old_relationship_label="neutral",
+        old_score=0,
+        relationship_events=[],
+        effect_eligible=False,
+        effect_suppression_reason="action_rate_cap",
+    )
+
+    assert result["effect_applied"] is False
+    assert result["effect_suppression_reason"] == "action_rate_cap"
+    assert relationship_updater.relationships.get_score("Maya", "Ethan") == 0
+    assert speaker.needs["social"] == before_need
+    assert listener.reputation_beliefs == {}
+    assert conversation_policy.recent_actions == ["offer_help"]

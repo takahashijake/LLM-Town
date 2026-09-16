@@ -309,8 +309,33 @@ def test_prompt_is_compact_and_requires_grounded_action_aligned_dialogue():
     assert len(prompt.split()) < 550
     assert "Assert facts only" in prompt
     assert "The words and action must agree" in prompt
-    assert "one focus, not every context item" in prompt
+    assert "Use one focus" in prompt
     assert "under 35 words" in prompt
+
+
+def test_follow_up_prompt_contains_latest_line_once_and_prioritizes_response():
+    context = build_conversation_context(
+        agent("Maya"),
+        agent("Ethan"),
+        "library",
+        "friendly",
+        5,
+        current_day=2,
+    )
+    latest = "Have you found the missing invoice?"
+    context["session_transcript"] = [
+        {"speaker": "Ethan", "listener": "Maya", "dialogue": latest}
+    ]
+    context["most_recent_utterance"] = latest
+
+    prompt = TransformersLLMClient._build_prompt(
+        object.__new__(TransformersLLMClient), context
+    )
+
+    assert prompt.count(latest) == 1
+    assert "highest priority is responding meaningfully" in prompt
+    assert "Answer or explicitly decline" in prompt
+    assert "Your turn: respond as Maya" in prompt
 
 
 def test_broad_activity_tag_does_not_make_remote_event_relevant():

@@ -132,6 +132,7 @@ class ActionSystem:
             "might be unreliable",
             "from what i saw",
             "someone told me",
+            "i heard",
             "word is",
             "i've been told",
         )
@@ -152,10 +153,12 @@ class ActionSystem:
             "you're good at", "you are good at", "impressive", "great work",
             "well done", "you always know how", "you're really good",
             "you are really good", "that was thoughtful", "that was kind",
-            "that was smart", "thanks for", "thank you for", "i appreciate",
+            "that was smart",
             "glad you came", "great to see", "good to see", "this is really helpful",
             "that helps a lot", "great job", "good work", "really come in handy",
             "come in handy", "organization skills", "organizing the volunteers",
+            "you handled that really well", "you handled that well",
+            "you've got a knack", "you have a knack",
             # Common direct praise variants emitted by instruction-following models.
             "you were excellent", "you are excellent", "you did an excellent job",
             "you've done a great", "you have done a great", "i admire",
@@ -163,6 +166,13 @@ class ActionSystem:
         ))
         if marker:
             return "compliment", f"compliment_marker:{marker}"
+        contribution_praise = re.search(
+            r"\b(?:thanks|thank you) for (?:coming|helping|supporting|organizing|"
+            r"handling|working|doing)\b|\bi appreciate (?:you|your)\b",
+            text,
+        )
+        if contribution_praise:
+            return "compliment", "compliment_pattern:appreciated_contribution"
         # Explicit offers of help. Recommendations and third-party staffing
         # observations are ordinary chat unless the speaker offers assistance.
         marker = self._first_match(text, (
@@ -179,6 +189,21 @@ class ActionSystem:
         ))
         if marker:
             return "offer_help", f"offer_marker:{marker}"
+        offered_task = re.search(
+            r"\bwould you like me to (?:check|find|get|grab|bring|carry|sort|"
+            r"organize|review|handle|take care of)\b",
+            text,
+        )
+        if offered_task:
+            return "offer_help", "offer_pattern:would_you_like_me_to_task"
+        if re.search(r"\bcould you use (?:my|some|a)\b", text):
+            return "offer_help", "offer_pattern:could_you_use_offered_resource"
+        first_person_help = re.search(
+            r"\b(let me|i(?:'ll| will| can| could))\b.{0,45}\bhelp out\b",
+            text,
+        )
+        if first_person_help:
+            return "offer_help", "offer_pattern:first_person_help_out"
     
         # Invitations and casual social questions
         marker = self._first_match(text, (
@@ -215,6 +240,27 @@ class ActionSystem:
         )
         if tentative_joint_task:
             return "cooperate", f"cooperation_pattern:lets_see_{tentative_joint_task.group(1)}"
+        coordinated_split = re.search(
+            r"\blet(?:'s| us)\b.{0,45}\b(split|divide)\b.{0,45}"
+            r"\b(area|areas|work|task|tasks|coverage|ground)\b",
+            text,
+        )
+        if coordinated_split:
+            return "cooperate", f"cooperation_pattern:{coordinated_split.group(1)}_task"
+        explicit_joint_plan = re.search(
+            r"\b(?:let(?:'s| us)|how about we)\b.{0,30}"
+            r"\b(split up|divide up|sort|organize|repair|handle|clean|cover|brainstorm)\b",
+            text,
+        )
+        if explicit_joint_plan:
+            return "cooperate", "cooperation_pattern:explicit_joint_plan"
+        joint_task_question = re.search(
+            r"\bdo you think we could\b.{0,35}"
+            r"\b(find|check|sort|organize|repair|handle|clean|cover)\b",
+            text,
+        )
+        if joint_task_question:
+            return "cooperate", "cooperation_pattern:joint_task_question"
     
         # Genuine requests for help, advice, or information
         marker = self._first_match(text, (
@@ -231,9 +277,15 @@ class ActionSystem:
             "i am looking for advice", "please help me", "do you have any contacts",
             "can you tell me", "could you tell me", "would you tell me",
             "could you recommend", "can you recommend", "would you recommend",
+            "could use some help", "if you could show me", "do you have any tips",
+            "could you grab me", "can you grab me", "do you have any extra",
+            "could you point me", "can you point me", "could you check if",
+            "can you check if",
         ))
         if marker:
             return "ask_for_help", f"request_marker:{marker}"
+        if re.search(r"\bcould you (?:maybe |perhaps )?point me\b", text):
+            return "ask_for_help", "request_pattern:point_me_to_resource"
     
         # Romantic confession
         marker = self._first_match(text, (
@@ -246,11 +298,12 @@ class ActionSystem:
         # Rumors / gossip
         # Arguments
         marker = self._first_match(text, (
-            "why are you", "argue", "issue", "you are wrong", "you're wrong",
+            "why are you", "argue", "you are wrong", "you're wrong",
             "that makes no sense", "that does not make sense", "i disagree",
             "i do not agree", "i don't agree", "you handled that poorly",
             "you made this harder", "i think you're mistaken", "i think you are mistaken",
             "that is not acceptable", "that's not acceptable", "you should not have",
+            "i have an issue with", "my issue with your",
         ))
         if marker:
             return "argue", f"argument_marker:{marker}"
@@ -266,6 +319,27 @@ class ActionSystem:
             return "storm_off", f"departure_marker:{marker}"
     
         return "chat", "no_action_language"
+
+    def validate_action_semantics(
+        self,
+        action: str,
+        conversation: str,
+    ) -> tuple[bool, str]:
+        """Conservatively validate a model-supplied non-chat action label.
+
+        Deterministic inference is deliberately narrower than generation.  A
+        parsed label may fill a lexical gap only when the utterance still
+        contains language that this policy recognizes as that exact social
+        move.  This prevents ordinary questions and positive observations
+        from acquiring help/cooperation effects merely because the model
+        emitted an ambitious label.
+        """
+        if action == "chat":
+            return True, "chat_requires_no_special_language"
+        inferred, reason = self.infer_action_with_reason(conversation, [])
+        if inferred == action:
+            return True, reason
+        return False, f"semantic_validator_inferred_{inferred}"
 
     @staticmethod
     def _first_match(text: str, markers: tuple[str, ...]) -> str | None:

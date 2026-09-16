@@ -165,6 +165,13 @@ class TransformersLLMClient:
                 f"hostility {relationship_snapshot.get('hostility', 0):+.2f}; "
                 f"{relationship_snapshot.get('interaction_count', 0)} interactions"
             )
+        anti_echo_instruction = ""
+        if context.get("anti_echo_retry"):
+            anti_echo_instruction = (
+                "\n- Retry requirement: your previous attempt copied an earlier line. "
+                "Answer with substantively new wording and content; do not paraphrase "
+                "or restate any line in the current conversation."
+            )
 
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
@@ -209,28 +216,30 @@ Avoid unnecessary repetition
 - Recent lines by this speaker:
 {lines(recent_utterances)}
 
-Current conversation (shared spoken transcript; answer the latest line naturally):
+Current conversation (shared spoken transcript):
 {lines(transcript_lines)}
-- Most recent utterance: {context.get('most_recent_utterance') or 'None; begin the conversation'}
+Your turn: respond as {context['speaker']}.
 
 Social move
 - Allowed actions: {', '.join(allowed_actions)}
 - Suggested action: {suggested_action}
 
 Requirements:
-- Use one focus, not every context item. The public event and ongoing situations are optional.
-- Prefer a concrete, relationship-aware continuation over a greeting or generic town commentary.
-- Express personality through word choice and judgment; never state traits, needs, goals, intent labels, scores, tags, or prompt metadata.
+- On follow-up turns, the highest priority is responding meaningfully to the immediately preceding utterance. Answer or explicitly decline/express uncertainty about a direct question; do not replace the answer with a new question. Acknowledge a request; accept, decline, clarify, modify, or question an offer/proposal; react to a statement. Change topics only afterward.
+- Use one focus; public events and ongoing situations are optional.
+- Prefer a concrete, relationship-aware continuation.
+- Let the voice cue shape wording/directness, occupation shape relevant perspective, and relationship shape tone. Never state traits, needs, goals, intents, scores, tags, or prompt metadata.
 - Never repeat raw simulation wording such as "work on intent" or underscore-separated identifiers.
 - Do not reuse a recent line or restart a settled topic unless something has changed.
 - Assert facts only from the immediate situation or the supplied speaker knowledge. Do not invent named people, businesses, events, schedules, shortages, secrets, or rumors. Use hearsay wording only when a supplied source is itself uncertain.
 - Use share_rumor only for the supported third-party social claim above. Keep its subject, dimension, and direction unchanged; present it cautiously rather than as certain fact.
 - Do not default to "I heard" or "Have you heard." Without an explicitly uncertain supplied source, state an observation, opinion, request, or question instead.
-- Keep past memories and journals in the past. Do not present them as happening today.
+- Treat memories and journals as past, not current events.
 - Match the relationship tone. Tense or hostile speakers should not suddenly flatter, invite, or offer help.
 - The suggested action is a soft direction. Follow it when context supports it; otherwise choose a better allowed action. The words and action must agree: requests for assistance are ask_for_help, direct offers are offer_help, shared-task proposals are cooperate, praise is compliment, regret is apologize, disagreement is argue, and uncertain secondhand claims are share_rumor. Invitations and ordinary questions are chat.
 - If using cooperate, explicitly propose doing a concrete task together with wording such as "let's" or "we can"; merely inviting the listener to look at or attend something is chat.
 - One spoken line, normally under 35 words. No narration, stage directions, speaker name, or hidden reasoning.
+{anti_echo_instruction}
 
 Return only valid JSON:
 {{"dialogue": "spoken line", "action": "one allowed action", "tags": ["conversation"], "reason": "brief grounding reason"}}

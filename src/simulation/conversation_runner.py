@@ -46,20 +46,37 @@ class ConversationRunner:
             context = setup["context"]
             context["session_transcript"] = list(transcript)
             context["most_recent_utterance"] = transcript[-1]["dialogue"] if transcript else ""
-            generation_error = ""
-            try:
-                raw_output = engine.llm.generate_conversation(context)
-            except Exception as error:
-                raw_output = ""
-                generation_error = f"{type(error).__name__}: {error}"
-            processed = engine.process_conversation_output(
-                raw_output=raw_output, allowed_actions=setup["allowed_actions"],
-                speaker=speaker, listener=listener,
-                old_relationship_label=setup["old_relationship_label"],
-                location_id=session.location, suggested_action=setup["suggested_action"],
-                current_day=session.day, conversation_context=context,
-                enforce_information_boundaries=not getattr(engine.llm, "is_deterministic_fake", False),
+            raw_output, processed, generation_error = self._generate_and_process(
+                engine=engine,
+                context=context,
+                setup=setup,
+                speaker=speaker,
+                listener=listener,
+                session=session,
             )
+            generation_attempt_count = 1
+            regenerated_for_repetition = False
+            if (
+                transcript
+                and not generation_error
+                and not getattr(engine.llm, "is_deterministic_fake", False)
+                and self._matches_prior_turn(processed["conversation"], transcript)
+            ):
+                generation_attempt_count = 2
+                regenerated_for_repetition = True
+                context = {
+                    **context,
+                    "anti_echo_retry": True,
+                    "repeated_candidate": processed["conversation"],
+                }
+                raw_output, processed, generation_error = self._generate_and_process(
+                    engine=engine,
+                    context=context,
+                    setup=setup,
+                    speaker=speaker,
+                    listener=listener,
+                    session=session,
+                )
             parsed = processed["parsed_output"]
             dialogue = processed["conversation"]
             tags = engine.get_initial_conversation_tags(
@@ -95,6 +112,8 @@ class ConversationRunner:
                 final_action_reason=final_reason,
                 action_source=parsed.get("action_source", ""),
                 dialogue_source=processed["dialogue_source"],
+                generation_attempt_count=generation_attempt_count,
+                regenerated_for_repetition=regenerated_for_repetition,
                 generation_error=generation_error, response_to_turn=response_to,
                 response_outcome=None,
                 context_evidence=context.get("context_evidence", {}),
@@ -116,7 +135,7 @@ class ConversationRunner:
 
     def _apply_and_record(self, engine, session, initiator, other) -> None:
         agents = {initiator.name: initiator, other.name: other}
-        applied_actions = set()
+        seen_actions = set()
         total_change = 0
         all_tags = []
         for turn in session.turns:
@@ -124,18 +143,34 @@ class ConversationRunner:
             outcome = turn.response_outcome or (
                 "unresolved" if turn.final_action in self.outcomes.RESPONSIVE_ACTIONS else "completed"
             )
-            if turn.final_action not in applied_actions:
-                applied_actions.add(turn.final_action)
-                effects = engine.apply_conversation_effects(
-                    day=session.day, hour=session.hour, location_id=session.location,
-                    speaker=agents[turn.speaker], listener=agents[turn.listener],
-                    action=turn.final_action, conversation=turn.dialogue,
-                    conversation_tags=d["tags"],
-                    old_relationship_label=d["old_relationship_label"],
-                    old_score=(engine.relationships.get_score(turn.speaker, turn.listener)
-                               if hasattr(engine, "relationships") else d["old_score"]),
-                    rumor_claim=d.get("rumor_claim"), outcome=outcome, remember=False,
-                )
+            if turn.final_action in self.outcomes.RESPONSIVE_ACTIONS and turn.response_outcome is None:
+                turn.response_outcome = outcome
+            suppression_reason = ""
+            if turn.final_action in seen_actions:
+                suppression_reason = "duplicate_action_in_session"
+            else:
+                cap = getattr(engine, "should_cap_action", None)
+                if cap and cap(turn.final_action):
+                    suppression_reason = "action_rate_cap"
+            seen_actions.add(turn.final_action)
+            effects = engine.apply_conversation_effects(
+                day=session.day, hour=session.hour, location_id=session.location,
+                speaker=agents[turn.speaker], listener=agents[turn.listener],
+                action=turn.final_action, conversation=turn.dialogue,
+                conversation_tags=d["tags"],
+                old_relationship_label=d["old_relationship_label"],
+                old_score=(engine.relationships.get_score(turn.speaker, turn.listener)
+                           if hasattr(engine, "relationships") else d["old_score"]),
+                rumor_claim=d.get("rumor_claim"), outcome=outcome, remember=False,
+                effect_eligible=not suppression_reason,
+                effect_suppression_reason=suppression_reason,
+            )
+            turn.effect_applied = effects.get("effect_applied", not suppression_reason)
+            turn.effect_suppressed = effects.get("effect_suppressed", bool(suppression_reason))
+            turn.effect_suppression_reason = effects.get(
+                "effect_suppression_reason", suppression_reason
+            )
+            if turn.effect_applied:
                 total_change += effects["relationship_change"]
                 if not (
                     turn.final_action in self.outcomes.RESPONSIVE_ACTIONS
@@ -148,13 +183,6 @@ class ConversationRunner:
                         relationship_change=effects["relationship_change"],
                         new_score=effects["new_score"], conversation_tags=d["tags"],
                     )
-            else:
-                score = (engine.relationships.get_score(turn.speaker, turn.listener)
-                         if hasattr(engine, "relationships") else d["old_score"])
-                effects = {"relationship_change": 0, "new_score": score,
-                           "relationship_label": d["old_relationship_label"],
-                           "relationship_updates": {}, "reputation_updates": [],
-                           "rumor_transmission": None}
             all_tags.extend(d["tags"])
             self._log_turn(engine, session, turn, agents, effects)
             engine.print_conversation_event(
@@ -207,7 +235,47 @@ class ConversationRunner:
             response_to_turn=turn.response_to_turn,
             response_outcome=turn.response_outcome,
             termination_reason=session.termination_reason,
+            generation_attempt_count=turn.generation_attempt_count,
+            regenerated_for_repetition=turn.regenerated_for_repetition,
+            effect_applied=turn.effect_applied,
+            effect_suppressed=turn.effect_suppressed,
+            effect_suppression_reason=turn.effect_suppression_reason,
         )
+
+    @staticmethod
+    def _generate_and_process(engine, context, setup, speaker, listener, session):
+        generation_error = ""
+        try:
+            raw_output = engine.llm.generate_conversation(context)
+        except Exception as error:
+            raw_output = ""
+            generation_error = f"{type(error).__name__}: {error}"
+        processed = engine.process_conversation_output(
+            raw_output=raw_output, allowed_actions=setup["allowed_actions"],
+            speaker=speaker, listener=listener,
+            old_relationship_label=setup["old_relationship_label"],
+            location_id=session.location, suggested_action=setup["suggested_action"],
+            current_day=session.day, conversation_context=context,
+            enforce_information_boundaries=not getattr(
+                engine.llm, "is_deterministic_fake", False
+            ),
+        )
+        return raw_output, processed, generation_error
+
+    @staticmethod
+    def _matches_prior_turn(dialogue: str, transcript: list[dict]) -> bool:
+        candidate = " ".join(dialogue.lower().split())
+        if not candidate:
+            return False
+        for turn in transcript:
+            prior = " ".join(str(turn.get("dialogue", "")).lower().split())
+            if candidate == prior:
+                return True
+            if min(len(candidate), len(prior)) >= 20 and (
+                SequenceMatcher(None, candidate, prior).ratio() >= 0.90
+            ):
+                return True
+        return False
 
     @staticmethod
     def _diagnostics(setup, parsed, tags, raw_output):

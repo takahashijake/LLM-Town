@@ -231,7 +231,7 @@ def test_log_conversation_event_includes_action_pipeline_fields():
     assert record["base_action_weights"]["chat"] == 8
     assert record["intent_adjusted_weights"]["offer_help"] == 5
 
-def test_choose_final_action_with_reason_trusts_parsed_non_chat():
+def test_choose_final_action_with_reason_rejects_unsupported_parsed_non_chat():
     engine = build_engine()
 
     action, reason = engine.choose_final_action_with_reason(
@@ -242,8 +242,8 @@ def test_choose_final_action_with_reason_trusts_parsed_non_chat():
         inferred_action="chat",
     )
 
-    assert action == "ask_for_help"
-    assert reason == "trusted_parsed_non_chat"
+    assert action == "chat"
+    assert reason == "parsed_action_failed_semantic_validation"
 
 
 def test_choose_final_action_with_reason_reports_disallowed_action():

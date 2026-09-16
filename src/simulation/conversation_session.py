@@ -20,6 +20,11 @@ class ConversationTurn:
     final_action_reason: str
     action_source: str
     dialogue_source: str
+    generation_attempt_count: int = 1
+    regenerated_for_repetition: bool = False
+    effect_applied: bool = False
+    effect_suppressed: bool = False
+    effect_suppression_reason: str = ""
     generation_error: str = ""
     response_to_turn: int | None = None
     response_outcome: str | None = None
@@ -56,29 +61,54 @@ class ResponseOutcomeResolver:
         "can't help", "cannot help", "won't help", "not able to help",
         "not interested", "leave me alone",
     )
-    ACCEPTED = (
+    OFFER_ACCEPTED = (
         "yes", "yeah", "sure", "please do", "i'd appreciate", "i would appreciate",
-        "that would help", "sounds good", "let's do", "let us do", "count me in",
-        "happy to", "gladly", "thank you", "thanks",
+        "that would help", "thanks for offering", "thank you for offering",
+        "i appreciate your help", "i appreciate the help",
+    )
+    COOPERATION_ACCEPTED = (
+        "yes", "yeah", "sure", "sounds good", "let's do", "let us do",
+        "count me in", "i'll join", "i will join", "we can do that",
     )
 
     def resolve(self, previous_action: str, reply: str) -> str:
         if previous_action not in self.RESPONSIVE_ACTIONS:
             return "unresolved"
         text = " ".join(reply.lower().split())
-        if any(marker in text for marker in self.DECLINED):
+        if self._contains_any(text, self.DECLINED):
             return "declined"
         if previous_action == "ask_for_help" and self._looks_like_answer(text):
             return "answered"
-        if any(marker in text for marker in self.ACCEPTED):
+        if previous_action == "offer_help" and self._contains_any(
+            text, self.OFFER_ACCEPTED
+        ):
             return "accepted"
-        if previous_action == "cooperate" and re.search(r"\b(i|we) (can|will|'ll)\b", text):
+        if previous_action == "cooperate" and (
+            self._contains_any(text, self.COOPERATION_ACCEPTED)
+            or re.search(
+                r"\b(i|we) (can|will|'ll) (help|join|work|handle|organize|sort|repair|do)\b",
+                text,
+            )
+            or re.search(
+                r"\blet(?:'s| us) (grab|start|split|divide|sort|organize|repair|"
+                r"handle|clean|check|work)\b",
+                text,
+            )
+        ):
             return "accepted"
         return "unresolved"
 
     @staticmethod
-    def _looks_like_answer(text: str) -> bool:
-        return bool(
-            re.search(r"\b(try|use|ask|go|look|start|check|know|suggest|recommend|because|the answer|you should)\b", text)
-            and not text.rstrip().endswith("?")
+    def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
+        return any(
+            re.search(rf"(?<!\w){re.escape(marker)}(?!\w)", text)
+            for marker in markers
         )
+
+    @staticmethod
+    def _looks_like_answer(text: str) -> bool:
+        has_answer_language = bool(
+            re.search(r"\b(try|use|ask|go|look|start|check|know|suggest|recommend|because|the answer|you should|sure thing)\b", text)
+            or re.search(r"\bi(?:'ll| will)\b", text)
+        )
+        return has_answer_language and not text.rstrip().endswith("?")

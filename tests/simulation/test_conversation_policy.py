@@ -175,6 +175,86 @@ def test_choose_final_action_keeps_rumor_with_marker():
     assert reason == "parsed_rumor_with_marker"
 
 
+def test_rate_cap_does_not_rewrite_offer_help_semantics():
+    policy = build_policy(
+        recent_actions=["offer_help", "offer_help", "offer_help", "chat", "chat"]
+    )
+
+    action, reason = policy.choose_final_action_with_reason(
+        conversation="Would you like some help?",
+        parsed_action="offer_help",
+        conversation_tags=[],
+        allowed_actions=["chat", "offer_help"],
+        inferred_action="offer_help",
+    )
+
+    assert policy.should_cap_action(action)
+    assert action == "offer_help"
+    assert reason == "trusted_inferred_non_chat"
+
+
+def test_rate_cap_does_not_rewrite_share_rumor_semantics():
+    policy = build_policy(
+        recent_actions=["share_rumor", "chat", "chat", "chat", "chat"]
+    )
+
+    action, _reason = policy.choose_final_action_with_reason(
+        conversation="Someone said the market account might be unreliable.",
+        parsed_action="share_rumor",
+        conversation_tags=[],
+        allowed_actions=["chat", "share_rumor"],
+        inferred_action="share_rumor",
+    )
+
+    assert policy.should_cap_action(action)
+    assert action == "share_rumor"
+
+
+def test_model_actions_require_supported_semantics():
+    policy = build_policy()
+    cases = [
+        (
+            "Carlos, have you considered expanding your produce section?",
+            "ask_for_help",
+        ),
+        (
+            "It seems they've made the library welcoming, doesn't it?",
+            "cooperate",
+        ),
+    ]
+
+    for dialogue, parsed_action in cases:
+        action, reason = policy.choose_final_action_with_reason(
+            conversation=dialogue,
+            parsed_action=parsed_action,
+            conversation_tags=[],
+            allowed_actions=["chat", parsed_action],
+            inferred_action="chat",
+        )
+        assert action == "chat"
+        assert reason == "parsed_action_failed_semantic_validation"
+
+
+def test_valid_help_and_cooperation_actions_pass_semantic_validation():
+    policy = build_policy()
+    cases = [
+        ("I can help you sort those records.", "offer_help"),
+        ("Could you give me advice about these records?", "ask_for_help"),
+        ("Let's sort these records together.", "cooperate"),
+    ]
+
+    for dialogue, parsed_action in cases:
+        action, reason = policy.choose_final_action_with_reason(
+            conversation=dialogue,
+            parsed_action=parsed_action,
+            conversation_tags=[],
+            allowed_actions=["chat", parsed_action],
+            inferred_action="chat",
+        )
+        assert action == parsed_action
+        assert reason == "trusted_parsed_non_chat"
+
+
 def test_choose_weighted_action_returns_chat_for_empty_weights():
     policy = build_policy()
 
