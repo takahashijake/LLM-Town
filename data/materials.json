@@ -1,0 +1,78 @@
+{
+  "goods": [
+    {
+      "id": "prepared_meal",
+      "name": "prepared meal",
+      "category": "food",
+      "unit_price": 8,
+      "consumable": true,
+      "need_effect": "social",
+      "need_effect_amount": 3
+    },
+    {
+      "id": "reference_book",
+      "name": "reference book",
+      "category": "information",
+      "unit_price": 25,
+      "consumable": false
+    },
+    {
+      "id": "household_supplies",
+      "name": "household supplies",
+      "category": "basic_supplies",
+      "unit_price": 12,
+      "consumable": false
+    },
+    {
+      "id": "trade_materials",
+      "name": "trade materials",
+      "category": "merchant_stock",
+      "unit_price": 18,
+      "consumable": false
+    }
+  ],
+  "business_inventories": [
+    {
+      "id": "inventory:business:market_stall",
+      "owner_type": "business",
+      "owner_id": "seller:market_stall",
+      "account_id": "account:employer:market_cooperative",
+      "quantities": {
+        "prepared_meal": 24,
+        "reference_book": 8,
+        "household_supplies": 12,
+        "trade_materials": 8
+      }
+    }
+  ],
+  "agent_starting_quantities": {
+    "agent_004": {
+      "trade_materials": 2
+    }
+  },
+  "sellers": [
+    {
+      "id": "seller:market_stall",
+      "inventory_id": "inventory:business:market_stall",
+      "account_id": "account:employer:market_cooperative",
+      "location_id": "market",
+      "operator_employment_id": "employment:agent_004:merchant",
+      "active": true
+    }
+  ],
+  "purchase_activity_rules": [
+    {
+      "activity_id": "buy_meal",
+      "seller_id": "seller:market_stall",
+      "good_id": "prepared_meal",
+      "quantity": 1
+    }
+  ],
+  "consumption_activity_rules": [
+    {
+      "activity_id": "eat_meal",
+      "good_id": "prepared_meal",
+      "quantity": 1
+    }
+  ]
+}

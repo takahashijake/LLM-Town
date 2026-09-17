@@ -204,6 +204,20 @@ class ActivityPlanner:
                 f"{agent.name} wants to be around people.",
                 ["social", "town_life"],
             )
+            add_activity(
+                "buy_meal",
+                "Buy a prepared meal",
+                "market",
+                f"{agent.name} wants a meal from the market stall.",
+                ["purchase"],
+            )
+            add_activity(
+                "eat_meal",
+                "Eat an owned prepared meal",
+                "cafe",
+                f"{agent.name} wants to use a meal they already own.",
+                ["consume"],
+            )
 
         if primary_need == "wealth":
             add_activity(
@@ -213,6 +227,16 @@ class ActivityPlanner:
                 f"{agent.name} wants to improve wealth.",
                 ["wealth", "business"],
             )
+            # This is only a proposal route. CrimeSystem remains authoritative
+            # and rejects attempts without material and location opportunity.
+            if agent.personality.lower() == "skeptical":
+                add_activity(
+                    "attempt_theft",
+                    "Attempt to take unattended trade supplies",
+                    "market",
+                    f"{agent.name} is considering a risky shortcut to material security.",
+                    ["unauthorized_take"],
+                )
 
         if primary_need == "knowledge":
             add_activity(
@@ -230,14 +254,14 @@ class ActivityPlanner:
                 "Investigate a possible story",
                 "town_square",
                 f"{agent.name} is looking for town stories or rumors.",
-                ["journalism", "rumor", "knowledge"],
+                ["journalism", "rumor", "knowledge", "work"],
             )
             add_activity(
                 "check_records",
                 "Check records for leads",
                 "library",
                 f"{agent.name} is looking for background information.",
-                ["journalism", "learning"],
+                ["journalism", "learning", "work"],
             )
 
         if "accountant" in text or "reliable allies" in text:
@@ -246,7 +270,7 @@ class ActivityPlanner:
                 "Review records and numbers",
                 "library",
                 f"{agent.name} wants reliable information before trusting others.",
-                ["accounting", "knowledge"],
+                ["accounting", "knowledge", "work"],
             )
             add_activity(
                 "observe_market",
@@ -262,7 +286,7 @@ class ActivityPlanner:
                 "Organize community support",
                 "town_square",
                 f"{agent.name} wants to help the town community.",
-                ["community", "volunteer", "social"],
+                ["community", "volunteer", "social", "work"],
             )
             add_activity(
                 "meet_residents",
@@ -278,7 +302,7 @@ class ActivityPlanner:
                 "Look for business opportunities",
                 "market",
                 f"{agent.name} wants to find business opportunities.",
-                ["business", "market", "wealth"],
+                ["business", "market", "wealth", "work"],
             )
             add_activity(
                 "network",

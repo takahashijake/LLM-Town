@@ -9,10 +9,16 @@ class ActivitySystem:
         activity_planner: ActivityPlanner,
         logger: TownLogger,
         activity_records: list[dict],
+        economy_system=None,
+        material_system=None,
+        crime_system=None,
     ):
         self.activity_planner = activity_planner
         self.logger = logger
         self.activity_records = activity_records
+        self.economy_system = economy_system
+        self.material_system = material_system
+        self.crime_system = crime_system
 
     def get_activity_need_effects(self, activity) -> dict[str, int]:
         effects_by_tag = {
@@ -68,6 +74,7 @@ class ActivitySystem:
         current_daily_event,
         agent_intents: dict,
     ) -> None:
+        completed_activities = []
         for agent in agents:
             agent.decay_needs()
 
@@ -88,8 +95,37 @@ class ActivitySystem:
             for need, amount in activity_need_effects.items():
                 agent.satisfy_need(need, amount)
 
+            if self.economy_system is not None:
+                self.economy_system.process_activity(
+                    agent,
+                    activity,
+                    day=day,
+                    hour=hour,
+                )
+
+            if self.material_system is not None:
+                self.material_system.process_activity(
+                    agent,
+                    activity,
+                    day=day,
+                    hour=hour,
+                )
+
+            completed_activities.append((agent, activity))
+
             print(
                 f"{agent.name} chooses activity: {activity.name} "
                 f"at {activity.location_id} ({activity.reason})"
             )
-            
+
+        # Crime opportunity depends on everyone's authoritative location for
+        # this tick, so evaluate it only after every activity has been chosen.
+        if self.crime_system is not None:
+            for agent, activity in completed_activities:
+                self.crime_system.process_activity(
+                    agent,
+                    activity,
+                    agents=agents,
+                    day=day,
+                    hour=hour,
+                )

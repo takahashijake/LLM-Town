@@ -107,6 +107,21 @@ class SimulationState:
                 arc.to_dict()
                 for arc in getattr(engine, "town_arcs", [])
             ],
+            "economy": (
+                engine.economy.to_dict()
+                if getattr(engine, "economy", None) is not None
+                else None
+            ),
+            "materials": (
+                engine.materials.to_dict()
+                if getattr(engine, "materials", None) is not None
+                else None
+            ),
+            "crime": (
+                engine.crime.to_dict()
+                if getattr(engine, "crime", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

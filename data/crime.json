@@ -1,0 +1,12 @@
+{
+  "theft_activity_rules": [
+    {
+      "activity_id": "attempt_theft",
+      "eligible_actor_ids": ["agent_002"],
+      "source_inventory_id": "inventory:agent:agent_004",
+      "good_id": "trade_materials",
+      "quantity": 1,
+      "location_id": "market"
+    }
+  ]
+}

@@ -32,6 +32,9 @@ from src.town.location import Location
 from src.town.town_arc import TownArc
 from src.utils.logger import TownLogger
 from src.systems.reputation import ReputationSystem
+from src.systems.economy import EconomySystem
+from src.systems.materials import MaterialSystem
+from src.systems.crime import CrimeSystem
 
 class SimulationEngine:
     def __init__(
@@ -43,9 +46,27 @@ class SimulationEngine:
         state_path: str | Path = "data/save_state.json",
         logs_dir: str | Path = "logs",
         max_conversation_turns: int = 4,
+        economy_path: str | Path = "data/economy.json",
+        materials_path: str | Path = "data/materials.json",
+        crime_path: str | Path = "data/crime.json",
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
+        self.economy_path = Path(economy_path)
+        if not self.economy_path.is_absolute() and not self.economy_path.is_file():
+            sibling_config = Path(agents_path).resolve().parent / "economy.json"
+            if sibling_config.is_file():
+                self.economy_path = sibling_config
+        self.materials_path = Path(materials_path)
+        if not self.materials_path.is_absolute() and not self.materials_path.is_file():
+            sibling_config = Path(agents_path).resolve().parent / "materials.json"
+            if sibling_config.is_file():
+                self.materials_path = sibling_config
+        self.crime_path = Path(crime_path)
+        if not self.crime_path.is_absolute() and not self.crime_path.is_file():
+            sibling_config = Path(agents_path).resolve().parent / "crime.json"
+            if sibling_config.is_file():
+                self.crime_path = sibling_config
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger(logs_dir=self.logs_dir)
         self.conversation_recorder = ConversationRecorder(
@@ -62,6 +83,9 @@ class SimulationEngine:
         )
         self.state = SimulationState(path=self.state_path)
         self.persistence = SimulationPersistence()
+        self.economy = None
+        self.materials = None
+        self.crime = None
         self.simulation_loop = SimulationLoop()
         self.journal_system = JournalSystem()
         self.llm = llm_client or TransformersLLMClient()
@@ -182,6 +206,50 @@ class SimulationEngine:
             )
             self.start_day = 1
             self.start_hour = 0
+        self.economy = (
+            self.persistence.load_economy_from_state(saved_state)
+            if saved_state
+            else None
+        )
+        if self.economy is None:
+            self.economy = EconomySystem.from_config(
+                self.economy_path,
+                self.agents,
+            )
+        self.materials = (
+            self.persistence.load_materials_from_state(
+                saved_state,
+                economy=self.economy,
+            )
+            if saved_state
+            else None
+        )
+        if self.materials is None:
+            self.materials = MaterialSystem.from_config(
+                self.materials_path,
+                economy=self.economy,
+                agents=self.agents,
+            )
+        self.crime = (
+            self.persistence.load_crime_from_state(
+                saved_state,
+                materials=self.materials,
+                agents=self.agents,
+                reputation_system=self.reputation_system,
+            )
+            if saved_state
+            else None
+        )
+        if self.crime is None:
+            self.crime = CrimeSystem.from_config(
+                self.crime_path,
+                materials=self.materials,
+                agents=self.agents,
+                reputation_system=self.reputation_system,
+            )
+        self.activity_system.economy_system = self.economy
+        self.activity_system.material_system = self.materials
+        self.activity_system.crime_system = self.crime
         self.conversation_context_preparer = ConversationContextPreparer(
             relationships=self.relationships,
             actions=self.actions,
@@ -313,6 +381,9 @@ class SimulationEngine:
         
     def sync_activity_system_refs(self) -> None:
         self.activity_system.activity_records = self.activity_records
+        self.activity_system.economy_system = getattr(self, "economy", None)
+        self.activity_system.material_system = getattr(self, "materials", None)
+        self.activity_system.crime_system = getattr(self, "crime", None)
         
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents

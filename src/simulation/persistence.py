@@ -7,8 +7,46 @@ from src.town.daily_event import DailyEvent
 from src.town.town_arc import TownArc
 from src.agents.journal_entry import JournalEntry
 from src.systems.reputation import ReputationBelief
+from src.systems.economy import EconomySystem
+from src.systems.materials import MaterialSystem
+from src.systems.crime import CrimeSystem
 
 class SimulationPersistence:
+    def load_crime_from_state(
+        self,
+        saved_state: dict,
+        *,
+        materials: MaterialSystem,
+        agents: list[Agent],
+        reputation_system,
+    ) -> CrimeSystem | None:
+        crime_data = saved_state.get("crime")
+        if not crime_data:
+            return None
+        return CrimeSystem.from_dict(
+            crime_data,
+            materials=materials,
+            agents=agents,
+            reputation_system=reputation_system,
+        )
+
+    def load_materials_from_state(
+        self,
+        saved_state: dict,
+        *,
+        economy: EconomySystem,
+    ) -> MaterialSystem | None:
+        material_data = saved_state.get("materials")
+        if not material_data:
+            return None
+        return MaterialSystem.from_dict(material_data, economy=economy)
+
+    def load_economy_from_state(self, saved_state: dict) -> EconomySystem | None:
+        economy_data = saved_state.get("economy")
+        if not economy_data:
+            return None
+        return EconomySystem.from_dict(economy_data)
+
     def load_agent_intents_from_state(
         self,
         saved_state: dict,

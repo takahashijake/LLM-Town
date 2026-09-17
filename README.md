@@ -8,6 +8,8 @@ plan activities, pursue goals, remember events, and hold bounded multi-turn
 conversations. It uses a hybrid architecture: deterministic code owns simulation
 state and applies validated effects, while a local language model realizes
 grounded dialogue. The model never receives arbitrary authority to mutate state.
+V1 remains frozen; the first three V2 slices add deliberately small deterministic
+economic, material, and crime/evidence foundations without changing that boundary.
 
 ## Key capabilities
 
@@ -20,12 +22,18 @@ grounded dialogue. The model never receives arbitrary authority to mutate state.
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
 - Needs, occupations, activity planning, daily events, and town arcs
+- Authoritative integer accounts, employment, wages, and an auditable ledger
+- Closed-system currency conservation and idempotent daily wage events
+- Persistent goods, inventory ownership, atomic purchases, and consumption records
+- Unauthorized material transfers, auditable theft incidents, and private evidence
+- Deterministic witness opportunity and provenance-preserving crime hearsay
 - Save/resume semantics, isolated deterministic benchmarks, and real-LLM review artifacts
 - A deterministic automated test suite that does not load or download a model
 
-The repository implements these systems today. Economy, crime, justice, romance,
-factions, networking, a GUI, and semantic vector memory are future possibilities,
-not current features.
+The repository implements the economic, material, and narrow theft/evidence
+foundations described below. Justice, policing, courts, other crime types, debt,
+taxes, dynamic markets, romance, factions, politics, a GUI, and semantic vector
+memory remain outside the current scope.
 
 ## Architecture overview
 
@@ -48,6 +56,15 @@ agent state + town state + deterministic policy
  logs + session memory + journals + save state + evaluation
 ```
 
+Dialogue never transfers money, goods, or ownership, and cannot create employment,
+crime incidents, witnesses, or evidence.
+Economic mutations can only
+enter through `EconomySystem.transfer`, which validates stable account IDs,
+positive integer amounts, distinct participants, available funds, and idempotency
+keys before atomically replacing balances and appending a transaction. Material
+mutations enter through `MaterialSystem`, whose exchange and consumption APIs use
+configured goods, prices, owners, and activity rules.
+
 Important directories:
 
 ```text
@@ -56,7 +73,7 @@ src/agents/        agents, goals, intents, memories, relationships
 src/behavior/      activity, goal, intent, and social policy
 src/llm/           prompt construction, local-model client, parser
 src/simulation/    orchestration, sessions, effects, persistence, town arcs
-src/systems/       reputation and provenance-preserving hearsay
+src/systems/       economy, materials, crime/evidence, and reputation
 src/analysis/      benchmarks, metrics, and real-LLM review artifacts
 tests/             deterministic unit and integration tests
 ```
@@ -97,6 +114,77 @@ State can be saved and resumed. Structured goal evidence supports bounded strate
 selection/adaptation, while deterministic effect guards prevent repeated dialogue
 actions from double-advancing goals or relationship state.
 
+## V2 economic foundation
+
+`data/economy.json` maps the four existing stable agent IDs to starting employment,
+employer accounts, integer daily wages, and exact qualifying activity IDs. Agent
+accounts and employer accounts are seeded once; initialization is the only
+non-ledger balance creation. Thereafter all transfers are atomic ledger events in a
+closed system, so total currency must remain equal to its initial value.
+
+The activity planner explicitly tags grounded occupational activities as `work`.
+After `ActivitySystem` selects and records an activity, `EconomySystem` requires
+both that tag and an exact match in the employee's configured job. A successful
+shift pays at most once per employment/day from the employer account and produces
+a bounded wealth-need improvement. Reprocessing a tick, including after resume,
+records a rejected duplicate attempt but cannot add a second ledger record or
+change either balance. The legacy `Agent.occupation` field remains available to V1
+behavior; authoritative employment is separate economic state.
+
+Accounts, employment, transaction records, work-event evidence, rejection
+diagnostics, and idempotency guards are all saved. Loading a V1 save without an
+`economy` field deterministically initializes this configuration.
+
+## V2 material foundation
+
+`data/materials.json` defines a small fixed-price catalog, the market stall's stock,
+and activity rules. Every agent has a stable inventory linked to its authoritative
+account. The market stall is a seller entity with its own inventory and account;
+its operator link uses the merchant employment ID rather than an agent name.
+Inventory quantities are non-negative integers, and inventory ownership provides
+the authoritative answer for fungible and durable catalog goods.
+
+A purchase is one coordinated deterministic operation. It validates the buyer's
+inventory/account linkage, seller ownership and location, configured unit price,
+positive quantity, seller stock, buyer funds, and idempotency key before changing
+state. It then writes a canonical monetary ledger transaction, an inventory
+transfer, and an exchange record linking both IDs. All failure checks precede the
+two commits, so a rejected purchase changes neither money nor stock. Generated
+dialogue cannot supply a price or invoke this path.
+
+The existing activity planner offers conservative `buy_meal` and `eat_meal`
+activities. An exact configured purchase activity at the market can buy one meal;
+a separate consumption activity succeeds only when the agent owns one. Consumption
+removes exactly one item, records the explicit material sink, and applies a bounded
+effect to the existing social need. Purchase and consumption guards survive
+save/resume. V1 and Phase 1 saves without material state initialize it
+deterministically.
+
+## V2 theft and evidence foundation
+
+`CrimeSystem` implements one deliberately narrow crime: theft through an explicit
+unauthorized inventory transfer. It validates the actor, controlled destination,
+prior owner and stock, configured good/value, positive quantity, event guard, and
+co-location of the actor and source property. A successful operation moves goods
+once through `MaterialSystem`, transfers no currency, creates no exchange record,
+and links the resulting transfer to one immutable crime incident. Legitimate
+purchase, ordinary authorized transfer, consumption, and unauthorized taking
+remain distinct recorded semantics.
+
+Witnessing is deterministic but not automatic. Non-actor agents at the incident
+location are potential witnesses; a stable hash rule selects actual observers
+reproducibly. Only actual observers receive direct eyewitness evidence and a
+private evidence-backed reputation observation. The actor receives private
+participation knowledge. A victim who did not observe can later discover a loss
+without thereby learning who committed it. Uninvolved agents receive nothing.
+
+Crime evidence records retain incident IDs, holders, source evidence, originating
+observer, and transmission chains. Explicit sharing creates hearsay and never
+upgrades it to direct observation. Crime state is not injected globally into LLM
+contexts. Incidents, opportunities, evidence, discovery, rejection diagnostics,
+ID counters, and replay guards survive save/resume; older saves initialize an
+empty configured crime layer safely.
+
 ## Evaluation and reproducibility
 
 Run an isolated deterministic benchmark:
@@ -113,6 +201,39 @@ and aggregate results without touching ordinary `logs/` or `data/save_state.json
 Generated benchmark and evaluation directories are ignored; the compact structured
 relationship evaluation under `outputs/prompt5_relationship_evaluation/` is kept as
 curated reproducibility evidence.
+
+Run the model-free economic acceptance evaluation:
+
+```bash
+python scripts/evaluate_economy.py
+```
+
+It writes machine-readable diagnostics to `outputs/economy_evaluation.json` and
+checks wage eligibility, duplicate prevention across resume, non-negative
+balances, currency conservation, wealth feedback, persistence, and ledger replay.
+
+Run the model-free material acceptance evaluation:
+
+```bash
+python scripts/evaluate_materials.py
+```
+
+It verifies successful and failed purchase atomicity, seller stock and buyer funds,
+configured pricing, ledger/exchange reconciliation, inventory reconstruction,
+material conservation with explicit consumption, bounded need feedback, and
+purchase/consumption guards across resume.
+
+Run the model-free crime/evidence acceptance evaluation:
+
+```bash
+python scripts/evaluate_crime.py
+```
+
+It constructs witnessed and unwitnessed thefts, atomic stock and location
+rejections, direct-to-hearsay propagation, and a save/resume replay attempt. The
+machine-readable result in `outputs/crime_evaluation.json` checks currency and
+material conservation, transfer/incident linkage, witness opportunity, evidence
+provenance, information boundaries, persistence, and idempotency.
 
 Run a controlled real-model evaluation:
 
@@ -175,7 +296,9 @@ python -m pytest
 Tests cover action inference/validation, bounded conversation sessions, echo retry,
 effect suppression and deduplication, context privacy, response outcomes, memories,
 journals, needs, activities, goals/intents, directional relationships, reputation,
-town arcs, persistence/resume, reporting, benchmarks, and evaluation artifacts.
+town arcs, economic accounts/employment/wages, goods/inventory/exchange/consumption,
+theft incidents/witness opportunity/evidence provenance, persistence/resume,
+reporting, benchmarks, and evaluation artifacts.
 CI installs only `requirements-dev.txt`, uses the fake/model-free paths, and never
 downloads Qwen or requires CUDA.
 
@@ -190,11 +313,22 @@ downloads Qwen or requires CUDA.
   stable relationship, reputation, need, goal, intent, and town-arc progression.
 - Reputation propagation is implemented, but downstream decision influence still
   benefits from controlled evaluation; lexical overlap alone does not establish it.
+- Wages and goods prices are fixed configuration. Wages are limited to one
+  qualifying payment per employment/day, and purchases to one configured activity
+  per buyer/day.
+- Employer funds are finite and deliberately have no replenishment mechanism in
+  this first closed-system slice.
+- Material state is a small catalog with inventory-level ownership. It has no
+  production, restocking, per-instance serial numbers, bargaining, dynamic prices,
+  loans, debt, taxes, or business competition.
+- Theft uses co-location plus a simple reproducible one-in-three observation rule.
+  There is no stealth, security, investigation, policing, adjudication,
+  restitution, punishment, or authoritative guilt decision.
 
 ## Future directions
 
-The v1 focus is evaluation and refinement of the implemented social simulation.
-Possible later work includes stronger controlled outcome validation, longer-context
-experiments, and measured reputation-policy studies. Larger subsystems such as an
-economy, crime/justice, romance, factions, networking, or a GUI are intentionally
-outside the current implementation and v1 freeze.
+V1 remains frozen as the social core. The recommended next V2 milestone is a
+deterministic investigation, adjudication, and consequence pipeline that consumes
+the incidents and provenance-bearing evidence implemented here. It must not treat
+accusation or reputation as guilt. Romance, factions, politics, large-population
+work, and a GUI remain separate directions.

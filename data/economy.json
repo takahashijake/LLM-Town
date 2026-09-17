@@ -1,0 +1,61 @@
+{
+  "currency": "credits",
+  "agent_starting_balance": 100,
+  "wealth_need_gain": 4,
+  "system_accounts": [
+    {
+      "id": "account:employer:town_services",
+      "owner_type": "employer",
+      "owner_id": "town_services",
+      "balance": 4000
+    },
+    {
+      "id": "account:employer:market_cooperative",
+      "owner_type": "employer",
+      "owner_id": "market_cooperative",
+      "balance": 1000
+    }
+  ],
+  "employments": [
+    {
+      "id": "employment:agent_001:journalist",
+      "agent_id": "agent_001",
+      "title": "local journalist",
+      "employer_account_id": "account:employer:town_services",
+      "wage": 25,
+      "qualifying_activity_ids": ["investigate_story", "check_records"],
+      "active": true,
+      "start_day": 1
+    },
+    {
+      "id": "employment:agent_002:accountant",
+      "agent_id": "agent_002",
+      "title": "accountant",
+      "employer_account_id": "account:employer:town_services",
+      "wage": 24,
+      "qualifying_activity_ids": ["review_records"],
+      "active": true,
+      "start_day": 1
+    },
+    {
+      "id": "employment:agent_003:organizer",
+      "agent_id": "agent_003",
+      "title": "community organizer",
+      "employer_account_id": "account:employer:town_services",
+      "wage": 22,
+      "qualifying_activity_ids": ["organize_community"],
+      "active": true,
+      "start_day": 1
+    },
+    {
+      "id": "employment:agent_004:merchant",
+      "agent_id": "agent_004",
+      "title": "merchant",
+      "employer_account_id": "account:employer:market_cooperative",
+      "wage": 30,
+      "qualifying_activity_ids": ["pursue_business"],
+      "active": true,
+      "start_day": 1
+    }
+  ]
+}
