@@ -8,8 +8,8 @@ plan activities, pursue goals, remember events, and hold bounded multi-turn
 conversations. It uses a hybrid architecture: deterministic code owns simulation
 state and applies validated effects, while a local language model realizes
 grounded dialogue. The model never receives arbitrary authority to mutate state.
-V1 remains frozen; the first three V2 slices add deliberately small deterministic
-economic, material, and crime/evidence foundations without changing that boundary.
+V1 remains frozen; the V2 slices add deliberately small deterministic economic,
+material, crime/evidence, and justice foundations without changing that boundary.
 
 ## Key capabilities
 
@@ -27,11 +27,12 @@ economic, material, and crime/evidence foundations without changing that boundar
 - Persistent goods, inventory ownership, atomic purchases, and consumption records
 - Unauthorized material transfers, auditable theft incidents, and private evidence
 - Deterministic witness opportunity and provenance-preserving crime hearsay
+- Deterministic investigation, adjudication, restitution, and public consequence
 - Save/resume semantics, isolated deterministic benchmarks, and real-LLM review artifacts
 - A deterministic automated test suite that does not load or download a model
 
-The repository implements the economic, material, and narrow theft/evidence
-foundations described below. Justice, policing, courts, other crime types, debt,
+The repository implements the economic, material, narrow theft/evidence, and
+justice foundations described below. General policing, courts, other crime types, debt,
 taxes, dynamic markets, romance, factions, politics, a GUI, and semantic vector
 memory remain outside the current scope.
 
@@ -57,7 +58,7 @@ agent state + town state + deterministic policy
 ```
 
 Dialogue never transfers money, goods, or ownership, and cannot create employment,
-crime incidents, witnesses, or evidence.
+crime incidents, witnesses, evidence, cases, adjudications, or consequences.
 Economic mutations can only
 enter through `EconomySystem.transfer`, which validates stable account IDs,
 positive integer amounts, distinct participants, available funds, and idempotency
@@ -73,7 +74,7 @@ src/agents/        agents, goals, intents, memories, relationships
 src/behavior/      activity, goal, intent, and social policy
 src/llm/           prompt construction, local-model client, parser
 src/simulation/    orchestration, sessions, effects, persistence, town arcs
-src/systems/       economy, materials, crime/evidence, and reputation
+src/systems/       economy, materials, crime/evidence, justice, and reputation
 src/analysis/      benchmarks, metrics, and real-LLM review artifacts
 tests/             deterministic unit and integration tests
 ```
@@ -185,6 +186,30 @@ contexts. Incidents, opportunities, evidence, discovery, rejection diagnostics,
 ID counters, and replay guards survive save/resume; older saves initialize an
 empty configured crime layer safely.
 
+## V2 deterministic justice foundation
+
+`JusticeSystem` closes the theft loop without delegating authority to dialogue. A
+case opens only from a victim's direct loss discovery or a direct eyewitness
+record, references the existing crime incident, and admits references to immutable
+crime evidence. Private cases are visible only to their reporter and investigator
+until adjudication becomes an intentional public record.
+
+The `theft-direct-eyewitness-v1` rule requires the authoritative unauthorized
+material-transfer record to establish theft and one unique actor candidate from
+admitted `eyewitness` / `direct_observation` evidence. The transfer record's actor
+field is never actor-identifying evidence. Loss discovery, hearsay, accusation,
+and reputation cannot support responsibility. Their absence produces
+`insufficient_evidence`, not a finding of innocence. Decisions persist the exact
+evidence IDs and rule version.
+
+A responsible finding permits one idempotent consequence operation. It returns up
+to the stolen quantity still held by that actor using a `justice_restitution`
+material transfer, never an exchange or currency transfer. Missing goods produce
+`partial` or `unresolved` restitution without minting stock. A separate bounded
+public-event trust consequence is keyed to the adjudication and cannot duplicate
+the eyewitness penalty. All justice records, counters, diagnostics, and replay
+guards survive save/resume; saves without `justice` initialize an empty layer.
+
 ## Evaluation and reproducibility
 
 Run an isolated deterministic benchmark:
@@ -234,6 +259,16 @@ rejections, direct-to-hearsay propagation, and a save/resume replay attempt. The
 machine-readable result in `outputs/crime_evaluation.json` checks currency and
 material conservation, transfer/incident linkage, witness opportunity, evidence
 provenance, information boundaries, persistence, and idempotency.
+
+Run the model-free justice acceptance evaluation:
+
+```bash
+python scripts/evaluate_justice.py
+```
+
+It writes `outputs/justice_evaluation.json` and covers witnessed responsibility,
+unwitnessed discovery, hearsay-only accusation, restitution, conservation,
+information boundaries, and exact save/resume replay behavior.
 
 Run a controlled real-model evaluation:
 
@@ -297,7 +332,8 @@ Tests cover action inference/validation, bounded conversation sessions, echo ret
 effect suppression and deduplication, context privacy, response outcomes, memories,
 journals, needs, activities, goals/intents, directional relationships, reputation,
 town arcs, economic accounts/employment/wages, goods/inventory/exchange/consumption,
-theft incidents/witness opportunity/evidence provenance, persistence/resume,
+theft incidents/witness opportunity/evidence provenance, deterministic justice,
+restitution/consequence replay safety, persistence/resume,
 reporting, benchmarks, and evaluation artifacts.
 CI installs only `requirements-dev.txt`, uses the fake/model-free paths, and never
 downloads Qwen or requires CUDA.
@@ -322,13 +358,15 @@ downloads Qwen or requires CUDA.
   production, restocking, per-instance serial numbers, bargaining, dynamic prices,
   loans, debt, taxes, or business competition.
 - Theft uses co-location plus a simple reproducible one-in-three observation rule.
-  There is no stealth, security, investigation, policing, adjudication,
-  restitution, punishment, or authoritative guilt decision.
+- Justice is intentionally not a realistic legal system. Theft is the only
+  authoritative crime; evidence rules are simple; there are no lawyers, juries,
+  appeals, generalized police, prisons, procedural-law simulation, or LLM
+  adjudication. The designated investigator is configuration, not a profession.
 
 ## Future directions
 
-V1 remains frozen as the social core. The recommended next V2 milestone is a
-deterministic investigation, adjudication, and consequence pipeline that consumes
-the incidents and provenance-bearing evidence implemented here. It must not treat
-accusation or reputation as guilt. Romance, factions, politics, large-population
-work, and a GUI remain separate directions.
+V1 remains frozen as the social core. A useful next V2 milestone is deterministic
+production/restocking and richer ownership history, followed by controlled study
+of how public justice outcomes affect planning without granting dialogue mutation
+authority. Romance, factions, politics, large-population work, and a GUI remain
+separate directions.

@@ -122,6 +122,11 @@ class SimulationState:
                 if getattr(engine, "crime", None) is not None
                 else None
             ),
+            "justice": (
+                engine.justice.to_dict()
+                if getattr(engine, "justice", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

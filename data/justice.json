@@ -1,0 +1,10 @@
+{
+  "adjudication_rule_version": "theft-direct-eyewitness-v1",
+  "investigator_agent_ids": ["agent_001"],
+  "qualifying_actor_evidence": [
+    {"evidence_type": "eyewitness", "provenance_type": "direct_observation"}
+  ],
+  "consequence_reputation_value": -0.65,
+  "public_adjudications": true,
+  "restitution_enabled": true
+}

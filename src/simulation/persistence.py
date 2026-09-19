@@ -10,8 +10,21 @@ from src.systems.reputation import ReputationBelief
 from src.systems.economy import EconomySystem
 from src.systems.materials import MaterialSystem
 from src.systems.crime import CrimeSystem
+from src.systems.justice import JusticeSystem
 
 class SimulationPersistence:
+    def load_justice_from_state(
+        self, saved_state: dict, *, crime: CrimeSystem, materials: MaterialSystem,
+        agents: list[Agent], reputation_system,
+    ) -> JusticeSystem | None:
+        justice_data = saved_state.get("justice")
+        if not justice_data:
+            return None
+        return JusticeSystem.from_dict(
+            justice_data, crime=crime, materials=materials, agents=agents,
+            reputation_system=reputation_system,
+        )
+
     def load_crime_from_state(
         self,
         saved_state: dict,

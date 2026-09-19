@@ -35,6 +35,7 @@ from src.systems.reputation import ReputationSystem
 from src.systems.economy import EconomySystem
 from src.systems.materials import MaterialSystem
 from src.systems.crime import CrimeSystem
+from src.systems.justice import JusticeSystem
 
 class SimulationEngine:
     def __init__(
@@ -49,6 +50,7 @@ class SimulationEngine:
         economy_path: str | Path = "data/economy.json",
         materials_path: str | Path = "data/materials.json",
         crime_path: str | Path = "data/crime.json",
+        justice_path: str | Path = "data/justice.json",
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
@@ -67,6 +69,11 @@ class SimulationEngine:
             sibling_config = Path(agents_path).resolve().parent / "crime.json"
             if sibling_config.is_file():
                 self.crime_path = sibling_config
+        self.justice_path = Path(justice_path)
+        if not self.justice_path.is_absolute() and not self.justice_path.is_file():
+            sibling_config = Path(agents_path).resolve().parent / "justice.json"
+            if sibling_config.is_file():
+                self.justice_path = sibling_config
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger(logs_dir=self.logs_dir)
         self.conversation_recorder = ConversationRecorder(
@@ -86,6 +93,7 @@ class SimulationEngine:
         self.economy = None
         self.materials = None
         self.crime = None
+        self.justice = None
         self.simulation_loop = SimulationLoop()
         self.journal_system = JournalSystem()
         self.llm = llm_client or TransformersLLMClient()
@@ -246,6 +254,18 @@ class SimulationEngine:
                 materials=self.materials,
                 agents=self.agents,
                 reputation_system=self.reputation_system,
+            )
+        self.justice = (
+            self.persistence.load_justice_from_state(
+                saved_state, crime=self.crime, materials=self.materials,
+                agents=self.agents, reputation_system=self.reputation_system,
+            )
+            if saved_state else None
+        )
+        if self.justice is None:
+            self.justice = JusticeSystem.from_config(
+                self.justice_path, crime=self.crime, materials=self.materials,
+                agents=self.agents, reputation_system=self.reputation_system,
             )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
