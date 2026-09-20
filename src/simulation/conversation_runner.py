@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from difflib import SequenceMatcher
 
+from src.llm.grounding import GroundingResult
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
 
 
@@ -56,13 +57,37 @@ class ConversationRunner:
             )
             generation_attempt_count = 1
             regenerated_for_repetition = False
+            regenerated_for_grounding = False
+            first_grounding_failure = ""
+            if (
+                not generation_error
+                and not getattr(engine.llm, "is_deterministic_fake", False)
+                and not processed["grounding"].valid
+            ):
+                first_grounding_failure = processed["grounding"].reason
+                generation_attempt_count += 1
+                regenerated_for_grounding = True
+                context = {
+                    **context,
+                    "grounding_correction": first_grounding_failure,
+                }
+                raw_output, processed, generation_error = self._generate_and_process(
+                    engine=engine, context=context, setup=setup, speaker=speaker,
+                    listener=listener, session=session,
+                )
+                if not generation_error and not processed["grounding"].valid:
+                    processed["conversation"] = engine.conversation_policy.get_grounded_fallback_dialogue(
+                        speaker=speaker, context=context, location_id=session.location,
+                    )
+                    processed["parsed_action"] = "chat"
+                    processed["dialogue_source"] = "policy_fallback_unsupported_grounding"
             if (
                 transcript
                 and not generation_error
                 and not getattr(engine.llm, "is_deterministic_fake", False)
                 and self._matches_prior_turn(processed["conversation"], transcript)
             ):
-                generation_attempt_count = 2
+                generation_attempt_count += 1
                 regenerated_for_repetition = True
                 context = {
                     **context,
@@ -78,6 +103,7 @@ class ConversationRunner:
                     session=session,
                 )
             parsed = processed["parsed_output"]
+            grounding = processed.get("grounding", GroundingResult(True))
             dialogue = processed["conversation"]
             tags = engine.get_initial_conversation_tags(
                 conversation=dialogue, parsed_tags=parsed.get("tags", []),
@@ -114,6 +140,12 @@ class ConversationRunner:
                 dialogue_source=processed["dialogue_source"],
                 generation_attempt_count=generation_attempt_count,
                 regenerated_for_repetition=regenerated_for_repetition,
+                regenerated_for_grounding=regenerated_for_grounding,
+                grounding_valid=grounding.valid,
+                grounding_reason=(grounding.reason or first_grounding_failure),
+                grounding_candidate_type=grounding.candidate_type,
+                grounding_refs=grounding.valid_refs,
+                invalid_grounding_refs=grounding.invalid_refs,
                 generation_error=generation_error, response_to_turn=response_to,
                 response_outcome=None,
                 context_evidence=context.get("context_evidence", {}),
@@ -237,6 +269,12 @@ class ConversationRunner:
             termination_reason=session.termination_reason,
             generation_attempt_count=turn.generation_attempt_count,
             regenerated_for_repetition=turn.regenerated_for_repetition,
+            regenerated_for_grounding=turn.regenerated_for_grounding,
+            grounding_valid=turn.grounding_valid,
+            grounding_reason=turn.grounding_reason,
+            grounding_candidate_type=turn.grounding_candidate_type,
+            grounding_refs=turn.grounding_refs,
+            invalid_grounding_refs=turn.invalid_grounding_refs,
             effect_applied=turn.effect_applied,
             effect_suppressed=turn.effect_suppressed,
             effect_suppression_reason=turn.effect_suppression_reason,
@@ -326,5 +364,6 @@ class ConversationRunner:
                 "reputation_context", "reputation_rumor_text", "relevant_memories",
                 "recent_journals", "goals", "active_goal", "speaker_intent", "daily_event",
                 "daily_event_relevant", "town_arcs", "recent_topics", "recent_utterances",
-                "focus_options", "session_transcript", "most_recent_utterance")
+                "focus_options", "session_transcript", "most_recent_utterance",
+                "grounding_sources")
         return {key: context.get(key) for key in keys}

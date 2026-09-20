@@ -419,6 +419,27 @@ reporting, benchmarks, and evaluation artifacts.
 CI installs only `requirements-dev.txt`, uses the fake/model-free paths, and never
 downloads Qwen or requires CUDA.
 
+## Post-V2 / V3 behavioral development
+
+The `v2.0.0` world remains frozen. Post-V2 work improves agent behavioral
+fidelity without changing the central authority boundary: generated dialogue may
+suggest bounded choices, while deterministic systems validate and own every
+state effect.
+
+Conversation context now exposes prompt-local grounding references for supplied
+memories, relationship events, public events, reputation claims, journals, and
+town arcs. Deterministic checks use them to flag a narrow set of high-risk
+unsupported-claim candidates, retry generation at most once, and otherwise use a
+safe fallback. This is a bounded heuristic, not natural-language theorem proving.
+Reference IDs are metadata and never belong in spoken dialogue.
+
+Reputation now influences only existing social-target selection, through an
+observer-private confidence-weighted adjustment capped at `-2.0` to `+2.0`.
+Relationships and current intent remain important, negative reputation never
+makes selection impossible, and positive reputation never guarantees it.
+Dialogue remains probabilistic. Deterministic correctness is covered by the
+model-free social-decision evaluator; real-model quality is evaluated separately.
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.
@@ -428,11 +449,9 @@ downloads Qwen or requires CUDA.
 - A local 3B model's instruction following and naturalness constrain dialogue quality.
 - Same-action deduplication and rate suppression trade some behavioral fidelity for
   stable relationship, reputation, need, goal, intent, and town-arc progression.
-- Reputation propagation is implemented, but downstream decision influence is
-  deliberately modest. A public justice consequence appears in an affected
-  observer's later dialogue context. Its bounded score does not cross the existing
-  action-weight threshold and does not affect activity choice or conversation
-  target selection; relationships and intents still own those paths.
+- Reputation's downstream decision influence is deliberately modest and limited
+  to the capped social-target term described above; it does not affect activities
+  or goals.
 - Wages and goods prices are fixed configuration. Wages are limited to one
   qualifying payment per employment/day, and purchases to one configured activity
   per buyer/day.
@@ -456,5 +475,5 @@ downloads Qwen or requires CUDA.
 
 V1 remains frozen as the social core. V2 is scoped as a small auditable causal
 loop, not realistic economics, law, or emergent civilization. A first V3 milestone
-should be an explicitly designed, bounded reputation-to-social-target experiment
-with A/B evaluation, rather than another institution or broad simulation feature.
+should continue deepening grounded response and social follow-through evaluation,
+rather than adding another institution or broad simulation feature.

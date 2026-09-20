@@ -22,6 +22,12 @@ class ConversationTurn:
     dialogue_source: str
     generation_attempt_count: int = 1
     regenerated_for_repetition: bool = False
+    regenerated_for_grounding: bool = False
+    grounding_valid: bool = True
+    grounding_reason: str = ""
+    grounding_candidate_type: str = ""
+    grounding_refs: list[str] = field(default_factory=list)
+    invalid_grounding_refs: list[str] = field(default_factory=list)
     effect_applied: bool = False
     effect_suppressed: bool = False
     effect_suppression_reason: str = ""
@@ -59,7 +65,8 @@ class ResponseOutcomeResolver:
         "no thanks", "no thank you", "i've got it", "i have got it",
         "i can handle it", "rather not", "don't need", "do not need",
         "can't help", "cannot help", "won't help", "not able to help",
-        "not interested", "leave me alone",
+        "not interested", "leave me alone", "sorry, i can't", "sorry, i cannot",
+        "no, i'm busy", "no, i am busy", "i don't want to", "i do not want to",
     )
     OFFER_ACCEPTED = (
         "yes", "yeah", "sure", "please do", "i'd appreciate", "i would appreciate",
@@ -67,7 +74,7 @@ class ResponseOutcomeResolver:
         "i appreciate your help", "i appreciate the help",
     )
     COOPERATION_ACCEPTED = (
-        "yes", "yeah", "sure", "sounds good", "let's do", "let us do",
+        "yes", "yeah", "sure", "sounds good", "good idea", "let's do", "let us do",
         "count me in", "i'll join", "i will join", "we can do that",
     )
 
@@ -78,7 +85,7 @@ class ResponseOutcomeResolver:
         if self._contains_any(text, self.DECLINED):
             return "declined"
         if previous_action == "ask_for_help" and self._looks_like_answer(text):
-            return "answered"
+            return "accepted"
         if previous_action == "offer_help" and self._contains_any(
             text, self.OFFER_ACCEPTED
         ):
@@ -109,6 +116,7 @@ class ResponseOutcomeResolver:
     def _looks_like_answer(text: str) -> bool:
         has_answer_language = bool(
             re.search(r"\b(try|use|ask|go|look|start|check|know|suggest|recommend|because|the answer|you should|sure thing)\b", text)
-            or re.search(r"\bi(?:'ll| will)\b", text)
+            or re.search(r"\bi(?:'ll| will| can)\b.{0,35}\b(help|handle|grab|take|carry|sort|check|do)\b", text)
+            or re.search(r"\blet(?:'s| us) do it\b", text)
         )
         return has_answer_language and not text.rstrip().endswith("?")

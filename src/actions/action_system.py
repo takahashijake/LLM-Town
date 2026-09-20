@@ -121,10 +121,7 @@ class ActionSystem:
         rumor_markers = (
             "rumor",
             "gossip",
-            "suspicious",
             "shady",
-            "secret",
-            "mystery",
             "people are saying",
             "someone said",
             "unverified",
@@ -176,10 +173,13 @@ class ActionSystem:
         # Explicit offers of help. Recommendations and third-party staffing
         # observations are ordinary chat unless the speaker offers assistance.
         marker = self._first_match(text, (
-            "i can help", "let me help", "we could help", "lend a hand",
+            "i can help", "let me help", "we could help",
             "pitching in", "i can show you", "i could show you", "i can give you a hand",
             "i could give you a hand", "i can lend a hand", "i could lend a hand",
             "i can help you", "i could help you", "let me help you", "let me take care of",
+            "let me give you a hand", "i'll help you", "i will help you",
+            "i can take care of", "i could take care of",
+            "i can lend you a hand", "i could lend you a hand",
             "i can organize", "i could organize", "i can pitch in", "i could pitch in",
             "need any help", "do you need help", "want me to help", "would you like help",
             "could i help", "can i help", "need a hand", "want a hand",
@@ -204,6 +204,8 @@ class ActionSystem:
         )
         if first_person_help:
             return "offer_help", "offer_pattern:first_person_help_out"
+        if re.search(r"\b(?:i|we) could use (?:some |a few )?(?:extra )?hands\b", text):
+            return "ask_for_help", "request_pattern:could_use_hands"
     
         # Invitations and casual social questions
         marker = self._first_match(text, (
@@ -249,13 +251,13 @@ class ActionSystem:
             return "cooperate", f"cooperation_pattern:{coordinated_split.group(1)}_task"
         explicit_joint_plan = re.search(
             r"\b(?:let(?:'s| us)|how about we)\b.{0,30}"
-            r"\b(split up|divide up|sort|organize|repair|handle|clean|cover|brainstorm)\b",
+            r"\b(split(?: up| the work)?|divide(?: up| the work)?|sort|organize|repair|handle|clean|cover|brainstorm|check|tackle|gather|start|compare|swap|explore)\b",
             text,
         )
         if explicit_joint_plan:
             return "cooperate", "cooperation_pattern:explicit_joint_plan"
         joint_task_question = re.search(
-            r"\bdo you think we could\b.{0,35}"
+            r"\b(?:do you think we could|why don't we|why do not we)\b.{0,35}"
             r"\b(find|check|sort|organize|repair|handle|clean|cover)\b",
             text,
         )
@@ -278,6 +280,9 @@ class ActionSystem:
             "can you tell me", "could you tell me", "would you tell me",
             "could you recommend", "can you recommend", "would you recommend",
             "could use some help", "if you could show me", "do you have any tips",
+            "could you lend me a hand", "would you give me a hand",
+            "i could use some hands", "we could use some extra hands",
+            "do you have any recommendations", "any recommendations",
             "could you grab me", "can you grab me", "do you have any extra",
             "could you point me", "can you point me", "could you check if",
             "can you check if",
@@ -287,9 +292,9 @@ class ActionSystem:
         if re.search(r"\bcould you (?:maybe |perhaps )?point me\b", text):
             return "ask_for_help", "request_pattern:point_me_to_resource"
         direct_assistance_request = re.search(
-            r"\b(?:can|could|would) you (?:please )?"
+            r"\b(?:(?:can|could|would) you (?:please )?|do you think you could )"
             r"(?:check|show|explain|teach|tell|recommend|grab|bring|find|review|"
-            r"look|walk|help|use)\b",
+            r"look|walk|help|use|gather)\b",
             text,
         )
         if direct_assistance_request:
@@ -306,6 +311,8 @@ class ActionSystem:
             return "ask_for_help", "request_pattern:tips"
         if re.search(r"\bdo you know where\b", text):
             return "ask_for_help", "request_pattern:resource_location"
+        if re.search(r"\bdo you have any (?:\w+ )?(?:bags|supplies|tools|materials)\b", text):
+            return "ask_for_help", "request_pattern:needed_material"
     
         # Romantic confession
         marker = self._first_match(text, (

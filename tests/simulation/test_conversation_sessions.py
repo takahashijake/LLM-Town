@@ -21,6 +21,10 @@ class ScriptedLLM:
         return json.dumps(response)
 
 
+class GroundingScriptedLLM(ScriptedLLM):
+    is_deterministic_fake = False
+
+
 def build_engine(tmp_path, llm, max_turns=4):
     engine = SimulationEngine(
         agents_path="data/agents.json",
@@ -40,6 +44,34 @@ def build_engine(tmp_path, llm, max_turns=4):
 
 def read_jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line]
+
+
+def test_unsupported_grounding_regenerates_at_most_once(tmp_path):
+    llm = GroundingScriptedLLM([
+        {"dialogue": "Remember when we played cards?", "action": "chat"},
+        {"dialogue": "What have you been working on?", "action": "chat"},
+    ])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=1)
+    engine.generate_conversations(1, 8)
+    row = read_jsonl(engine.logger.conversations_file)[0]
+    assert len(llm.contexts) == 2
+    assert llm.contexts[1]["grounding_correction"] == "unsupported_shared_history_candidate"
+    assert row["regenerated_for_grounding"] is True
+    assert row["generation_attempt_count"] == 2
+    assert row["grounding_reason"] == "unsupported_shared_history_candidate"
+
+
+def test_repeated_grounding_failure_uses_safe_fallback(tmp_path):
+    llm = GroundingScriptedLLM([
+        {"dialogue": "Remember when we played cards?", "action": "chat"},
+        {"dialogue": "Remember when we opened the Willow Garden shop?", "action": "chat"},
+    ])
+    engine, _, _ = build_engine(tmp_path, llm, max_turns=1)
+    engine.generate_conversations(1, 8)
+    row = read_jsonl(engine.logger.conversations_file)[0]
+    assert len(llm.contexts) == 2
+    assert row["dialogue_source"] == "policy_fallback_unsupported_grounding"
+    assert "memory:" not in row["conversation"]
 
 
 def test_session_alternates_and_rebuilds_private_context(tmp_path):
@@ -65,7 +97,7 @@ def test_session_alternates_and_rebuilds_private_context(tmp_path):
     assert "Maya private secret" not in json.dumps(llm.contexts[1])
     assert llm.contexts[1]["speaker"] == ethan.name
     assert rows[0]["response_outcome"] == "accepted"
-    assert rows[2]["response_outcome"] == "answered"
+    assert rows[2]["response_outcome"] == "accepted"
     assert rows[-1]["termination_reason"] == "max_turns"
     assert len([m for m in maya.memory if m.type == "conversation"]) == 1
     assert len([m for m in ethan.memory if m.type == "conversation"]) == 1
@@ -111,7 +143,7 @@ def test_response_outcomes_are_conservative():
     assert resolver.resolve("offer_help", "Perhaps we can discuss the records.") == "unresolved"
     assert resolver.resolve("cooperate", "Thanks, the library looks welcoming.") == "unresolved"
     assert resolver.resolve("ask_for_help", "That sounds good to me.") == "unresolved"
-    assert resolver.resolve("ask_for_help", "Sure thing, I'll check the printer.") == "answered"
+    assert resolver.resolve("ask_for_help", "Sure thing, I'll check the printer.") == "accepted"
     assert resolver.resolve("offer_help", "Thanks, I appreciate your help.") == "accepted"
     assert resolver.resolve("cooperate", "Let's grab some trash bags first.") == "accepted"
 

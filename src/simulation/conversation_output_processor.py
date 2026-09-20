@@ -10,6 +10,7 @@ from src.simulation.dialogue_utils import (
 )
 from src.town.daily_event import DailyEvent
 from src.systems.reputation import ReputationSystem
+from src.llm.grounding import GroundingValidator
 
 
 class ConversationOutputProcessor:
@@ -18,6 +19,7 @@ class ConversationOutputProcessor:
         conversation_policy: ConversationPolicy,
     ):
         self.conversation_policy = conversation_policy
+        self.grounding = GroundingValidator()
 
     def process_llm_output(
         self,
@@ -144,18 +146,25 @@ class ConversationOutputProcessor:
 
         conversation = clean_dialogue_text(conversation)
 
+        grounding = self.grounding.validate(
+            conversation,
+            parsed_output.get("grounding_refs", []),
+            conversation_context or {},
+        )
+
         return {
             "parsed_output": parsed_output,
             "conversation": conversation,
             "parsed_action": parsed_action,
             "dialogue_source": dialogue_source,
+            "grounding": grounding,
         }
 
     @staticmethod
     def _uses_unsourced_hearsay(conversation: str, context: dict) -> bool:
         text = conversation.lower()
         hearsay_markers = (
-            "i heard", "have you heard", "did you hear", "someone said", "people are saying",
+            "i heard", "i overheard", "been hearing", "have you heard", "did you hear", "someone said", "people are saying",
             "rumor", "rumour", "gossip", "word is", "spotted a suspicious",
         )
         if not any(marker in text for marker in hearsay_markers):

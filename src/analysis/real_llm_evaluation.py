@@ -360,6 +360,11 @@ def analyze_real_llm_records(
     regeneration_count = sum(
         bool(row.get("regenerated_for_repetition")) for row in records
     )
+    grounding_candidates = [row for row in records if row.get("grounding_reason")]
+    grounding_refs = [ref for row in records for ref in row.get("grounding_refs", [])]
+    invalid_grounding_refs = [
+        ref for row in records for ref in row.get("invalid_grounding_refs", [])
+    ]
     adjacent_repetition = _adjacent_repetition(records)
     multi_turn_rows = [row for rows in sessions.values() if len(rows) > 1 for row in rows]
     session_metrics = {
@@ -407,6 +412,27 @@ def analyze_real_llm_records(
             "generation_attempt_count_distribution": dict(sorted(Counter(
                 row.get("generation_attempt_count", 1) for row in records
             ).items())),
+        },
+        "grounding_diagnostics": {
+            "unsupported_world_claim_candidate_count": sum(
+                row.get("grounding_candidate_type") == "named_world_entity"
+                for row in grounding_candidates
+            ),
+            "unsupported_shared_history_candidate_count": sum(
+                row.get("grounding_candidate_type") == "shared_history"
+                for row in grounding_candidates
+            ),
+            "grounding_regeneration_count": sum(
+                bool(row.get("regenerated_for_grounding")) for row in records
+            ),
+            "grounding_fallback_count": sum(
+                row.get("dialogue_source") == "policy_fallback_unsupported_grounding"
+                for row in records
+            ),
+            "valid_grounding_reference_rate": safe_rate(
+                len(grounding_refs), len(grounding_refs) + len(invalid_grounding_refs)
+            ),
+            "note": "Candidate counts are bounded lexical heuristics, not perfect factual verification.",
         },
         "semantic_action_distribution": dict(sorted(semantic_actions.items())),
         "effect_applied_action_distribution": dict(sorted(effect_actions.items())),
@@ -484,6 +510,7 @@ def build_human_review_sample(
         "resolved_social_action": [],
         "unresolved_social_action": [],
         "semantic_action_correction": [],
+        "suspected_grounding_failure": [],
         "effect_suppressed_but_semantic_action_preserved": [],
         "goal_grounded_session": [],
         "relationship_grounded_session": [],
@@ -560,6 +587,8 @@ def build_human_review_sample(
             "regenerated_for_repetition": record.get(
                 "regenerated_for_repetition", False
             ),
+            "regenerated_for_grounding": record.get("regenerated_for_grounding", False),
+            "grounding_reason": record.get("grounding_reason", ""),
             "effect_applied": record.get("effect_applied", True),
             "effect_suppressed": record.get("effect_suppressed", False),
             "effect_suppression_reason": record.get(
@@ -595,6 +624,7 @@ def build_human_review_sample(
                 "reputation_rumor": context.get(
                     "reputation_rumor_text", context.get("reputation_rumor", "")
                 ),
+                "grounding_sources": context.get("grounding_sources", {}),
             },
         }
         memberships = []
@@ -670,6 +700,8 @@ def build_human_review_sample(
             )
         ):
             memberships.append("semantic_action_correction")
+        if record.get("grounding_reason"):
+            memberships.append("suspected_grounding_failure")
         if matches["reputation"] and any(
             "direct experience" in str(item).lower()
             for item in values["reputation"]
@@ -859,6 +891,7 @@ def write_real_llm_evaluation(
         },
         "adjacent_echo": indicators["adjacent_echo"],
         "generation_retries": indicators["generation_retries"],
+        "grounding_diagnostics": indicators["grounding_diagnostics"],
         "semantic_action_distribution": indicators[
             "semantic_action_distribution"
         ],

@@ -102,6 +102,7 @@ def parse_llm_conversation_output(
             "reason": "",
             "raw_action": "",
             "action_source": "fallback_no_json",
+            "grounding_refs": [],
         }
 
     try:
@@ -114,11 +115,16 @@ def parse_llm_conversation_output(
             "reason": "",
             "raw_action": "",
             "action_source": "fallback_bad_json",
+            "grounding_refs": [],
         }
 
     dialogue = clean_conversation_output(str(data.get("dialogue", "")))
     raw_action = str(data.get("action", "chat")).strip()
     action = normalize_action(raw_action)
+    grounding_refs = data.get("grounding_refs", [])
+    if not isinstance(grounding_refs, list):
+        grounding_refs = []
+    grounding_refs = list(dict.fromkeys(str(ref).strip() for ref in grounding_refs if str(ref).strip()))
 
     allowed = set(allowed_actions or ALLOWED_ACTIONS)
 
@@ -133,6 +139,7 @@ def parse_llm_conversation_output(
             "reason": str(data.get("reason", "")),
             "raw_action": raw_action,
             "action_source": "fallback_unknown_action",
+            "grounding_refs": grounding_refs,
         }
 
     if action not in allowed:
@@ -143,6 +150,7 @@ def parse_llm_conversation_output(
             "reason": str(data.get("reason", "")),
             "raw_action": raw_action,
             "action_source": "fallback_disallowed_action",
+            "grounding_refs": grounding_refs,
         }
 
     return {
@@ -152,4 +160,5 @@ def parse_llm_conversation_output(
         "reason": str(data.get("reason", "")),
         "raw_action": raw_action,
         "action_source": "llm",
+        "grounding_refs": grounding_refs,
     }

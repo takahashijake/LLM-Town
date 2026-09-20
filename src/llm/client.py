@@ -73,7 +73,7 @@ class TransformersLLMClient:
                     "Use exactly this JSON format: "
                     '{"dialogue": "short line of dialogue", '
                     '"action": "one allowed action", '
-                    '"tags": [], '
+                    '"tags": [], "grounding_refs": [], '
                     '"reason": "why this action fits"}. '
                     "The action must be the best semantic label for the dialogue, not always chat. "
                     "No narration. No markdown."
@@ -172,6 +172,15 @@ class TransformersLLMClient:
                 "Answer with substantively new wording and content; do not paraphrase "
                 "or restate any line in the current conversation."
             )
+        grounding_correction = ""
+        if context.get("grounding_correction"):
+            grounding_correction = (
+                "\n- Grounding retry: the prior line made an unsupported claim "
+                f"({context['grounding_correction']}). Remove it, ask a question, or express "
+                "uncertainty. Cite only a supplied grounding reference."
+            )
+        grounding_sources = context.get("grounding_sources", {})
+        grounding_lines = [f"{ref} — {value}" for ref, value in grounding_sources.items()]
 
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
@@ -185,6 +194,8 @@ Immediate situation
 - Voice cue: {context.get('speaker_personality') or 'None'}
 
 What this speaker legitimately knows
+Grounding references (metadata only; never speak IDs):
+{lines(grounding_lines)}
 Shared history:
 {lines(context.get('relationship_history', []))}
 Salient interpersonal episodes:
@@ -236,11 +247,12 @@ Requirements:
 - Do not default to "I heard" or "Have you heard." Without an explicitly uncertain supplied source, state an observation, opinion, request, or question instead.
 - Treat memories and journals as past, not current events.
 - Match the relationship tone. Tense or hostile speakers should not suddenly flatter, invite, or offer help.
-- The suggested action is a soft direction. Follow it when context supports it; otherwise choose a better allowed action. The words and action must agree: requests for assistance are ask_for_help, direct offers are offer_help, shared-task proposals are cooperate, praise is compliment, regret is apologize, disagreement is argue, and uncertain secondhand claims are share_rumor. Invitations and ordinary questions are chat.
+- The suggested action is soft. The words and action must agree: assistance requests are ask_for_help, direct offers are offer_help, shared-task proposals are cooperate, praise is compliment, regret is apologize, disagreement is argue, and uncertain secondhand claims are share_rumor. Invitations and ordinary questions are chat.
 - If using cooperate, explicitly propose doing a concrete task together with wording such as "let's" or "we can"; merely inviting the listener to look at or attend something is chat.
 - One spoken line, normally under 35 words. No narration, stage directions, speaker name, or hidden reasoning.
 {anti_echo_instruction}
+{grounding_correction}
 
 Return only valid JSON:
-{{"dialogue": "spoken line", "action": "one allowed action", "tags": ["conversation"], "reason": "brief grounding reason"}}
+{{"dialogue": "spoken line", "action": "one allowed action", "tags": ["conversation"], "grounding_refs": ["memory:1"], "reason": "brief grounding reason"}}
 """.strip()

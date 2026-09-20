@@ -3,9 +3,12 @@ from collections.abc import Callable
 
 from src.agents.agent import Agent
 from src.agents.relationships import RelationshipManager
+from src.systems.reputation import ReputationBelief
 
 
 class ConversationSelector:
+    # Reputation is deliberately smaller than common relationship/intent terms.
+    REPUTATION_ADJUSTMENT_CAP = 2.0
     def __init__(self, relationships: RelationshipManager):
         self.relationships = relationships
 
@@ -52,7 +55,7 @@ class ConversationSelector:
         speaker: Agent,
         listeners: list[Agent],
         intent_bonus_fn: Callable[[Agent, Agent], int] | None = None,
-    ) -> list[int]:
+    ) -> list[float]:
         """Expose the interpretable target weights used by seeded selection."""
         return [
             max(
@@ -65,10 +68,26 @@ class ConversationSelector:
                     speaker=speaker,
                     listener=listener,
                     intent_bonus_fn=intent_bonus_fn,
-                ),
+                )
+                + self.get_reputation_adjustment(speaker, listener),
             )
             for listener in listeners
         ]
+
+    @classmethod
+    def get_reputation_adjustment(cls, speaker: Agent, listener: Agent) -> float:
+        """Return an observer-private, confidence-weighted adjustment in [-2, 2]."""
+        beliefs = speaker.reputation_beliefs.get(listener.name, {})
+        signal = 0.0
+        for dimension, belief in beliefs.items():
+            if not isinstance(belief, ReputationBelief):
+                continue
+            direction = -1.0 if dimension == "hostility" else 1.0
+            signal += direction * belief.score * belief.confidence
+        # Four dimensions can contribute, so scale the aggregate before the cap.
+        adjustment = signal / 2.5
+        return round(max(-cls.REPUTATION_ADJUSTMENT_CAP,
+                         min(cls.REPUTATION_ADJUSTMENT_CAP, adjustment)), 4)
 
     @staticmethod
     def get_relationship_memory_bonus(speaker: Agent, listener: Agent) -> int:

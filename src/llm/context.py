@@ -6,6 +6,7 @@ import re
 
 from src.agents.memory import Memory
 from src.systems.reputation import ReputationSystem
+from src.llm.grounding import build_grounding_sources
 
 
 ACTION_AND_SYSTEM_TAGS = {
@@ -601,4 +602,5 @@ def build_conversation_context(
     context["context_evidence"]["prompt_context_text_chars"] = (
         _prompt_context_text_chars(context)
     )
+    context["grounding_sources"] = build_grounding_sources(context)
     return context
