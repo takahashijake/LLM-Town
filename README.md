@@ -25,14 +25,15 @@ material, crime/evidence, and justice foundations without changing that boundary
 - Authoritative integer accounts, employment, wages, and an auditable ledger
 - Closed-system currency conservation and idempotent daily wage events
 - Persistent goods, inventory ownership, atomic purchases, and consumption records
+- Configured material transformation, bounded restocking, and batch provenance
 - Unauthorized material transfers, auditable theft incidents, and private evidence
 - Deterministic witness opportunity and provenance-preserving crime hearsay
 - Deterministic investigation, adjudication, restitution, and public consequence
 - Save/resume semantics, isolated deterministic benchmarks, and real-LLM review artifacts
 - A deterministic automated test suite that does not load or download a model
 
-The repository implements the economic, material, narrow theft/evidence, and
-justice foundations described below. General policing, courts, other crime types, debt,
+The repository implements the economic, material, narrow theft/evidence, justice,
+and production/provenance foundations described below. General policing, courts, other crime types, debt,
 taxes, dynamic markets, romance, factions, politics, a GUI, and semantic vector
 memory remain outside the current scope.
 
@@ -161,6 +162,28 @@ effect to the existing social need. Purchase and consumption guards survive
 save/resume. V1 and Phase 1 saves without material state initialize it
 deterministically.
 
+The same authority supports one narrow production loop. The configured
+`recipe:market_prepared_meals` transforms two finite meal ingredients into four
+prepared meals in the market inventory. Only the configured merchant employment,
+`restock_market` activity, and market location may invoke it. Production rejects
+invalid requirements before mutation and stops when prepared stock reaches its
+target of 24. Wages run first, so a legitimate restocking shift may earn its wage
+even when the stock target prevents output.
+
+Gameplay inventories remain fungible quantities, while an authoritative batch/lot
+ledger tracks provenance. Initial holdings receive stable configuration lots.
+Production consumes input-lot allocations and creates distinct output lots linked
+to the recipe, production record, and parent lots. Transfers use oldest-created-lot
+first with stable lot-ID tie-breaking. Purchases and theft inherit that path;
+restitution prefers lots moved by the original theft when still available.
+Consumption depletes holdings but retains their lineage in history.
+
+Per-good accounting enforces
+`initial + production outputs = current + consumed + production inputs`.
+Inventory replay and active lot holdings independently reconcile with authoritative
+quantities. Production and provenance state persists exactly; schema-v1 material
+saves migrate deterministically by anchoring extant holdings as migration lots.
+
 ## V2 theft and evidence foundation
 
 `CrimeSystem` implements one deliberately narrow crime: theft through an explicit
@@ -270,6 +293,16 @@ It writes `outputs/justice_evaluation.json` and covers witnessed responsibility,
 unwitnessed discovery, hearsay-only accusation, restitution, conservation,
 information boundaries, and exact save/resume replay behavior.
 
+Run the production/provenance lifecycle evaluation:
+
+```bash
+python scripts/evaluate_production.py
+```
+
+It writes `outputs/production_evaluation.json` and checks successful and atomic
+failed production, depletion/restocking, produced-lot purchase, theft, restitution,
+consumption, accounting, provenance reconciliation, and resume replay safety.
+
 Run a controlled real-model evaluation:
 
 ```bash
@@ -354,9 +387,11 @@ downloads Qwen or requires CUDA.
   per buyer/day.
 - Employer funds are finite and deliberately have no replenishment mechanism in
   this first closed-system slice.
-- Material state is a small catalog with inventory-level ownership. It has no
-  production, restocking, per-instance serial numbers, bargaining, dynamic prices,
-  loans, debt, taxes, or business competition.
+- Material state remains a small catalog and one configured recipe. Provenance is
+  batch/lot based, not unique physical serial numbers. Raw inputs are finite
+  configured stock: there is no extraction, generalized manufacturing economy,
+  external market, supply/demand pricing, bargaining, loans, debt, taxes, or
+  business competition. Prices remain fixed.
 - Theft uses co-location plus a simple reproducible one-in-three observation rule.
 - Justice is intentionally not a realistic legal system. Theft is the only
   authoritative crime; evidence rules are simple; there are no lawyers, juries,
@@ -365,8 +400,7 @@ downloads Qwen or requires CUDA.
 
 ## Future directions
 
-V1 remains frozen as the social core. A useful next V2 milestone is deterministic
-production/restocking and richer ownership history, followed by controlled study
-of how public justice outcomes affect planning without granting dialogue mutation
-authority. Romance, factions, politics, large-population work, and a GUI remain
-separate directions.
+V1 remains frozen as the social core. The next useful V2 milestone is a controlled
+study of how public justice outcomes affect future agent planning and decisions
+without granting dialogue mutation authority. Romance, factions, politics,
+large-population work, and a GUI remain separate directions.

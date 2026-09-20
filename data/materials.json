@@ -1,6 +1,13 @@
 {
   "goods": [
     {
+      "id": "meal_ingredients",
+      "name": "meal ingredients",
+      "category": "food_input",
+      "unit_price": 4,
+      "consumable": false
+    },
+    {
       "id": "prepared_meal",
       "name": "prepared meal",
       "category": "food",
@@ -38,6 +45,7 @@
       "owner_id": "seller:market_stall",
       "account_id": "account:employer:market_cooperative",
       "quantities": {
+        "meal_ingredients": 24,
         "prepared_meal": 24,
         "reference_book": 8,
         "household_supplies": 12,
@@ -73,6 +81,20 @@
       "activity_id": "eat_meal",
       "good_id": "prepared_meal",
       "quantity": 1
+    }
+  ],
+  "production_recipes": [
+    {
+      "id": "recipe:market_prepared_meals",
+      "inputs": {"meal_ingredients": 2},
+      "outputs": {"prepared_meal": 4},
+      "output_inventory_id": "inventory:business:market_stall",
+      "activity_id": "restock_market",
+      "required_location_id": "market",
+      "eligible_actor_ids": ["agent_004"],
+      "eligible_employment_ids": ["employment:agent_004:merchant"],
+      "target_stock_good_id": "prepared_meal",
+      "target_stock_quantity": 24
     }
   ]
 }

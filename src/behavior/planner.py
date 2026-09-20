@@ -298,6 +298,13 @@ class ActivityPlanner:
 
         if "merchant" in text or "business opportunities" in text:
             add_activity(
+                "restock_market",
+                "Prepare and restock market meals",
+                "market",
+                f"{agent.name} wants to replenish prepared market stock.",
+                ["business", "market", "work", "production"],
+            )
+            add_activity(
                 "pursue_business",
                 "Look for business opportunities",
                 "market",

@@ -173,10 +173,103 @@ class ConsumptionRecord:
     event_key: str
 
 
+@dataclass(frozen=True)
+class ProductionRecipe:
+    id: str
+    inputs: tuple[tuple[str, int], ...]
+    outputs: tuple[tuple[str, int], ...]
+    output_inventory_id: str
+    activity_id: str
+    required_location_id: str | None = None
+    eligible_actor_ids: tuple[str, ...] = ()
+    eligible_employment_ids: tuple[str, ...] = ()
+    target_stock_good_id: str | None = None
+    target_stock_quantity: int | None = None
+
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        data["inputs"] = dict(self.inputs)
+        data["outputs"] = dict(self.outputs)
+        data["eligible_actor_ids"] = list(self.eligible_actor_ids)
+        data["eligible_employment_ids"] = list(self.eligible_employment_ids)
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProductionRecipe":
+        values = dict(data)
+        values["inputs"] = tuple(sorted(values.get("inputs", {}).items()))
+        values["outputs"] = tuple(sorted(values.get("outputs", {}).items()))
+        values["eligible_actor_ids"] = tuple(values.get("eligible_actor_ids", ()))
+        values["eligible_employment_ids"] = tuple(values.get("eligible_employment_ids", ()))
+        return cls(**values)
+
+
+@dataclass(frozen=True)
+class MaterialLot:
+    id: str
+    good_id: str
+    origin_type: str
+    origin_id: str
+    created_day: int
+    created_hour: int | None
+    initial_quantity: int
+    production_id: str | None = None
+    recipe_id: str | None = None
+    parent_lot_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class LotMovement:
+    id: str
+    lot_id: str
+    good_id: str
+    quantity: int
+    source_inventory_id: str | None
+    destination_inventory_id: str | None
+    movement_type: str
+    reference_id: str
+    day: int
+    hour: int | None
+
+
+@dataclass(frozen=True)
+class ProductionRecord:
+    id: str
+    recipe_id: str
+    actor_id: str | None
+    employment_id: str | None
+    inventory_id: str
+    day: int
+    hour: int | None
+    inputs: tuple[tuple[str, int], ...]
+    outputs: tuple[tuple[str, int], ...]
+    activity_id: str
+    event_key: str
+    input_lot_ids: tuple[str, ...]
+    output_lot_ids: tuple[str, ...]
+
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        data["inputs"] = dict(self.inputs)
+        data["outputs"] = dict(self.outputs)
+        for key in ("input_lot_ids", "output_lot_ids"):
+            data[key] = list(data[key])
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProductionRecord":
+        values = dict(data)
+        values["inputs"] = tuple(sorted(values.get("inputs", {}).items()))
+        values["outputs"] = tuple(sorted(values.get("outputs", {}).items()))
+        values["input_lot_ids"] = tuple(values.get("input_lot_ids", ()))
+        values["output_lot_ids"] = tuple(values.get("output_lot_ids", ()))
+        return cls(**values)
+
+
 class MaterialSystem:
     """Own all material quantities and coordinate atomic purchases with money."""
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(
         self,
@@ -187,6 +280,7 @@ class MaterialSystem:
         sellers: list[Seller],
         purchase_activity_rules: list[PurchaseActivityRule] | None = None,
         consumption_activity_rules: list[ConsumptionActivityRule] | None = None,
+        production_recipes: list[ProductionRecipe] | None = None,
         initial_quantities: dict[str, dict[str, int]] | None = None,
         inventory_transfers: list[InventoryTransferRecord] | None = None,
         exchanges: list[ExchangeRecord] | None = None,
@@ -196,6 +290,13 @@ class MaterialSystem:
         next_transfer_number: int = 1,
         next_exchange_number: int = 1,
         next_consumption_number: int = 1,
+        production_records: list[ProductionRecord] | None = None,
+        lots: list[MaterialLot] | None = None,
+        lot_holdings: dict[str, dict[str, int]] | None = None,
+        lot_movements: list[LotMovement] | None = None,
+        next_production_number: int = 1,
+        next_lot_number: int = 1,
+        next_movement_number: int = 1,
     ):
         self.economy = economy
         self.goods = self._unique_by_id(goods, "good")
@@ -207,6 +308,7 @@ class MaterialSystem:
         self.consumption_activity_rules = self._unique_by_field(
             consumption_activity_rules or [], "activity_id", "consumption activity"
         )
+        self.production_recipes = self._unique_by_id(production_recipes or [], "production recipe")
         self.inventory_transfers = list(inventory_transfers or [])
         self.exchanges = list(exchanges or [])
         self.consumptions = list(consumptions or [])
@@ -215,6 +317,12 @@ class MaterialSystem:
         self.next_transfer_number = int(next_transfer_number)
         self.next_exchange_number = int(next_exchange_number)
         self.next_consumption_number = int(next_consumption_number)
+        self.production_records = list(production_records or [])
+        self.lots = self._unique_by_id(lots or [], "material lot")
+        self.lot_movements = list(lot_movements or [])
+        self.next_production_number = int(next_production_number)
+        self.next_lot_number = int(next_lot_number)
+        self.next_movement_number = int(next_movement_number)
         self.initial_quantities = (
             self._quantity_snapshot()
             if initial_quantities is None
@@ -223,6 +331,17 @@ class MaterialSystem:
                 for inventory_id, values in initial_quantities.items()
             }
         )
+        if lot_holdings is None:
+            self.lot_holdings = {}
+            if self.inventory_transfers or self.consumptions or self.production_records:
+                self._initialize_migrated_lots()
+            else:
+                self._initialize_lots()
+        else:
+            self.lot_holdings = {
+                inventory_id: {lot_id: int(q) for lot_id, q in values.items() if int(q)}
+                for inventory_id, values in lot_holdings.items()
+            }
         self._validate_model()
         self._validate_history()
 
@@ -290,6 +409,74 @@ class MaterialSystem:
             for inventory_id, inventory in self._inventories.items()
         }
 
+    def _initialize_lots(self) -> None:
+        """Create stable configuration lots; also used to migrate schema-v1 saves."""
+        for inventory_id in sorted(self.initial_quantities):
+            self.lot_holdings.setdefault(inventory_id, {})
+            for good_id, quantity in sorted(self.initial_quantities[inventory_id].items()):
+                if quantity <= 0:
+                    continue
+                lot_id = f"lot:initial:{inventory_id}:{good_id}"
+                lot = MaterialLot(lot_id, good_id, "initial_configuration", inventory_id,
+                                  0, None, quantity)
+                self.lots[lot_id] = lot
+                self.lot_holdings[inventory_id][lot_id] = quantity
+
+    def _initialize_migrated_lots(self) -> None:
+        """Deterministically anchor current holdings when loading a schema-v1 history."""
+        for inventory_id, inventory in sorted(self._inventories.items()):
+            self.lot_holdings[inventory_id] = {}
+            for good_id, quantity in inventory.quantities:
+                lot_id = f"lot:migrated:{inventory_id}:{good_id}"
+                self.lots[lot_id] = MaterialLot(
+                    lot_id, good_id, "schema_v1_migration", inventory_id, 0, None, quantity
+                )
+                self.lot_holdings[inventory_id][lot_id] = quantity
+
+    def _allocations(self, inventory_id: str, good_id: str, quantity: int,
+                     preferred_lot_ids: tuple[str, ...] = ()) -> list[tuple[str, int]]:
+        holdings = self.lot_holdings.get(inventory_id, {})
+        preferred = set(preferred_lot_ids)
+        candidates = [
+            (lot_id, held) for lot_id, held in holdings.items()
+            if held > 0 and self.lots[lot_id].good_id == good_id
+        ]
+        candidates.sort(key=lambda item: (
+            0 if item[0] in preferred else 1,
+            self.lots[item[0]].created_day,
+            -1 if self.lots[item[0]].created_hour is None else self.lots[item[0]].created_hour,
+            item[0],
+        ))
+        remaining, result = quantity, []
+        for lot_id, held in candidates:
+            used = min(held, remaining)
+            if used:
+                result.append((lot_id, used))
+                remaining -= used
+            if not remaining:
+                break
+        if remaining:
+            raise MaterialError("provenance_shortfall", "inventory provenance is insufficient")
+        return result
+
+    def _move_allocations(self, allocations, source_id, destination_id, *, movement_type,
+                          reference_id, day, hour) -> None:
+        for lot_id, quantity in allocations:
+            source = self.lot_holdings.setdefault(source_id, {})
+            source[lot_id] -= quantity
+            if source[lot_id] == 0:
+                source.pop(lot_id)
+            if destination_id is not None:
+                destination = self.lot_holdings.setdefault(destination_id, {})
+                destination[lot_id] = destination.get(lot_id, 0) + quantity
+            lot = self.lots[lot_id]
+            self.lot_movements.append(LotMovement(
+                f"lot-movement-{self.next_movement_number:08d}", lot_id, lot.good_id,
+                quantity, source_id, destination_id, movement_type, reference_id,
+                int(day), None if hour is None else int(hour),
+            ))
+            self.next_movement_number += 1
+
     def _validate_model(self) -> None:
         if set(self.initial_quantities) != set(self._inventories):
             raise ValueError("initial quantities must match inventory ids")
@@ -339,6 +526,35 @@ class MaterialSystem:
             if good is None or not good.consumable:
                 raise ValueError("consumption activity requires a consumable good")
             self._validate_quantity(rule.quantity)
+        for recipe in self.production_recipes.values():
+            if not recipe.id or not recipe.activity_id:
+                raise ValueError("production recipe id and activity are required")
+            if not recipe.inputs:
+                raise ValueError("production recipe requires material inputs")
+            if not recipe.outputs:
+                raise ValueError("production recipe requires outputs")
+            if len({good_id for good_id, _ in recipe.inputs}) != len(recipe.inputs) or \
+                    len({good_id for good_id, _ in recipe.outputs}) != len(recipe.outputs):
+                raise ValueError("production recipe goods must be unique within each side")
+            if recipe.output_inventory_id not in self._inventories:
+                raise ValueError("production recipe references unknown output inventory")
+            for good_id, quantity in (*recipe.inputs, *recipe.outputs):
+                if good_id not in self.goods:
+                    raise ValueError("production recipe references unknown good")
+                self._validate_quantity(quantity)
+            if recipe.target_stock_good_id is not None:
+                if recipe.target_stock_good_id not in dict(recipe.outputs):
+                    raise ValueError("target stock good must be a recipe output")
+                self._validate_quantity(recipe.target_stock_quantity)
+            for employment_id in recipe.eligible_employment_ids:
+                if employment_id not in self.economy.employments:
+                    raise ValueError("production recipe references unknown employment")
+            known_agents = {
+                account.owner_id for account in account_ids.values()
+                if account.owner_type == "agent"
+            }
+            if any(actor_id not in known_agents for actor_id in recipe.eligible_actor_ids):
+                raise ValueError("production recipe references unknown actor")
 
     def _validate_history(self) -> None:
         record_groups = (
@@ -366,6 +582,8 @@ class MaterialSystem:
             raise ValueError("exchange history does not reconcile with ledger")
         if not self.consumption_records_are_valid():
             raise ValueError("consumption history is invalid")
+        if not self.provenance_reconciles():
+            raise ValueError("material provenance does not reconcile with inventories")
 
     def _attempt(self, operation: str, **values) -> dict:
         return {"operation": operation, **values}
@@ -421,6 +639,7 @@ class MaterialSystem:
         authorization_type: str,
         authorization_id: str,
         event_key: str | None,
+        preferred_lot_ids: tuple[str, ...] = (),
     ) -> InventoryTransferRecord:
         record = InventoryTransferRecord(
             id=f"material-transfer-{self.next_transfer_number:08d}",
@@ -435,6 +654,7 @@ class MaterialSystem:
             authorization_id=authorization_id,
             event_key=event_key,
         )
+        allocations = self._allocations(source.id, good_id, quantity, preferred_lot_ids)
         self._inventories[source.id] = source.with_quantity(
             good_id, source.quantity(good_id) - quantity
         )
@@ -442,9 +662,75 @@ class MaterialSystem:
             good_id, destination.quantity(good_id) + quantity
         )
         self.inventory_transfers.append(record)
+        self._move_allocations(allocations, source.id, destination.id,
+                               movement_type=authorization_type,
+                               reference_id=record.id, day=day, hour=hour)
         if event_key:
             self.applied_event_keys.add(event_key)
         self.next_transfer_number += 1
+        return record
+
+    def produce(self, recipe_id: str, *, actor_id: str | None, employment_id: str | None,
+                inventory_id: str, day: int, hour: int | None, activity_id: str,
+                location_id: str | None, event_key: str) -> ProductionRecord:
+        attempt = self._attempt("production", recipe_id=recipe_id, actor_id=actor_id,
+                                inventory_id=inventory_id, day=day, hour=hour,
+                                activity_id=activity_id, event_key=event_key)
+        if event_key in self.applied_event_keys:
+            self._reject("duplicate_event", "production event was already applied", attempt)
+        recipe = self.production_recipes.get(recipe_id)
+        if recipe is None:
+            self._reject("unknown_recipe", "production recipe does not exist", attempt)
+        if inventory_id != recipe.output_inventory_id or activity_id != recipe.activity_id:
+            self._reject("invalid_production_trigger", "recipe trigger or inventory does not match", attempt)
+        if recipe.required_location_id and location_id != recipe.required_location_id:
+            self._reject("wrong_location", "production requires a different location", attempt)
+        if recipe.eligible_actor_ids and actor_id not in recipe.eligible_actor_ids:
+            self._reject("ineligible_actor", "actor is not eligible for this recipe", attempt)
+        if recipe.eligible_employment_ids and employment_id not in recipe.eligible_employment_ids:
+            self._reject("ineligible_employment", "employment is not eligible for this recipe", attempt)
+        inventory = self._inventories[inventory_id]
+        if recipe.target_stock_good_id and inventory.quantity(recipe.target_stock_good_id) >= recipe.target_stock_quantity:
+            self._reject("target_stock_met", "restocking target is already met", attempt)
+        allocations_by_good = {}
+        for good_id, quantity in recipe.inputs:
+            if inventory.quantity(good_id) < quantity:
+                self._reject("insufficient_inputs", "production inputs are insufficient", attempt)
+            try:
+                allocations_by_good[good_id] = self._allocations(inventory_id, good_id, quantity)
+            except MaterialError:
+                self._reject("provenance_shortfall", "production input provenance is insufficient", attempt)
+
+        production_id = f"production-{self.next_production_number:08d}"
+        input_lot_ids = tuple(dict.fromkeys(
+            lot_id for allocations in allocations_by_good.values() for lot_id, _ in allocations
+        ))
+        output_lot_ids = tuple(
+            f"lot:production:{production_id}:{good_id}" for good_id, _ in recipe.outputs
+        )
+        record = ProductionRecord(production_id, recipe.id, actor_id, employment_id,
+                                  inventory_id, int(day), None if hour is None else int(hour),
+                                  recipe.inputs, recipe.outputs, activity_id, event_key,
+                                  input_lot_ids, output_lot_ids)
+        # All validation/allocation is complete before the adjacent state mutations.
+        current = inventory
+        for good_id, quantity in recipe.inputs:
+            current = current.with_quantity(good_id, current.quantity(good_id) - quantity)
+            self._move_allocations(allocations_by_good[good_id], inventory_id, None,
+                                   movement_type="production_input", reference_id=production_id,
+                                   day=day, hour=hour)
+        for (good_id, quantity), lot_id in zip(recipe.outputs, output_lot_ids):
+            current = current.with_quantity(good_id, current.quantity(good_id) + quantity)
+            lot = MaterialLot(lot_id, good_id, "production", production_id, int(day),
+                              None if hour is None else int(hour), quantity, production_id,
+                              recipe.id, input_lot_ids)
+            self.lots[lot_id] = lot
+            self.lot_holdings.setdefault(inventory_id, {})[lot_id] = quantity
+        self._inventories[inventory_id] = current
+        self.production_records.append(record)
+        self.applied_event_keys.add(event_key)
+        self.next_production_number += 1
+        self.next_lot_number += len(output_lot_ids)
         return record
 
     def transfer_good(
@@ -460,6 +746,7 @@ class MaterialSystem:
         authorization_type: str,
         authorization_id: str,
         event_key: str | None = None,
+        preferred_lot_ids: tuple[str, ...] = (),
     ) -> InventoryTransferRecord:
         attempt = self._attempt(
             "transfer",
@@ -470,6 +757,7 @@ class MaterialSystem:
             good_id=good_id,
             quantity=quantity,
             event_key=event_key,
+            preferred_lot_ids=preferred_lot_ids,
         )
         source, destination, _good = self._validate_transfer(
             source_inventory_id,
@@ -490,6 +778,7 @@ class MaterialSystem:
             authorization_type=authorization_type,
             authorization_id=authorization_id,
             event_key=event_key,
+            preferred_lot_ids=preferred_lot_ids,
         )
 
     def purchase(
@@ -655,10 +944,13 @@ class MaterialSystem:
             activity_id=activity_id,
             event_key=event_key,
         )
+        allocations = self._allocations(inventory_id, good_id, quantity)
         self._inventories[inventory_id] = inventory.with_quantity(
             good_id, inventory.quantity(good_id) - quantity
         )
         self.consumptions.append(record)
+        self._move_allocations(allocations, inventory_id, None, movement_type="consumption",
+                               reference_id=record.id, day=day, hour=hour)
         self.applied_event_keys.add(event_key)
         self.next_consumption_number += 1
         agent.satisfy_need(record.need, record.need_effect_amount)
@@ -704,6 +996,20 @@ class MaterialSystem:
                 )
             except MaterialError:
                 return None
+        for recipe in self.production_recipes.values():
+            if recipe.activity_id != activity.id or "production" not in activity.tags:
+                continue
+            employment = self.economy.employment_for_agent(agent.id)
+            try:
+                return self.produce(
+                    recipe.id, actor_id=agent.id,
+                    employment_id=employment.id if employment else None,
+                    inventory_id=recipe.output_inventory_id, day=day, hour=hour,
+                    activity_id=activity.id, location_id=activity.location_id,
+                    event_key=f"production:{recipe.id}:{agent.id}:{day}:{hour}",
+                )
+            except MaterialError:
+                return None
         return None
 
     def total_quantities(self) -> dict[str, int]:
@@ -724,18 +1030,56 @@ class MaterialSystem:
             totals[record.good_id] += record.quantity
         return {good_id: totals[good_id] for good_id in sorted(self.goods)}
 
+    def production_output_quantities(self) -> dict[str, int]:
+        totals = Counter()
+        for record in self.production_records:
+            totals.update(dict(record.outputs))
+        return {good_id: totals[good_id] for good_id in sorted(self.goods)}
+
+    def production_input_quantities(self) -> dict[str, int]:
+        totals = Counter()
+        for record in self.production_records:
+            totals.update(dict(record.inputs))
+        return {good_id: totals[good_id] for good_id in sorted(self.goods)}
+
     def material_conservation_holds(self) -> bool:
         initial = self.initial_total_quantities()
         current = self.total_quantities()
         consumed = self.consumed_quantities()
-        return all(current[good_id] + consumed[good_id] == initial[good_id] for good_id in self.goods)
+        outputs = self.production_output_quantities()
+        inputs = self.production_input_quantities()
+        return all(initial[g] + outputs[g] == current[g] + consumed[g] + inputs[g]
+                   for g in self.goods)
 
     def material_history_reconstructs_inventories(self) -> bool:
         reconstructed = {
             inventory_id: Counter(values)
             for inventory_id, values in self.initial_quantities.items()
         }
-        for record in self.inventory_transfers:
+        events = (
+            [(record.day, -1 if record.hour is None else record.hour, 1, record.id, "transfer", record)
+             for record in self.inventory_transfers]
+            + [(record.day, -1 if record.hour is None else record.hour, 2, record.id, "consumption", record)
+               for record in self.consumptions]
+            + [(record.day, -1 if record.hour is None else record.hour, 0, record.id, "production", record)
+               for record in self.production_records]
+        )
+        for _day, _hour, _priority, _id, kind, record in sorted(events):
+            if kind == "production":
+                for good_id, quantity in record.inputs:
+                    reconstructed[record.inventory_id][good_id] -= quantity
+                    if reconstructed[record.inventory_id][good_id] < 0:
+                        return False
+                for good_id, quantity in record.outputs:
+                    reconstructed[record.inventory_id][good_id] += quantity
+                continue
+            if kind == "consumption":
+                if record.inventory_id not in reconstructed or record.good_id not in self.goods:
+                    return False
+                reconstructed[record.inventory_id][record.good_id] -= record.quantity
+                if reconstructed[record.inventory_id][record.good_id] < 0:
+                    return False
+                continue
             if (
                 record.source_inventory_id not in reconstructed
                 or record.destination_inventory_id not in reconstructed
@@ -747,12 +1091,6 @@ class MaterialSystem:
             if reconstructed[record.source_inventory_id][record.good_id] < 0:
                 return False
             reconstructed[record.destination_inventory_id][record.good_id] += record.quantity
-        for record in self.consumptions:
-            if record.inventory_id not in reconstructed or record.good_id not in self.goods:
-                return False
-            reconstructed[record.inventory_id][record.good_id] -= record.quantity
-            if reconstructed[record.inventory_id][record.good_id] < 0:
-                return False
         return all(
             all(quantity >= 0 for quantity in reconstructed[inventory_id].values())
             and {
@@ -804,6 +1142,59 @@ class MaterialSystem:
                 return False
         return True
 
+    def provenance_reconciles(self) -> bool:
+        if any(q <= 0 for values in self.lot_holdings.values() for q in values.values()):
+            return False
+        if any(lot_id not in self.lots for values in self.lot_holdings.values() for lot_id in values):
+            return False
+        for inventory_id, inventory in self._inventories.items():
+            totals = Counter()
+            for lot_id, quantity in self.lot_holdings.get(inventory_id, {}).items():
+                totals[self.lots[lot_id].good_id] += quantity
+            if {k: v for k, v in totals.items() if v} != dict(inventory.quantities):
+                return False
+        production_ids = {record.id for record in self.production_records}
+        if any(lot.origin_type == "production" and lot.production_id not in production_ids
+               for lot in self.lots.values()):
+            return False
+        if any(movement.lot_id not in self.lots or movement.quantity <= 0
+               for movement in self.lot_movements):
+            return False
+        return self.provenance_history_reconstructs_holdings()
+
+    def provenance_history_reconstructs_holdings(self) -> bool:
+        production_inventory = {record.id: record.inventory_id for record in self.production_records}
+        reconstructed = {inventory_id: Counter() for inventory_id in self._inventories}
+        for lot in self.lots.values():
+            origin_inventory = (
+                production_inventory.get(lot.production_id)
+                if lot.origin_type == "production" else lot.origin_id
+            )
+            if origin_inventory not in reconstructed or lot.initial_quantity <= 0:
+                return False
+            reconstructed[origin_inventory][lot.id] += lot.initial_quantity
+        for movement in self.lot_movements:
+            if movement.source_inventory_id not in reconstructed:
+                return False
+            reconstructed[movement.source_inventory_id][movement.lot_id] -= movement.quantity
+            if reconstructed[movement.source_inventory_id][movement.lot_id] < 0:
+                return False
+            if movement.destination_inventory_id is not None:
+                if movement.destination_inventory_id not in reconstructed:
+                    return False
+                reconstructed[movement.destination_inventory_id][movement.lot_id] += movement.quantity
+        expected = {
+            inventory_id: Counter(values) for inventory_id, values in self.lot_holdings.items()
+        }
+        return all(
+            +reconstructed[inventory_id] == +expected.get(inventory_id, Counter())
+            for inventory_id in reconstructed
+        )
+
+    def lot_ids_moved_by_transfer(self, transfer_id: str) -> tuple[str, ...]:
+        return tuple(dict.fromkeys(m.lot_id for m in self.lot_movements
+                                   if m.reference_id == transfer_id))
+
     def consumption_records_are_valid(self) -> bool:
         for record in self.consumptions:
             inventory = self._inventories.get(record.inventory_id)
@@ -844,6 +1235,11 @@ class MaterialSystem:
             "total_quantities": self.total_quantities(),
             "initial_total_quantities": self.initial_total_quantities(),
             "consumed_quantities": self.consumed_quantities(),
+            "production_input_quantities": self.production_input_quantities(),
+            "production_output_quantities": self.production_output_quantities(),
+            "production_count": len(self.production_records),
+            "lot_count": len(self.lots),
+            "lot_movement_count": len(self.lot_movements),
             "no_negative_inventory": all(
                 quantity >= 0
                 for inventory in self._inventories.values()
@@ -853,6 +1249,8 @@ class MaterialSystem:
             "history_reconstructs_inventories": self.material_history_reconstructs_inventories(),
             "exchanges_reconcile_with_ledger": self.exchanges_reconcile_with_ledger(),
             "consumption_records_valid": self.consumption_records_are_valid(),
+            "provenance_reconciles": self.provenance_reconciles(),
+            "provenance_history_reconstructs": self.provenance_history_reconstructs_holdings(),
             "rejected_operation_count": len(self.rejected_operations),
             "rejection_counts_by_code": dict(sorted(Counter(
                 record["code"] for record in self.rejected_operations
@@ -874,20 +1272,29 @@ class MaterialSystem:
             "consumption_activity_rules": [
                 asdict(rule) for rule in self.consumption_activity_rules.values()
             ],
+            "production_recipes": [recipe.to_dict() for recipe in self.production_recipes.values()],
             "initial_quantities": self.initial_quantities,
             "inventory_transfers": [asdict(record) for record in self.inventory_transfers],
             "exchanges": [asdict(record) for record in self.exchanges],
             "consumptions": [asdict(record) for record in self.consumptions],
+            "production_records": [record.to_dict() for record in self.production_records],
+            "lots": [asdict(lot) for lot in self.lots.values()],
+            "lot_holdings": self.lot_holdings,
+            "lot_movements": [asdict(movement) for movement in self.lot_movements],
             "applied_event_keys": sorted(self.applied_event_keys),
             "rejected_operations": self.rejected_operations,
             "next_transfer_number": self.next_transfer_number,
             "next_exchange_number": self.next_exchange_number,
             "next_consumption_number": self.next_consumption_number,
+            "next_production_number": self.next_production_number,
+            "next_lot_number": self.next_lot_number,
+            "next_movement_number": self.next_movement_number,
         }
 
     @classmethod
     def from_dict(cls, data: dict, *, economy: EconomySystem) -> "MaterialSystem":
-        if data.get("schema_version", 1) != cls.SCHEMA_VERSION:
+        version = data.get("schema_version", 1)
+        if version not in (1, cls.SCHEMA_VERSION):
             raise ValueError("unsupported material schema version")
         return cls(
             economy=economy,
@@ -902,6 +1309,7 @@ class MaterialSystem:
                 ConsumptionActivityRule(**item)
                 for item in data.get("consumption_activity_rules", [])
             ],
+            production_recipes=[ProductionRecipe.from_dict(item) for item in data.get("production_recipes", [])],
             initial_quantities=data.get("initial_quantities"),
             inventory_transfers=[
                 InventoryTransferRecord(**item)
@@ -916,6 +1324,14 @@ class MaterialSystem:
             next_transfer_number=data.get("next_transfer_number", 1),
             next_exchange_number=data.get("next_exchange_number", 1),
             next_consumption_number=data.get("next_consumption_number", 1),
+            production_records=[ProductionRecord.from_dict(item) for item in data.get("production_records", [])],
+            lots=[MaterialLot(**{**item, "parent_lot_ids": tuple(item.get("parent_lot_ids", ()))})
+                  for item in data.get("lots", [])],
+            lot_holdings=data.get("lot_holdings") if version >= 2 else None,
+            lot_movements=[LotMovement(**item) for item in data.get("lot_movements", [])],
+            next_production_number=data.get("next_production_number", 1),
+            next_lot_number=data.get("next_lot_number", 1),
+            next_movement_number=data.get("next_movement_number", 1),
         )
 
     @classmethod
@@ -968,5 +1384,9 @@ class MaterialSystem:
             consumption_activity_rules=[
                 ConsumptionActivityRule(**item)
                 for item in config.get("consumption_activity_rules", [])
+            ],
+            production_recipes=[
+                ProductionRecipe.from_dict(item)
+                for item in config.get("production_recipes", [])
             ],
         )

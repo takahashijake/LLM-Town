@@ -53,7 +53,7 @@
       "title": "merchant",
       "employer_account_id": "account:employer:market_cooperative",
       "wage": 30,
-      "qualifying_activity_ids": ["pursue_business"],
+      "qualifying_activity_ids": ["pursue_business", "restock_market"],
       "active": true,
       "start_day": 1
     }

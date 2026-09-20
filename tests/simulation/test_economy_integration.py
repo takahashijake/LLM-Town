@@ -105,7 +105,7 @@ def test_phase_one_state_without_materials_initializes_safely(tmp_path):
     state_path.write_text(json.dumps(phase_one))
 
     resumed = build_engine(tmp_path, load_state=True)
-    assert len(resumed.materials.goods) == 4
+    assert len(resumed.materials.goods) == 5
     assert len(resumed.materials.sellers) == 1
     assert resumed.materials.diagnostics()["material_conserved_with_consumption"]
 

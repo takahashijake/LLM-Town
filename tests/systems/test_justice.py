@@ -132,6 +132,8 @@ def test_full_restitution_conserves_material_and_currency_and_is_idempotent(fake
     assert restitution.status == "full" and restitution.returned_quantity == 1
     assert transfer.authorization_type == "justice_restitution"
     assert transfer.authorization_id == decision.id
+    assert fake_engine.materials.lot_ids_moved_by_transfer(transfer.id) == \
+        fake_engine.materials.lot_ids_moved_by_transfer(incident.unauthorized_transfer_id)
     assert fake_engine.materials.total_quantities() == total
     assert {k: v.balance for k, v in fake_engine.economy.accounts.items()} == balances
     assert consequence.affected_agent_ids

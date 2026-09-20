@@ -347,11 +347,15 @@ class JusticeSystem:
             available = source.quantity(incident.good_id)
             returned = min(available, incident.quantity)
             if returned:
+                stolen_lot_ids = self.materials.lot_ids_moved_by_transfer(
+                    incident.unauthorized_transfer_id
+                )
                 transfer = self.materials.transfer_good(
                     source.id, incident.source_inventory_id, incident.good_id, returned,
                     day=day, hour=hour, reason=f"Restitution for {adjudication.id}",
                     authorization_type="justice_restitution", authorization_id=adjudication.id,
                     event_key=f"justice-restitution:{adjudication.id}",
+                    preferred_lot_ids=stolen_lot_ids,
                 )
                 transfer_id = transfer.id
         status = "full" if returned == incident.quantity else ("partial" if returned else "unresolved")
