@@ -1,4 +1,5 @@
 import copy
+from dataclasses import replace
 
 import pytest
 
@@ -92,6 +93,25 @@ def test_failed_production_and_target_guard_make_no_material_mutation():
     with pytest.raises(MaterialError) as error:
         produce(stocked)
     assert error.value.code == "target_stock_met"
+
+
+def test_target_stock_is_pre_batch_threshold_not_hard_cap():
+    _, system = build_system(meals=4)
+    produce(system)
+    assert system.quantity("shop", "meal") == 7
+
+
+def test_production_and_lot_event_validators_detect_broken_references():
+    _, system = build_system()
+    record = produce(system)
+    assert system.production_records_are_valid()
+    assert system.lot_movements_reconcile_with_events()
+    system.lot_movements[0] = replace(
+        system.lot_movements[0], reference_id="missing-production"
+    )
+    assert not system.lot_movements_reconcile_with_events()
+    system.production_records[0] = replace(record, actor_id="unauthorized")
+    assert not system.production_records_are_valid()
 
 
 def test_oldest_lot_transfer_splits_and_consumption_preserves_history_round_trip():

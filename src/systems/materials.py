@@ -459,6 +459,19 @@ class MaterialSystem:
             raise MaterialError("provenance_shortfall", "inventory provenance is insufficient")
         return result
 
+    def quantity_for_lots(
+        self, inventory_id: str, good_id: str, lot_ids: tuple[str, ...]
+    ) -> int:
+        """Return current quantity from only the specified authoritative lots."""
+        self.get_inventory(inventory_id)
+        self.get_good(good_id)
+        requested = set(lot_ids)
+        return sum(
+            quantity
+            for lot_id, quantity in self.lot_holdings.get(inventory_id, {}).items()
+            if lot_id in requested and self.lots[lot_id].good_id == good_id
+        )
+
     def _move_allocations(self, allocations, source_id, destination_id, *, movement_type,
                           reference_id, day, hour) -> None:
         for lot_id, quantity in allocations:
@@ -584,6 +597,10 @@ class MaterialSystem:
             raise ValueError("consumption history is invalid")
         if not self.provenance_reconciles():
             raise ValueError("material provenance does not reconcile with inventories")
+        if not self.production_records_are_valid():
+            raise ValueError("production history is invalid")
+        if not self.lot_movements_reconcile_with_events():
+            raise ValueError("lot movements do not reconcile with material events")
 
     def _attempt(self, operation: str, **values) -> dict:
         return {"operation": operation, **values}
@@ -830,6 +847,14 @@ class MaterialSystem:
         total_price = good.unit_price * quantity
         if buyer_account.balance < total_price:
             self._reject("insufficient_funds", "buyer has insufficient funds", attempt)
+        # Validate provenance before committing the coordinated monetary leg.
+        # A provenance failure must never leave a payment without its goods.
+        try:
+            self._allocations(source.id, good_id, quantity)
+        except MaterialError:
+            self._reject(
+                "provenance_shortfall", "purchase stock provenance is insufficient", attempt
+            )
 
         exchange_id = f"exchange-{self.next_exchange_number:08d}"
         transfer_id = f"material-transfer-{self.next_transfer_number:08d}"
@@ -1162,6 +1187,108 @@ class MaterialSystem:
             return False
         return self.provenance_history_reconstructs_holdings()
 
+    def production_records_are_valid(self) -> bool:
+        ids = [record.id for record in self.production_records]
+        keys = [record.event_key for record in self.production_records]
+        if len(ids) != len(set(ids)) or len(keys) != len(set(keys)):
+            return False
+        if not set(keys).issubset(self.applied_event_keys):
+            return False
+        for record in self.production_records:
+            recipe = self.production_recipes.get(record.recipe_id)
+            if recipe is None or not (
+                record.inventory_id == recipe.output_inventory_id
+                and record.activity_id == recipe.activity_id
+                and record.inputs == recipe.inputs
+                and record.outputs == recipe.outputs
+                and (not recipe.eligible_actor_ids or record.actor_id in recipe.eligible_actor_ids)
+                and (
+                    not recipe.eligible_employment_ids
+                    or record.employment_id in recipe.eligible_employment_ids
+                )
+            ):
+                return False
+            expected_output_ids = tuple(
+                f"lot:production:{record.id}:{good_id}"
+                for good_id, _quantity in record.outputs
+            )
+            if record.output_lot_ids != expected_output_ids:
+                return False
+            for (good_id, quantity), lot_id in zip(record.outputs, record.output_lot_ids):
+                lot = self.lots.get(lot_id)
+                if lot is None or not (
+                    lot.good_id == good_id
+                    and lot.origin_type == "production"
+                    and lot.origin_id == record.id
+                    and lot.production_id == record.id
+                    and lot.recipe_id == record.recipe_id
+                    and lot.initial_quantity == quantity
+                    and lot.parent_lot_ids == record.input_lot_ids
+                ):
+                    return False
+        return True
+
+    def lot_movements_reconcile_with_events(self) -> bool:
+        transfers = {record.id: record for record in self.inventory_transfers}
+        consumptions = {record.id: record for record in self.consumptions}
+        productions = {record.id: record for record in self.production_records}
+        grouped: dict[str, list[LotMovement]] = {}
+        migrated_history = any(
+            lot.origin_type == "schema_v1_migration" for lot in self.lots.values()
+        )
+        for movement in self.lot_movements:
+            grouped.setdefault(movement.reference_id, []).append(movement)
+            if movement.movement_type == "production_input":
+                if movement.reference_id not in productions:
+                    return False
+            elif movement.movement_type == "consumption":
+                if movement.reference_id not in consumptions:
+                    return False
+            else:
+                transfer = transfers.get(movement.reference_id)
+                if transfer is None or movement.movement_type != transfer.authorization_type:
+                    return False
+        for record in self.inventory_transfers:
+            movements = grouped.get(record.id, [])
+            if migrated_history and not movements:
+                continue
+            if sum(item.quantity for item in movements) != record.quantity or any(
+                item.good_id != record.good_id
+                or item.source_inventory_id != record.source_inventory_id
+                or item.destination_inventory_id != record.destination_inventory_id
+                for item in movements
+            ):
+                return False
+        for record in self.consumptions:
+            movements = grouped.get(record.id, [])
+            if migrated_history and not movements:
+                continue
+            if sum(item.quantity for item in movements) != record.quantity or any(
+                item.good_id != record.good_id
+                or item.source_inventory_id != record.inventory_id
+                or item.destination_inventory_id is not None
+                for item in movements
+            ):
+                return False
+        for record in self.production_records:
+            movements = grouped.get(record.id, [])
+            totals = Counter()
+            moved_lot_ids = []
+            for item in movements:
+                if (
+                    item.source_inventory_id != record.inventory_id
+                    or item.destination_inventory_id is not None
+                ):
+                    return False
+                totals[item.good_id] += item.quantity
+                moved_lot_ids.append(item.lot_id)
+            if (
+                dict(totals) != dict(record.inputs)
+                or set(moved_lot_ids) != set(record.input_lot_ids)
+            ):
+                return False
+        return True
+
     def provenance_history_reconstructs_holdings(self) -> bool:
         production_inventory = {record.id: record.inventory_id for record in self.production_records}
         reconstructed = {inventory_id: Counter() for inventory_id in self._inventories}
@@ -1251,6 +1378,8 @@ class MaterialSystem:
             "consumption_records_valid": self.consumption_records_are_valid(),
             "provenance_reconciles": self.provenance_reconciles(),
             "provenance_history_reconstructs": self.provenance_history_reconstructs_holdings(),
+            "production_records_valid": self.production_records_are_valid(),
+            "lot_movements_reconcile_with_events": self.lot_movements_reconcile_with_events(),
             "rejected_operation_count": len(self.rejected_operations),
             "rejection_counts_by_code": dict(sorted(Counter(
                 record["code"] for record in self.rejected_operations

@@ -155,6 +155,39 @@ def test_unavailable_stock_records_unresolved_without_minting(fake_engine):
     assert fake_engine.materials.total_quantities() == before
 
 
+def test_fungible_replacement_is_not_misrepresented_as_stolen_lot(fake_engine):
+    incident, _direct, case = witnessed_case(fake_engine)
+    actor_inventory = fake_engine.materials.inventory_for_agent("agent_002")
+    stolen_lots = fake_engine.materials.lot_ids_moved_by_transfer(
+        incident.unauthorized_transfer_id
+    )
+    fake_engine.materials.transfer_good(
+        actor_inventory.id, "inventory:agent:agent_003", incident.good_id, 1,
+        day=2, hour=14, reason="Stolen lot moved away",
+        authorization_type="authorized_transfer", authorization_id="move-stolen",
+        event_key="move-stolen", preferred_lot_ids=stolen_lots,
+    )
+    fake_engine.materials.transfer_good(
+        "inventory:business:market_stall", actor_inventory.id, incident.good_id, 1,
+        day=2, hour=15, reason="Unrelated replacement stock",
+        authorization_type="authorized_transfer", authorization_id="replacement",
+        event_key="replacement",
+    )
+    assert fake_engine.materials.quantity(actor_inventory.id, incident.good_id) == 1
+    decision = fake_engine.justice.adjudicate(
+        case_id=case.id, reviewer_agent_id="agent_001", day=2, hour=16,
+        event_key="decide:replacement",
+    )
+    fake_engine.justice.apply_consequence(
+        adjudication_id=decision.id, day=2, hour=17,
+        event_key="consequence:replacement",
+    )
+    restitution = fake_engine.justice.restitutions[0]
+    assert restitution.status == "unresolved"
+    assert restitution.returned_quantity == 0
+    assert restitution.material_transfer_id is None
+
+
 def test_partial_restitution_returns_only_available_stolen_stock(fake_engine):
     arrange(fake_engine, True)
     key = event_key(("agent_003", True), ("agent_004", False))

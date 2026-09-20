@@ -115,6 +115,18 @@ def test_valid_inventory_transfer_changes_ownership_and_conserves_quantity():
     assert materials.material_history_reconstructs_inventories()
 
 
+def test_purchase_provenance_failure_cannot_commit_payment():
+    economy, materials = build_materials()
+    materials.lot_holdings["seller_inventory"].clear()
+    balances = {key: account.balance for key, account in economy.accounts.items()}
+    with pytest.raises(MaterialError) as error:
+        purchase(materials)
+    assert error.value.code == "provenance_shortfall"
+    assert {key: account.balance for key, account in economy.accounts.items()} == balances
+    assert not economy.ledger
+    assert not materials.exchanges
+
+
 @pytest.mark.parametrize(
     ("source", "destination", "good", "quantity", "code"),
     [

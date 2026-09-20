@@ -8,8 +8,8 @@ plan activities, pursue goals, remember events, and hold bounded multi-turn
 conversations. It uses a hybrid architecture: deterministic code owns simulation
 state and applies validated effects, while a local language model realizes
 grounded dialogue. The model never receives arbitrary authority to mutate state.
-V1 remains frozen; the V2 slices add deliberately small deterministic economic,
-material, crime/evidence, and justice foundations without changing that boundary.
+V1 remains frozen; V2 integrates deterministic economy, material production and
+provenance, crime/evidence, and justice without changing that boundary.
 
 ## Key capabilities
 
@@ -38,6 +38,39 @@ taxes, dynamic markets, romance, factions, politics, a GUI, and semantic vector
 memory remain outside the current scope.
 
 ## Architecture overview
+
+```text
+persistent agents
+      ↓
+needs / goals / planning
+      ↓
+activities
+      ↓
+work ───────────────→ wages
+      ↓
+production
+      ↓
+material lots / inventory
+      ↓
+purchase / ownership
+      ↓
+unauthorized theft
+      ↓
+observation / evidence
+      ↓
+justice
+      ↓
+restitution + reputation consequence
+      ↓
+future social context / behavior
+```
+
+Accounts, inventories, lots, incidents, evidence, cases, and consequences are
+authoritative deterministic state. Agent knowledge is a bounded view acquired
+through participation, observation, transmission, discovery, or public
+adjudication. Public information is an explicit transition, not global access to
+system records. LLM-generated dialogue receives only the current speaker's
+bounded context and cannot invoke authoritative mutation APIs.
 
 ```text
 agent state + town state + deterministic policy
@@ -166,16 +199,18 @@ The same authority supports one narrow production loop. The configured
 `recipe:market_prepared_meals` transforms two finite meal ingredients into four
 prepared meals in the market inventory. Only the configured merchant employment,
 `restock_market` activity, and market location may invoke it. Production rejects
-invalid requirements before mutation and stops when prepared stock reaches its
-target of 24. Wages run first, so a legitimate restocking shift may earn its wage
-even when the stock target prevents output.
+invalid requirements before mutation. The target of 24 is a pre-batch threshold,
+not a hard cap: stock below 24 permits a four-unit batch, so 23 becomes 27. At 24
+or above, later batches are rejected. Wages run first, so a legitimate restocking
+shift may earn its wage even when the threshold prevents output.
 
 Gameplay inventories remain fungible quantities, while an authoritative batch/lot
 ledger tracks provenance. Initial holdings receive stable configuration lots.
 Production consumes input-lot allocations and creates distinct output lots linked
 to the recipe, production record, and parent lots. Transfers use oldest-created-lot
 first with stable lot-ID tie-breaking. Purchases and theft inherit that path;
-restitution prefers lots moved by the original theft when still available.
+restitution returns only lots moved by the original theft while they remain with
+the responsible actor. Unrelated fungible stock is not labeled as stolen property.
 Consumption depletes holdings but retains their lineage in history.
 
 Per-good accounting enforces
@@ -303,6 +338,19 @@ It writes `outputs/production_evaluation.json` and checks successful and atomic
 failed production, depletion/restocking, produced-lot purchase, theft, restitution,
 consumption, accounting, provenance reconciliation, and resume replay safety.
 
+Run the whole-V2 freeze acceptance evaluation:
+
+```bash
+python scripts/evaluate_v2.py
+```
+
+It writes `outputs/v2_evaluation.json`, returns nonzero on any hard invariant
+failure, and exercises an integrated work/wage/production/purchase/theft/evidence/
+justice/restitution chain. It also checks an unwitnessed negative case, exact-lot
+and unavailable-lot restitution, two-boundary save/resume equivalence,
+representative replay attacks, LLM information boundaries, and 30 deterministic
+days of state-integrity checks.
+
 Run a controlled real-model evaluation:
 
 ```bash
@@ -380,8 +428,11 @@ downloads Qwen or requires CUDA.
 - A local 3B model's instruction following and naturalness constrain dialogue quality.
 - Same-action deduplication and rate suppression trade some behavioral fidelity for
   stable relationship, reputation, need, goal, intent, and town-arc progression.
-- Reputation propagation is implemented, but downstream decision influence still
-  benefits from controlled evaluation; lexical overlap alone does not establish it.
+- Reputation propagation is implemented, but downstream decision influence is
+  deliberately modest. A public justice consequence appears in an affected
+  observer's later dialogue context. Its bounded score does not cross the existing
+  action-weight threshold and does not affect activity choice or conversation
+  target selection; relationships and intents still own those paths.
 - Wages and goods prices are fixed configuration. Wages are limited to one
   qualifying payment per employment/day, and purchases to one configured activity
   per buyer/day.
@@ -397,10 +448,13 @@ downloads Qwen or requires CUDA.
   authoritative crime; evidence rules are simple; there are no lawyers, juries,
   appeals, generalized police, prisons, procedural-law simulation, or LLM
   adjudication. The designated investigator is configuration, not a profession.
+- V2 has no dynamic pricing, debt, taxation, generalized manufacturing or resource
+  extraction, police, prison, lawyers, juries, appeals, politics, factions,
+  romance, organizations, large-population model, or GUI.
 
 ## Future directions
 
-V1 remains frozen as the social core. The next useful V2 milestone is a controlled
-study of how public justice outcomes affect future agent planning and decisions
-without granting dialogue mutation authority. Romance, factions, politics,
-large-population work, and a GUI remain separate directions.
+V1 remains frozen as the social core. V2 is scoped as a small auditable causal
+loop, not realistic economics, law, or emergent civilization. A first V3 milestone
+should be an explicitly designed, bounded reputation-to-social-target experiment
+with A/B evaluation, rather than another institution or broad simulation feature.

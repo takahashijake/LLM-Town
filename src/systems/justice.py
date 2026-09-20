@@ -207,6 +207,73 @@ class JusticeSystem:
             raise ValueError("adjudication references invalid case")
         if any(item.adjudication_id not in adjudications for item in (*self.restitutions, *self.consequences)):
             raise ValueError("justice outcome references invalid adjudication")
+        admissions_by_case = {
+            case_id: [item for item in self.admitted_evidence if item.case_id == case_id]
+            for case_id in cases
+        }
+        for case in self.cases:
+            admissions = admissions_by_case[case.id]
+            if set(case.admitted_evidence_ids) != {item.id for item in admissions}:
+                raise ValueError("case admission references are inconsistent")
+            for admission in admissions:
+                source = evidence[admission.evidence_id]
+                if not (
+                    source.incident_id == case.incident_id
+                    and admission.evidence_type == source.evidence_type
+                    and admission.provenance_type == source.provenance_type
+                    and admission.claims_actor == source.claims_actor
+                ):
+                    raise ValueError("admitted evidence provenance is inconsistent")
+        for decision in self.adjudications:
+            case = cases[decision.case_id]
+            admitted = [
+                evidence[item.evidence_id] for item in admissions_by_case[case.id]
+            ]
+            theft = [item for item in admitted if item.evidence_type == "unauthorized_transfer"
+                     and item.provenance_type == "system_record"]
+            qualifying = [item for item in admitted if item.claims_actor and
+                          (item.evidence_type, item.provenance_type)
+                          in self.qualifying_actor_evidence]
+            candidates = {item.actor_id for item in qualifying}
+            expected_actor = next(iter(candidates)) if theft and len(candidates) == 1 else None
+            expected_result = "responsible" if expected_actor else "insufficient_evidence"
+            if not (
+                decision.incident_id == case.incident_id
+                and decision.rule_version == self.rule_version
+                and decision.evidence_ids == tuple(item.id for item in admitted)
+                and decision.theft_evidence_ids == tuple(item.id for item in theft)
+                and decision.actor_identifying_evidence_ids == tuple(item.id for item in qualifying)
+                and decision.responsible_actor_id == expected_actor
+                and decision.result == expected_result
+                and case.adjudication_id == decision.id
+                and case.status == "adjudicated"
+            ):
+                raise ValueError("adjudication does not follow its recorded evidence")
+        if len({item.adjudication_id for item in self.restitutions}) != len(self.restitutions):
+            raise ValueError("an adjudication has duplicate restitution")
+        if len({item.adjudication_id for item in self.consequences}) != len(self.consequences):
+            raise ValueError("an adjudication has duplicate consequences")
+        transfers = {item.id: item for item in self.materials.inventory_transfers}
+        incidents = {item.id: item for item in self.crime.incidents}
+        for restitution in self.restitutions:
+            incident = incidents[restitution.incident_id]
+            transfer = transfers.get(restitution.material_transfer_id)
+            if restitution.returned_quantity == 0:
+                if transfer is not None or restitution.status != "unresolved":
+                    raise ValueError("unresolved restitution has a material transfer")
+                continue
+            actor_inventory = self.materials.inventory_for_agent(
+                restitution.responsible_actor_id
+            )
+            if transfer is None or not (
+                transfer.authorization_type == "justice_restitution"
+                and transfer.authorization_id == restitution.adjudication_id
+                and transfer.source_inventory_id == actor_inventory.id
+                and transfer.destination_inventory_id == incident.source_inventory_id
+                and transfer.good_id == restitution.good_id
+                and transfer.quantity == restitution.returned_quantity
+            ):
+                raise ValueError("restitution does not reconcile with material transfer")
         successful_keys = {
             x.event_key
             for group in (self.cases, self.adjudications, self.restitutions, self.consequences)
@@ -214,6 +281,13 @@ class JusticeSystem:
         }
         if not successful_keys.issubset(self.applied_event_keys):
             raise ValueError("justice history is missing replay guards")
+
+    def history_is_valid(self) -> bool:
+        try:
+            self._validate_history()
+        except (KeyError, ValueError):
+            return False
+        return True
 
     def _reject(self, code, message, **attempt):
         self.rejected_attempts.append({"code": code, **attempt})
@@ -344,12 +418,15 @@ class JusticeSystem:
         returned, transfer_id = 0, None
         if self.restitution_enabled:
             source = self.materials.inventory_for_agent(actor_id)
-            available = source.quantity(incident.good_id)
+            stolen_lot_ids = self.materials.lot_ids_moved_by_transfer(
+                incident.unauthorized_transfer_id
+            )
+            # Never describe unrelated fungible stock as the stolen property.
+            available = self.materials.quantity_for_lots(
+                source.id, incident.good_id, stolen_lot_ids
+            )
             returned = min(available, incident.quantity)
             if returned:
-                stolen_lot_ids = self.materials.lot_ids_moved_by_transfer(
-                    incident.unauthorized_transfer_id
-                )
                 transfer = self.materials.transfer_good(
                     source.id, incident.source_inventory_id, incident.good_id, returned,
                     day=day, hour=hour, reason=f"Restitution for {adjudication.id}",
@@ -411,6 +488,7 @@ class JusticeSystem:
             "insufficient_evidence_count": sum(x.result == "insufficient_evidence" for x in self.adjudications),
             "restitution_count": len(self.restitutions), "consequence_count": len(self.consequences),
             "rule_version": self.rule_version,
+            "history_valid": self.history_is_valid(),
         }
 
     def to_dict(self) -> dict:

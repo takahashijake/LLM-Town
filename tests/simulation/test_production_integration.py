@@ -27,6 +27,8 @@ def test_activity_system_runs_authoritative_restock_and_guard(tmp_path):
     engine.activity_system.run_agent_activities(
         engine.agents, ["market"], 1, 8, None, {},
     )
+    # The target is a pre-batch threshold, not a hard cap: stock 23 permits
+    # one configured four-unit batch and therefore reaches 27.
     assert engine.materials.quantity(market, "prepared_meal") == 27
     assert len(engine.materials.production_records) == 1
     assert engine.materials.production_records[0].actor_id == "agent_004"
@@ -39,4 +41,3 @@ def test_activity_system_runs_authoritative_restock_and_guard(tmp_path):
     assert any(item["code"] == "target_stock_met"
                for item in engine.materials.rejected_operations)
     assert engine.materials.provenance_reconciles()
-
