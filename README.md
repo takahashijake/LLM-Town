@@ -440,6 +440,65 @@ makes selection impossible, and positive reputation never guarantees it.
 Dialogue remains probabilistic. Deterministic correctness is covered by the
 model-free social-decision evaluator; real-model quality is evaluated separately.
 
+### Persistent social commitments
+
+V3 adds a deliberately narrow authoritative ledger for `help`, `meet`, and
+`transfer` agreements. Dialogue is only evidence: a record is created when a
+bounded proposal identifies both parties and a concrete action, and the existing
+multi-turn response resolver finds a clear acceptance or decline. Vague proposals
+or replies remain unresolved and create no active promise.
+
+```text
+finalized dialogue/action -> conservative response resolution -> commitment ledger
+                                                              -> compact future context
+authoritative activity/material event ------------------------> terminal resolution
+                                                              -> bounded social effect
+```
+
+Legal transitions are `proposed -> accepted|declined|cancelled|expired` and
+`accepted -> fulfilled|cancelled|failed|expired`; terminal records cannot be
+reopened. Due commitments expire deterministically after the configured zero-day
+grace window. A material promise is fulfilled only by a successful atomic
+`MaterialSystem.transfer_good` record, never by dialogue claiming success.
+Terminal effects are idempotent and small (at most one legacy relationship point
+and a bounded direct reputation observation). The ledger, stable ID counter,
+semantic evidence keys, resolution provenance, and effect guard are included in
+normal save state, so resume neither duplicates nor resets commitments.
+
+Run the deterministic evaluator with:
+
+```bash
+python scripts/evaluate_commitments.py
+```
+
+Run the controlled real-model A/B evaluator (same scenarios, seed, and prompt
+grounding with commitment-aware execution pressure disabled/enabled) with:
+
+```bash
+python scripts/evaluate_commitments_real.py --model-name Qwen/Qwen2.5-3B-Instruct --seeds 42 73
+python scripts/evaluate_commitments_real.py --model-name Qwen/Qwen2.5-7B-Instruct --seeds 42 73
+```
+
+Accepted commitments also produce ephemeral action opportunities for the
+obligated agent during ordinary activity selection. Opportunity feasibility is
+checked against the current agents, locations, date, and material inventory.
+Due-date urgency contributes a capped planner probability (`0.10` base, `0.60`
+urgency weight, `0.70` maximum), leaving existing needs, intents, and events room
+to win selection. Selected help, meeting, and transfer activities retain their
+`source_commitment_id`; fulfillment occurs only after co-located activity
+execution or an atomic material transfer succeeds. Opportunities are derived on
+each cycle rather than persisted as another queue.
+
+Run the deterministic execution funnel with:
+
+```bash
+python scripts/evaluate_commitment_execution.py
+```
+
+The real-model script now compares prompt grounding alone against the same
+grounding plus commitment-aware execution pressure, and reports the full
+accepted → candidate → feasible → selected → executed → fulfilled funnel.
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.

@@ -5,6 +5,10 @@ from src.behavior.activity import Activity
 
 
 class ActivityPlanner:
+    COMMITMENT_SELECTION_BASE = 0.10
+    COMMITMENT_SELECTION_URGENCY_WEIGHT = 0.60
+    COMMITMENT_SELECTION_MAX = 0.70
+
     @staticmethod
     def _goal_texts(agent) -> list[str]:
         if hasattr(agent, "goal_descriptions"):
@@ -71,8 +75,26 @@ class ActivityPlanner:
         hour: int,
         daily_event=None,
         current_intent=None,
+        commitment_opportunities=None,
     ) -> Activity:
         agent.initialize_needs()
+
+        feasible_commitments = [
+            item for item in (commitment_opportunities or [])
+            if item.feasibility == "feasible"
+        ]
+        if feasible_commitments:
+            opportunity = max(
+                feasible_commitments,
+                key=lambda item: (item.urgency, item.commitment_id),
+            )
+            probability = min(
+                self.COMMITMENT_SELECTION_MAX,
+                self.COMMITMENT_SELECTION_BASE
+                + opportunity.urgency * self.COMMITMENT_SELECTION_URGENCY_WEIGHT,
+            )
+            if random.random() < probability:
+                return self.create_commitment_activity(agent, opportunity)
 
         if (
             current_intent
@@ -115,6 +137,27 @@ class ActivityPlanner:
             )
 
         return random.choice(candidates)
+
+    def create_commitment_activity(self, agent: Agent, opportunity) -> Activity:
+        names = {
+            "help": "Help fulfill an agreed task",
+            "meet": "Attend an agreed meeting",
+            "transfer": "Deliver a promised resource",
+        }
+        return Activity(
+            id=f"commitment_{opportunity.commitment_type}",
+            name=names[opportunity.commitment_type],
+            location_id=opportunity.target_location or agent.location_id,
+            reason=(
+                f"{agent.name} is acting on accepted commitment "
+                f"{opportunity.commitment_id}."
+            ),
+            tags=["commitment", opportunity.commitment_type],
+            source_commitment_id=opportunity.commitment_id,
+            commitment_priority=min(self.COMMITMENT_SELECTION_MAX,
+                                    self.COMMITMENT_SELECTION_BASE +
+                                    opportunity.urgency * self.COMMITMENT_SELECTION_URGENCY_WEIGHT),
+        )
 
     def should_attend_daily_event(self, agent: Agent, daily_event) -> bool:
         text = " ".join(

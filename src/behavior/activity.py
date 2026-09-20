@@ -8,3 +8,5 @@ class Activity:
     location_id: str
     reason: str
     tags: list[str]
+    source_commitment_id: str | None = None
+    commitment_priority: float = 0.0

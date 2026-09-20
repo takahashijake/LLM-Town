@@ -36,6 +36,7 @@ from src.systems.economy import EconomySystem
 from src.systems.materials import MaterialSystem
 from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
+from src.systems.commitments import CommitmentSystem
 
 class SimulationEngine:
     def __init__(
@@ -103,6 +104,7 @@ class SimulationEngine:
             actions=self.actions,
             update_records=self.reputation_updates,
         )
+        self.commitment_grounding_enabled = True
         self.relationship_updater = RelationshipUpdater(
             relationships=self.relationships,
             actions=self.actions,
@@ -267,9 +269,18 @@ class SimulationEngine:
                 self.justice_path, crime=self.crime, materials=self.materials,
                 agents=self.agents, reputation_system=self.reputation_system,
             )
+        self.commitment_system = CommitmentSystem.from_dict(
+            saved_state.get("commitments") if saved_state else None,
+            relationships=self.relationships,
+            reputation_system=self.reputation_system,
+            agents=self.agents,
+            materials=self.materials,
+            location_ids=[location.id for location in self.locations],
+        )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
+        self.activity_system.commitment_system = self.commitment_system
         self.conversation_context_preparer = ConversationContextPreparer(
             relationships=self.relationships,
             actions=self.actions,
@@ -404,6 +415,7 @@ class SimulationEngine:
         self.activity_system.economy_system = getattr(self, "economy", None)
         self.activity_system.material_system = getattr(self, "materials", None)
         self.activity_system.crime_system = getattr(self, "crime", None)
+        self.activity_system.commitment_system = getattr(self, "commitment_system", None)
         
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents
@@ -452,7 +464,7 @@ class SimulationEngine:
         self.sync_conversation_policy_refs()
         self.sync_conversation_context_preparer_refs()
 
-        return self.conversation_context_preparer.prepare_conversation_context(
+        result = self.conversation_context_preparer.prepare_conversation_context(
             location_id=location_id,
             speaker=speaker,
             listener=listener,
@@ -462,6 +474,11 @@ class SimulationEngine:
             relationship_events=self.relationship_events,
             session_transcript=session_transcript,
         )
+        result["context"]["active_commitments"] = (
+            self.commitment_system.relevant_context(speaker.id, listener.id, current_day)
+            if self.commitment_grounding_enabled else []
+        )
+        return result
         
     def finalize_conversation_tags(
         self,

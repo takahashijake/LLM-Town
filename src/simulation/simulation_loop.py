@@ -119,6 +119,8 @@ class SimulationLoop:
         engine.update_agent_intents(day)
 
     def run_tick(self, engine, day: int, hour: int) -> None:
+        if getattr(engine, "commitment_system", None):
+            engine.commitment_system.expire_due(day=day, tick=hour)
         engine.run_agent_activities(day, hour)
         engine.generate_conversations(day, hour)
         engine.maintain_agent_memories()

@@ -127,6 +127,11 @@ class SimulationState:
                 if getattr(engine, "justice", None) is not None
                 else None
             ),
+            "commitments": (
+                engine.commitment_system.to_dict()
+                if getattr(engine, "commitment_system", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

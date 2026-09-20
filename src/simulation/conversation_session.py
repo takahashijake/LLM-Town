@@ -67,6 +67,7 @@ class ResponseOutcomeResolver:
         "can't help", "cannot help", "won't help", "not able to help",
         "not interested", "leave me alone", "sorry, i can't", "sorry, i cannot",
         "no, i'm busy", "no, i am busy", "i don't want to", "i do not want to",
+        "i don't think i can", "i do not think i can",
     )
     OFFER_ACCEPTED = (
         "yes", "yeah", "sure", "please do", "i'd appreciate", "i would appreciate",
@@ -93,7 +94,7 @@ class ResponseOutcomeResolver:
         if previous_action == "cooperate" and (
             self._contains_any(text, self.COOPERATION_ACCEPTED)
             or re.search(
-                r"\b(i|we) (can|will|'ll) (help|join|work|handle|organize|sort|repair|do)\b",
+                r"\b(i|we) (can|will|'ll) (help|join|work|handle|organize|sort|repair|do|meet)\b",
                 text,
             )
             or re.search(
@@ -116,7 +117,7 @@ class ResponseOutcomeResolver:
     def _looks_like_answer(text: str) -> bool:
         has_answer_language = bool(
             re.search(r"\b(try|use|ask|go|look|start|check|know|suggest|recommend|because|the answer|you should|sure thing)\b", text)
-            or re.search(r"\bi(?:'ll| will| can)\b.{0,35}\b(help|handle|grab|take|carry|sort|check|do)\b", text)
+            or re.search(r"\bi(?:'ll| will| can)\b.{0,45}\b(help|handle|grab|take|carry|sort|check|do|bring|give|meet)\b", text)
             or re.search(r"\blet(?:'s| us) do it\b", text)
         )
         return has_answer_language and not text.rstrip().endswith("?")

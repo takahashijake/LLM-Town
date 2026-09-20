@@ -12,6 +12,7 @@ class ActivitySystem:
         economy_system=None,
         material_system=None,
         crime_system=None,
+        commitment_system=None,
     ):
         self.activity_planner = activity_planner
         self.logger = logger
@@ -19,6 +20,7 @@ class ActivitySystem:
         self.economy_system = economy_system
         self.material_system = material_system
         self.crime_system = crime_system
+        self.commitment_system = commitment_system
 
     def get_activity_need_effects(self, activity) -> dict[str, int]:
         effects_by_tag = {
@@ -60,6 +62,8 @@ class ActivitySystem:
             "location": activity.location_id,
             "reason": activity.reason,
             "tags": activity.tags,
+            "source_commitment_id": getattr(activity, "source_commitment_id", None),
+            "commitment_priority": getattr(activity, "commitment_priority", 0.0),
         }
 
         self.activity_records.append(activity_record)
@@ -78,14 +82,25 @@ class ActivitySystem:
         for agent in agents:
             agent.decay_needs()
 
-            activity = self.activity_planner.choose_activity(
-                agent=agent,
-                location_ids=location_ids,
-                current_day=day,
-                hour=hour,
-                daily_event=current_daily_event,
-                current_intent=agent_intents.get(agent.name),
+            opportunities = (
+                self.commitment_system.opportunities_for_agent(agent.id, day=day, tick=hour)
+                if self.commitment_system else []
             )
+            try:
+                activity = self.activity_planner.choose_activity(
+                    agent=agent, location_ids=location_ids, current_day=day, hour=hour,
+                    daily_event=current_daily_event,
+                    current_intent=agent_intents.get(agent.name),
+                    commitment_opportunities=opportunities,
+                )
+            except TypeError as error:
+                if "commitment_opportunities" not in str(error):
+                    raise
+                activity = self.activity_planner.choose_activity(
+                    agent=agent, location_ids=location_ids, current_day=day, hour=hour,
+                    daily_event=current_daily_event,
+                    current_intent=agent_intents.get(agent.name),
+                )
 
             agent.set_activity(activity)
             self.log_activity_event(day, hour, agent, activity)
@@ -111,7 +126,7 @@ class ActivitySystem:
                     hour=hour,
                 )
 
-            completed_activities.append((agent, activity))
+            completed_activities.append((agent, activity, self.activity_records[-1]))
 
             print(
                 f"{agent.name} chooses activity: {activity.name} "
@@ -121,7 +136,7 @@ class ActivitySystem:
         # Crime opportunity depends on everyone's authoritative location for
         # this tick, so evaluate it only after every activity has been chosen.
         if self.crime_system is not None:
-            for agent, activity in completed_activities:
+            for agent, activity, _record in completed_activities:
                 self.crime_system.process_activity(
                     agent,
                     activity,
@@ -129,3 +144,17 @@ class ActivitySystem:
                     day=day,
                     hour=hour,
                 )
+
+        if self.commitment_system is not None:
+            for agent, activity, record in completed_activities:
+                commitment_id = getattr(activity, "source_commitment_id", None)
+                if not commitment_id:
+                    continue
+                try:
+                    self.commitment_system.execute_activity(
+                        commitment_id=commitment_id, agent_id=agent.id,
+                        day=day, tick=hour, activity_record=record,
+                    )
+                except ValueError as error:
+                    record["execution_status"] = "failed"
+                    record["execution_failure_reason"] = getattr(error, "code", str(error))

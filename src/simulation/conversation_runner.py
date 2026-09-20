@@ -130,6 +130,22 @@ class ConversationRunner:
                 outcome = self.outcomes.resolve(previous.final_action, dialogue)
                 response_to = previous.turn_index
                 previous.response_outcome = outcome
+            elif session.turns and getattr(engine, "commitment_system", None):
+                previous = session.turns[-1]
+                goods = {
+                    good_id: definition.name
+                    for good_id, definition in getattr(engine.materials, "goods", {}).items()
+                }
+                proposal = engine.commitment_system.recognize_proposal(
+                    previous.dialogue, day=session.day, known_goods=goods,
+                )
+                if proposal:
+                    semantic_action = (
+                        "cooperate" if proposal["commitment_type"] == "meet" else "ask_for_help"
+                    )
+                    outcome = self.outcomes.resolve(semantic_action, dialogue)
+                    response_to = previous.turn_index
+                    previous.response_outcome = outcome
             turn = ConversationTurn(
                 turn_index=turn_index, speaker=speaker.name, listener=listener.name,
                 dialogue=dialogue, suggested_action=setup["suggested_action"],
@@ -167,6 +183,29 @@ class ConversationRunner:
 
     def _apply_and_record(self, engine, session, initiator, other) -> None:
         agents = {initiator.name: initiator, other.name: other}
+        commitment_system = getattr(engine, "commitment_system", None)
+        if commitment_system:
+            goods = {
+                good_id: definition.name
+                for good_id, definition in getattr(engine.materials, "goods", {}).items()
+            }
+            for response in session.turns:
+                if response.response_to_turn is None:
+                    continue
+                proposal = session.turns[response.response_to_turn]
+                commitment_system.process_response(
+                    proposer_id=agents[proposal.speaker].id,
+                    counterpart_id=agents[response.speaker].id,
+                    proposal_text=proposal.dialogue,
+                    response_text=response.dialogue,
+                    outcome=proposal.response_outcome or "unresolved",
+                    day=session.day,
+                    tick=session.hour,
+                    session_id=session.session_id,
+                    proposal_turn=proposal.turn_index,
+                    response_turn=response.turn_index,
+                    known_goods=goods,
+                )
         seen_actions = set()
         total_change = 0
         all_tags = []

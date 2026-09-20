@@ -181,6 +181,13 @@ class TransformersLLMClient:
             )
         grounding_sources = context.get("grounding_sources", {})
         grounding_lines = [f"{ref} — {value}" for ref, value in grounding_sources.items()]
+        commitment_lines = context.get("active_commitments", [])
+        commitment_block = (
+            "\nAuthoritative commitments involving this listener:\n"
+            f"{lines(commitment_lines)}\nWhen a commitment is supplied, make it the line's "
+            "primary focus and stay consistent with its status; never invent fulfillment."
+            if commitment_lines else ""
+        )
 
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
@@ -204,6 +211,7 @@ Relevant memories:
 {lines(context.get('relevant_memories', []))}
 Speaker's beliefs about the listener's general conduct:
 {lines(context.get('reputation_context', []))}
+{commitment_block}
 Supported third-party social claim available to share:
 - {context.get('reputation_rumor_text') or 'None supplied'}
 Latest journal reflection:
