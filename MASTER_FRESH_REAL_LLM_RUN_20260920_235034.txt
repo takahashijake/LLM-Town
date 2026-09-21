@@ -1,0 +1,1483 @@
+================ FRESH LLM-TOWN REAL MODEL RUN ================
+START: 2026-09-20T23:50:34+00:00
+
+================ GIT STATE ================
+BRANCH: main
+HEAD: f45cbfc56910539d0c31b1d7b81ab736994ecfef
+?? MASTER_FRESH_REAL_LLM_RUN_20260920_235034.txt
+?? MASTER_REAL_LLM_STATUS_20260920_234747.txt
+
+================ GPU ================
+Sun Sep 20 23:50:34 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.163.01             Driver Version: 550.163.01     CUDA Version: 12.9     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX 6000 Ada Gene...    On  |   00000000:61:00.0 Off |                 Off* |
+| 30%   32C    P8             28W /  300W |    1994MiB /  49140MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
++-----------------------------------------------------------------------------------------+
+
+================ FRESH QWEN2.5-3B RUN ================
+Loading weights:   0%|                                                                                          | 0/434 [00:00<?, ?it/s]Loading weights:  35%|███████████████████████████▏                                                  | 151/434 [00:00<00:00, 1505.00it/s]Loading weights:  70%|██████████████████████████████████████████████████████▎                       | 302/434 [00:00<00:00, 1286.73it/s]Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████| 434/434 [00:00<00:00, 1397.41it/s]
+Carlos chooses activity: Attend an agreed meeting at cafe (Carlos is acting on accepted commitment commitment-00000002.)
+Carlos chooses activity: Talk with people in the town square at town_square (Carlos wants to be around people.)
+Carlos chooses activity: Eat an owned prepared meal at cafe (Carlos wants to use a meal they already own.)
+Wrote controlled commitment A/B evaluation to /tmp/tmp.Ucv3K45PH9.json
+3B_EXIT_CODE=0
+
+================ FRESH QWEN2.5-3B RESULTS ================
+{
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "seeds": [
+    42,
+    73
+  ],
+  "predefined_metrics": [
+    "conversations",
+    "proposal_count",
+    "acceptance_rate",
+    "proposal_resolution_rate",
+    "follow_through_rate",
+    "contradiction_rate",
+    "forgotten_commitment_rate",
+    "false_fulfillment_rate",
+    "valid_action_parsing",
+    "intent_action_compatibility",
+    "repetition_rate",
+    "runtime_failures",
+    "malformed_output_rate",
+    "actionable_commitment_opportunity_rate",
+    "feasible_opportunity_rate",
+    "commitment_action_selection_rate",
+    "authoritative_execution_rate",
+    "accepted_commitment_fulfillment_rate",
+    "deadline_miss_rate",
+    "explicit_cancellation_rate",
+    "action_commitment_provenance_validity"
+  ],
+  "runs": [
+    {
+      "model": "Qwen/Qwen2.5-3B-Instruct",
+      "seed": 42,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": false,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.5,
+        "proposal_resolution_rate": 0.5,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 1.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 1.0,
+        "commitment_action_selection_rate": 0.0,
+        "authoritative_execution_rate": 0.0,
+        "accepted_commitment_fulfillment_rate": 0.0,
+        "deadline_miss_rate": 1.0,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 2,
+        "candidates": 2,
+        "feasible": 2,
+        "selected": 0,
+        "executed": 0,
+        "fulfilled": 0
+      },
+      "failure_classification": {
+        "candidate_never_selected": 2
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I could use some practice working on fences. How's your fence looking?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, I could use some practice working on fences. How's your fence looking?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey there, Maya. Haven't seen you around here lately. How have you been?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey there, Maya. Haven't seen you around here lately. How have you been?"
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, how about we discuss your latest sales strategies?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, how about we discuss your latest sales strategies?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-42-False",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, how about we discuss your latest sales strategies?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-42-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hi there! Haven't seen you around here much lately.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hi there! Haven't seen you around here much lately."
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. Heard your orders are in high demand around here.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, Maya. Heard your orders are in high demand around here.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-42-False",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. Heard your orders are in high demand around here.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-42-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, have you noticed how busy our competitors are lately?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Maya, have you noticed how busy our competitors are lately?"
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, what do you need help with?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, what do you need help with?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey there, Maya. Haven't seen you around here lately.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey there, Maya. Haven't seen you around here lately."
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I could use some practice working on fences. How's your fence looking?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "meet": "{\"dialogue\": \"Sure, how about we discuss your latest sales strategies?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. Heard your orders are in high demand around here.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "failure": "{\"dialogue\": \"Sure thing, what do you need help with?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-3B-Instruct",
+      "seed": 42,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": true,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.5,
+        "proposal_resolution_rate": 0.5,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 1.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 1.0,
+        "commitment_action_selection_rate": 0.5,
+        "authoritative_execution_rate": 1.0,
+        "accepted_commitment_fulfillment_rate": 0.5,
+        "deadline_miss_rate": 0.5,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 2,
+        "candidates": 2,
+        "feasible": 2,
+        "selected": 1,
+        "executed": 1,
+        "fulfilled": 1
+      },
+      "failure_classification": {
+        "candidate_never_selected": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I could use some practice working on fences. How's your fence looking?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, I could use some practice working on fences. How's your fence looking?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey there, Maya. Haven't seen you around here lately. How have you been?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey there, Maya. Haven't seen you around here lately. How have you been?"
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, how about we discuss your latest sales strategies?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, how about we discuss your latest sales strategies?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "fulfilled",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-42-True",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 2,
+            "resolution_tick": 8,
+            "resolution_reason": "authoritative_meet_activity",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, how about we discuss your latest sales strategies?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-42-True:0:1"
+              },
+              {
+                "activity_event_key": "commitment-action:commitment-00000002",
+                "source_commitment_id": "commitment-00000002"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was fulfilled on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hi Maya, how's your day been so far?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hi Maya, how's your day been so far?"
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. Heard your orders are in high demand around here.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, Maya. Heard your orders are in high demand around here.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-42-True",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. Heard your orders are in high demand around here.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-42-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hi there! Mind if I join you for a moment?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hi there! Mind if I join you for a moment?"
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, what do you need help with?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, what do you need help with?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hi there! Mind if we grab a coffee and catch up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hi there! Mind if we grab a coffee and catch up?"
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I could use some practice working on fences. How's your fence looking?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "meet": "{\"dialogue\": \"Sure, how about we discuss your latest sales strategies?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. Heard your orders are in high demand around here.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "failure": "{\"dialogue\": \"Sure thing, what do you need help with?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-3B-Instruct",
+      "seed": 73,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": false,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.5,
+        "proposal_resolution_rate": 0.5,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 1.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.5,
+        "commitment_action_selection_rate": 0.0,
+        "authoritative_execution_rate": 0.0,
+        "accepted_commitment_fulfillment_rate": 0.0,
+        "deadline_miss_rate": 1.0,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 2,
+        "candidates": 2,
+        "feasible": 1,
+        "selected": 0,
+        "executed": 0,
+        "fulfilled": 0
+      },
+      "failure_classification": {
+        "candidate_never_selected": 1,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I could use some practice working with wood. How's your fence holding up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, I could use some practice working with wood. How's your fence holding up?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey, what brings you here today?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey, what brings you here today?"
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, how about we grab a coffee and catch up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, how about we grab a coffee and catch up?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-73-False",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, how about we grab a coffee and catch up?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-73-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, have you noticed how busy the market has been lately?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Maya, have you noticed how busy the market has been lately?"
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. How about we swap some stories over coffee?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, Maya. How about we swap some stories over coffee?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Mind if I join you? The coffee here is quite good.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Mind if I join you? The coffee here is quite good."
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, I'll bring you the book.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos agrees to help Maya with her request\"}",
+          "response": "Sure thing, I'll bring you the book.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-73-False",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, I'll bring you the book.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-73-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hey there, Maya. Haven't seen you around here much lately.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey there, Maya. Haven't seen you around here much lately."
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I could use some practice working with wood. How's your fence holding up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "meet": "{\"dialogue\": \"Sure, how about we grab a coffee and catch up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. How about we swap some stories over coffee?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "failure": "{\"dialogue\": \"Sure thing, I'll bring you the book.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos agrees to help Maya with her request\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-3B-Instruct",
+      "seed": 73,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": true,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.5,
+        "proposal_resolution_rate": 0.5,
+        "follow_through_rate": 0.5,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 0.5,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 1.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.5,
+        "commitment_action_selection_rate": 0.0,
+        "authoritative_execution_rate": 0.0,
+        "accepted_commitment_fulfillment_rate": 0.0,
+        "deadline_miss_rate": 1.0,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 2,
+        "candidates": 2,
+        "feasible": 1,
+        "selected": 0,
+        "executed": 0,
+        "fulfilled": 0
+      },
+      "failure_classification": {
+        "candidate_never_selected": 1,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I could use some practice working with wood. How's your fence holding up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, I could use some practice working with wood. How's your fence holding up?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey, what brings you here today?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey, what brings you here today?"
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, how about we grab a coffee and catch up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure, how about we grab a coffee and catch up?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-73-True",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, how about we grab a coffee and catch up?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-73-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hey Maya, what brings you here today?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey Maya, what brings you here today?"
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. How about we swap some stories over coffee?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "response": "Sure thing, Maya. How about we swap some stories over coffee?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Hey Maya, did you hear about the new coffee beans they brought in? They're supposed to be really special.\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey Maya, did you hear about the new coffee beans they brought in? They're supposed to be really special."
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, I'll bring you the book.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos agrees to help Maya with her request\"}",
+          "response": "Sure thing, I'll bring you the book.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-73-True",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, I'll bring you the book.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-73-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Hey Maya, what brings you to the cafe today?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+          "future": "Hey Maya, what brings you to the cafe today?"
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I could use some practice working with wood. How's your fence holding up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "meet": "{\"dialogue\": \"Sure, how about we grab a coffee and catch up?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. How about we swap some stories over coffee?\", \"action\": \"chat\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"brief grounding reason\"}",
+        "failure": "{\"dialogue\": \"Sure thing, I'll bring you the book.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos agrees to help Maya with her request\"}"
+      }
+    }
+  ]
+}
+================ FRESH QWEN2.5-7B RUN ================
+Loading weights:   0%|                                                                                          | 0/339 [00:00<?, ?it/s]Loading weights:  35%|███████████████████████████▌                                                  | 120/339 [00:00<00:00, 1194.18it/s]Loading weights:  99%|█████████████████████████████████████████████████████████████████████████████▌| 337/339 [00:00<00:00, 1766.90it/s]Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████| 339/339 [00:00<00:00, 1687.04it/s]
+Carlos chooses activity: Attend an agreed meeting at cafe (Carlos is acting on accepted commitment commitment-00000002.)
+Carlos chooses activity: Talk with people in the town square at town_square (Carlos wants to be around people.)
+Carlos chooses activity: Eat an owned prepared meal at cafe (Carlos wants to use a meal they already own.)
+Carlos chooses activity: Deliver a promised resource at cafe (Carlos is acting on accepted commitment commitment-00000003.)
+Wrote controlled commitment A/B evaluation to /tmp/tmp.3Ph1ULPnyi.json
+7B_EXIT_CODE=0
+
+================ FRESH QWEN2.5-7B RESULTS ================
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "seeds": [
+    42,
+    73
+  ],
+  "predefined_metrics": [
+    "conversations",
+    "proposal_count",
+    "acceptance_rate",
+    "proposal_resolution_rate",
+    "follow_through_rate",
+    "contradiction_rate",
+    "forgotten_commitment_rate",
+    "false_fulfillment_rate",
+    "valid_action_parsing",
+    "intent_action_compatibility",
+    "repetition_rate",
+    "runtime_failures",
+    "malformed_output_rate",
+    "actionable_commitment_opportunity_rate",
+    "feasible_opportunity_rate",
+    "commitment_action_selection_rate",
+    "authoritative_execution_rate",
+    "accepted_commitment_fulfillment_rate",
+    "deadline_miss_rate",
+    "explicit_cancellation_rate",
+    "action_commitment_provenance_validity"
+  ],
+  "runs": [
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "seed": 42,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": false,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.75,
+        "proposal_resolution_rate": 0.75,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 0.875,
+        "intent_action_compatibility": 0.25,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.125,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.6666666666666666,
+        "commitment_action_selection_rate": 0.0,
+        "authoritative_execution_rate": 0.0,
+        "accepted_commitment_fulfillment_rate": 0.0,
+        "deadline_miss_rate": 1.0,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 3,
+        "candidates": 3,
+        "feasible": 2,
+        "selected": 0,
+        "executed": 0,
+        "fulfilled": 0
+      },
+      "failure_classification": {
+        "candidate_never_selected": 2,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and offering help aligns with his primary unmet need for social connection.\"}",
+          "response": "Sure, I can help with that. Maybe we can start early in the morning?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Maya, have you seen the new trade routes opening up? There's potential for us to expand our business.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos aims to grow his influence and sees an opportunity to collaborate with Maya to expand their business.\"}",
+          "future": "Maya, have you seen the new trade routes opening up? There's potential for us to expand our business."
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I'd like to discuss some new goods I might bring in. Want to check them out?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos sees an opportunity to grow his influence by discussing new goods with Maya, who he perceives as a potential ally or customer.\"}",
+          "response": "Sure, I'd like to discuss some new goods I might bring in. Want to check them out?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-42-False",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, I'd like to discuss some new goods I might bring in. Want to check them out?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-42-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about our last meeting. Maybe we could work together to grow our influence in the town.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"Commitment to meet meet was expired on day 2.\"], \"reason\": \"Carlos wants to grow his influence and sees an opportunity to collaborate with Maya after their previous interaction.\"}",
+          "future": "Maya, I've been thinking about our last meeting. Maybe we could work together to grow our influence in the town."
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is helping Maya with her request, aligning with his goal to grow his influence.\"}",
+          "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-42-False",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-42-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about how we could expand our trade routes together. What do you think?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is aiming to grow his influence and sees an opportunity to work with Maya on expanding their trade.\"}",
+          "future": "Maya, I've been thinking about how we could expand our trade routes together. What do you think?"
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers help to Maya regarding her request for a reference book, aligning with his goal to grow his influence in the community.\"}",
+          "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-42-False",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-42-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about how we could expand our network in the town. What do you think about joining forces on that?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos wants to grow his influence and sees an opportunity to work with Maya.\"}",
+          "future": "Maya, I've been thinking about how we could expand our network in the town. What do you think about joining forces on that?"
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and offering help aligns with his primary unmet need for social connection.\"}",
+        "meet": "{\"dialogue\": \"Sure, I'd like to discuss some new goods I might bring in. Want to check them out?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos sees an opportunity to grow his influence by discussing new goods with Maya, who he perceives as a potential ally or customer.\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is helping Maya with her request, aligning with his goal to grow his influence.\"}",
+        "failure": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers help to Maya regarding her request for a reference book, aligning with his goal to grow his influence in the community.\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "seed": 42,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": true,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.75,
+        "proposal_resolution_rate": 0.75,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 0.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.6666666666666666,
+        "commitment_action_selection_rate": 0.5,
+        "authoritative_execution_rate": 1.0,
+        "accepted_commitment_fulfillment_rate": 0.3333333333333333,
+        "deadline_miss_rate": 0.6666666666666666,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 3,
+        "candidates": 3,
+        "feasible": 2,
+        "selected": 1,
+        "executed": 1,
+        "fulfilled": 1
+      },
+      "failure_classification": {
+        "candidate_never_selected": 1,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and offering help aligns with his primary unmet need for social connection.\"}",
+          "response": "Sure, I can help with that. Maybe we can start early in the morning?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Maya, have you seen the new trade routes opening up? There's potential for us to expand our business.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos aims to grow his influence and sees an opportunity to collaborate with Maya to expand their business.\"}",
+          "future": "Maya, have you seen the new trade routes opening up? There's potential for us to expand our business."
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I'd like to discuss some new goods I might bring in. Want to check them out?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos sees an opportunity to grow his influence by discussing new goods with Maya, who he perceives as a potential ally or customer.\"}",
+          "response": "Sure, I'd like to discuss some new goods I might bring in. Want to check them out?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "fulfilled",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-42-True",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 2,
+            "resolution_tick": 8,
+            "resolution_reason": "authoritative_meet_activity",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, I'd like to discuss some new goods I might bring in. Want to check them out?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-42-True:0:1"
+              },
+              {
+                "activity_event_key": "commitment-action:commitment-00000002",
+                "source_commitment_id": "commitment-00000002"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was fulfilled on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've got some new goods coming in that might interest you.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos is trying to grow his influence and offering help aligns with his goal.\"}",
+          "future": "Maya, I've got some new goods coming in that might interest you."
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is helping Maya with her request, aligning with his goal to grow his influence.\"}",
+          "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-42-True",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-42-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've got some rare spices arriving soon. Want to see them first hand?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos is trying to grow his influence and offering Maya a chance to see valuable goods could strengthen their relationship.\"}",
+          "future": "Maya, I've got some rare spices arriving soon. Want to see them first hand?"
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers help to Maya regarding her request for a reference book, aligning with his goal to grow his influence in the community.\"}",
+          "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-42-True",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-42-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, have you seen any interesting artifacts lately? I could use some new stock for my shop.\", \"action\": \"ask_for_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos is looking to expand his shop and believes Maya might have some leads on interesting artifacts.\"}",
+          "future": "Maya, have you seen any interesting artifacts lately? I could use some new stock for my shop."
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and offering help aligns with his primary unmet need for social connection.\"}",
+        "meet": "{\"dialogue\": \"Sure, I'd like to discuss some new goods I might bring in. Want to check them out?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"personal direction: grow his influence\"], \"reason\": \"Carlos sees an opportunity to grow his influence by discussing new goods with Maya, who he perceives as a potential ally or customer.\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is helping Maya with her request, aligning with his goal to grow his influence.\"}",
+        "failure": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers help to Maya regarding her request for a reference book, aligning with his goal to grow his influence in the community.\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "seed": 73,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": false,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.75,
+        "proposal_resolution_rate": 0.75,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 0.875,
+        "intent_action_compatibility": 0.25,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.125,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.6666666666666666,
+        "commitment_action_selection_rate": 0.0,
+        "authoritative_execution_rate": 0.0,
+        "accepted_commitment_fulfillment_rate": 0.0,
+        "deadline_miss_rate": 1.0,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 3,
+        "candidates": 3,
+        "feasible": 2,
+        "selected": 0,
+        "executed": 0,
+        "fulfilled": 0
+      },
+      "failure_classification": {
+        "candidate_never_selected": 2,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with the fence repair, suggesting a specific time to work together.\"}",
+          "response": "Sure, I can help with that. Maybe we can start early in the morning?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Maya, I noticed your stall at the market last week. You've got some great wares there.\", \"action\": \"compliment\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and a compliment is a good way to start a positive interaction with Maya.\"}",
+          "future": "Maya, I noticed your stall at the market last week. You've got some great wares there."
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I'd like that. Maybe we could discuss your business ideas over coffee?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos sees an opportunity to grow his influence through cooperation with Maya.\"}",
+          "response": "Sure, I'd like that. Maybe we could discuss your business ideas over coffee?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-73-False",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, I'd like that. Maybe we could discuss your business ideas over coffee?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-73-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about how we could expand our trade network. Want to discuss it over another round of coffee?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos believes expanding their trade network could benefit both of them and he wants to involve Maya in the discussion.\"}",
+          "future": "Maya, I've been thinking about how we could expand our trade network. Want to discuss it over another round of coffee?"
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is an ambitious merchant and wants to build a good rapport with Maya by offering to fulfill her request promptly.\"}",
+          "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-73-False",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-73-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about how we could expand our trade routes together.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos aims to grow his influence and sees an opportunity to collaborate with Maya to achieve this.\"}",
+          "future": "Maya, I've been thinking about how we could expand our trade routes together."
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with her request, aligning with his goal to grow his influence.\"}",
+          "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-73-False",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-73-False:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I've been thinking about how we can work together to grow our influence in the town. What do you think about teaming up?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos wants to grow his influence and sees an opportunity to collaborate with Maya, despite their tense relationship.\"}",
+          "future": "Maya, I've been thinking about how we can work together to grow our influence in the town. What do you think about teaming up?"
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with the fence repair, suggesting a specific time to work together.\"}",
+        "meet": "{\"dialogue\": \"Sure, I'd like that. Maybe we could discuss your business ideas over coffee?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos sees an opportunity to grow his influence through cooperation with Maya.\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is an ambitious merchant and wants to build a good rapport with Maya by offering to fulfill her request promptly.\"}",
+        "failure": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with her request, aligning with his goal to grow his influence.\"}"
+      }
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "seed": 73,
+      "grounding_enabled": true,
+      "execution_pressure_enabled": true,
+      "metrics": {
+        "conversations": 8,
+        "proposal_count": 4,
+        "acceptance_rate": 0.75,
+        "proposal_resolution_rate": 0.75,
+        "follow_through_rate": 0.0,
+        "contradiction_rate": 0.0,
+        "forgotten_commitment_rate": 1.0,
+        "false_fulfillment_rate": 0.0,
+        "valid_action_parsing": 1.0,
+        "intent_action_compatibility": 0.0,
+        "repetition_rate": 0.0,
+        "runtime_failures": 0,
+        "malformed_output_rate": 0.0,
+        "actionable_commitment_opportunity_rate": 1.0,
+        "feasible_opportunity_rate": 0.6666666666666666,
+        "commitment_action_selection_rate": 0.5,
+        "authoritative_execution_rate": 1.0,
+        "accepted_commitment_fulfillment_rate": 0.3333333333333333,
+        "deadline_miss_rate": 0.6666666666666666,
+        "explicit_cancellation_rate": 0.0,
+        "action_commitment_provenance_validity": 1.0
+      },
+      "funnel": {
+        "accepted": 3,
+        "candidates": 3,
+        "feasible": 2,
+        "selected": 1,
+        "executed": 1,
+        "fulfilled": 1
+      },
+      "failure_classification": {
+        "candidate_never_selected": 1,
+        "resource_unavailable": 1
+      },
+      "events": [
+        {
+          "scenario": "help",
+          "proposal": "Could you help me repair the fence tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with the fence repair, suggesting a specific time to work together.\"}",
+          "response": "Sure, I can help with that. Maybe we can start early in the morning?",
+          "outcome": "unresolved",
+          "commitment": null,
+          "future_context_commitments": [],
+          "raw_future": "{\"dialogue\": \"Maya, I noticed your stall at the market last week. You've got some great wares there.\", \"action\": \"compliment\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is trying to grow his influence and a compliment is a good way to start a positive interaction with Maya.\"}",
+          "future": "Maya, I noticed your stall at the market last week. You've got some great wares there."
+        },
+        {
+          "scenario": "meet",
+          "proposal": "Could we meet at the cafe tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure, I'd like that. Maybe we could discuss your business ideas over coffee?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos sees an opportunity to grow his influence through cooperation with Maya.\"}",
+          "response": "Sure, I'd like that. Maybe we could discuss your business ideas over coffee?",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000002",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "meet",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "meet-73-True",
+            "metadata": {
+              "location": "cafe"
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could we meet at the cafe tomorrow?",
+                "response": "Sure, I'd like that. Maybe we could discuss your business ideas over coffee?",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "meet-73-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to meet meet was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Enjoy your meal, Maya. Maybe we could team up on some projects soon.\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos aims to grow his influence and sees an opportunity to collaborate with Maya.\"}",
+          "future": "Enjoy your meal, Maya. Maybe we could team up on some projects soon."
+        },
+        {
+          "scenario": "transfer",
+          "proposal": "Could you bring me one trade material tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is an ambitious merchant and wants to build a good rapport with Maya by offering to fulfill her request promptly.\"}",
+          "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000003",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "fulfilled",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "transfer-73-True",
+            "metadata": {
+              "good_id": "trade_materials",
+              "quantity": 1
+            },
+            "resolution_day": 2,
+            "resolution_tick": 8,
+            "resolution_reason": "authoritative_material_transfer",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one trade material tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to have it ready for you tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "transfer-73-True:0:1"
+              },
+              {
+                "material_transfer_id": "material-transfer-00000001"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer trade materials was fulfilled on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"Maya, I\u2019ve got just what you need for your latest project. How\u2019s this quality?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos is fulfilling his commitment to deliver a promised resource to Maya, and he is presenting the item to her for consideration.\"}",
+          "future": "Maya, I\u2019ve got just what you need for your latest project. How\u2019s this quality?"
+        },
+        {
+          "scenario": "failure",
+          "proposal": "Could you bring me one reference book tomorrow?",
+          "raw_response": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with her request, aligning with his goal to grow his influence.\"}",
+          "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+          "outcome": "accepted",
+          "commitment": {
+            "id": "commitment-00000004",
+            "proposer_id": "agent_001",
+            "counterpart_id": "agent_004",
+            "commitment_type": "transfer",
+            "status": "expired",
+            "created_day": 1,
+            "created_tick": 8,
+            "due_day": 2,
+            "due_tick": null,
+            "source_session_id": "failure-73-True",
+            "metadata": {
+              "good_id": "reference_book",
+              "quantity": 1
+            },
+            "resolution_day": 3,
+            "resolution_tick": 8,
+            "resolution_reason": "due_window_passed",
+            "evidence": [
+              {
+                "proposal": "Could you bring me one reference book tomorrow?",
+                "response": "Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.",
+                "outcome": "accepted",
+                "proposal_turn": 0,
+                "response_turn": 1,
+                "evidence_key": "failure-73-True:0:1"
+              }
+            ],
+            "consequence_applied": true
+          },
+          "future_context_commitments": [
+            "Commitment to transfer reference book was expired on day 2."
+          ],
+          "raw_future": "{\"dialogue\": \"I've got just what you need for your research. Want to take a look?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"shared_history:Commitment to transfer reference book was expired on day 2.\"], \"reason\": \"Carlos is offering help related to the previous unfulfilled commitment.\"}",
+          "future": "I've got just what you need for your research. Want to take a look?"
+        }
+      ],
+      "response_cache": {
+        "help": "{\"dialogue\": \"Sure, I can help with that. Maybe we can start early in the morning?\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with the fence repair, suggesting a specific time to work together.\"}",
+        "meet": "{\"dialogue\": \"Sure, I'd like that. Maybe we could discuss your business ideas over coffee?\", \"action\": \"cooperate\", \"tags\": [\"conversation\"], \"grounding_refs\": [\"memory:1\"], \"reason\": \"Carlos sees an opportunity to grow his influence through cooperation with Maya.\"}",
+        "transfer": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to have it ready for you tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos is an ambitious merchant and wants to build a good rapport with Maya by offering to fulfill her request promptly.\"}",
+        "failure": "{\"dialogue\": \"Sure thing, Maya. I'll make sure to bring you that reference book first thing tomorrow.\", \"action\": \"offer_help\", \"tags\": [\"conversation\"], \"grounding_refs\": [], \"reason\": \"Carlos offers to help Maya with her request, aligning with his goal to grow his influence.\"}"
+      }
+    }
+  ]
+}
+================ FINAL STATUS ================
+3B_EXIT_CODE=0
+7B_EXIT_CODE=0
+END: 2026-09-20T23:52:25+00:00
+================ END FRESH REAL MODEL RUN ================

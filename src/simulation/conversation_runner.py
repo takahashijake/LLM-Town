@@ -125,9 +125,16 @@ class ConversationRunner:
             )
             response_to = None
             outcome = None
+            resolution_reason = ""
             if session.turns and session.turns[-1].final_action in self.outcomes.RESPONSIVE_ACTIONS:
                 previous = session.turns[-1]
-                outcome = self.outcomes.resolve(previous.final_action, dialogue)
+                goods = {good_id: definition.name for good_id, definition in getattr(engine.materials, "goods", {}).items()}
+                proposal = engine.commitment_system.recognize_proposal(previous.dialogue, day=session.day, known_goods=goods) if getattr(engine, "commitment_system", None) else None
+                outcome, resolution_reason = self.outcomes.resolve_with_reason(
+                    previous.final_action, dialogue, proposal=proposal,
+                    parsed_action=processed["parsed_action"],
+                    social_response=parsed.get("social_response"),
+                )
                 response_to = previous.turn_index
                 previous.response_outcome = outcome
             elif session.turns and getattr(engine, "commitment_system", None):
@@ -143,7 +150,11 @@ class ConversationRunner:
                     semantic_action = (
                         "cooperate" if proposal["commitment_type"] == "meet" else "ask_for_help"
                     )
-                    outcome = self.outcomes.resolve(semantic_action, dialogue)
+                    outcome, resolution_reason = self.outcomes.resolve_with_reason(
+                        semantic_action, dialogue, proposal=proposal,
+                        parsed_action=processed["parsed_action"],
+                        social_response=parsed.get("social_response"),
+                    )
                     response_to = previous.turn_index
                     previous.response_outcome = outcome
             turn = ConversationTurn(
@@ -164,6 +175,9 @@ class ConversationRunner:
                 invalid_grounding_refs=grounding.invalid_refs,
                 generation_error=generation_error, response_to_turn=response_to,
                 response_outcome=None,
+                social_response=parsed.get("social_response", {}),
+                commitment_relation=parsed.get("commitment_relation", {}),
+                response_resolution_reason=resolution_reason,
                 context_evidence=context.get("context_evidence", {}),
                 context_snapshot=self._context_snapshot(context),
                 diagnostics=self._diagnostics(setup, parsed, tags, raw_output),

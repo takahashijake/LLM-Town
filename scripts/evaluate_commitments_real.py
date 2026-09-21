@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
 from src.llm.client import TransformersLLMClient
 from src.llm.parser import parse_llm_conversation_output
 from src.simulation.conversation_session import ResponseOutcomeResolver
+from src.simulation.social_semantics import classify_commitment_relation, semantic_action_compatibility
 from src.simulation.engine import SimulationEngine
 
 
@@ -32,6 +33,11 @@ def generate(client, context):
     raw = client.generate_conversation(context)
     parsed = parse_llm_conversation_output(raw, allowed_actions=context["allowed_actions"])
     return raw, parsed
+
+
+def observed_rate(numerator: int, denominator: int) -> float | None:
+    """Do not turn an unobserved semantic class into a misleading zero."""
+    return numerator / denominator if denominator else None
 
 
 def run_arm(
@@ -61,6 +67,10 @@ def run_arm(
             "intent_action_compatible", "repetitions", "runtime_failures", "malformed_output",
             "candidates", "feasible", "selected", "executed", "fulfilled", "deadline_miss",
             "cancelled", "provenance_valid",
+            "clear_acceptance", "clear_acceptance_recognized", "false_commitment_creation",
+            "decline_semantic", "decline_correct", "unresolved_semantic", "unresolved_correct",
+            "counteroffer_semantic", "counteroffer_correct", "expired_awareness",
+            "fulfilled_awareness", "repair_attempts", "state_consistent",
         )}
         failure_reasons = {}
         prior_lines = set()
@@ -96,7 +106,34 @@ def run_arm(
                 events.append({"scenario": name, "stage": "response", "error": repr(error)})
                 continue
             response = parsed["dialogue"]
-            outcome = resolver.resolve(semantic_action, response)
+            proposal_object = engine.commitment_system.recognize_proposal(
+                proposal, day=1,
+                known_goods={good_id: good.name for good_id, good in engine.materials.goods.items()},
+            )
+            outcome, evaluation_reason = resolver.resolve_with_reason(
+                semantic_action, response, proposal=proposal_object,
+                parsed_action=parsed.get("action", ""),
+                social_response=parsed.get("social_response"),
+            )
+            social_type = parsed.get("social_response", {}).get("type", "none")
+            clear_acceptance = evaluation_reason in {
+                "explicit_compatible_commitment_language",
+                "structured_agreement_with_compatible_action",
+            }
+            counters["clear_acceptance"] += int(clear_acceptance)
+            counters["clear_acceptance_recognized"] += int(clear_acceptance and outcome == "accepted")
+            counters["decline_semantic"] += int(social_type == "decline_request")
+            counters["decline_correct"] += int(social_type == "decline_request" and outcome == "declined")
+            counters["unresolved_semantic"] += int(social_type in {"uncertain", "unrelated", "acknowledge", "none"})
+            counters["unresolved_correct"] += int(social_type in {"uncertain", "unrelated", "acknowledge", "none"} and outcome == "unresolved")
+            counters["counteroffer_semantic"] += int(social_type == "counteroffer")
+            counters["counteroffer_correct"] += int(social_type == "counteroffer" and outcome == "unresolved")
+            counters["false_commitment_creation"] += int(
+                outcome == "accepted" and evaluation_reason not in {
+                    "explicit_compatible_commitment_language",
+                    "structured_agreement_with_compatible_action",
+                }
+            )
             counters[outcome if outcome in {"accepted", "declined"} else "unresolved"] += 1
             item = engine.commitment_system.process_response(
                 proposer_id=alice.id, counterpart_id=bob.id, proposal_text=proposal,
@@ -167,34 +204,57 @@ def run_arm(
                 events.append({"scenario": name, "stage": "future", "error": repr(error)})
                 continue
             future = future_parsed["dialogue"]
-            lower = future.lower()
-            remembers = any(word in lower for word in (
-                "fence", "cafe", "trade material", "supplies", "promise", "agreed", "couldn't", "cannot",
-            ))
+            relation = (
+                classify_commitment_relation(
+                    item.to_dict(), future,
+                    future_parsed.get("commitment_relation"),
+                    future_parsed.get("grounding_refs", []),
+                ) if item else {
+                    "commitment_id": "", "relation": "unrelated",
+                    "classification": "state_consistent", "reason": "no_authoritative_commitment",
+                    "grounding_refs": future_parsed.get("grounding_refs", []),
+                }
+            )
+            remembers = relation["relation"] != "unrelated"
             if item and outcome == "accepted":
                 counters["follow_through"] += int(remembers)
                 counters["forgotten"] += int(not remembers)
-                contradiction = (
-                    (item.status == "expired" and any(x in lower for x in ("will help", "still will", "i'll help")))
-                    or (item.status == "fulfilled" and any(x in lower for x in ("will bring", "haven't brought")))
-                )
+                contradiction = relation["classification"] == "contradiction"
                 counters["contradictions"] += int(contradiction)
-            claimed_transfer = any(x in lower for x in ("i gave", "i brought", "i transferred", "already gave"))
+                counters["state_consistent"] += int(not contradiction)
+                counters["expired_awareness"] += int(item.status in {"expired", "failed"} and relation["relation"] in {"acknowledges_failure", "attempts_repair"})
+                counters["fulfilled_awareness"] += int(item.status == "fulfilled" and relation["relation"] == "references_fulfillment")
+                counters["repair_attempts"] += int(relation["relation"] == "attempts_repair")
+            claimed_transfer = relation["relation"] == "references_fulfillment"
             counters["false_fulfillment"] += int(
                 name == "transfer" and claimed_transfer and (not item or item.status != "fulfilled")
             )
-            counters["intent_action_compatible"] += int(
-                future_parsed["action"] == "chat" or future_parsed["action"] in lower
+            action_compatible, action_reason = semantic_action_compatibility(
+                future_parsed["action"], future,
+                future_parsed.get("social_response"),
             )
+            counters["intent_action_compatible"] += int(action_compatible)
             normalized = " ".join(future.lower().split())
             counters["repetitions"] += int(normalized in prior_lines)
             prior_lines.add(normalized)
             events.append({
                 "scenario": name, "proposal": proposal, "raw_response": raw,
-                "response": response, "outcome": outcome,
+                "response": response, "parsed_action": parsed.get("action"),
+                "parsed_social_response": parsed.get("social_response"),
+                "resolver_outcome": outcome, "outcome": outcome,
+                "authoritative_commitment_created": item is not None,
+                "commitment_id": item.id if item else None,
+                "commitment_state": item.status if item else None,
                 "commitment": item.to_dict() if item else None,
                 "future_context_commitments": future_context.get("active_commitments", []),
+                "future_authoritative_state": item.status if item else None,
                 "raw_future": future_raw, "future": future,
+                "future_semantic_relation": relation,
+                "contradiction_classification": relation["classification"],
+                "grounding_references": future_parsed.get("grounding_refs", []),
+                "evaluation_reason": evaluation_reason,
+                "semantic_action_compatible": action_compatible,
+                "semantic_action_reason": action_reason,
             })
         accepted = counters["accepted"]
         conversations = len(events) * 2
@@ -209,6 +269,16 @@ def run_arm(
             "false_fulfillment_rate": counters["false_fulfillment"] / max(1, counters["proposals"]),
             "valid_action_parsing": counters["parsing_success"] / max(1, conversations),
             "intent_action_compatibility": counters["intent_action_compatible"] / max(1, len(events)),
+            "clear_acceptance_recall": observed_rate(counters["clear_acceptance_recognized"], counters["clear_acceptance"]),
+            "commitment_creation_precision": observed_rate(accepted - counters["false_commitment_creation"], accepted),
+            "decline_accuracy": observed_rate(counters["decline_correct"], counters["decline_semantic"]),
+            "unresolved_accuracy": observed_rate(counters["unresolved_correct"], counters["unresolved_semantic"]),
+            "counteroffer_accuracy": observed_rate(counters["counteroffer_correct"], counters["counteroffer_semantic"]),
+            "false_commitment_creation_rate": counters["false_commitment_creation"] / max(1, counters["proposals"]),
+            "authoritative_state_contradiction_rate": counters["contradictions"] / accepted if accepted else 0.0,
+            "expired_commitment_awareness": observed_rate(counters["expired_awareness"], counters["deadline_miss"]),
+            "fulfilled_commitment_awareness": observed_rate(counters["fulfilled_awareness"], counters["fulfilled"]),
+            "repair_recommitment_attempts": counters["repair_attempts"],
             "repetition_rate": counters["repetitions"] / max(1, len(events)),
             "runtime_failures": counters["runtime_failures"],
             "malformed_output_rate": counters["malformed_output"] / max(1, conversations),

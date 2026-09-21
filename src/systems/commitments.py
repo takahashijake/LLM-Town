@@ -417,19 +417,51 @@ class CommitmentSystem:
         return record
 
     def relevant_context(self, agent_id: str, counterpart_id: str, current_day: int, limit: int = 3) -> list[str]:
+        return [record["text"] for record in self.relevant_context_records(agent_id, counterpart_id, current_day, limit)]
+
+    def relevant_context_records(self, agent_id: str, counterpart_id: str, current_day: int, limit: int = 3) -> list[dict]:
         relevant = [item for item in self.commitments if
                     {item.proposer_id, item.counterpart_id} == {agent_id, counterpart_id}
                     and (item.active or (item.resolution_day is not None and current_day - item.resolution_day <= 2))]
         relevant.sort(key=lambda item: (not item.active, -(item.due_day or 10**9), item.id))
-        return [self._format_context(item, agent_id) for item in relevant[:limit]]
+        return [{"commitment_id": item.id, "status": item.status,
+                 "text": self._format_context(item, agent_id)} for item in relevant[:limit]]
 
     def _format_context(self, item: SocialCommitment, agent_id: str) -> str:
-        role = "you agreed" if item.counterpart_id == agent_id else f"{item.counterpart_id} agreed"
-        subject = item.metadata.get("task") or item.metadata.get("good_id", "").replace("_", " ") or "meet"
+        names = {agent.id: agent.name for agent in self.agents}
+        if not names:
+            subject = item.metadata.get("task") or item.metadata.get("good_id", "").replace("_", " ") or "meet"
+            due = f" on day {item.due_day}" if item.due_day is not None else ""
+            if item.status == "accepted":
+                return f"you agreed to {item.commitment_type} {subject}{due}."
+        proposer = "you" if item.proposer_id == agent_id else names.get(item.proposer_id, "the other person")
+        actor = "You" if item.counterpart_id == agent_id else names.get(item.counterpart_id, "The other person")
         due = f" on day {item.due_day}" if item.due_day is not None else ""
+        if item.commitment_type == "meet":
+            location = item.metadata.get("location") or "the agreed place"
+            active = f"{actor} agreed to meet {proposer} at {location}{due}."
+            fulfilled = f"{actor} met {proposer} at {location} as agreed{due}."
+        elif item.commitment_type == "transfer":
+            quantity = int(item.metadata.get("quantity", 1))
+            good = item.metadata.get("good_id", "item").replace("_", " ")
+            active = f"{actor} agreed to give {proposer} {quantity} {good} by day {item.due_day}."
+            fulfilled = f"{actor} delivered {quantity} {good} to {proposer} as agreed{due}."
+        else:
+            task = item.metadata.get("task") or "with the agreed task"
+            active = f"{actor} agreed to help {proposer} {task}{due}."
+            fulfilled = f"{actor} helped {proposer} {task} as agreed{due}."
         if item.status == "accepted":
-            return f"{role} to {item.commitment_type} {subject}{due}."
-        return f"Commitment to {item.commitment_type} {subject} was {item.status}{due}."
+            return active
+        if item.status == "fulfilled":
+            return fulfilled
+        if item.status in {"expired", "failed"}:
+            if item.commitment_type == "transfer":
+                good = item.metadata.get("good_id", "item").replace("_", " ")
+                return f"{actor} promised {proposer} {int(item.metadata.get('quantity', 1))} {good} by day {item.due_day}, but the promise expired unfulfilled."
+            return active[:-1] + ", but that commitment expired without fulfillment."
+        if item.status == "declined":
+            return f"{actor} declined the proposed {item.commitment_type} commitment{due}."
+        return active[:-1] + f", but it was {item.status}."
 
     def _apply_consequence_once(self, item: SocialCommitment, day: int) -> None:
         if item.consequence_applied:

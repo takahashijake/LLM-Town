@@ -74,6 +74,8 @@ class TransformersLLMClient:
                     '{"dialogue": "short line of dialogue", '
                     '"action": "one allowed action", '
                     '"tags": [], "grounding_refs": [], '
+                    '"social_response": {"type": "accept_request|decline_request|counteroffer|acknowledge|unrelated|uncertain|none", "target": "help|meet|transfer|none", "confidence": "high|medium|low|none", "evidence": []}, '
+                    '"commitment_relation": {"commitment_id": "", "relation": "planning_to_fulfill|fulfilling|references_fulfillment|acknowledges_failure|attempts_repair|unrelated|contradicts_state|none", "confidence": "high|medium|low|none"}, '
                     '"reason": "why this action fits"}. '
                     "The action must be the best semantic label for the dialogue, not always chat. "
                     "No narration. No markdown."
@@ -181,10 +183,14 @@ class TransformersLLMClient:
             )
         grounding_sources = context.get("grounding_sources", {})
         grounding_lines = [f"{ref} — {value}" for ref, value in grounding_sources.items()]
-        commitment_lines = context.get("active_commitments", [])
+        commitment_records = context.get("commitment_records", [])
+        commitment_lines = [
+            f"[{row['commitment_id']}; {row['status']}] {row['text']}"
+            for row in commitment_records
+        ] or context.get("active_commitments", [])
         commitment_block = (
             "\nAuthoritative commitments involving this listener:\n"
-            f"{lines(commitment_lines)}\nWhen a commitment is supplied, make it the line's "
+            f"{lines(commitment_lines)}\nIDs are metadata: cite the matching ID in commitment_relation, never speak it. Make the commitment the line's "
             "primary focus and stay consistent with its status; never invent fulfillment."
             if commitment_lines else ""
         )
@@ -257,10 +263,11 @@ Requirements:
 - Match the relationship tone. Tense or hostile speakers should not suddenly flatter, invite, or offer help.
 - The suggested action is soft. The words and action must agree: assistance requests are ask_for_help, direct offers are offer_help, shared-task proposals are cooperate, praise is compliment, regret is apologize, disagreement is argue, and uncertain secondhand claims are share_rumor. Invitations and ordinary questions are chat.
 - If using cooperate, explicitly propose doing a concrete task together with wording such as "let's" or "we can"; merely inviting the listener to look at or attend something is chat.
+- Classify replies; positivity alone is not acceptance. Never invent fulfillment or IDs.
 - One spoken line, normally under 35 words. No narration, stage directions, speaker name, or hidden reasoning.
 {anti_echo_instruction}
 {grounding_correction}
 
 Return only valid JSON:
-{{"dialogue": "spoken line", "action": "one allowed action", "tags": ["conversation"], "grounding_refs": ["memory:1"], "reason": "brief grounding reason"}}
+{{"dialogue":"spoken line","action":"allowed action","tags":[],"grounding_refs":[],"social_response":{{"type":"none","target":"none","confidence":"none"}},"commitment_relation":{{"commitment_id":"","relation":"none","confidence":"none"}},"reason":"brief reason"}}
 """.strip()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-import re
+from src.simulation.social_semantics import resolve_response
 
 
 @dataclass
@@ -34,6 +34,9 @@ class ConversationTurn:
     generation_error: str = ""
     response_to_turn: int | None = None
     response_outcome: str | None = None
+    social_response: dict = field(default_factory=dict)
+    commitment_relation: dict = field(default_factory=dict)
+    response_resolution_reason: str = ""
     context_evidence: dict = field(default_factory=dict)
     context_snapshot: dict = field(default_factory=dict)
     diagnostics: dict = field(default_factory=dict)
@@ -61,63 +64,18 @@ class ResponseOutcomeResolver:
     """Conservatively resolve a reply to the preceding social action."""
 
     RESPONSIVE_ACTIONS = {"offer_help", "ask_for_help", "cooperate"}
-    DECLINED = (
-        "no thanks", "no thank you", "i've got it", "i have got it",
-        "i can handle it", "rather not", "don't need", "do not need",
-        "can't help", "cannot help", "won't help", "not able to help",
-        "not interested", "leave me alone", "sorry, i can't", "sorry, i cannot",
-        "no, i'm busy", "no, i am busy", "i don't want to", "i do not want to",
-        "i don't think i can", "i do not think i can",
-    )
-    OFFER_ACCEPTED = (
-        "yes", "yeah", "sure", "please do", "i'd appreciate", "i would appreciate",
-        "that would help", "thanks for offering", "thank you for offering",
-        "i appreciate your help", "i appreciate the help",
-    )
-    COOPERATION_ACCEPTED = (
-        "yes", "yeah", "sure", "sounds good", "good idea", "let's do", "let us do",
-        "count me in", "i'll join", "i will join", "we can do that",
-    )
-
-    def resolve(self, previous_action: str, reply: str) -> str:
+    def resolve(
+        self, previous_action: str, reply: str, *, proposal: dict | None = None,
+        parsed_action: str = "", social_response: dict | None = None,
+    ) -> str:
         if previous_action not in self.RESPONSIVE_ACTIONS:
             return "unresolved"
-        text = " ".join(reply.lower().split())
-        if self._contains_any(text, self.DECLINED):
-            return "declined"
-        if previous_action == "ask_for_help" and self._looks_like_answer(text):
-            return "accepted"
-        if previous_action == "offer_help" and self._contains_any(
-            text, self.OFFER_ACCEPTED
-        ):
-            return "accepted"
-        if previous_action == "cooperate" and (
-            self._contains_any(text, self.COOPERATION_ACCEPTED)
-            or re.search(
-                r"\b(i|we) (can|will|'ll) (help|join|work|handle|organize|sort|repair|do|meet)\b",
-                text,
-            )
-            or re.search(
-                r"\blet(?:'s| us) (grab|start|split|divide|sort|organize|repair|"
-                r"handle|clean|check|work)\b",
-                text,
-            )
-        ):
-            return "accepted"
-        return "unresolved"
+        return resolve_response(
+            previous_action, reply, proposal=proposal, parsed_action=parsed_action,
+            social_response=social_response,
+        )[0]
 
-    @staticmethod
-    def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
-        return any(
-            re.search(rf"(?<!\w){re.escape(marker)}(?!\w)", text)
-            for marker in markers
-        )
-
-    @staticmethod
-    def _looks_like_answer(text: str) -> bool:
-        has_answer_language = bool(
-            re.search(r"\b(try|use|ask|go|look|start|check|know|suggest|recommend|because|the answer|you should|sure thing)\b", text)
-            or re.search(r"\bi(?:'ll| will| can)\b.{0,45}\b(help|handle|grab|take|carry|sort|check|do|bring|give|meet)\b", text)
-            or re.search(r"\blet(?:'s| us) do it\b", text)
-        )
-        return has_answer_language and not text.rstrip().endswith("?")
+    def resolve_with_reason(self, previous_action: str, reply: str, **signals) -> tuple[str, str]:
+        if previous_action not in self.RESPONSIVE_ACTIONS:
+            return "unresolved", "preceding_action_requires_no_response_resolution"
+        return resolve_response(previous_action, reply, **signals)

@@ -478,6 +478,10 @@ class SimulationEngine:
             self.commitment_system.relevant_context(speaker.id, listener.id, current_day)
             if self.commitment_grounding_enabled else []
         )
+        result["context"]["commitment_records"] = (
+            self.commitment_system.relevant_context_records(speaker.id, listener.id, current_day)
+            if self.commitment_grounding_enabled else []
+        )
         return result
         
     def finalize_conversation_tags(
