@@ -63,3 +63,18 @@ def test_archived_memories_can_be_summarized():
 
     assert len(agent.memory_archive) == 5
     assert "Archived 15 older memories" in agent.memory_summary
+
+
+def test_remember_enforces_archive_bound_without_waiting_for_journal_pass():
+    agent = Agent(
+        id="agent_001", name="Maya", personality="curious", location_id="cafe",
+    )
+
+    for day in range(750):
+        agent.remember(make_memory(day), active_memory_limit=200)
+
+    assert len(agent.memory) == 200
+    assert len(agent.memory_archive) == 500
+    assert len({memory.id for memory in agent.memory + agent.memory_archive}) == 700
+    assert "Archived 1 older memories" in agent.memory_summary
+    assert len(agent.memory_summary) <= 2000

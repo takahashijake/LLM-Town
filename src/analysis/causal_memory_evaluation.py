@@ -217,5 +217,18 @@ def evaluate_causal_memory() -> dict:
             "memory_not_authority": scenarios["authority_independence"],
             "social_effect_not_double_applied": commitment.consequence_applied,
         })
-    return {"passed": all(scenarios.values()) and all(invariants.values()),
-            "scenarios": scenarios, "invariants": invariants}
+    failed_scenarios = sorted(name for name, passed in scenarios.items() if not passed)
+    failed_invariants = sorted(name for name, passed in invariants.items() if not passed)
+    return {
+        "passed": not failed_scenarios and not failed_invariants,
+        "scenario_count": len(scenarios),
+        "scenarios_passed": len(scenarios) - len(failed_scenarios),
+        "invariant_count": len(invariants),
+        "invariants_passed": len(invariants) - len(failed_invariants),
+        "scenarios": scenarios,
+        "invariants": invariants,
+        "diagnostics": {
+            "failed_scenarios": failed_scenarios,
+            "failed_invariants": failed_invariants,
+        },
+    }

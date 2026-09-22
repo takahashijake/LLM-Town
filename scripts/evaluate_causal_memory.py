@@ -12,5 +12,9 @@ from src.analysis.causal_memory_evaluation import evaluate_causal_memory
 if __name__ == "__main__":
     result = evaluate_causal_memory()
     print("LLM-Town deterministic causal-memory evaluation")
+    print(
+        f"scenarios={result['scenarios_passed']}/{result['scenario_count']} "
+        f"invariants={result['invariants_passed']}/{result['invariant_count']}"
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
     raise SystemExit(0 if result["passed"] else 1)

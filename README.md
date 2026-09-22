@@ -582,6 +582,61 @@ evaluation remains a separate measurement of whether generated dialogue notices
 and verbalizes supplied grounded state; fluent text is never treated as execution
 proof.
 
+## Causal knowledge and historical recall
+
+World records and agent knowledge are deliberately separate. Economy balances,
+inventories and provenance, commitments, plans, crime/evidence, and justice
+records are authoritative state. `OutcomeMemorySystem` can only project a
+completed authoritative outcome into an agent's private `Memory`; changing or
+deleting that memory cannot transfer goods or money, resolve a commitment,
+create evidence, or alter an adjudication. Relationship state, social memories,
+reputation beliefs, journal summaries, and prompt memories remain distinct:
+relationships and reputation supply existing bounded decision pressure, journals
+compress a private narrative, and prompt retrieval exposes only selected facts.
+
+Every causal projection names its legitimate route: `self_action`, `participant`,
+`counterparty`, `direct_observer`, `victim_discovery`, `explicit_transmission`, or
+`public_event`. Callers enumerate recipients; global truth is never broadcast by
+default. In particular, plan execution details remain actor-private, loss
+discovery does not identify an unknown thief, evidence hearsay requires an
+explicit transmission record, and justice reaches the town only when the
+configured adjudication is public. Significant material acquisition is currently
+limited to an authorized purchase made to execute a commitment plan; ordinary
+meals and recurring purchases do not become permanent causal memories.
+
+Causal memories carry structured, optional provenance alongside legacy fields:
+owner, source system, source record ID, event type, knowledge basis, day,
+location, and counterpart IDs. Their deterministic identity is
+`memory:<owner>:<source-system>:<source-id>:<event-type>`, making projection
+idempotent across replay and save/resume while allowing separate owners to know
+the same outcome. Old saves and conversational memories omit these optional
+fields and continue to load unchanged.
+
+Active memory is capped at 200 entries and the archive at 500. Archive retention
+reserves one fifth of its capacity for deterministically ranked causal or
+high-importance history, then fills the remainder by recency. Conversation
+context admits at most three memories, including at most one important,
+provenance-backed archived event involving the listener; causal provenance,
+listener involvement, location, importance, and recency are inspectable ranking
+inputs. The overall prompt text budget remains enforced. Memory itself adds no
+second trust adjustment: commitment consequences, relationship state, and
+reputation continue to influence choices through their existing capped paths.
+
+Run the deterministic causal-memory acceptance evaluation with:
+
+```bash
+python scripts/evaluate_causal_memory.py
+```
+
+It reports 12 scenarios and 14 invariants, including epistemic boundaries,
+replay/save idempotency, authority independence, bounded retention and recall,
+and bounded future-choice pressure. Existing long-run save files can be checked
+without loading a model with:
+
+```bash
+python scripts/evaluate_causal_memory_stress.py path/to/save_state.json [...]
+```
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.

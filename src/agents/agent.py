@@ -151,6 +151,17 @@ class Agent:
             self.memory_summary += " " + summary_piece
         else:
             self.memory_summary = summary_piece
+        # This text is itself a lossy synopsis, not another unbounded archive.
+        # Keep the newest complete summaries within a fixed storage budget.
+        if len(self.memory_summary) > 2000:
+            pieces = self.memory_summary.split("Archived ")
+            kept = []
+            for piece in reversed([item for item in pieces if item]):
+                candidate = " ".join(reversed(kept + ["Archived " + piece]))
+                if len(candidate) > 2000:
+                    break
+                kept.append("Archived " + piece)
+            self.memory_summary = " ".join(reversed(kept))
     
     def prune_memory(self, active_memory_limit: int = 200) -> None:
         if len(self.memory) <= active_memory_limit:
@@ -173,6 +184,10 @@ class Agent:
     
         self.memory = active_memories
         self.memory_archive.extend(archived_memories)
+        # Keep the archive's hard bound true at the mutation boundary. The
+        # journal pass also enforces this, but callers may remember many items
+        # between journal runs (or save immediately after remembering one).
+        self.summarize_archived_memories()
     
     def set_activity(self, activity) -> None: 
         self.current_activity = activity.name 

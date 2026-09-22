@@ -209,13 +209,14 @@ def _memory_score(
     listener_name: str,
     location_id: str,
     current_day: int,
-) -> tuple[int, int, int, int, int]:
+) -> tuple[int, int, int, int, int, int]:
     involves_listener = listener_name in memory.participants
     is_personal_arc_event = memory.type == "town_arc_participation"
     matches_location = memory.location == location_id
     age = max(0, current_day - memory.day)
     return (
         1 if involves_listener else 0,
+        1 if memory.causal and memory.has_authoritative_provenance else 0,
         1 if is_personal_arc_event else 0,
         1 if matches_location else 0,
         memory.importance,
