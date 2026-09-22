@@ -511,7 +511,8 @@ evidence makes cancellation idempotent.
 A replacement follows normal proposal and clear-acceptance resolution. The new
 record has its own ID and an explicit `repair_of_commitment_id`; its terminal
 predecessor remains immutable and retains its social consequence. Cyclic or
-missing lineage is rejected. Production dialogue is also checked against only
+missing lineage is rejected, as are successor links that change the original
+participant pair or bounded commitment type. Production dialogue is also checked against only
 the pair-private commitment records supplied to that speaker. A clear status
 contradiction receives at most one regeneration, followed by a neutral fallback;
 dialogue can never fulfill a promise.

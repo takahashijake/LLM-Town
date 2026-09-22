@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from src.llm.client import FakeLLMClient
 from src.simulation.conversation_runner import ConversationRunner
 from src.simulation.engine import SimulationEngine
@@ -106,6 +108,21 @@ def test_explicit_cancellation_is_grounded_idempotent_and_ambiguous_is_not(tmp_p
     assert system.validate_invariants()["cancelled_has_evidence"]
 
 
+def test_explicit_meeting_cancellation_supports_inability_phrase(tmp_path):
+    engine = town(tmp_path)
+    item = accepted(
+        engine.commitment_system, kind="meet",
+        metadata={"location": "cafe"},
+    )
+    result = engine.commitment_system.cancel_from_dialogue(
+        item.id, speaker_id="agent_001", counterpart_id="agent_002",
+        dialogue="I won't be able to make our meeting tomorrow.",
+        day=1, tick=12, session_id="meeting-cancel", turn_index=0,
+    )
+    assert result is item
+    assert item.status == "cancelled"
+
+
 def test_repair_opportunity_is_pair_private_bounded_and_successor_needs_acceptance(tmp_path):
     engine = town(tmp_path)
     system = engine.commitment_system
@@ -155,6 +172,50 @@ def test_contradictory_claims_are_detected_without_ledger_mutation(tmp_path):
     result = ConversationRunner._commitment_state_check(context, processed)
     assert not result["valid"]
     assert item.status == "accepted"
+
+
+def test_pronoun_future_claim_after_fulfillment_is_contradictory(tmp_path):
+    engine = town(tmp_path)
+    item = accepted(engine.commitment_system,
+                    metadata={"good_id": "reference_book", "quantity": 1})
+    item.status = "fulfilled"
+    context = {"commitment_records": [{
+        "commitment_id": item.id, "status": item.status,
+        "commitment_type": item.commitment_type, "metadata": item.metadata,
+        "text": "The book was delivered.",
+    }]}
+    processed = {"conversation": "I still need to bring it tomorrow.",
+                 "parsed_output": {"commitment_relation": {
+                     "commitment_id": item.id, "relation": "planning_to_fulfill",
+                 }, "grounding_refs": []}}
+    result = ConversationRunner._commitment_state_check(context, processed)
+    assert not result["valid"]
+    assert result["reason"] == "plans_terminal_commitment_as_if_active"
+
+
+def test_repair_lineage_rejects_unrelated_pair_and_type(tmp_path):
+    engine = town(tmp_path)
+    system = engine.commitment_system
+    parent = accepted(system, metadata={"good_id": "reference_book", "quantity": 1})
+    system.expire_due(day=3)
+    goods = {key: value.name for key, value in engine.materials.goods.items()}
+    with pytest.raises(ValueError, match="same two participants"):
+        system.process_response(
+            proposer_id="agent_003", counterpart_id="agent_004",
+            proposal_text="I can bring you one reference book tomorrow.",
+            response_text="Yes, please do.", outcome="accepted", day=3, tick=9,
+            session_id="wrong-pair", proposal_turn=0, response_turn=1,
+            known_goods=goods, repair_of_commitment_id=parent.id,
+        )
+    with pytest.raises(ValueError, match="preserve the bounded commitment type"):
+        system.process_response(
+            proposer_id="agent_001", counterpart_id="agent_002",
+            proposal_text="Let's meet at the cafe tomorrow.",
+            response_text="I'll meet you there.", outcome="accepted", day=3, tick=9,
+            session_id="wrong-type", proposal_turn=0, response_turn=1,
+            known_goods=goods, repair_of_commitment_id=parent.id,
+        )
+    assert len(system.commitments) == 1
 
 
 def test_terminal_lineage_and_attempts_persist_exactly(tmp_path):

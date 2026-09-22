@@ -467,6 +467,17 @@ class CommitmentSystem:
             parent = self.get(repair_of_commitment_id)
             if parent.status not in {"expired", "failed", "cancelled"}:
                 raise CommitmentError("invalid_repair_parent", "repair parent must be terminal")
+            if ({parent.proposer_id, parent.counterpart_id}
+                    != {proposer_id, counterpart_id}):
+                raise CommitmentError(
+                    "invalid_repair_pair",
+                    "repair parent must involve the same two participants",
+                )
+            if parent.commitment_type != proposal["commitment_type"]:
+                raise CommitmentError(
+                    "invalid_repair_type",
+                    "repair successor must preserve the bounded commitment type",
+                )
         evidence_key = f"{session_id}:{proposal_turn}:{response_turn}"
         item = self.create(
             proposer_id=proposer_id, counterpart_id=counterpart_id, day=day, tick=tick,
@@ -664,6 +675,19 @@ class CommitmentSystem:
             "repair_parent_terminal": all(
                 not item.repair_of_commitment_id or self.get(item.repair_of_commitment_id).status
                 in {"expired", "failed", "cancelled"} for item in self.commitments
+            ),
+            "repair_pair_preserved": all(
+                not item.repair_of_commitment_id or
+                {item.proposer_id, item.counterpart_id} == {
+                    self.get(item.repair_of_commitment_id).proposer_id,
+                    self.get(item.repair_of_commitment_id).counterpart_id,
+                }
+                for item in self.commitments
+            ),
+            "repair_type_preserved": all(
+                not item.repair_of_commitment_id or
+                item.commitment_type == self.get(item.repair_of_commitment_id).commitment_type
+                for item in self.commitments
             ),
             "repair_acyclic": all(self._lineage_acyclic(item) for item in self.commitments),
             "attempts_unique": len({record["event_key"] for record in self.attempt_records})

@@ -191,7 +191,13 @@ def classify_commitment_relation(
     failure = bool(re.search(r"\b(?:couldn't|could not|failed|missed|didn't|did not|sorry)\b", text))
     repair = failure and bool(re.search(r"\b(?:try again|make it up|can try|i'll try|i will try|reschedule)\b", text))
 
-    annotated_grounded = annotated != "none" and refers_to_object
+    # The ID is only available when the record was supplied in this pair-private
+    # prompt.  Treat an exact ID plus a bounded relation as grounded even when
+    # the utterance naturally uses a pronoun ("I still need to bring it").
+    annotated_grounded = (
+        annotation.get("commitment_id") == commitment_id
+        and annotated != "none"
+    ) or (annotated != "none" and refers_to_object)
     if repair or (annotated == "attempts_repair" and annotated_grounded):
         relation = "attempts_repair"
     elif failure or (annotated == "acknowledges_failure" and annotated_grounded):
@@ -239,7 +245,10 @@ def classify_explicit_cancellation(commitment: dict, dialogue: str) -> dict:
         refers = refers or bool(re.search(r"\b(?:bring|give|deliver|lend)\b", text))
     elif commitment.get("commitment_type") == "help":
         refers = refers or bool(re.search(r"\b(?:help|assist)\b", text))
-    inability = r"(?:can't|cannot|won't|will not|am not able to|am unable to|won't be able to)"
+    inability = (
+        r"(?:can't|cannot|won't|will not|am not able to|am unable to|"
+        r"won't be able to|will not be able to)"
+    )
     commitment_verb = r"(?:bring|give|deliver|lend|meet|make|attend|help|assist|repair|fix)"
     explicit = bool(re.search(
         rf"\bi (?:{inability})\s+(?:continue (?:with )?|still )?{commitment_verb}\b",

@@ -45,6 +45,20 @@ def evaluate_commitment_accountability() -> dict:
                 [engine.agents[3]], locations, 2, 8, None, {},
             )
         due_selected = engine.activity_records[-1].get("source_commitment_id") == due.id
+        # Replay the same derived decision input with the opposite bounded
+        # adjustment.  This proves ordinary behavior remains able to win and
+        # records why, without mutating or reopening the fulfilled commitment.
+        with patch("src.behavior.planner.random.random", return_value=0.99):
+            competing_activity = engine.activity_planner.choose_activity(
+                engine.agents[3], locations, 2, 9,
+                commitment_opportunities=[opportunity],
+            )
+        competition_preserved = (
+            competing_activity.source_commitment_id is None
+            and competing_activity.commitment_decision
+            and not competing_activity.commitment_decision["selected"]
+            and competing_activity.commitment_decision["competing_priority"] > 0.0
+        )
 
         missing = _accepted(system, "transfer", "agent_002", "agent_001", 3,
                             {"good_id": "trade_materials", "quantity": 1})
@@ -108,7 +122,7 @@ def evaluate_commitment_accountability() -> dict:
         }
         scenarios = {
             "due_feasible_commitment": due.status == "fulfilled" and due_selected,
-            "ordinary_competition_preserved": opportunity.urgency == 1.0,
+            "ordinary_competition_preserved": competition_preserved,
             "temporary_transfer_prepared": prepared and missing.status == "accepted",
             "transfer_conservation": engine.materials.total_quantities()["trade_materials"] == total_before,
             "unavailable_resource_expired": impossible.status == "expired"
