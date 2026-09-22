@@ -132,6 +132,11 @@ class SimulationState:
                 if getattr(engine, "commitment_system", None) is not None
                 else None
             ),
+            "plans": (
+                engine.plan_system.to_dict()
+                if getattr(engine, "plan_system", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

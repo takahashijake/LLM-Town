@@ -11,3 +11,5 @@ class Activity:
     source_commitment_id: str | None = None
     commitment_priority: float = 0.0
     commitment_decision: dict | None = None
+    source_plan_id: str | None = None
+    source_plan_step_id: str | None = None

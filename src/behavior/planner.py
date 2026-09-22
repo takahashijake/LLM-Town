@@ -232,6 +232,8 @@ class ActivityPlanner:
             source_commitment_id=opportunity.commitment_id,
             commitment_priority=(decision.pressure if decision else opportunity.urgency),
             commitment_decision=asdict(decision) if decision else None,
+            source_plan_id=getattr(opportunity, "plan_id", None),
+            source_plan_step_id=getattr(opportunity, "step_id", None),
         )
 
     def create_commitment_preparation_activity(self, agent, opportunity,
@@ -246,6 +248,8 @@ class ActivityPlanner:
             source_commitment_id=opportunity.commitment_id,
             commitment_priority=decision.pressure,
             commitment_decision=asdict(decision),
+            source_plan_id=getattr(opportunity, "plan_id", None),
+            source_plan_step_id=getattr(opportunity, "step_id", None),
         )
 
     def should_attend_daily_event(self, agent: Agent, daily_event) -> bool:

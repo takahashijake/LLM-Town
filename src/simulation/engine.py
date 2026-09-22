@@ -37,6 +37,7 @@ from src.systems.materials import MaterialSystem
 from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
 from src.systems.commitments import CommitmentSystem
+from src.systems.plans import PlanSystem
 
 class SimulationEngine:
     def __init__(
@@ -277,10 +278,16 @@ class SimulationEngine:
             materials=self.materials,
             location_ids=[location.id for location in self.locations],
         )
+        self.plan_system = PlanSystem.from_dict(
+            saved_state.get("plans") if saved_state else None,
+            commitment_system=self.commitment_system,
+            agents=self.agents,
+        )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
         self.activity_system.commitment_system = self.commitment_system
+        self.activity_system.plan_system = self.plan_system
         self.conversation_context_preparer = ConversationContextPreparer(
             relationships=self.relationships,
             actions=self.actions,
@@ -416,6 +423,7 @@ class SimulationEngine:
         self.activity_system.material_system = getattr(self, "materials", None)
         self.activity_system.crime_system = getattr(self, "crime", None)
         self.activity_system.commitment_system = getattr(self, "commitment_system", None)
+        self.activity_system.plan_system = getattr(self, "plan_system", None)
         
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents

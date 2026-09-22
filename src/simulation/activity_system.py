@@ -13,6 +13,7 @@ class ActivitySystem:
         material_system=None,
         crime_system=None,
         commitment_system=None,
+        plan_system=None,
     ):
         self.activity_planner = activity_planner
         self.logger = logger
@@ -21,6 +22,7 @@ class ActivitySystem:
         self.material_system = material_system
         self.crime_system = crime_system
         self.commitment_system = commitment_system
+        self.plan_system = plan_system
 
     def get_activity_need_effects(self, activity) -> dict[str, int]:
         effects_by_tag = {
@@ -65,6 +67,8 @@ class ActivitySystem:
             "source_commitment_id": getattr(activity, "source_commitment_id", None),
             "commitment_priority": getattr(activity, "commitment_priority", 0.0),
             "commitment_decision": getattr(activity, "commitment_decision", None),
+            "source_plan_id": getattr(activity, "source_plan_id", None),
+            "source_plan_step_id": getattr(activity, "source_plan_step_id", None),
         }
 
         self.activity_records.append(activity_record)
@@ -83,10 +87,16 @@ class ActivitySystem:
         for agent in agents:
             agent.decay_needs()
 
-            opportunities = (
-                self.commitment_system.opportunities_for_agent(agent.id, day=day, tick=hour)
-                if self.commitment_system else []
+            plan_opportunities = (
+                self.plan_system.opportunities_for_agent(agent.id, day=day, tick=hour)
+                if self.plan_system else []
             )
+            planned_commitments = {item.commitment_id for item in plan_opportunities}
+            opportunities = plan_opportunities + ([
+                item for item in self.commitment_system.opportunities_for_agent(
+                    agent.id, day=day, tick=hour)
+                if item.commitment_id not in planned_commitments
+            ] if self.commitment_system else [])
             try:
                 activity = self.activity_planner.choose_activity(
                     agent=agent, location_ids=location_ids, current_day=day, hour=hour,
@@ -153,15 +163,29 @@ class ActivitySystem:
                     continue
                 try:
                     if activity.id == "commitment_acquire_resource":
-                        self.commitment_system.execute_preparation(
+                        result = self.commitment_system.execute_preparation(
                             commitment_id=commitment_id, agent_id=agent.id,
                             day=day, tick=hour, activity_record=record,
                         )
                     else:
-                        self.commitment_system.execute_activity(
+                        result = self.commitment_system.execute_activity(
                             commitment_id=commitment_id, agent_id=agent.id,
                             day=day, tick=hour, activity_record=record,
+                        )
+                    plan_id = getattr(activity, "source_plan_id", None)
+                    if plan_id and self.plan_system:
+                        execution_key = (result.get("exchange_id") or result.get("event_key")
+                                         or f"{commitment_id}:{day}:{hour}")
+                        self.plan_system.record_execution(
+                            plan_id, activity.source_plan_step_id, day=day, tick=hour,
+                            execution_key=execution_key,
                         )
                 except ValueError as error:
                     record["execution_status"] = "failed"
                     record["execution_failure_reason"] = getattr(error, "code", str(error))
+                    if getattr(activity, "source_plan_id", None) and self.plan_system:
+                        self.plan_system.record_failure(
+                            activity.source_plan_id, activity.source_plan_step_id,
+                            day=day, tick=hour,
+                            reason=record["execution_failure_reason"],
+                        )
