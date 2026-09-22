@@ -2,7 +2,10 @@ import json
 
 import pytest
 
-from src.llm.grounding import GroundingValidator
+from types import SimpleNamespace
+
+from src.agents.memory import Memory
+from src.llm.grounding import GroundingValidator, build_grounding_packet, grounding_packet_for_prompt
 from src.llm.parser import parse_llm_conversation_output
 
 
@@ -66,3 +69,53 @@ def test_grounding_metadata_in_spoken_dialogue_is_rejected(context):
     )
     assert not result.valid
     assert result.candidate_type == "metadata_leak"
+
+
+def causal_memory(owner="a", event="commitment_fulfilled", counterparts=None, basis="participant"):
+    return Memory(day=2, hour=1, type=event, event_type=event,
+                  description="Ava fulfilled the promise to Bo concerning repairs.",
+                  participants=["Ava", "Bo"], location="market", importance=5,
+                  sentiment=2, tags=["causal_outcome"], source_system="commitments",
+                  source_id="commitment-00000001", knowledge_basis=basis,
+                  owner_id=owner, counterpart_ids=counterparts or ["b"], causal=True)
+
+
+def test_packet_is_bounded_stable_and_hides_private_ids():
+    speaker, listener = SimpleNamespace(id="a", name="Ava"), SimpleNamespace(id="b", name="Bo")
+    memories = [causal_memory() for _ in range(8)]
+    memories.append(causal_memory(owner="other"))
+    packet = build_grounding_packet(memories, speaker=speaker, listener=listener, current_day=9)
+    prompt = grounding_packet_for_prompt(packet)
+    assert [row["ref"] for row in prompt] == ["g1", "g2", "g3"]
+    assert all(row["outcome_polarity"] == "fulfilled" for row in prompt)
+    assert all("owner_id" not in row and "counterpart_ids" not in row and "commitment-" not in str(row) for row in prompt)
+
+
+@pytest.mark.parametrize("dialogue,polarity,reason", [
+    ("You fulfilled that promise.", "failed", "outcome_polarity_reversed"),
+    ("You failed that promise.", "fulfilled", "outcome_polarity_reversed"),
+    ("You stole the missing goods.", "unknown_culprit", "unknown_culprit_asserted"),
+    ("The materials have been transferred.", "accepted", "unsupported_authoritative_assertion"),
+])
+def test_structured_causal_claims_preserve_authority(dialogue, polarity, reason):
+    packet = [{"ref": "g1", "fact": "bounded fact", "source_type": "test",
+               "knowledge_basis": "participant", "counterpart": "Bo",
+               "event_day": 2, "age_days": 1, "outcome_polarity": polarity}]
+    result = GroundingValidator().validate(dialogue, ["g1"], {
+        "grounding_packet": packet, "grounding_sources": {"g1": "bounded fact"},
+    })
+    assert not result.valid
+    assert result.reason == reason
+
+
+def test_follow_through_is_bounded_and_counterpart_scoped():
+    packet = [{"ref": "g1", "fact": "promise failed", "source_type": "commitment_failed",
+               "knowledge_basis": "participant", "counterpart": "Bo",
+               "event_day": 2, "age_days": 1, "outcome_polarity": "failed"}]
+    context = {"grounding_packet": packet, "grounding_sources": {"g1": "promise failed"}}
+    valid = GroundingValidator().validate("Can we try again tomorrow?", ["g1"], context,
+        follow_through={"kind": "propose_repair", "target": "Bo", "source_ref": "g1"})
+    invalid = GroundingValidator().validate("Thanks.", ["g1"], context,
+        follow_through={"kind": "appreciate", "target": "Else", "source_ref": "g1"})
+    assert valid.valid and valid.follow_through["kind"] == "propose_repair"
+    assert not invalid.valid and not invalid.follow_through

@@ -43,6 +43,11 @@ def make_context(engine, outcome, enabled):
     context["commitment_records"] = []
     if not enabled:
         context["relevant_memories"] = []
+        context["grounding_packet"] = []
+        context["grounding_sources"] = {
+            key: value for key, value in context.get("grounding_sources", {}).items()
+            if not key.startswith("g")
+        }
         context["focus_options"] = [x for x in context.get("focus_options", [])
                                     if "history" not in x]
     return context

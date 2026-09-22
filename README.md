@@ -637,6 +637,29 @@ without loading a model with:
 python scripts/evaluate_causal_memory_stress.py path/to/save_state.json [...]
 ```
 
+## Grounded dialogue and follow-through
+
+Selected speaker-owned causal memories now enter prompts as a bounded typed
+grounding packet with prompt-local references and explicit outcome polarity.
+The optional response envelope records references and narrow social
+follow-through intent; deterministic validation rejects fabricated references,
+polarity reversals, unknown-culprit accusations, private-plan leakage, and
+claims that dialogue completed an authoritative transition. Follow-through is
+metadata only: repair commitments still require the existing proposal and
+acceptance path, and no extra relationship or reputation effect is applied.
+
+Run the deterministic and cached no-model evaluations with:
+
+```bash
+python scripts/evaluate_grounded_dialogue.py
+python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cached_3b.json
+python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cached_7b.json
+```
+
+See [the grounded-dialogue architecture and live 3B/7B commands](docs/grounded_dialogue.md)
+for the packet contract, artifact metadata, authority boundary, metrics, and
+known limitations.
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.

@@ -6,7 +6,11 @@ import re
 
 from src.agents.memory import Memory
 from src.systems.reputation import ReputationSystem
-from src.llm.grounding import build_grounding_sources
+from src.llm.grounding import (
+    build_grounding_packet,
+    build_grounding_sources,
+    grounding_packet_for_prompt,
+)
 
 
 ACTION_AND_SYSTEM_TAGS = {
@@ -620,5 +624,12 @@ def build_conversation_context(
     context["context_evidence"]["prompt_context_text_chars"] = (
         _prompt_context_text_chars(context)
     )
+    packet = build_grounding_packet(
+        prompt_memories, speaker=speaker, listener=listener,
+        current_day=current_day,
+    )
+    context["grounding_packet"] = grounding_packet_for_prompt(packet)
     context["grounding_sources"] = build_grounding_sources(context)
+    context["context_evidence"]["grounding_fact_count"] = len(packet)
+    context["context_evidence"]["grounding_refs"] = [item.ref for item in packet]
     return context

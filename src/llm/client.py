@@ -74,6 +74,8 @@ class TransformersLLMClient:
                     '{"dialogue": "short line of dialogue", '
                     '"action": "one allowed action", '
                     '"tags": [], "grounding_refs": [], '
+                    '"social_intent": "none|acknowledge|appreciate|request_explanation|apologize|propose_repair|decline_similar|cooperate", '
+                    '"follow_through": {"kind": "none", "target": "", "source_ref": ""}, '
                     '"social_response": {"type": "accept_request|decline_request|counteroffer|acknowledge|unrelated|uncertain|none", "target": "help|meet|transfer|none", "confidence": "high|medium|low|none", "evidence": []}, '
                     '"commitment_relation": {"commitment_id": "", "relation": "planning_to_fulfill|fulfilling|references_fulfillment|acknowledges_failure|attempts_repair|unrelated|contradicts_state|none", "confidence": "high|medium|low|none"}, '
                     '"reason": "why this action fits"}. '
@@ -190,6 +192,20 @@ class TransformersLLMClient:
             )
         grounding_sources = context.get("grounding_sources", {})
         grounding_lines = [f"{ref} — {value}" for ref, value in grounding_sources.items()]
+        causal_lines = [
+            f"[{row['ref']}] {row['fact']} (type={row['source_type']}; "
+            f"basis={row['knowledge_basis']}; counterpart={row.get('counterpart') or 'none'}; "
+            f"day={row['event_day']}; age={row['age_days']}d; outcome={row['outcome_polarity']})"
+            for row in context.get("grounding_packet", [])
+        ]
+        causal_block = (
+            "\nSelected causal history:\n" + lines(causal_lines) +
+            "\nCite its g-reference only when used; preserve outcome polarity. "
+            "Unknown culprit stays unknown; dialogue cannot complete world changes. "
+            "When it concerns this listener, normally acknowledge a fulfilled or failed outcome; "
+            "otherwise ignore it."
+            if causal_lines else ""
+        )
         commitment_records = context.get("commitment_records", [])
         commitment_lines = [
             f"[{row['commitment_id']}; {row['status']}] {row['text']}"
@@ -223,6 +239,7 @@ Immediate situation
 What this speaker legitimately knows
 Grounding references (metadata only; never speak IDs):
 {lines(grounding_lines)}
+{causal_block}
 Shared history:
 {lines(context.get('relationship_history', []))}
 Salient interpersonal episodes:

@@ -155,6 +155,8 @@ def parse_llm_conversation_output(
             "grounding_refs": [],
             "social_response": empty_social,
             "commitment_relation": empty_relation,
+            "social_intent": "none", "follow_through": {},
+            "envelope_status": "legacy_plain_text",
         }
 
     try:
@@ -170,9 +172,11 @@ def parse_llm_conversation_output(
             "grounding_refs": [],
             "social_response": empty_social,
             "commitment_relation": empty_relation,
+            "social_intent": "none", "follow_through": {},
+            "envelope_status": "malformed_json",
         }
 
-    dialogue = clean_conversation_output(str(data.get("dialogue", "")))
+    dialogue = clean_conversation_output(str(data.get("utterance", data.get("dialogue", ""))))
     raw_action = str(data.get("action", "chat")).strip()
     action = normalize_action(raw_action)
     grounding_refs = data.get("grounding_refs", [])
@@ -181,6 +185,10 @@ def parse_llm_conversation_output(
     grounding_refs = list(dict.fromkeys(str(ref).strip() for ref in grounding_refs if str(ref).strip()))
     social_response = _bounded_social_response(data.get("social_response"))
     commitment_relation = _bounded_commitment_relation(data.get("commitment_relation"))
+    social_intent = str(data.get("social_intent", "none")).strip().lower()[:40]
+    follow_through = data.get("follow_through", {})
+    if not isinstance(follow_through, dict):
+        follow_through = {"_malformed": True}
 
     allowed = set(allowed_actions or ALLOWED_ACTIONS)
 
@@ -198,6 +206,8 @@ def parse_llm_conversation_output(
             "grounding_refs": grounding_refs,
             "social_response": social_response,
             "commitment_relation": commitment_relation,
+            "social_intent": social_intent, "follow_through": follow_through,
+            "envelope_status": "parsed",
         }
 
     if action not in allowed:
@@ -211,6 +221,8 @@ def parse_llm_conversation_output(
             "grounding_refs": grounding_refs,
             "social_response": social_response,
             "commitment_relation": commitment_relation,
+            "social_intent": social_intent, "follow_through": follow_through,
+            "envelope_status": "parsed",
         }
 
     return {
@@ -223,4 +235,6 @@ def parse_llm_conversation_output(
         "grounding_refs": grounding_refs,
         "social_response": social_response,
         "commitment_relation": commitment_relation,
+        "social_intent": social_intent, "follow_through": follow_through,
+        "envelope_status": "parsed",
     }

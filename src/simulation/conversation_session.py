@@ -40,6 +40,7 @@ class ConversationTurn:
     response_outcome: str | None = None
     social_response: dict = field(default_factory=dict)
     commitment_relation: dict = field(default_factory=dict)
+    follow_through: dict = field(default_factory=dict)
     response_resolution_reason: str = ""
     context_evidence: dict = field(default_factory=dict)
     context_snapshot: dict = field(default_factory=dict)

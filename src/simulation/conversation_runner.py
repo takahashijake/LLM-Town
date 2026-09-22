@@ -205,6 +205,7 @@ class ConversationRunner:
                 response_outcome=None,
                 social_response=parsed.get("social_response", {}),
                 commitment_relation=parsed.get("commitment_relation", {}),
+                follow_through=grounding.follow_through,
                 response_resolution_reason=resolution_reason,
                 context_evidence=context.get("context_evidence", {}),
                 context_snapshot=self._context_snapshot(context),
@@ -507,5 +508,5 @@ class ConversationRunner:
                 "recent_journals", "goals", "active_goal", "speaker_intent", "daily_event",
                 "daily_event_relevant", "town_arcs", "recent_topics", "recent_utterances",
                 "focus_options", "session_transcript", "most_recent_utterance",
-                "grounding_sources")
+                "grounding_sources", "grounding_packet")
         return {key: context.get(key) for key in keys}
