@@ -533,7 +533,6 @@ def test_compress_old_memories_preserves_all_recent_memories():
     )
 
     assert archived_count == 0
-
     assert agent.memory == [
         day_4_memory,
         day_10_memory,
@@ -554,6 +553,30 @@ def test_compress_old_memories_handles_empty_memory():
     assert archived_count == 0
     assert agent.memory == []
     assert agent.memory_archive == []
+
+
+def test_compress_old_memories_enforces_archive_bound_after_end_of_day():
+    agent = build_agent()
+    agent.memory_archive = [
+        Memory(day=day, hour=8, type="conversation", description=f"old {day}",
+               participants=[agent.name], location="cafe", importance=1,
+               sentiment=0, tags=["old"], id=f"archive-{day}")
+        for day in range(500)
+    ]
+    agent.memory = [
+        Memory(day=1, hour=8, type="conversation", description="newly old",
+               participants=[agent.name], location="cafe", importance=1,
+               sentiment=0, tags=["old"], id="newly-archived")
+    ]
+
+    archived_count = JournalSystem().compress_old_memories(
+        agent, current_day=20, raw_memory_retention_days=7,
+    )
+
+    assert archived_count == 1
+    assert len(agent.memory_archive) == 500
+    assert agent.memory_archive[-1].id == "newly-archived"
+    assert "Archived 1 older memories" in agent.memory_summary
 
 
 def test_compression_does_not_remove_structured_journals():

@@ -248,5 +248,8 @@ class JournalSystem:
     
         agent.memory = retained_memories
         agent.memory_archive.extend(new_archived_memories)
+        # Compression runs after the tick-level maintenance pass. Enforce the
+        # durable archive bound here too so end-of-day saves cannot exceed it.
+        agent.summarize_archived_memories(max_archive_size=500)
     
         return len(new_archived_memories)

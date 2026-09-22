@@ -19,6 +19,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Separate semantic action records and effect eligibility/rate limiting
 - One bounded anti-echo regeneration attempt on the real-model path
 - Persistent memories, daily journals, goals, intents, and adaptive goal strategies
+- Persistent bounded plans whose steps invoke existing authoritative actions
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
 - Needs, occupations, activity planning, daily events, and town arcs
@@ -497,8 +498,9 @@ price, inventory, provenance, and conservation checks all pass. There is no
 resource minting and no fabricated acquisition route. Selected help, meeting,
 transfer, and preparation activities retain their `source_commitment_id`;
 fulfillment still occurs only after co-located authoritative activity execution
-or an atomic material transfer succeeds. Opportunities are reconstructed each
-cycle rather than persisted as another task queue.
+or an atomic material transfer succeeds. Feasibility opportunities are
+reconstructed each cycle from current authoritative state; the bounded causal
+plan and completed-step evidence persist.
 
 Expired, failed, and explicitly cancelled commitments produce a pair-private
 repair opportunity for two days. It can focus later dialogue on acknowledgment,
@@ -530,6 +532,56 @@ accepted → candidate → feasible → selected → executed → fulfilled funn
 Phase 3 adds cancellation, repair-opportunity, successor-lineage,
 authoritative-contradiction, false-fulfillment, and persistence scenarios.
 
+### Persistent bounded plans
+
+Plans provide temporal continuity without giving either dialogue or an LLM a task
+queue. A goal describes a durable desired outcome; an intent is a short-lived
+behavioral strategy; an activity is the single action selected for a tick; and a
+commitment is a social obligation between two agents. A plan is narrower: a
+small, deterministic sequence of known activity types linked to one authoritative
+source. The current template exists only for accepted transfer commitments and
+contains at most an acquisition step followed by a delivery step.
+
+```text
+accepted transfer commitment
+        -> persistent plan (source ID + owner + bounded steps)
+        -> current-state feasibility and bounded priority comparison
+        -> one selected activity
+        -> economy/material/commitment authority executes or rejects it
+        -> execution proof advances exactly one step
+        -> terminal plan + pair-private causal memory
+```
+
+Plan IDs and step IDs are stable. Active, completed, failed, and abandoned states
+are persisted; terminal plans cannot resume. Steps name only registered action
+types and cannot directly edit inventory, money, commitment status, relationships,
+or memory. A missing resource can produce an acquisition candidate only from an
+existing active seller with stock and at a price the agent can pay. Three distinct
+blocked observations exhaust the current retry budget. A cancelled, fulfilled,
+expired, or otherwise incompatible source invalidates its active plan before the
+next action. Execution keys make resume/replay idempotent.
+
+For example, Maya accepts a promise to bring Ethan one trade material. On day 2
+she lacks it, so the plan selects an authorized market purchase; the material
+system debits her account and transfers an existing unit with provenance. At a
+later tick the persisted plan selects delivery; the material system transfers the
+exact owned unit and the commitment system records fulfillment proof. Both parties
+receive typed, pair-private memories grounded in those records. No dialogue line
+causes either transfer.
+
+The deterministic planning evaluator covers success, legitimate interruption and
+resume, bounded resource failure, save/resume, terminal-source invalidation,
+information boundaries, replay idempotency, memory provenance, and cleanup:
+
+```bash
+python scripts/evaluate_long_horizon_planning.py
+```
+
+This evaluator proves authoritative behavior without loading a model. Real-model
+evaluation remains a separate measurement of whether generated dialogue notices
+and verbalizes supplied grounded state; fluent text is never treated as execution
+proof.
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.
@@ -541,6 +593,11 @@ authoritative-contradiction, false-fulfillment, and persistence scenarios.
   only an existing-seller transfer purchase, and there is no general calendar,
   contract engine, negotiation planner, multi-party promise, or hierarchical
   autonomous planner.
+- Persistent plans currently have one deterministic two-step template for transfer
+  commitments. There is no free-form decomposition, multi-party plan, general
+  calendar, plan-to-plan dependency, or LLM-authored authoritative step. Blocked
+  acquisition rediscovery can find a newly valid configured seller route, but the
+  planner does not negotiate or synthesize alternate strategies.
 - A local 3B model's instruction following and naturalness constrain dialogue quality.
 - Same-action deduplication and rate suppression trade some behavioral fidelity for
   stable relationship, reputation, need, goal, intent, and town-arc progression.
