@@ -10,15 +10,29 @@
 - Completed: architecture audit; structured provenance; shared owner-scoped
   projection; commitment/private-plan integration; salience-aware bounded archive;
   bounded historical prompt retrieval.
-- Current phase: long-horizon stress and real-model grounding evaluation.
+- Checkpoint: `ce8f532` — provenance-preserving causal memory projection.
+- Current phase: final regression/evaluator audit.
 - Decisions: source systems remain authoritative; explicit recipients and knowledge
   bases are mandatory; causal IDs include owner/source/event; private plan failure
   is self-only; existing relationship/reputation remains the social-pressure path.
 - Deterministic acceptance: 11/11 causal-memory scenarios and 13/13 invariants
   PASS; full suite 543 passed; planning evaluator remains PASS.
-- Known weaknesses: long-horizon and real-model runs remain; public adjudication
-  projection is deliberately broad only when the justice configuration says public.
-- Next unfinished action: add/run 250/500-day bounded-memory stress instrumentation.
+- Long horizon: full 250/500-day fake-model benchmarks completed for seeds 42/73;
+  memory stress checks PASS for all four states (archive 500 each, active 24–33,
+  causal 2–3, owner duplicates 0, provenance reconstructable). Natural commitment
+  count was zero; conversation repetition rose from about 75% to 86%.
+- Real model: cached Qwen2.5-3B and 7B, seeds 42/73, 8 matched samples/model.
+  Neither model explicitly used the historical fact in this tiny sample; no
+  authoritative contradictions/runtime failures. 7B malformed-output rates were
+  2/4 recent-only and 3/4 historical; 3B malformed rate was 0/4 in both arms.
+- Known weaknesses: natural commitments remain sparse; real-model sample is small;
+  long-run dialogue repetition is high. Public adjudication projection is broad
+  only when justice configuration explicitly marks adjudications public.
+- Final validation: compileall PASS; `git diff --check` PASS; 544 tests PASS.
+  Commitments 20/20, execution 20/20, semantics 45, accountability 20/20,
+  social decisions 14/14, Whole V2 22/22, planning 14/14, causal memory
+  12/12 scenarios and 14/14 invariants, crime, and justice all PASS.
+- Next unfinished action: none in the mandatory implementation; report results.
 
 - Original requested starting SHA: `849f24159b60c4959ca33e0d2c418c02d245adad`
 - Actual campaign starting SHA: `4777181` (`main`, clean; the expected Phase 3 diff was already committed)

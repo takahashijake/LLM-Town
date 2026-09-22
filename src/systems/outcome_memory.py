@@ -31,6 +31,29 @@ class OutcomeMemorySystem:
 
     def __init__(self, agents):
         self.agents = {agent.id: agent for agent in agents}
+        self.authorities = {}
+
+    def bind_authorities(self, **authorities) -> None:
+        """Attach read-only source registries after engine construction."""
+        self.authorities = authorities
+
+    def source_exists(self, memory: Memory) -> bool:
+        authority = self.authorities.get(memory.source_system)
+        if authority is None:
+            return False
+        if memory.source_system == "commitments":
+            records = authority.commitments
+        elif memory.source_system == "plans":
+            records = authority.plans
+        elif memory.source_system == "crime":
+            records = [*authority.incidents, *authority.evidence]
+        elif memory.source_system == "justice":
+            records = [*authority.adjudications, *authority.restitutions]
+        elif memory.source_system == "materials":
+            records = authority.exchanges
+        else:
+            return False
+        return any(record.id == memory.source_id for record in records)
 
     @staticmethod
     def memory_id(owner_id: str, source_system: str, source_id: str,
@@ -98,4 +121,5 @@ class OutcomeMemorySystem:
             "known_knowledge_bases": all(
                 memory.knowledge_basis in KNOWLEDGE_BASES for memory in all_memories
             ),
+            "causal_sources_exist": all(self.source_exists(memory) for memory in all_memories),
         }

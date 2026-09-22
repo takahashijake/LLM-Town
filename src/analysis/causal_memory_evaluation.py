@@ -89,6 +89,11 @@ def evaluate_causal_memory() -> dict:
             and any(m.event_type == "commitment_expired" for m in failed.agents[1].memory)
             and missed.status == "expired"
         )
+        for agent in failed.agents[:2]:
+            failed.journal_system.compress_old_memories(agent, current_day=40)
+        failed_context = failed.prepare_conversation_context(
+            "market", failed.agents[0], failed.agents[1], 40
+        )["context"]
 
         crime = _engine(root, "crime")
         incident = _steal(crime, witnessed=True)
@@ -144,6 +149,12 @@ def evaluate_causal_memory() -> dict:
             any("fulfilled" in text for text in context["relevant_memories"])
             and len(context["relevant_memories"]) <= 3
             and _prompt_context_text_chars(context) <= MAX_CONTEXT_TEXT_CHARS
+        )
+        scenarios["historical_outcome_distinction"] = (
+            any("fulfilled" in text and "not fulfilled" not in text
+                for text in context["relevant_memories"])
+            and any("not fulfilled" in text
+                    for text in failed_context["relevant_memories"])
         )
 
         owner = participants[0]

@@ -12,6 +12,7 @@ from src.behavior.goal_planner import GoalPlanner
 from src.behavior.planner import ActivityPlanner
 from src.behavior.social_policy import SocialBehaviorPolicy
 from src.llm.client import TransformersLLMClient
+from src.llm.context import _prune_context_to_budget
 from src.simulation.simulation_loop import SimulationLoop
 from src.simulation.activity_system import ActivitySystem
 from src.simulation.conversation_context_preparer import ConversationContextPreparer
@@ -289,6 +290,10 @@ class SimulationEngine:
             agents=self.agents,
             outcome_memory=self.outcome_memory,
         )
+        self.outcome_memory.bind_authorities(
+            commitments=self.commitment_system, plans=self.plan_system,
+            crime=self.crime, justice=self.justice, materials=self.materials,
+        )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -501,6 +506,7 @@ class SimulationEngine:
                 speaker.id, listener.id, day=current_day,
             ) if self.commitment_grounding_enabled else []
         )
+        _prune_context_to_budget(result["context"])
         return result
         
     def finalize_conversation_tags(
