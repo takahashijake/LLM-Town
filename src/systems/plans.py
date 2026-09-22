@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-from src.agents.memory import Memory
+from src.systems.outcome_memory import KnowledgeRecipient
 
 
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
@@ -104,11 +104,13 @@ class PlanOpportunity:
 class PlanSystem:
     """Owns plan lifecycle; delegates every world mutation to existing systems."""
 
-    def __init__(self, plans=None, *, next_number=1, commitment_system=None, agents=None):
+    def __init__(self, plans=None, *, next_number=1, commitment_system=None, agents=None,
+                 outcome_memory=None):
         self.plans = list(plans or [])
         self.next_number = max(1, int(next_number))
         self.commitment_system = commitment_system
         self.agents = list(agents or [])
+        self.outcome_memory = outcome_memory
         self.execution_records: list[dict] = []
 
     def to_dict(self) -> dict:
@@ -117,11 +119,13 @@ class PlanSystem:
                 "execution_records": list(self.execution_records)}
 
     @classmethod
-    def from_dict(cls, data: dict | None, *, commitment_system=None, agents=None) -> "PlanSystem":
+    def from_dict(cls, data: dict | None, *, commitment_system=None, agents=None,
+                  outcome_memory=None) -> "PlanSystem":
         data = data or {}
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
                      next_number=data.get("next_number", 1),
-                     commitment_system=commitment_system, agents=agents)
+                     commitment_system=commitment_system, agents=agents,
+                     outcome_memory=outcome_memory)
         system.execution_records = list(data.get("execution_records", []))
         system.validate_invariants()
         return system
@@ -152,11 +156,6 @@ class PlanSystem:
             )
             self.plans.append(plan)
             self.next_number += 1
-            self._remember_pair(
-                item, day, "commitment_accepted",
-                f"A promise to transfer {item.metadata.get('quantity')} "
-                f"{item.metadata.get('good_id')} was accepted.", sentiment=1,
-            )
         self.validate_invariants()
 
     def opportunities_for_agent(self, agent_id: str, *, day: int, tick: int | None) -> list[PlanOpportunity]:
@@ -193,11 +192,7 @@ class PlanSystem:
                                             reason=reason or "no_acquisition_route")
                         plan.transitions[-1]["observation_key"] = observation_key
                     if not plan.active:
-                        self._remember_pair(
-                            self.commitment_system.get(plan.source_id), day,
-                            "plan_failed", f"Plan {plan.id} failed: {plan.terminal_reason}.",
-                            sentiment=-1,
-                        )
+                        self._remember_plan(plan, day, "plan_failed", -1)
                         continue
             else:
                 action_id = None
@@ -225,6 +220,19 @@ class PlanSystem:
         self.execution_records.append({"plan_id": plan_id, "step_id": step_id,
                                        "day": day, "tick": tick,
                                        "execution_key": execution_key})
+        if step.action_type == "commitment_acquire_resource" and self.outcome_memory:
+            source = self.commitment_system.get(plan.source_id)
+            quantity = int(source.metadata.get("quantity", 1))
+            good = source.metadata.get("good_id", "item").replace("_", " ")
+            self.outcome_memory.project(
+                source_system="materials", source_id=execution_key,
+                event_type="important_acquisition", day=day, hour=tick,
+                recipients=[KnowledgeRecipient(
+                    plan.agent_id, "self_action",
+                    f"I acquired {quantity} {good} through an authorized purchase for my promise.",
+                    (), 1, 4,
+                )],
+            )
         self._complete_step(plan, step, day, tick, "authoritative_execution", execution_key)
         self.validate_invariants()
 
@@ -253,33 +261,22 @@ class PlanSystem:
         plan.current_step_index += 1
         if plan.current_step_index == len(plan.steps):
             self._terminate(plan, "completed", day, "all_steps_completed")
-            self._remember_pair(
-                self.commitment_system.get(plan.source_id), day,
-                "commitment_fulfilled",
-                f"The promised transfer for {plan.source_id} was fulfilled.",
-                sentiment=1,
-            )
+            self._remember_plan(plan, day, "plan_completed", 1)
 
-    def _remember_pair(self, source, day, event_type, description, *, sentiment) -> None:
-        """Create idempotent pair-private memories from authoritative state."""
-        agents = {agent.id: agent for agent in self.agents}
-        memory_id = f"memory:{event_type}:{source.id}"
-        for agent_id, counterpart_id in (
-            (source.proposer_id, source.counterpart_id),
-            (source.counterpart_id, source.proposer_id),
-        ):
-            owner = agents.get(agent_id)
-            counterpart = agents.get(counterpart_id)
-            if owner is None or counterpart is None:
-                continue
-            if any(memory.id == memory_id for memory in owner.memory + owner.memory_archive):
-                continue
-            owner.remember(Memory(
-                id=memory_id, day=day, hour=0, type=event_type,
-                description=description, participants=[owner.name, counterpart.name],
-                location=owner.location_id, importance=4, sentiment=sentiment,
-                tags=[event_type, f"source_system:plans", f"source_id:{source.id}"],
-            ))
+    def _remember_plan(self, plan, day, event_type, sentiment) -> None:
+        """Plan mechanics are self-private unless another system exposes them."""
+        if self.outcome_memory is None:
+            return
+        reason = plan.terminal_reason.replace("_", " ")
+        self.outcome_memory.project(
+            source_system="plans", source_id=plan.id, event_type=event_type,
+            day=day, hour=0,
+            recipients=[KnowledgeRecipient(
+                plan.agent_id, "self_action",
+                f"My plan {event_type.replace('_', ' ')}: {reason}.",
+                (), sentiment,
+            )],
+        )
 
     @staticmethod
     def _terminate(plan, status, day, reason) -> None:

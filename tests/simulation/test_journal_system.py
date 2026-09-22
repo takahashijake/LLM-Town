@@ -575,7 +575,8 @@ def test_compress_old_memories_enforces_archive_bound_after_end_of_day():
 
     assert archived_count == 1
     assert len(agent.memory_archive) == 500
-    assert agent.memory_archive[-1].id == "newly-archived"
+    assert agent.memory_archive[-1].id == "archive-499"
+    assert "archive-0" not in {memory.id for memory in agent.memory_archive}
     assert "Archived 1 older memories" in agent.memory_summary
 
 

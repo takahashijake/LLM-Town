@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from src.systems.materials import MaterialError
+from src.systems.outcome_memory import KnowledgeRecipient
 
 
 class JusticeError(ValueError):
@@ -149,6 +150,7 @@ class JusticeSystem:
         next_case_number: int = 1, next_admission_number: int = 1,
         next_adjudication_number: int = 1, next_restitution_number: int = 1,
         next_consequence_number: int = 1,
+        outcome_memory=None,
     ):
         self.crime, self.materials = crime, materials
         self.agents = {agent.id: agent for agent in agents}
@@ -171,6 +173,7 @@ class JusticeSystem:
         self.next_adjudication_number = int(next_adjudication_number)
         self.next_restitution_number = int(next_restitution_number)
         self.next_consequence_number = int(next_consequence_number)
+        self.outcome_memory = outcome_memory
         self._validate_config()
         self._validate_history()
 
@@ -468,6 +471,42 @@ class JusticeSystem:
         self.next_consequence_number += 1
         self.consequences.append(consequence)
         self.applied_event_keys.update({event_key, restitution.event_key})
+        if self.outcome_memory is not None:
+            actor = self.agents[actor_id]
+            victim = self.agents[incident.victim_id]
+            basis = "public_event" if self.public_adjudications else "participant"
+            adjudication_recipients = (
+                [KnowledgeRecipient(
+                    agent_id, basis,
+                    f"An adjudication found {actor.name} responsible for theft from {victim.name}.",
+                    (actor_id, incident.victim_id), -1, 5, incident.location_id,
+                ) for agent_id in self.agents]
+                if self.public_adjudications else [
+                    KnowledgeRecipient(actor_id, basis,
+                                       "I was found responsible for the theft.",
+                                       (incident.victim_id,), -2, 5),
+                    KnowledgeRecipient(incident.victim_id, basis,
+                                       f"{actor.name} was found responsible for stealing from me.",
+                                       (actor_id,), 1, 5),
+                ]
+            )
+            self.outcome_memory.project(
+                source_system="justice", source_id=adjudication.id,
+                event_type="adjudicated_responsible", day=day, hour=hour,
+                recipients=adjudication_recipients,
+            )
+            self.outcome_memory.project(
+                source_system="justice", source_id=restitution.id,
+                event_type="restitution_received", day=day, hour=hour,
+                recipients=[
+                    KnowledgeRecipient(actor_id, "participant",
+                                       f"I returned {restitution.returned_quantity} {incident.good_id.replace('_', ' ')} as restitution to {victim.name}.",
+                                       (incident.victim_id,), -1, 5),
+                    KnowledgeRecipient(incident.victim_id, "participant",
+                                       f"I received {restitution.returned_quantity} {incident.good_id.replace('_', ' ')} in restitution from {actor.name}.",
+                                       (actor_id,), 2, 5),
+                ],
+            )
         return consequence
 
     def knowledge_for_agent(self, agent_id: str) -> dict:

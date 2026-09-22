@@ -1,5 +1,25 @@
 # Overnight engineering progress
 
+## Causal memory run (2026-09-22)
+
+- Starting SHA: `54c102b43e0ba65c39c30101213877e77fc86225` (clean worktree).
+- Baseline: compileall and `git diff --check` PASS; 542 tests PASS.
+- Baseline evaluators: commitments 20/20; execution 20/20; semantics 45;
+  accountability 10 scenarios/20 invariants; social decisions 14/14; Whole V2
+  22/22; long-horizon planning 8 scenarios/14 invariants — all PASS.
+- Completed: architecture audit; structured provenance; shared owner-scoped
+  projection; commitment/private-plan integration; salience-aware bounded archive;
+  bounded historical prompt retrieval.
+- Current phase: long-horizon stress and real-model grounding evaluation.
+- Decisions: source systems remain authoritative; explicit recipients and knowledge
+  bases are mandatory; causal IDs include owner/source/event; private plan failure
+  is self-only; existing relationship/reputation remains the social-pressure path.
+- Deterministic acceptance: 11/11 causal-memory scenarios and 13/13 invariants
+  PASS; full suite 543 passed; planning evaluator remains PASS.
+- Known weaknesses: long-horizon and real-model runs remain; public adjudication
+  projection is deliberately broad only when the justice configuration says public.
+- Next unfinished action: add/run 250/500-day bounded-memory stress instrumentation.
+
 - Original requested starting SHA: `849f24159b60c4959ca33e0d2c418c02d245adad`
 - Actual campaign starting SHA: `4777181` (`main`, clean; the expected Phase 3 diff was already committed)
 - Current checkpoint SHA: `HEAD` (`Harden long-horizon memory stability and document plans`; parent plan checkpoint `562188f`)

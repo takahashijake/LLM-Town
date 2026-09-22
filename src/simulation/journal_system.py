@@ -84,6 +84,7 @@ class JournalSystem:
                 "town_arc",
                 "town_arc_participation",
             }
+            or memory.causal
         ][:5]
 
         relationship_changes: dict[str, int] = {}
@@ -148,6 +149,9 @@ class JournalSystem:
                 + ", ".join(important_people)
                 + "."
             )
+
+        if important_events:
+            summary_parts.append("Meaningful outcomes: " + " ".join(important_events[:3]))
         
         for other_name, change in relationship_changes.items():
             if change > 0:

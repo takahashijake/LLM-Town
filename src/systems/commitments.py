@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 import re
 
 from src.systems.reputation import ReputationSystem
+from src.systems.outcome_memory import KnowledgeRecipient
 
 
 COMMITMENT_TYPES = {"help", "meet", "transfer"}
@@ -122,6 +123,7 @@ class CommitmentSystem:
         self, commitments: list[SocialCommitment] | None = None, *, next_number: int = 1,
         relationships=None, reputation_system: ReputationSystem | None = None,
         agents: list | None = None, materials=None, location_ids: list[str] | None = None,
+        outcome_memory=None,
     ):
         self.commitments = list(commitments or [])
         self.next_number = max(1, int(next_number))
@@ -130,6 +132,7 @@ class CommitmentSystem:
         self.agents = agents if agents is not None else []
         self.materials = materials
         self.location_ids = list(location_ids or [])
+        self.outcome_memory = outcome_memory
         self.execution_records: list[dict] = []
         self.attempt_records: list[dict] = []
         self.duplicate_attempts = 0
@@ -408,7 +411,40 @@ class CommitmentSystem:
             item.resolution_tick = tick
             item.resolution_reason = reason
             self._apply_consequence_once(item, day)
+        self._project_transition(item, status, day, tick)
         return item
+
+    def _project_transition(self, item, status, day, tick) -> None:
+        if self.outcome_memory is None or status not in {
+            "accepted", "fulfilled", "expired", "failed", "cancelled"
+        }:
+            return
+        names = {agent.id: agent.name for agent in self.agents}
+        actor = names.get(item.counterpart_id, "The responsible person")
+        recipient = names.get(item.proposer_id, "the recipient")
+        subject = item.metadata.get("good_id", item.metadata.get("task", item.commitment_type))
+        if status == "accepted":
+            text = f"{actor} agreed with {recipient} to {item.commitment_type} {subject}."
+            sentiment = 1
+        elif status == "fulfilled":
+            text = f"{actor} fulfilled the promise to {recipient} concerning {subject}."
+            sentiment = 2
+        elif status in {"expired", "failed"}:
+            text = f"{actor}'s promise to {recipient} concerning {subject} was not fulfilled."
+            sentiment = -2
+        else:
+            text = f"{actor}'s promise to {recipient} concerning {subject} was cancelled."
+            sentiment = -1
+        self.outcome_memory.project(
+            source_system="commitments", source_id=item.id,
+            event_type=f"commitment_{status}", day=day, hour=tick,
+            recipients=[
+                KnowledgeRecipient(item.proposer_id, "participant", text,
+                                   (item.counterpart_id,), sentiment),
+                KnowledgeRecipient(item.counterpart_id, "participant", text,
+                                   (item.proposer_id,), sentiment),
+            ],
+        )
 
     def get(self, commitment_id: str) -> SocialCommitment:
         matches = [item for item in self.commitments if item.id == commitment_id]

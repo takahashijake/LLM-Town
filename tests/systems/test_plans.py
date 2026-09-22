@@ -99,12 +99,13 @@ def test_unavailable_resource_has_bounded_observations_and_private_failure_memor
     assert plan.status == "failed"
     assert plan.steps[0].attempts == 3
     assert len([event for event in plan.transitions if event["type"] == "blocked"]) == 3
-    participants = {"Maya", "Ethan"}
-    for agent in engine.agents[:2]:
-        memories = [memory for memory in agent.memory if memory.type == "plan_failed"]
-        assert len(memories) == 1
-        assert set(memories[0].participants) == participants
-        assert f"source_id:{item.id}" in memories[0].tags
+    actor, counterpart = engine.agents[:2]
+    memories = [memory for memory in actor.memory if memory.type == "plan_failed"]
+    assert len(memories) == 1
+    assert memories[0].owner_id == actor.id
+    assert memories[0].knowledge_basis == "self_action"
+    assert not [memory for memory in counterpart.memory if memory.type == "plan_failed"]
+    assert f"source_id:{plan.id}" in memories[0].tags
     assert not [memory for memory in engine.agents[2].memory
                 if f"source_id:{item.id}" in memory.tags]
 

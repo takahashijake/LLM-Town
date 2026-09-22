@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from src.systems.materials import MaterialError, MaterialSystem
+from src.systems.outcome_memory import KnowledgeRecipient
 
 
 class CrimeError(ValueError):
@@ -169,6 +170,7 @@ class CrimeSystem:
         next_incident_number: int = 1,
         next_opportunity_number: int = 1,
         next_evidence_number: int = 1,
+        outcome_memory=None,
     ):
         self.materials = materials
         self.agents = {agent.id: agent for agent in agents}
@@ -185,6 +187,7 @@ class CrimeSystem:
         self.next_incident_number = int(next_incident_number)
         self.next_opportunity_number = int(next_opportunity_number)
         self.next_evidence_number = int(next_evidence_number)
+        self.outcome_memory = outcome_memory
         self._validate_model()
         self._validate_history()
 
@@ -466,6 +469,24 @@ class CrimeSystem:
         self.applied_event_keys.add(event_key)
         self.next_incident_number += 1
         self._apply_direct_reputation(incident, new_evidence)
+        if self.outcome_memory is not None:
+            actor_name = self.agents[actor_id].name
+            victim_name = self.agents[source.owner_id].name
+            recipients = [KnowledgeRecipient(
+                actor_id, "self_action",
+                f"I took {quantity} {good_id.replace('_', ' ')} from {victim_name} without authorization.",
+                (source.owner_id,), -1, 5, location_id,
+            )]
+            recipients.extend(KnowledgeRecipient(
+                witness_id, "direct_observer",
+                f"I witnessed {actor_name} take {quantity} {good_id.replace('_', ' ')} from {victim_name} without authorization.",
+                (actor_id, source.owner_id), -2, 5, location_id,
+            ) for witness_id in observed_ids)
+            self.outcome_memory.project(
+                source_system="crime", source_id=incident.id,
+                event_type="theft_committed", day=day, hour=hour,
+                recipients=recipients,
+            )
         return incident
 
     def _apply_direct_reputation(
@@ -537,6 +558,16 @@ class CrimeSystem:
             discovered_by=(*incident.discovered_by, victim_id),
         )
         self.applied_event_keys.add(event_key)
+        if self.outcome_memory is not None:
+            self.outcome_memory.project(
+                source_system="crime", source_id=incident.id,
+                event_type="loss_discovered", day=day, hour=hour,
+                recipients=[KnowledgeRecipient(
+                    victim_id, "victim_discovery",
+                    f"I discovered that {incident.quantity} {incident.good_id.replace('_', ' ')} was missing; I do not know who took it.",
+                    (), -2, 5, incident.location_id,
+                )],
+            )
         return evidence
 
     def share_evidence(
@@ -590,6 +621,23 @@ class CrimeSystem:
         )
         self.applied_event_keys.add(event_key)
         self._apply_hearsay_reputation(source, speaker_id, listener_id, day)
+        if self.outcome_memory is not None:
+            speaker = self.agents[speaker_id]
+            actor = self.agents.get(source.actor_id)
+            victim = self.agents.get(source.victim_id)
+            claim = (
+                f"{speaker.name} told me that {actor.name} took property from {victim.name}; this is hearsay."
+                if source.claims_actor and actor and victim else
+                f"{speaker.name} told me about a loss; this is hearsay and does not identify a culprit."
+            )
+            self.outcome_memory.project(
+                source_system="crime", source_id=evidence.id,
+                event_type="theft_hearsay_received", day=day, hour=hour,
+                recipients=[KnowledgeRecipient(
+                    listener_id, "explicit_transmission", claim,
+                    (speaker_id,), -1, 4, source.location_id,
+                )],
+            )
         return evidence
 
     def _apply_hearsay_reputation(

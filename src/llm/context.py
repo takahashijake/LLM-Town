@@ -241,7 +241,7 @@ def select_conversation_memories(
     importance.
     """
 
-    eligible = [
+    active_eligible = [
         memory
         for memory in speaker.memory
         if 0 <= current_day - memory.day <= max_age_days
@@ -252,6 +252,21 @@ def select_conversation_memories(
             or (memory.location == location_id and memory.importance >= 3)
         )
     ]
+    # Archived recall is deliberately narrower than recent recall: only one
+    # provenance-backed, important item relevant to this listener may return.
+    historical = [
+        memory for memory in speaker.memory_archive
+        if memory.causal and memory.has_authoritative_provenance
+        and memory.importance >= 4
+        and listener_name in memory.participants
+        and 0 <= current_day - memory.day
+    ]
+    historical.sort(
+        key=lambda memory: _memory_score(
+            memory, listener_name, location_id, current_day
+        ), reverse=True,
+    )
+    eligible = active_eligible + historical[:1]
     eligible.sort(
         key=lambda memory: _memory_score(
             memory, listener_name, location_id, current_day

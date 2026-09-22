@@ -38,6 +38,7 @@ from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
 from src.systems.commitments import CommitmentSystem
 from src.systems.plans import PlanSystem
+from src.systems.outcome_memory import OutcomeMemorySystem
 
 class SimulationEngine:
     def __init__(
@@ -270,6 +271,9 @@ class SimulationEngine:
                 self.justice_path, crime=self.crime, materials=self.materials,
                 agents=self.agents, reputation_system=self.reputation_system,
             )
+        self.outcome_memory = OutcomeMemorySystem(self.agents)
+        self.crime.outcome_memory = self.outcome_memory
+        self.justice.outcome_memory = self.outcome_memory
         self.commitment_system = CommitmentSystem.from_dict(
             saved_state.get("commitments") if saved_state else None,
             relationships=self.relationships,
@@ -277,11 +281,13 @@ class SimulationEngine:
             agents=self.agents,
             materials=self.materials,
             location_ids=[location.id for location in self.locations],
+            outcome_memory=self.outcome_memory,
         )
         self.plan_system = PlanSystem.from_dict(
             saved_state.get("plans") if saved_state else None,
             commitment_system=self.commitment_system,
             agents=self.agents,
+            outcome_memory=self.outcome_memory,
         )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials

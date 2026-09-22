@@ -92,9 +92,32 @@ class Agent:
     def summarize_archived_memories(self, max_archive_size: int = 500) -> None:
         if len(self.memory_archive) <= max_archive_size:
             return
-    
-        oldest_memories = self.memory_archive[:-max_archive_size]
-        self.memory_archive = self.memory_archive[-max_archive_size:]
+
+        # Reserve one fifth of the fixed archive for high-value causal history;
+        # fill the rest by recency. The union is deterministic and remains hard
+        # bounded even over multi-thousand-day runs.
+        salient_limit = max(1, max_archive_size // 5)
+        ordered = sorted(
+            (memory for memory in self.memory_archive
+             if memory.causal or memory.importance >= 4),
+            key=lambda memory: (
+                bool(memory.causal), memory.importance, memory.strength,
+                memory.day, memory.hour, memory.id,
+            ), reverse=True,
+        )
+        salient = ordered[:salient_limit]
+        salient_ids = {memory.id for memory in salient}
+        recent = sorted(
+            (memory for memory in self.memory_archive if memory.id not in salient_ids),
+            key=lambda memory: (memory.day, memory.hour, memory.id), reverse=True,
+        )[:max_archive_size - len(salient)]
+        retained_ids = {memory.id for memory in salient + recent}
+        oldest_memories = [
+            memory for memory in self.memory_archive if memory.id not in retained_ids
+        ]
+        self.memory_archive = sorted(
+            salient + recent, key=lambda memory: (memory.day, memory.hour, memory.id)
+        )
     
         conversation_count = sum(
             1 for memory in oldest_memories
