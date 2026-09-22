@@ -482,6 +482,11 @@ class SimulationEngine:
             self.commitment_system.relevant_context_records(speaker.id, listener.id, current_day)
             if self.commitment_grounding_enabled else []
         )
+        result["context"]["repair_opportunities"] = (
+            self.commitment_system.repair_opportunities(
+                speaker.id, listener.id, day=current_day,
+            ) if self.commitment_grounding_enabled else []
+        )
         return result
         
     def finalize_conversation_tags(
@@ -988,6 +993,10 @@ class SimulationEngine:
         generation_attempt_count: int = 1,
         regenerated_for_repetition: bool = False,
         regenerated_for_grounding: bool = False,
+        regenerated_for_commitment_state: bool = False,
+        commitment_state_valid: bool = True,
+        commitment_state_reason: str = "",
+        related_commitment_id: str = "",
         grounding_valid: bool = True,
         grounding_reason: str = "",
         grounding_candidate_type: str = "",
@@ -1044,6 +1053,10 @@ class SimulationEngine:
             generation_attempt_count=generation_attempt_count,
             regenerated_for_repetition=regenerated_for_repetition,
             regenerated_for_grounding=regenerated_for_grounding,
+            regenerated_for_commitment_state=regenerated_for_commitment_state,
+            commitment_state_valid=commitment_state_valid,
+            commitment_state_reason=commitment_state_reason,
+            related_commitment_id=related_commitment_id,
             grounding_valid=grounding_valid,
             grounding_reason=grounding_reason,
             grounding_candidate_type=grounding_candidate_type,

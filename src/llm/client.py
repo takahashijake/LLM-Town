@@ -181,6 +181,13 @@ class TransformersLLMClient:
                 f"({context['grounding_correction']}). Remove it, ask a question, or express "
                 "uncertainty. Cite only a supplied grounding reference."
             )
+        commitment_correction = ""
+        if context.get("commitment_state_correction"):
+            commitment_correction = (
+                "\n- Commitment-state retry: the prior line contradicted the supplied "
+                f"commitment status ({context['commitment_state_correction']}). State only "
+                "what the supplied pair-private commitment record supports."
+            )
         grounding_sources = context.get("grounding_sources", {})
         grounding_lines = [f"{ref} — {value}" for ref, value in grounding_sources.items()]
         commitment_records = context.get("commitment_records", [])
@@ -194,6 +201,13 @@ class TransformersLLMClient:
             "primary focus and stay consistent with its status; never invent fulfillment."
             if commitment_lines else ""
         )
+        repair_block = ""
+        if context.get("repair_opportunities"):
+            repair_block = (
+                "\nA recent failed commitment creates bounded accountability pressure. "
+                "You may acknowledge it, apologize, or make a concrete replacement proposal; "
+                "do not claim it was fulfilled and do not assume a proposal is accepted."
+            )
 
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
@@ -217,7 +231,7 @@ Relevant memories:
 {lines(context.get('relevant_memories', []))}
 Speaker's beliefs about the listener's general conduct:
 {lines(context.get('reputation_context', []))}
-{commitment_block}
+{commitment_block}{repair_block}{commitment_correction}
 Supported third-party social claim available to share:
 - {context.get('reputation_rumor_text') or 'None supplied'}
 Latest journal reflection:

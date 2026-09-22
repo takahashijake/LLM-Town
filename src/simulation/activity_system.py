@@ -64,6 +64,7 @@ class ActivitySystem:
             "tags": activity.tags,
             "source_commitment_id": getattr(activity, "source_commitment_id", None),
             "commitment_priority": getattr(activity, "commitment_priority", 0.0),
+            "commitment_decision": getattr(activity, "commitment_decision", None),
         }
 
         self.activity_records.append(activity_record)
@@ -151,10 +152,16 @@ class ActivitySystem:
                 if not commitment_id:
                     continue
                 try:
-                    self.commitment_system.execute_activity(
-                        commitment_id=commitment_id, agent_id=agent.id,
-                        day=day, tick=hour, activity_record=record,
-                    )
+                    if activity.id == "commitment_acquire_resource":
+                        self.commitment_system.execute_preparation(
+                            commitment_id=commitment_id, agent_id=agent.id,
+                            day=day, tick=hour, activity_record=record,
+                        )
+                    else:
+                        self.commitment_system.execute_activity(
+                            commitment_id=commitment_id, agent_id=agent.id,
+                            day=day, tick=hour, activity_record=record,
+                        )
                 except ValueError as error:
                     record["execution_status"] = "failed"
                     record["execution_failure_reason"] = getattr(error, "code", str(error))

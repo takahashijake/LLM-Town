@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 
 from src.llm.grounding import GroundingResult
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
+from src.simulation.social_semantics import classify_commitment_relation
 
 
 class ConversationRunner:
@@ -58,6 +59,7 @@ class ConversationRunner:
             generation_attempt_count = 1
             regenerated_for_repetition = False
             regenerated_for_grounding = False
+            regenerated_for_commitment_state = False
             first_grounding_failure = ""
             if (
                 not generation_error
@@ -81,6 +83,28 @@ class ConversationRunner:
                     )
                     processed["parsed_action"] = "chat"
                     processed["dialogue_source"] = "policy_fallback_unsupported_grounding"
+            commitment_state = self._commitment_state_check(context, processed)
+            if (
+                not generation_error and not commitment_state["valid"]
+                and not getattr(engine.llm, "is_deterministic_fake", False)
+            ):
+                generation_attempt_count += 1
+                regenerated_for_commitment_state = True
+                context = {**context,
+                           "commitment_state_correction": commitment_state["reason"]}
+                raw_output, processed, generation_error = self._generate_and_process(
+                    engine=engine, context=context, setup=setup, speaker=speaker,
+                    listener=listener, session=session,
+                )
+                commitment_state = self._commitment_state_check(context, processed)
+                if not generation_error and not commitment_state["valid"]:
+                    processed["conversation"] = "I understand."
+                    processed["parsed_action"] = "chat"
+                    processed["dialogue_source"] = "policy_fallback_commitment_state"
+                    processed["parsed_output"]["commitment_relation"] = {
+                        "commitment_id": commitment_state["commitment_id"],
+                        "relation": "unrelated", "confidence": "none",
+                    }
             if (
                 transcript
                 and not generation_error
@@ -168,6 +192,10 @@ class ConversationRunner:
                 generation_attempt_count=generation_attempt_count,
                 regenerated_for_repetition=regenerated_for_repetition,
                 regenerated_for_grounding=regenerated_for_grounding,
+                regenerated_for_commitment_state=regenerated_for_commitment_state,
+                commitment_state_valid=commitment_state["valid"],
+                commitment_state_reason=commitment_state["reason"],
+                related_commitment_id=commitment_state["commitment_id"],
                 grounding_valid=grounding.valid,
                 grounding_reason=(grounding.reason or first_grounding_failure),
                 grounding_candidate_type=grounding.candidate_type,
@@ -207,6 +235,10 @@ class ConversationRunner:
                 if response.response_to_turn is None:
                     continue
                 proposal = session.turns[response.response_to_turn]
+                repair_parent = self._repair_parent_for_turn(
+                    commitment_system, agents[proposal.speaker].id,
+                    agents[response.speaker].id, proposal.dialogue, session.day,
+                )
                 commitment_system.process_response(
                     proposer_id=agents[proposal.speaker].id,
                     counterpart_id=agents[response.speaker].id,
@@ -219,7 +251,24 @@ class ConversationRunner:
                     proposal_turn=proposal.turn_index,
                     response_turn=response.turn_index,
                     known_goods=goods,
+                    repair_of_commitment_id=repair_parent,
                 )
+            for turn in session.turns:
+                speaker_id = agents[turn.speaker].id
+                listener_id = agents[turn.listener].id
+                records = commitment_system.relevant_context_records(
+                    speaker_id, listener_id, session.day, limit=10,
+                )
+                annotated_id = turn.commitment_relation.get("commitment_id", "")
+                for record in records:
+                    if annotated_id and record["commitment_id"] != annotated_id:
+                        continue
+                    commitment_system.cancel_from_dialogue(
+                        record["commitment_id"], speaker_id=speaker_id,
+                        counterpart_id=listener_id, dialogue=turn.dialogue,
+                        day=session.day, tick=session.hour, session_id=session.session_id,
+                        turn_index=turn.turn_index,
+                    )
         seen_actions = set()
         total_change = 0
         all_tags = []
@@ -323,6 +372,10 @@ class ConversationRunner:
             generation_attempt_count=turn.generation_attempt_count,
             regenerated_for_repetition=turn.regenerated_for_repetition,
             regenerated_for_grounding=turn.regenerated_for_grounding,
+            regenerated_for_commitment_state=turn.regenerated_for_commitment_state,
+            commitment_state_valid=turn.commitment_state_valid,
+            commitment_state_reason=turn.commitment_state_reason,
+            related_commitment_id=turn.related_commitment_id,
             grounding_valid=turn.grounding_valid,
             grounding_reason=turn.grounding_reason,
             grounding_candidate_type=turn.grounding_candidate_type,
@@ -367,6 +420,42 @@ class ConversationRunner:
             ):
                 return True
         return False
+
+    @staticmethod
+    def _commitment_state_check(context: dict, processed: dict) -> dict:
+        records = context.get("commitment_records", [])
+        if not records:
+            return {"valid": True, "reason": "no_supplied_commitment_claim",
+                    "commitment_id": ""}
+        annotation = processed.get("parsed_output", {}).get("commitment_relation", {})
+        annotated_id = annotation.get("commitment_id", "")
+        candidates = [row for row in records if not annotated_id
+                      or row.get("commitment_id") == annotated_id]
+        for row in candidates:
+            commitment = {**row, "id": row["commitment_id"]}
+            result = classify_commitment_relation(
+                commitment, processed.get("conversation", ""), annotation,
+                processed.get("parsed_output", {}).get("grounding_refs", []),
+            )
+            if result["classification"] == "contradiction":
+                return {"valid": False, "reason": result["reason"],
+                        "commitment_id": result["commitment_id"]}
+        return {"valid": True, "reason": "consistent_with_authoritative_state",
+                "commitment_id": annotated_id or (candidates[0]["commitment_id"] if candidates else "")}
+
+    @staticmethod
+    def _repair_parent_for_turn(system, proposal_speaker_id: str,
+                                response_speaker_id: str, dialogue: str,
+                                day: int) -> str | None:
+        text = " ".join(dialogue.lower().split())
+        if not any(marker in text for marker in ("sorry", "missed", "failed", "couldn't", "didn't")):
+            return None
+        if not any(marker in text for marker in ("instead", "again", "make it up", "tomorrow")):
+            return None
+        options = system.repair_opportunities(
+            proposal_speaker_id, response_speaker_id, day=day,
+        )
+        return options[0]["commitment_id"] if options else None
 
     @staticmethod
     def _diagnostics(setup, parsed, tags, raw_output):

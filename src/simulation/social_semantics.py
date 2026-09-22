@@ -221,3 +221,34 @@ def classify_commitment_relation(
         "reason": reason,
         "grounding_refs": list(grounding_refs or []),
     }
+
+
+def classify_explicit_cancellation(commitment: dict, dialogue: str) -> dict:
+    """Recognize only explicit inability/refusal tied to supplied commitment terms."""
+    text = normalize(dialogue)
+    metadata = commitment.get("metadata", {})
+    terms = normalize(
+        metadata.get("task", "") or metadata.get("good_id", "").replace("_", " ")
+        or metadata.get("location", "")
+    )
+    content = [word.rstrip("s") for word in re.findall(r"[a-z]+", terms) if len(word) > 3]
+    refers = any(word in text for word in content)
+    if commitment.get("commitment_type") == "meet":
+        refers = refers or bool(re.search(r"\b(?:meet|meeting|make it|be there)\b", text))
+    elif commitment.get("commitment_type") == "transfer":
+        refers = refers or bool(re.search(r"\b(?:bring|give|deliver|lend)\b", text))
+    elif commitment.get("commitment_type") == "help":
+        refers = refers or bool(re.search(r"\b(?:help|assist)\b", text))
+    inability = r"(?:can't|cannot|won't|will not|am not able to|am unable to|won't be able to)"
+    commitment_verb = r"(?:bring|give|deliver|lend|meet|make|attend|help|assist|repair|fix)"
+    explicit = bool(re.search(
+        rf"\bi (?:{inability})\s+(?:continue (?:with )?|still )?{commitment_verb}\b",
+        text,
+    ))
+    vague = text in {"i'm busy.", "i am busy.", "maybe later.", "that sounds difficult.",
+                     "i don't know.", "i do not know."}
+    cancel = bool(explicit and refers and not vague)
+    return {"cancel": cancel,
+            "reason": "explicit_inability_for_commitment" if cancel
+            else "no_explicit_grounded_cancellation",
+            "refers_to_commitment": refers, "explicit_inability": explicit}

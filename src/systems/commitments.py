@@ -19,6 +19,7 @@ LEGAL_TRANSITIONS = {
 }
 
 FEASIBILITY_STATES = {"feasible", "temporarily_infeasible", "impossible"}
+REPAIR_WINDOW_DAYS = 2
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,10 @@ class CommitmentOpportunity:
     feasibility: str
     infeasibility_reason: str
     provenance: str
+    attempted_in_window: bool = False
+    preparation_action_id: str | None = None
+    preparation_location: str | None = None
+    preparation_reason: str = ""
 
     def __post_init__(self) -> None:
         if self.feasibility not in FEASIBILITY_STATES:
@@ -73,6 +78,7 @@ class SocialCommitment:
     resolution_reason: str = ""
     evidence: list[dict] = field(default_factory=list)
     consequence_applied: bool = False
+    repair_of_commitment_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.commitment_type not in COMMITMENT_TYPES:
@@ -125,6 +131,7 @@ class CommitmentSystem:
         self.materials = materials
         self.location_ids = list(location_ids or [])
         self.execution_records: list[dict] = []
+        self.attempt_records: list[dict] = []
         self.duplicate_attempts = 0
         self.illegal_transition_attempts = 0
         self.processed_evidence_keys: set[str] = set()
@@ -137,6 +144,7 @@ class CommitmentSystem:
             "duplicate_attempts": self.duplicate_attempts,
             "illegal_transition_attempts": self.illegal_transition_attempts,
             "execution_records": list(self.execution_records),
+            "attempt_records": list(self.attempt_records),
         }
 
     @classmethod
@@ -150,6 +158,7 @@ class CommitmentSystem:
         system.duplicate_attempts = int(data.get("duplicate_attempts", 0))
         system.illegal_transition_attempts = int(data.get("illegal_transition_attempts", 0))
         system.execution_records = list(data.get("execution_records", []))
+        system.attempt_records = list(data.get("attempt_records", []))
         system.validate_invariants()
         return system
 
@@ -182,6 +191,9 @@ class CommitmentSystem:
             location = item.metadata.get("location")
             good_id = item.metadata.get("good_id")
             quantity = item.metadata.get("quantity")
+            preparation_action_id = None
+            preparation_location = None
+            preparation_reason = ""
             if actor is None or counterpart is None:
                 feasibility, reason = "impossible", "missing_agent"
             elif day < item.created_day or (item.due_day is not None and day < item.created_day):
@@ -195,6 +207,11 @@ class CommitmentSystem:
                 else:
                     if available < int(quantity or 0):
                         feasibility, reason = "temporarily_infeasible", "resource_unavailable"
+                        route = self._purchase_route(agent_id, good_id, int(quantity or 0))
+                        if route:
+                            preparation_action_id = "commitment_acquire_resource"
+                            preparation_location = route["location_id"]
+                            preparation_reason = "authorized_purchase_available"
                 location = actor.location_id if actor else None
             elif item.commitment_type == "meet":
                 if not location or location not in self.location_ids:
@@ -221,8 +238,69 @@ class CommitmentSystem:
                 urgency=self.urgency(item, day, tick), feasibility=feasibility,
                 infeasibility_reason=reason,
                 provenance=f"commitment:{item.id}",
+                attempted_in_window=any(
+                    record.get("commitment_id") == item.id and record.get("day") == day
+                    for record in self.attempt_records
+                ),
+                preparation_action_id=preparation_action_id,
+                preparation_location=preparation_location,
+                preparation_reason=preparation_reason,
             ))
         return opportunities
+
+    def _purchase_route(self, agent_id: str, good_id: str | None, quantity: int) -> dict | None:
+        """Return an existing legal seller route; never create stock or prices."""
+        if not self.materials or not good_id or quantity <= 0:
+            return None
+        try:
+            account = self.materials.economy.account_for_agent(agent_id)
+            price = self.materials.price_for_good(good_id) * quantity
+        except (KeyError, ValueError, AttributeError):
+            return None
+        for seller in sorted(self.materials.sellers.values(), key=lambda value: value.id):
+            try:
+                stock = self.materials.quantity(seller.inventory_id, good_id)
+            except (KeyError, ValueError):
+                continue
+            if seller.active and stock >= quantity and account.balance >= price:
+                return {"seller_id": seller.id, "location_id": seller.location_id,
+                        "quantity": quantity, "good_id": good_id}
+        return None
+
+    def record_attempt(self, commitment_id: str, *, agent_id: str, day: int,
+                       tick: int | None, kind: str, activity_id: str) -> dict:
+        key = f"commitment-attempt:{commitment_id}:{kind}:{day}:{tick}"
+        existing = next((item for item in self.attempt_records if item["event_key"] == key), None)
+        if existing:
+            self.duplicate_attempts += 1
+            return existing
+        record = {"event_key": key, "commitment_id": commitment_id,
+                  "agent_id": agent_id, "day": day, "tick": tick,
+                  "kind": kind, "activity_id": activity_id}
+        self.attempt_records.append(record)
+        return record
+
+    def execute_preparation(self, *, commitment_id: str, agent_id: str, day: int,
+                            tick: int | None, activity_record: dict) -> dict:
+        item = self.get(commitment_id)
+        if item.status != "accepted" or item.counterpart_id != agent_id:
+            raise CommitmentError("not_executable", "commitment preparation is not active")
+        route = self._purchase_route(agent_id, item.metadata.get("good_id"),
+                                     int(item.metadata.get("quantity", 0)))
+        if not route or activity_record.get("location") != route["location_id"]:
+            raise CommitmentError("resource_unavailable", "no legal acquisition route is available")
+        inventory = self.materials.inventory_for_agent(agent_id)
+        account = self.materials.economy.account_for_agent(agent_id)
+        exchange = self.materials.purchase(
+            inventory.id, account.id, route["seller_id"], route["good_id"], route["quantity"],
+            day=day, hour=tick, event_key=f"commitment:{commitment_id}:preparation",
+        )
+        attempt = self.record_attempt(commitment_id, agent_id=agent_id, day=day, tick=tick,
+                                      kind="preparation", activity_id=activity_record["activity_id"])
+        activity_record["execution_status"] = "prepared"
+        activity_record["preparation_exchange_id"] = exchange.id
+        attempt["exchange_id"] = exchange.id
+        return attempt
 
     def execute_activity(
         self, *, commitment_id: str, agent_id: str, day: int,
@@ -237,6 +315,8 @@ class CommitmentSystem:
             return existing
         if item.status != "accepted" or item.counterpart_id != agent_id:
             raise CommitmentError("not_executable", "commitment is not executable by this agent")
+        self.record_attempt(commitment_id, agent_id=agent_id, day=day, tick=tick,
+                            kind="execution", activity_id=activity_record["activity_id"])
         opportunity = next(
             (candidate for candidate in self.opportunities_for_agent(agent_id, day=day, tick=tick)
              if candidate.commitment_id == commitment_id), None,
@@ -280,6 +360,7 @@ class CommitmentSystem:
         due_tick: int | None = None, source_session_id: str | None = None,
         metadata: dict | None = None, evidence: dict | None = None,
         status: str = "proposed", evidence_key: str | None = None,
+        repair_of_commitment_id: str | None = None,
     ) -> SocialCommitment:
         if evidence_key and evidence_key in self.processed_evidence_keys:
             self.duplicate_attempts += 1
@@ -294,6 +375,7 @@ class CommitmentSystem:
             status=status, created_day=int(day), created_tick=tick, due_day=due_day,
             due_tick=due_tick, source_session_id=source_session_id,
             metadata=dict(metadata or {}), evidence=[],
+            repair_of_commitment_id=repair_of_commitment_id,
         )
         proof = dict(evidence or {})
         if evidence_key:
@@ -339,7 +421,8 @@ class CommitmentSystem:
         due_day = day + 1 if "tomorrow" in normalized else day if "today" in normalized else None
         bounded = bool(due_day is not None or re.search(r"\b(at|after|before) \w+", normalized))
         transfer_request = re.search(r"\b(?:can|could|would) you (?:give|bring|transfer|lend) me\b", normalized)
-        if transfer_request:
+        transfer_offer = re.search(r"\bi (?:can|will|'ll) (?:bring|give|deliver|lend)(?: you)?\b", normalized)
+        if transfer_request or transfer_offer:
             goods = known_goods or {}
             match = next(((good_id, name) for good_id, name in goods.items()
                           if any(alias in normalized for alias in {
@@ -353,7 +436,8 @@ class CommitmentSystem:
             raw = quantity_match.group(1) if quantity_match else "1"
             quantity = quantity_values.get(raw, int(raw) if raw.isdigit() else 1)
             return {"commitment_type": "transfer", "due_day": due_day,
-                    "metadata": {"good_id": match[0], "quantity": quantity}}
+                    "metadata": {"good_id": match[0], "quantity": quantity},
+                    "proposal_speaker_is_obligated": bool(transfer_offer)}
         meet = re.search(r"\b(?:can|could|shall|would) (?:we|you) meet\b|\blet(?:'s| us) meet\b", normalized)
         if meet and bounded:
             location = re.search(r"\b(?:at|in) (?:the )?([a-z_ ]+?)(?: tomorrow| today| at| after| before|[?.!,]|$)", normalized)
@@ -372,15 +456,23 @@ class CommitmentSystem:
         response_text: str, outcome: str, day: int, tick: int | None,
         session_id: str, proposal_turn: int, response_turn: int,
         known_goods: dict[str, str] | None = None,
+        repair_of_commitment_id: str | None = None,
     ) -> SocialCommitment | None:
         proposal = self.recognize_proposal(proposal_text, day=day, known_goods=known_goods)
         if proposal is None or outcome not in {"accepted", "declined"}:
             return None
+        if proposal.get("proposal_speaker_is_obligated"):
+            proposer_id, counterpart_id = counterpart_id, proposer_id
+        if repair_of_commitment_id:
+            parent = self.get(repair_of_commitment_id)
+            if parent.status not in {"expired", "failed", "cancelled"}:
+                raise CommitmentError("invalid_repair_parent", "repair parent must be terminal")
         evidence_key = f"{session_id}:{proposal_turn}:{response_turn}"
         item = self.create(
             proposer_id=proposer_id, counterpart_id=counterpart_id, day=day, tick=tick,
             due_day=proposal["due_day"], source_session_id=session_id,
             commitment_type=proposal["commitment_type"], metadata=proposal["metadata"],
+            repair_of_commitment_id=repair_of_commitment_id,
             evidence={"proposal": proposal_text, "response": response_text,
                       "outcome": outcome, "proposal_turn": proposal_turn,
                       "response_turn": response_turn}, evidence_key=evidence_key,
@@ -389,6 +481,44 @@ class CommitmentSystem:
             self.transition(item.id, outcome, day=day, tick=tick,
                             reason=f"counterpart_{outcome}")
         return item
+
+    def repair_opportunities(self, agent_id: str, counterpart_id: str, *, day: int) -> list[dict]:
+        """Derive pair-private, short-lived accountability pressure."""
+        result = []
+        for item in self.commitments:
+            if item.status not in {"expired", "failed", "cancelled"}:
+                continue
+            if item.counterpart_id != agent_id or item.proposer_id != counterpart_id:
+                continue
+            if item.resolution_day is None or not 0 <= day - item.resolution_day <= REPAIR_WINDOW_DAYS:
+                continue
+            successor = next((child for child in self.commitments
+                              if child.repair_of_commitment_id == item.id), None)
+            result.append({"commitment_id": item.id, "counterpart_id": counterpart_id,
+                           "status": item.status, "age_days": day - item.resolution_day,
+                           "pressure": max(0.35, 0.85 - 0.20 * (day - item.resolution_day)),
+                           "successor_id": successor.id if successor else None})
+        return result
+
+    def cancel_from_dialogue(self, commitment_id: str, *, speaker_id: str,
+                             counterpart_id: str, dialogue: str, day: int,
+                             tick: int | None, session_id: str, turn_index: int) -> SocialCommitment | None:
+        from src.simulation.social_semantics import classify_explicit_cancellation
+        item = self.get(commitment_id)
+        result = classify_explicit_cancellation(item.to_dict(), dialogue)
+        if (item.status != "accepted" or item.counterpart_id != speaker_id
+                or item.proposer_id != counterpart_id or not result["cancel"]):
+            return None
+        evidence_key = f"cancellation:{session_id}:{turn_index}:{commitment_id}"
+        if evidence_key in self.processed_evidence_keys:
+            self.duplicate_attempts += 1
+            return item
+        self.processed_evidence_keys.add(evidence_key)
+        return self.transition(item.id, "cancelled", day=day, tick=tick,
+                               reason="explicit_dialogue_cancellation",
+                               evidence={"evidence_key": evidence_key, "session_id": session_id,
+                                         "turn_index": turn_index, "dialogue": dialogue,
+                                         "semantic_reason": result["reason"]})
 
     def expire_due(self, *, day: int, tick: int | None = None) -> list[SocialCommitment]:
         expired = []
@@ -520,6 +650,24 @@ class CommitmentSystem:
                 ]) == 1
                 for item in self.commitments
             ),
+            "cancelled_has_evidence": all(
+                item.status != "cancelled" or any(
+                    evidence.get("session_id") and evidence.get("turn_index") is not None
+                    for evidence in item.evidence
+                ) for item in self.commitments
+            ),
+            "repair_parent_exists": all(
+                not item.repair_of_commitment_id or item.repair_of_commitment_id in set(ids)
+                for item in self.commitments
+            ),
+            "repair_not_self": all(item.repair_of_commitment_id != item.id for item in self.commitments),
+            "repair_parent_terminal": all(
+                not item.repair_of_commitment_id or self.get(item.repair_of_commitment_id).status
+                in {"expired", "failed", "cancelled"} for item in self.commitments
+            ),
+            "repair_acyclic": all(self._lineage_acyclic(item) for item in self.commitments),
+            "attempts_unique": len({record["event_key"] for record in self.attempt_records})
+            == len(self.attempt_records),
             "priority_bounded": all(
                 0.0 <= value <= 1.0 for value in (
                     self.URGENCY_FAR, self.URGENCY_NEAR,
@@ -530,3 +678,17 @@ class CommitmentSystem:
         if not all(checks.values()):
             raise ValueError(f"commitment invariants failed: {checks}")
         return checks
+
+    def _lineage_acyclic(self, item: SocialCommitment) -> bool:
+        seen = {item.id}
+        parent_id = item.repair_of_commitment_id
+        while parent_id:
+            if parent_id in seen:
+                return False
+            seen.add(parent_id)
+            parent = next((candidate for candidate in self.commitments
+                           if candidate.id == parent_id), None)
+            if parent is None:
+                return False
+            parent_id = parent.repair_of_commitment_id
+        return True

@@ -71,6 +71,8 @@ def run_arm(
             "decline_semantic", "decline_correct", "unresolved_semantic", "unresolved_correct",
             "counteroffer_semantic", "counteroffer_correct", "expired_awareness",
             "fulfilled_awareness", "repair_attempts", "state_consistent",
+            "repair_opportunities", "repair_acknowledgments", "repair_proposals",
+            "repair_successors", "due_attention",
         )}
         failure_reasons = {}
         prior_lines = set()
@@ -225,6 +227,21 @@ def run_arm(
                 counters["expired_awareness"] += int(item.status in {"expired", "failed"} and relation["relation"] in {"acknowledges_failure", "attempts_repair"})
                 counters["fulfilled_awareness"] += int(item.status == "fulfilled" and relation["relation"] == "references_fulfillment")
                 counters["repair_attempts"] += int(relation["relation"] == "attempts_repair")
+                repair_available = bool(engine.commitment_system.repair_opportunities(
+                    bob.id, alice.id, day=3,
+                ))
+                counters["repair_opportunities"] += int(repair_available)
+                counters["repair_acknowledgments"] += int(
+                    repair_available and relation["relation"] in {
+                        "acknowledges_failure", "attempts_repair",
+                    }
+                )
+                counters["repair_proposals"] += int(
+                    repair_available and relation["relation"] == "attempts_repair"
+                )
+                counters["due_attention"] += int(
+                    opportunity is not None and opportunity.urgency >= 1.0 and remembers
+                )
             claimed_transfer = relation["relation"] == "references_fulfillment"
             counters["false_fulfillment"] += int(
                 name == "transfer" and claimed_transfer and (not item or item.status != "fulfilled")
@@ -279,6 +296,15 @@ def run_arm(
             "expired_commitment_awareness": observed_rate(counters["expired_awareness"], counters["deadline_miss"]),
             "fulfilled_commitment_awareness": observed_rate(counters["fulfilled_awareness"], counters["fulfilled"]),
             "repair_recommitment_attempts": counters["repair_attempts"],
+            "repair_opportunity_attention_rate": observed_rate(
+                counters["repair_acknowledgments"], counters["repair_opportunities"]
+            ),
+            "repair_successor_rate": observed_rate(
+                counters["repair_successors"], counters["repair_proposals"]
+            ),
+            "due_commitment_attention_rate": observed_rate(
+                counters["due_attention"], counters["candidates"]
+            ),
             "repetition_rate": counters["repetitions"] / max(1, len(events)),
             "runtime_failures": counters["runtime_failures"],
             "malformed_output_rate": counters["malformed_output"] / max(1, conversations),
@@ -294,7 +320,11 @@ def run_arm(
         result = {"model": model_name, "seed": seed, "grounding_enabled": True,
                   "execution_pressure_enabled": enabled, "metrics": metrics,
                   "funnel": {key: counters[key] for key in
-                             ("accepted", "candidates", "feasible", "selected", "executed", "fulfilled")},
+                             ("accepted", "candidates", "feasible", "selected", "executed",
+                              "fulfilled", "deadline_miss", "cancelled",
+                              "repair_opportunities", "repair_acknowledgments",
+                              "repair_proposals", "repair_successors", "contradictions",
+                              "false_fulfillment")},
                   "failure_classification": failure_reasons, "events": events}
         result["response_cache"] = response_cache
         return result

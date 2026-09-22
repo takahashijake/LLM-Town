@@ -481,23 +481,53 @@ python scripts/evaluate_commitments_real.py --model-name Qwen/Qwen2.5-7B-Instruc
 
 Accepted commitments also produce ephemeral action opportunities for the
 obligated agent during ordinary activity selection. Opportunity feasibility is
-checked against the current agents, locations, date, and material inventory.
-Due-date urgency contributes a capped planner probability (`0.10` base, `0.60`
-urgency weight, `0.70` maximum), leaving existing needs, intents, and events room
-to win selection. Selected help, meeting, and transfer activities retain their
-`source_commitment_id`; fulfillment occurs only after co-located activity
-execution or an atomic material transfer succeeds. Opportunities are derived on
-each cycle rather than persisted as another queue.
+checked against the current agents, locations, date, material inventory, and
+same-window attempt history. Phase 3 replaces the shallow selection coin flip
+with an inspectable bounded priority comparison: urgency and current-due status
+raise commitment pressure, prior attempts reduce it, and the strongest current
+need, intent, or event remains a real competitor. A bounded stochastic
+adjustment permits intelligible lapses without making every promise succeed.
+Activity records retain the pressure, competitor, adjustment, feasibility, and
+decision reason.
+
+For a missing transfer resource, the derived opportunity may select a narrow
+preparatory purchase only when an already configured active seller has the real
+stock, the obligated agent has sufficient funds, and the existing location,
+price, inventory, provenance, and conservation checks all pass. There is no
+resource minting and no fabricated acquisition route. Selected help, meeting,
+transfer, and preparation activities retain their `source_commitment_id`;
+fulfillment still occurs only after co-located authoritative activity execution
+or an atomic material transfer succeeds. Opportunities are reconstructed each
+cycle rather than persisted as another task queue.
+
+Expired, failed, and explicitly cancelled commitments produce a pair-private
+repair opportunity for two days. It can focus later dialogue on acknowledgment,
+apology, or a concrete replacement proposal, but it cannot rewrite the terminal
+record. Explicit cancellation is conservative: only the obligated speaker,
+talking to the original proposer, can cancel an active promise with language
+that both states inability/refusal and identifies its terms. Exact session/turn
+evidence makes cancellation idempotent.
+
+A replacement follows normal proposal and clear-acceptance resolution. The new
+record has its own ID and an explicit `repair_of_commitment_id`; its terminal
+predecessor remains immutable and retains its social consequence. Cyclic or
+missing lineage is rejected. Production dialogue is also checked against only
+the pair-private commitment records supplied to that speaker. A clear status
+contradiction receives at most one regeneration, followed by a neutral fallback;
+dialogue can never fulfill a promise.
 
 Run the deterministic execution funnel with:
 
 ```bash
 python scripts/evaluate_commitment_execution.py
+python scripts/evaluate_commitment_accountability.py
 ```
 
 The real-model script now compares prompt grounding alone against the same
 grounding plus commitment-aware execution pressure, and reports the full
 accepted → candidate → feasible → selected → executed → fulfilled funnel.
+Phase 3 adds cancellation, repair-opportunity, successor-lineage,
+authoritative-contradiction, false-fulfillment, and persistence scenarios.
 
 ## Current limitations
 
@@ -505,6 +535,11 @@ accepted → candidate → feasible → selected → executed → fulfilled funn
 - Session effects are generally applied after dialogue generation, so relationship
   state does not change midway through the same conversation.
 - The four-turn default bounds cost and failure propagation but limits depth.
+- Commitments remain limited to `help`, `meet`, and `transfer`; proposal and
+  cancellation grammar is intentionally narrow, preparation currently covers
+  only an existing-seller transfer purchase, and there is no general calendar,
+  contract engine, negotiation planner, multi-party promise, or hierarchical
+  autonomous planner.
 - A local 3B model's instruction following and naturalness constrain dialogue quality.
 - Same-action deduplication and rate suppression trade some behavioral fidelity for
   stable relationship, reputation, need, goal, intent, and town-arc progression.

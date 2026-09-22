@@ -23,6 +23,10 @@ class ConversationTurn:
     generation_attempt_count: int = 1
     regenerated_for_repetition: bool = False
     regenerated_for_grounding: bool = False
+    regenerated_for_commitment_state: bool = False
+    commitment_state_valid: bool = True
+    commitment_state_reason: str = "no_supplied_commitment_claim"
+    related_commitment_id: str = ""
     grounding_valid: bool = True
     grounding_reason: str = ""
     grounding_candidate_type: str = ""

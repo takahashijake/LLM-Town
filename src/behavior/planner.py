@@ -1,13 +1,36 @@
 import random
+from dataclasses import asdict, dataclass
 
 from src.agents.agent import Agent
 from src.behavior.activity import Activity
 
 
+@dataclass(frozen=True)
+class CommitmentDecision:
+    commitment_id: str
+    selected: bool
+    decision_type: str
+    urgency: float
+    feasibility: str
+    pressure: float
+    competing_priority: float
+    stochastic_adjustment: float
+    attempted_in_window: bool
+    reason: str
+
+
 class ActivityPlanner:
-    COMMITMENT_SELECTION_BASE = 0.10
-    COMMITMENT_SELECTION_URGENCY_WEIGHT = 0.60
-    COMMITMENT_SELECTION_MAX = 0.70
+    """Compare inspectable bounded priorities; randomness only breaks close calls."""
+
+    COMMITMENT_PRESSURE_BASE = 0.20
+    COMMITMENT_URGENCY_WEIGHT = 0.60
+    COMMITMENT_DUE_BONUS = 0.15
+    COMMITMENT_ATTEMPT_PENALTY = 0.18
+    COMMITMENT_PREPARATION_PENALTY = 0.12
+    # A visible lapse/resolve term preserves occasional failures without making
+    # the commitment itself a Bernoulli gate. Due pressure still dominates
+    # ordinary activity through most of this bounded range.
+    DECISION_JITTER = 0.75
 
     @staticmethod
     def _goal_texts(agent) -> list[str]:
@@ -78,23 +101,30 @@ class ActivityPlanner:
         commitment_opportunities=None,
     ) -> Activity:
         agent.initialize_needs()
+        deferred_commitment_decision = None
 
         feasible_commitments = [
             item for item in (commitment_opportunities or [])
             if item.feasibility == "feasible"
         ]
-        if feasible_commitments:
-            opportunity = max(
-                feasible_commitments,
-                key=lambda item: (item.urgency, item.commitment_id),
+        preparable_commitments = [
+            item for item in (commitment_opportunities or [])
+            if item.feasibility == "temporarily_infeasible" and item.preparation_action_id
+        ]
+        actionable = feasible_commitments + preparable_commitments
+        if actionable:
+            decisions = [self.commitment_decision(agent, item, current_intent, daily_event)
+                         for item in actionable]
+            decision, opportunity = max(
+                zip(decisions, actionable),
+                key=lambda pair: (pair[0].pressure + pair[0].stochastic_adjustment,
+                                  pair[1].urgency, pair[1].commitment_id),
             )
-            probability = min(
-                self.COMMITMENT_SELECTION_MAX,
-                self.COMMITMENT_SELECTION_BASE
-                + opportunity.urgency * self.COMMITMENT_SELECTION_URGENCY_WEIGHT,
-            )
-            if random.random() < probability:
-                return self.create_commitment_activity(agent, opportunity)
+            if decision.selected:
+                if decision.decision_type == "prepare":
+                    return self.create_commitment_preparation_activity(agent, opportunity, decision)
+                return self.create_commitment_activity(agent, opportunity, decision)
+            deferred_commitment_decision = asdict(decision)
 
         if (
             current_intent
@@ -102,17 +132,21 @@ class ActivityPlanner:
             and current_intent.target_location in location_ids
             and self.should_prioritize_intent_before_event(current_intent)
         ):
-            return self.create_intent_activity(current_intent)
+            activity = self.create_intent_activity(current_intent)
+            activity.commitment_decision = deferred_commitment_decision
+            return activity
 
         # Sometimes attend the daily event if it is relevant.
         if daily_event and self.should_attend_daily_event(agent, daily_event):
-            return Activity(
+            activity = Activity(
                 id="attend_event",
                 name=f"Attend {daily_event.name}",
                 location_id=daily_event.location_id,
                 reason=f"{agent.name} is interested in today's event: {daily_event.name}.",
                 tags=["event", daily_event.id] + daily_event.tags,
             )
+            activity.commitment_decision = deferred_commitment_decision
+            return activity
 
         if current_intent and current_intent.target_location:
             follow_probability = self.get_intent_activity_probability(current_intent)
@@ -121,24 +155,66 @@ class ActivityPlanner:
                 current_intent.target_location in location_ids
                 and random.random() < follow_probability
             ):
-                return self.create_intent_activity(current_intent)
+                activity = self.create_intent_activity(current_intent)
+                activity.commitment_decision = deferred_commitment_decision
+                return activity
 
         # Otherwise choose based on goals, occupation, and needs.
         candidates = self.get_candidate_activities(agent, location_ids)
 
         if not candidates:
             fallback_location = agent.choose_location_by_need(location_ids)
-            return Activity(
+            activity = Activity(
                 id="wander",
                 name="Wander around town",
                 location_id=fallback_location,
                 reason=f"{agent.name} is choosing a location based on current needs.",
                 tags=["wander", agent.get_primary_need()],
             )
+            activity.commitment_decision = deferred_commitment_decision
+            return activity
 
-        return random.choice(candidates)
+        activity = random.choice(candidates)
+        activity.commitment_decision = deferred_commitment_decision
+        return activity
 
-    def create_commitment_activity(self, agent: Agent, opportunity) -> Activity:
+    def _competing_priority(self, agent, current_intent, daily_event) -> tuple[float, str]:
+        values = [(0.18, "ordinary_activity")]
+        if current_intent:
+            values.append((self.get_intent_activity_probability(current_intent) + 0.20,
+                           f"intent:{current_intent.intent_type}"))
+        if daily_event:
+            values.append((0.52, f"event:{daily_event.id}"))
+        agent.initialize_needs()
+        primary = agent.get_primary_need()
+        need_value = float(agent.needs.get(primary, 50))
+        values.append((min(0.90, 0.25 + max(0.0, 50.0 - need_value) / 60.0),
+                       f"need:{primary}"))
+        return max(values, key=lambda value: value[0])
+
+    def commitment_decision(self, agent, opportunity, current_intent=None,
+                            daily_event=None) -> CommitmentDecision:
+        preparation = opportunity.feasibility != "feasible"
+        pressure = (self.COMMITMENT_PRESSURE_BASE
+                    + opportunity.urgency * self.COMMITMENT_URGENCY_WEIGHT
+                    + (self.COMMITMENT_DUE_BONUS if opportunity.urgency >= 1.0 else 0.0)
+                    - (self.COMMITMENT_ATTEMPT_PENALTY if opportunity.attempted_in_window else 0.0)
+                    - (self.COMMITMENT_PREPARATION_PENALTY if preparation else 0.0))
+        pressure = max(0.0, min(1.0, pressure))
+        competing, competitor = self._competing_priority(agent, current_intent, daily_event)
+        jitter = (0.5 - random.random()) * 2.0 * self.DECISION_JITTER
+        selected = pressure + jitter >= competing
+        reason = (f"commitment pressure {pressure:.3f} plus bounded adjustment {jitter:.3f} "
+                  f"{'met' if selected else 'did not meet'} competing {competitor} "
+                  f"priority {competing:.3f}")
+        return CommitmentDecision(
+            opportunity.commitment_id, selected, "prepare" if preparation else "execute",
+            opportunity.urgency, opportunity.feasibility, pressure, competing, jitter,
+            opportunity.attempted_in_window, reason,
+        )
+
+    def create_commitment_activity(self, agent: Agent, opportunity,
+                                   decision: CommitmentDecision | None = None) -> Activity:
         names = {
             "help": "Help fulfill an agreed task",
             "meet": "Attend an agreed meeting",
@@ -154,9 +230,22 @@ class ActivityPlanner:
             ),
             tags=["commitment", opportunity.commitment_type],
             source_commitment_id=opportunity.commitment_id,
-            commitment_priority=min(self.COMMITMENT_SELECTION_MAX,
-                                    self.COMMITMENT_SELECTION_BASE +
-                                    opportunity.urgency * self.COMMITMENT_SELECTION_URGENCY_WEIGHT),
+            commitment_priority=(decision.pressure if decision else opportunity.urgency),
+            commitment_decision=asdict(decision) if decision else None,
+        )
+
+    def create_commitment_preparation_activity(self, agent, opportunity,
+                                               decision: CommitmentDecision) -> Activity:
+        return Activity(
+            id=opportunity.preparation_action_id,
+            name="Acquire a promised resource through an authorized seller",
+            location_id=opportunity.preparation_location or agent.location_id,
+            reason=(f"{agent.name} is preparing for accepted commitment "
+                    f"{opportunity.commitment_id}: {opportunity.preparation_reason}."),
+            tags=["commitment", "preparation", "purchase"],
+            source_commitment_id=opportunity.commitment_id,
+            commitment_priority=decision.pressure,
+            commitment_decision=asdict(decision),
         )
 
     def should_attend_daily_event(self, agent: Agent, daily_event) -> bool:
