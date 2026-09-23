@@ -14,7 +14,7 @@ MAX_GROUNDING_FACT_CHARS = 240
 GROUNDING_PREFIXES = {"memory", "relationship_event", "public_event", "reputation_claim", "journal", "town_arc", "g"}
 POLARITY_BY_EVENT = {
     "commitment_accepted": "accepted", "commitment_fulfilled": "fulfilled",
-    "commitment_failed": "failed", "commitment_expired": "failed",
+    "commitment_failed": "failed", "commitment_expired": "expired",
     "commitment_cancelled": "cancelled", "commitment_canceled": "cancelled",
     "plan_failed": "failed_private", "restitution_received": "completed",
     "plan_completed": "completed_private",
@@ -23,6 +23,117 @@ POLARITY_BY_EVENT = {
     "loss_discovered": "unknown_culprit",
 }
 ALLOWED_FOLLOW_THROUGH = {"none", "acknowledge", "appreciate", "request_explanation", "apologize", "propose_repair", "decline_similar", "cooperate"}
+
+
+@dataclass(frozen=True)
+class GroundedDialoguePlan:
+    """Engine-owned meaning that a model may phrase but may not redefine."""
+
+    use_history: bool
+    grounding_ref: str = ""
+    event_type: str = ""
+    required_polarity: str = "neutral"
+    counterpart: str = ""
+    social_intent: str = "none"
+    follow_through: str = "none"
+    forbidden_assertions: tuple[str, ...] = ()
+
+    def prompt_dict(self) -> dict:
+        return {**asdict(self), "forbidden_assertions": list(self.forbidden_assertions)}
+
+
+FOLLOW_THROUGH_BY_POLARITY = {
+    "fulfilled": ("acknowledge", "appreciate", "cooperate"),
+    "failed": ("acknowledge", "request_explanation", "apologize", "propose_repair", "decline_similar"),
+    "expired": ("acknowledge", "request_explanation", "propose_repair"),
+    "cancelled": ("acknowledge", "request_explanation"),
+    "completed_private": ("acknowledge",),
+    "failed_private": ("acknowledge",),
+    "witnessed": ("acknowledge", "request_explanation"),
+    "unknown_culprit": ("acknowledge",),
+    "adjudicated": ("acknowledge",),
+    "completed": ("acknowledge", "appreciate"),
+}
+
+
+def plan_grounded_dialogue(context: dict) -> GroundedDialoguePlan | None:
+    """Select a visible causal fact when the current utterance asks about it.
+
+    Selection is deliberately narrow. Ambient causal history remains visible but is
+    not forced into unrelated conversation.
+    """
+    transcript = context.get("session_transcript", [])
+    question = str(transcript[-1].get("dialogue", "")) if transcript else ""
+    if not question or "?" not in question:
+        return None
+    question_words = set(re.findall(r"[a-z][a-z'-]{2,}", question.lower()))
+    ignored = {"what", "when", "where", "which", "about", "that", "this", "your", "have", "were", "with", "from", "there"}
+    question_words -= ignored
+    best = None
+    best_score = 0
+    for row in context.get("grounding_packet", []):
+        if not isinstance(row, dict) or not row.get("ref"):
+            continue
+        counterpart = str(row.get("counterpart", ""))
+        if counterpart and counterpart != context.get("listener"):
+            continue
+        fact_words = set(re.findall(r"[a-z][a-z'-]{2,}", str(row.get("fact", "")).lower()))
+        event_words = set(str(row.get("source_type", "")).lower().split("_"))
+        score = len(question_words & (fact_words | event_words))
+        if score > best_score:
+            best, best_score = row, score
+    if not best or best_score == 0:
+        return None
+    polarity = str(best.get("outcome_polarity", "neutral"))
+    if polarity not in FOLLOW_THROUGH_BY_POLARITY:
+        return None
+    allowed = FOLLOW_THROUGH_BY_POLARITY.get(polarity, ("acknowledge",))
+    forbidden = []
+    if polarity == "unknown_culprit":
+        forbidden.append("identify any culprit")
+    if polarity in {"completed_private", "failed_private"}:
+        forbidden.append("attribute the private plan or its reason to the listener")
+    return GroundedDialoguePlan(
+        use_history=True, grounding_ref=str(best["ref"]),
+        event_type=str(best.get("source_type", "")), required_polarity=polarity,
+        counterpart=counterpart, social_intent=allowed[0],
+        follow_through=allowed[0], forbidden_assertions=tuple(forbidden),
+    )
+
+
+FALLBACK_BY_POLARITY = {
+    "fulfilled": "Yes, that was fulfilled.",
+    "failed": "No, that failed.",
+    "expired": "No, that expired before completion.",
+    "cancelled": "No, that was cancelled.",
+    "completed_private": "Yes, I completed that plan.",
+    "failed_private": "No, my plan failed.",
+    "witnessed": "Yes, I witnessed what happened.",
+    "unknown_culprit": "I don't know who was responsible.",
+    "adjudicated": "Yes, that was adjudicated.",
+    "completed": "Yes, that was completed.",
+}
+
+FALLBACK_BY_EVENT = {
+    "material_acquired": "Yes, I acquired the materials.",
+    "adjudication": "Yes, that was resolved by adjudication.",
+    "adjudicated_responsible": "Yes, that was resolved by adjudication.",
+    "restitution_received": "Yes, the restitution was received.",
+    "restitution_completed": "Yes, the restitution was completed.",
+    "theft_committed": "Yes, I witnessed the theft.",
+    "loss_discovered": "I don't know who was responsible.",
+    "plan_completed": "Yes, I completed that plan.",
+    "plan_failed": "No, my plan failed.",
+}
+
+
+def grounded_fallback(plan: GroundedDialoguePlan | dict) -> str:
+    value = plan.prompt_dict() if isinstance(plan, GroundedDialoguePlan) else plan
+    event_type = str(value.get("event_type", ""))
+    if event_type in FALLBACK_BY_EVENT:
+        return FALLBACK_BY_EVENT[event_type]
+    polarity = str(value.get("required_polarity", "neutral"))
+    return FALLBACK_BY_POLARITY.get(polarity, "I can only confirm what I know.")
 
 
 @dataclass(frozen=True)
@@ -118,6 +229,50 @@ class GroundingValidator:
     LOCAL_ENTITY = re.compile(r"\b(?:the |a |our )?(?:new )?([A-Z][A-Za-z'-]*(?: [A-Z][A-Za-z'-]*){0,2}) (shop|store|stall|vendor|market|cafe|garden|library|factory|clinic|school)\b")
     DESCRIBED_LOCAL_ENTITY = re.compile(r"\b((?:new|old|community|riverside|downtown|local) (?:shop|store|stall|vendor|market|cafe|bakery|bookstore|garden|museum|factory|clinic|school|mill))\b", re.I)
     HONORIFIC_PERSON = re.compile(r"\b(?:Mr|Mrs|Ms|Dr)\.\s*[A-Z][A-Za-z'-]+\b")
+
+    PLAN_REQUIRED = {
+        "fulfilled": re.compile(r"\b(?:fulfilled|kept|completed|came through|did it|yes,? i did)\b", re.I),
+        "failed": re.compile(r"\b(?:failed|missed|didn't|did not|couldn't|could not|sorry)\b", re.I),
+        "expired": re.compile(r"\b(?:expired|ran out|too late|deadline passed)\b", re.I),
+        "cancelled": re.compile(r"\b(?:cancel(?:led|ed)?|called off|ended|not (?:delivered|done))\b", re.I),
+        "completed_private": re.compile(r"\b(?:completed|finished|succeeded|did it)\b", re.I),
+        "failed_private": re.compile(r"\b(?:failed|didn't|did not|couldn't|could not)\b", re.I),
+        "witnessed": re.compile(r"\b(?:saw|witnessed|observed|was there when)\b", re.I),
+        "unknown_culprit": re.compile(r"\b(?:don't know|do not know|unknown|not sure|can't confirm|cannot confirm)\b", re.I),
+        "adjudicated": re.compile(r"\b(?:adjudicat|judg(?:e|ed|ment)|ruled|ordered|responsible|repay)\w*\b", re.I),
+        "completed": re.compile(r"\b(?:completed|finished|received|restitution|acquired|got)\b", re.I),
+    }
+    PLAN_REVERSED = {
+        "fulfilled": re.compile(r"\b(?:failed|missed|didn't|did not|not (?:fulfilled|completed))\b", re.I),
+        "failed": re.compile(r"\b(?:fulfilled|kept (?:the |your )?promise|came through|completed it)\b", re.I),
+        "expired": re.compile(r"\b(?:fulfilled|completed|still active|still valid)\b", re.I),
+        "cancelled": re.compile(r"\b(?:fulfilled|delivered|completed)\b", re.I),
+        "completed_private": re.compile(r"\b(?:failed|didn't|did not|couldn't|could not)\b", re.I),
+        "failed_private": re.compile(r"\b(?:completed|finished|succeeded)\b", re.I),
+        "witnessed": re.compile(r"\b(?:didn't|did not|never) (?:see|saw|witness|witnessed|observe|observed)\b", re.I),
+        "unknown_culprit": CULPRIT,
+        "adjudicated": re.compile(r"\b(?:not|never) (?:adjudicated|judged|ruled|ordered)\b", re.I),
+        "completed": re.compile(r"\b(?:not completed|still owe|failed|couldn't|could not)\b", re.I),
+    }
+
+    def validate_realization(self, dialogue: str, plan: GroundedDialoguePlan | dict) -> GroundingResult:
+        """Check that surface text, rather than metadata, realizes the plan."""
+        value = plan.prompt_dict() if isinstance(plan, GroundedDialoguePlan) else plan
+        polarity = str(value.get("required_polarity", "neutral"))
+        text = " ".join(str(dialogue).split())
+        reversed_rule = self.PLAN_REVERSED.get(polarity)
+        if reversed_rule and reversed_rule.search(text):
+            return GroundingResult(False, "planned_outcome_reversed", "polarity")
+        required_rule = self.PLAN_REQUIRED.get(polarity)
+        if value.get("use_history") and required_rule and not required_rule.search(text):
+            return GroundingResult(False, "planned_outcome_not_realized", "polarity")
+        if polarity == "unknown_culprit" and self.CULPRIT.search(text):
+            return GroundingResult(False, "unknown_culprit_asserted", "private_information")
+        if polarity in {"completed_private", "failed_private"} and re.search(
+            r"\b(?:you|because you|your plan)\b", text, re.I
+        ):
+            return GroundingResult(False, "private_plan_boundary", "private_information")
+        return GroundingResult(True)
 
     def validate(self, dialogue: str, refs: list[str], context: dict, *, follow_through: dict | None = None) -> GroundingResult:
         sources = context.get("grounding_sources") or build_grounding_sources(context)

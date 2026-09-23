@@ -1,5 +1,55 @@
 # Grounded dialogue and social follow-through
 
+## V3 production architecture
+
+Grounded dialogue now uses an engine-planned, two-stage path. Deterministic code
+selects whether history applies and owns the visible `gN` fact, event type,
+outcome polarity, counterpart, social intent, follow-through eligibility, and
+forbidden assertions. The model receives that bounded plan and realizes it as a
+natural utterance. It does not decide provenance, ownership, culprit identity,
+counterpart identity, outcome, or whether follow-through is legitimate.
+
+Any model-emitted metadata is advisory and retained as disagreement diagnostics.
+The parsed production record always uses the engine-selected reference; invented
+or misspelled IDs cannot displace it or reject an otherwise safe utterance.
+Surface language is scored separately, so correct metadata cannot make an
+incorrect or polarity-reversed utterance count as grounded.
+
+The validator has narrow event-specific contracts for fulfilled, failed, expired,
+cancelled, private-plan completion/failure, witnessed crime, unknown culprit,
+adjudication, and completed restitution/material outcomes. A contradiction gets
+at most one plan-scoped repair. Failure then produces a personality-neutral,
+event-specific utterance without mutating state. Repair, fallback, and metadata
+disagreement are recorded on the turn.
+
+### Final capability tiers (24 cases × 3 seeds)
+
+Production candidate D passed every safety requirement for both cached local
+Qwen models: private leakage 0, authority contradictions 0, counterpart accuracy
+100%, engine-owned reference validity 100%, and runtime failures 0. Both also
+reached 100% parse success, required-history realization, and polarity accuracy,
+with 0% irrelevant-history intrusion.
+
+- Qwen2.5-3B is **safe degraded support**: repair 19.44%, deterministic fallback
+  19.44%. It exceeds both full-support frequency ceilings.
+- Qwen2.5-7B is **safe degraded support**: repair 15.28%, deterministic fallback
+  6.94%. It misses full support by one repair in 72 samples; the 15% threshold was
+  not relaxed.
+
+The targeted prior-failure cluster (five cases, seed 42) was safe and 100%
+correct after recovery: 3B repaired 4/5 and fell back 3/5; 7B repaired 2/5 and
+fell back 1/5. These deliberately concentrated rates are not capability rates.
+The one-seed A–D ablation confirmed that A (prompted JSON), B (plan plus
+model-owned metadata), and C (engine metadata without recovery) all fail quality
+gates. D is selected because it alone closes surface failures while preserving
+the authority boundary. Since neither supported model meets the full-quality
+repair/fallback envelope, V3 should not yet advance to broader social
+follow-through.
+
+Generation caching keys include model digest, exact prompt hash, content-plan
+hash, seed, generation configuration, and parser version. Development used stored
+baselines and targeted failures; only D received the final three-seed run.
+
 ## Contract and knowledge boundary
 
 Conversation retrieval remains the only entrance to historical context. After

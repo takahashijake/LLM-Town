@@ -32,6 +32,10 @@ class ConversationTurn:
     grounding_candidate_type: str = ""
     grounding_refs: list[str] = field(default_factory=list)
     invalid_grounding_refs: list[str] = field(default_factory=list)
+    grounding_metadata_advisory: dict = field(default_factory=dict)
+    grounding_metadata_disagreements: list[str] = field(default_factory=list)
+    grounded_repair_used: bool = False
+    grounded_fallback_used: bool = False
     effect_applied: bool = False
     effect_suppressed: bool = False
     effect_suppression_reason: str = ""

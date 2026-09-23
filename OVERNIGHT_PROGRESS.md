@@ -1,5 +1,35 @@
 # Overnight engineering progress
 
+## Engine-planned grounded realization V3 gate (2026-09-23)
+
+- Starting SHA `1abaa3d331205d5d9fd75cae181482c3b7808afe`; clean `main`, aligned
+  with `origin/main`.
+- Implemented an engine-owned content plan for history use, selected visible
+  reference, authoritative event/polarity, counterpart, social intent,
+  follow-through eligibility, and forbidden assertions. Planned model output is
+  utterance-only; any emitted metadata is advisory and disagreements are logged.
+- Added narrow polarity contracts for fulfilled, failed, expired, cancelled,
+  private completion/failure, witnessed crime, unknown culprit, adjudication,
+  restitution, and material completion. One bounded repair precedes an
+  event-specific, state-neutral fallback.
+- Added regressions proving invented metadata cannot replace the engine reference
+  and correct engine metadata cannot make reversed surface meaning pass.
+- Targeted five-case seed-42 failure cluster: both models had 100% history and
+  polarity after recovery with zero hard-safety failures; 3B repair/fallback was
+  4/5 and 3/5, 7B was 2/5 and 1/5.
+- Final D run, 72 samples/model: both had 100% parse/history/polarity/counterpart/
+  engine-reference validity and zero leakage, authority contradiction, intrusion,
+  or runtime failure. 3B repair/fallback was 19.44%/19.44%; 7B was 15.28%/6.94%.
+  Both are honestly classified safe degraded; thresholds were not weakened.
+- A–D only: prompted JSON, planned meaning with model metadata, engine metadata,
+  and engine metadata plus repair/fallback. D was selected as the only safe path
+  that closes all surface failures. Neither model currently supports advancing
+  V3 to broader social follow-through.
+- Verification so far: compileall PASS; 573 tests PASS; grounded evaluator PASS;
+  all prior deterministic commitment, planning, social, relationship, economy,
+  material, production, crime, justice, causal-memory, and Whole V2 evaluators
+  PASS.
+
 ## Reliable live grounded dialogue V3 gate (2026-09-23)
 
 - Starting SHA: `c60aa0076ded1268336cbeb9ef3c8850491ee5a5`; clean `main`

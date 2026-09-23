@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from difflib import SequenceMatcher
 
-from src.llm.grounding import GroundingResult
+from src.llm.grounding import GroundingResult, grounded_fallback, plan_grounded_dialogue
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
 from src.simulation.social_semantics import classify_commitment_relation
 
@@ -48,6 +48,9 @@ class ConversationRunner:
             context = setup["context"]
             context["session_transcript"] = list(transcript)
             context["most_recent_utterance"] = transcript[-1]["dialogue"] if transcript else ""
+            if "grounded_content_plan" not in context:
+                plan = plan_grounded_dialogue(context)
+                context["grounded_content_plan"] = plan.prompt_dict() if plan else None
             raw_output, processed, generation_error = self._generate_and_process(
                 engine=engine,
                 context=context,
@@ -61,6 +64,8 @@ class ConversationRunner:
             regenerated_for_grounding = False
             regenerated_for_commitment_state = False
             first_grounding_failure = ""
+            grounded_repair_used = False
+            grounded_fallback_used = False
             if (
                 not generation_error
                 and not getattr(engine.llm, "is_deterministic_fake", False)
@@ -69,20 +74,53 @@ class ConversationRunner:
                 first_grounding_failure = processed["grounding"].reason
                 generation_attempt_count += 1
                 regenerated_for_grounding = True
-                context = {
-                    **context,
-                    "grounding_correction": first_grounding_failure,
-                }
-                raw_output, processed, generation_error = self._generate_and_process(
-                    engine=engine, context=context, setup=setup, speaker=speaker,
-                    listener=listener, session=session,
-                )
-                if not generation_error and not processed["grounding"].valid:
-                    processed["conversation"] = engine.conversation_policy.get_grounded_fallback_dialogue(
-                        speaker=speaker, context=context, location_id=session.location,
+                invalid_output = raw_output
+                context = {**context, "grounding_correction": first_grounding_failure,
+                           "invalid_grounded_output": invalid_output}
+                repair = getattr(engine.llm, "repair_grounded_realization", None)
+                if context.get("grounded_content_plan") and repair:
+                    grounded_repair_used = True
+                    try:
+                        raw_output = repair(context, invalid_output, first_grounding_failure)
+                        generation_error = ""
+                    except Exception as error:
+                        raw_output = ""
+                        generation_error = f"{type(error).__name__}: {error}"
+                    processed = engine.process_conversation_output(
+                        raw_output=raw_output, allowed_actions=setup["allowed_actions"],
+                        speaker=speaker, listener=listener,
+                        old_relationship_label=setup["old_relationship_label"],
+                        location_id=session.location, suggested_action=setup["suggested_action"],
+                        current_day=session.day, conversation_context=context,
+                        enforce_information_boundaries=True,
                     )
+                else:
+                    raw_output, processed, generation_error = self._generate_and_process(
+                        engine=engine, context=context, setup=setup, speaker=speaker,
+                        listener=listener, session=session,
+                    )
+                if generation_error or not processed["grounding"].valid:
+                    if context.get("grounded_content_plan"):
+                        if generation_error:
+                            processed.setdefault("grounding_metadata_advisory", {})[
+                                "repair_error"
+                            ] = generation_error
+                            generation_error = ""
+                        processed["conversation"] = grounded_fallback(context["grounded_content_plan"])
+                        processed["parsed_output"]["grounding_refs"] = [
+                            context["grounded_content_plan"]["grounding_ref"]
+                        ]
+                        grounded_fallback_used = True
+                    else:
+                        processed["conversation"] = engine.conversation_policy.get_grounded_fallback_dialogue(
+                            speaker=speaker, context=context, location_id=session.location,
+                        )
                     processed["parsed_action"] = "chat"
                     processed["dialogue_source"] = "policy_fallback_unsupported_grounding"
+                    processed["grounding"] = GroundingResult(
+                        True, valid_refs=processed["parsed_output"].get("grounding_refs", []),
+                        follow_through=processed["grounding"].follow_through,
+                    )
             commitment_state = self._commitment_state_check(context, processed)
             if (
                 not generation_error and not commitment_state["valid"]
@@ -201,6 +239,10 @@ class ConversationRunner:
                 grounding_candidate_type=grounding.candidate_type,
                 grounding_refs=grounding.valid_refs,
                 invalid_grounding_refs=grounding.invalid_refs,
+                grounding_metadata_advisory=processed.get("grounding_metadata_advisory", {}),
+                grounding_metadata_disagreements=processed.get("grounding_metadata_disagreements", []),
+                grounded_repair_used=grounded_repair_used,
+                grounded_fallback_used=grounded_fallback_used,
                 generation_error=generation_error, response_to_turn=response_to,
                 response_outcome=None,
                 social_response=parsed.get("social_response", {}),
@@ -382,6 +424,10 @@ class ConversationRunner:
             grounding_candidate_type=turn.grounding_candidate_type,
             grounding_refs=turn.grounding_refs,
             invalid_grounding_refs=turn.invalid_grounding_refs,
+            grounding_metadata_advisory=turn.grounding_metadata_advisory,
+            grounding_metadata_disagreements=turn.grounding_metadata_disagreements,
+            grounded_repair_used=turn.grounded_repair_used,
+            grounded_fallback_used=turn.grounded_fallback_used,
             effect_applied=turn.effect_applied,
             effect_suppressed=turn.effect_suppressed,
             effect_suppression_reason=turn.effect_suppression_reason,
@@ -508,5 +554,5 @@ class ConversationRunner:
                 "recent_journals", "goals", "active_goal", "speaker_intent", "daily_event",
                 "daily_event_relevant", "town_arcs", "recent_topics", "recent_utterances",
                 "focus_options", "session_transcript", "most_recent_utterance",
-                "grounding_sources", "grounding_packet")
+                "grounding_sources", "grounding_packet", "grounded_content_plan")
         return {key: context.get(key) for key in keys}

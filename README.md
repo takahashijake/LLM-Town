@@ -641,12 +641,17 @@ python scripts/evaluate_causal_memory_stress.py path/to/save_state.json [...]
 
 Selected speaker-owned causal memories now enter prompts as a bounded typed
 grounding packet with prompt-local references and explicit outcome polarity.
-The optional response envelope records references and narrow social
-follow-through intent; deterministic validation rejects fabricated references,
-polarity reversals, unknown-culprit accusations, private-plan leakage, and
-claims that dialogue completed an authoritative transition. Follow-through is
-metadata only: repair commitments still require the existing proposal and
-acceptance path, and no extra relationship or reputation effect is applied.
+Deterministic code builds the conversational content plan and owns reference,
+provenance, polarity, counterpart, intent, and follow-through eligibility. The
+model realizes only the bounded meaning as natural dialogue. Model-emitted
+metadata is advisory; it cannot replace the selected reference. Event-specific
+validation allows one bounded repair and then a safe non-mutating fallback.
+
+The final 72-sample-per-model V3 run achieved 100% parse, required history,
+polarity, counterpart, and engine-reference validity with zero leakage,
+authority contradictions, intrusion, or runtime failures. Qwen2.5-3B is a safe
+degraded tier (19.44% repair/fallback). Qwen2.5-7B is also safe degraded (15.28%
+repair, 6.94% fallback), narrowly missing the unchanged 15% repair ceiling.
 
 Run the deterministic and cached no-model evaluations with:
 

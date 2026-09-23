@@ -81,9 +81,17 @@ class TransformersLLMClient:
         ).to(self.device)
 
     def generate_conversation(self, context: dict) -> str:
-        prompt = self._build_prompt(context)
+        messages = self._conversation_messages(context)
+        return self._generate_messages(messages)
 
-        contract = compact_contract_example() if self.simplified_contract else (
+    def _conversation_messages(self, context: dict) -> list[dict]:
+        prompt = self._build_prompt(context)
+        realization_only = bool(
+            context.get("grounded_content_plan")
+            and not context.get("model_generated_grounding_metadata")
+        )
+        contract = '{"utterance":"natural spoken line"}' if realization_only else (
+            compact_contract_example() if self.simplified_contract else (
             '{"dialogue": "short line of dialogue", "action": "one allowed action", '
             '"tags": [], "grounding_refs": [], '
             '"social_intent": "none|acknowledge|appreciate|request_explanation|apologize|propose_repair|decline_similar|cooperate", '
@@ -91,7 +99,7 @@ class TransformersLLMClient:
             '"social_response": {"type": "accept_request|decline_request|counteroffer|acknowledge|unrelated|uncertain|none", "target": "help|meet|transfer|none", "confidence": "high|medium|low|none", "evidence": []}, '
             '"commitment_relation": {"commitment_id": "", "relation": "planning_to_fulfill|fulfilling|references_fulfillment|acknowledges_failure|attempts_repair|unrelated|contradicts_state|none", "confidence": "high|medium|low|none"}, '
             '"reason": "why this action fits"}'
-        )
+        ))
         messages = [
             {
                 "role": "system",
@@ -119,7 +127,14 @@ class TransformersLLMClient:
                 '"follow_through":{"kind":"none","target":"","grounding_ref":""}}.'
             )
 
-        return self._generate_messages(messages)
+        return messages
+
+    def render_conversation_prompt(self, context: dict) -> str:
+        """Render without generation so benchmark cache keys include the exact prompt."""
+        return self.tokenizer.apply_chat_template(
+            self._conversation_messages(context), tokenize=False,
+            add_generation_prompt=True,
+        )
 
     def _generate_messages(self, messages: list[dict]) -> str:
         text = self.tokenizer.apply_chat_template(
@@ -158,6 +173,24 @@ class TransformersLLMClient:
                 f"Shape: {compact_contract_example()}\n"
                 f"Error: {validation_error[:160]}\n"
                 f"Invalid output: {invalid_output[:1200]}"
+            ),
+        }]
+        return self._generate_messages(messages)
+
+    def repair_grounded_realization(
+        self, context: dict, invalid_output: str, validation_error: str
+    ) -> str:
+        """Perform the sole bounded semantic repair allowed by the runtime."""
+        plan = context.get("grounded_content_plan") or {}
+        messages = [{
+            "role": "user",
+            "content": (
+                "Rewrite only the utterance as one natural, personality-neutral JSON line. "
+                "Obey the engine plan exactly; do not add facts, people, outcomes, or IDs.\n"
+                f"Engine plan: {json.dumps(plan, sort_keys=True)}\n"
+                f"Concise error: {validation_error[:160]}\n"
+                f"Invalid output: {invalid_output[:800]}\n"
+                'Return: {"utterance":"corrected spoken line"}'
             ),
         }]
         return self._generate_messages(messages)
@@ -298,13 +331,22 @@ class TransformersLLMClient:
         content_plan = ""
         if context.get("grounded_content_plan"):
             plan = context["grounded_content_plan"]
-            response_contract = response_contract.replace(
-                '"grounding_refs":[]', f'"grounding_refs":["{plan["grounding_ref"]}"]'
-            ).replace('"social_intent":"none"', f'"social_intent":"{plan["dialogue_act"]}"')
+            planned_intent = plan.get("social_intent", plan.get("dialogue_act", "none"))
+            if context.get("model_generated_grounding_metadata"):
+                response_contract = response_contract.replace(
+                    '"grounding_refs":[]', f'"grounding_refs":["{plan["grounding_ref"]}"]'
+                ).replace('"social_intent":"none"', f'"social_intent":"{planned_intent}"')
+            else:
+                response_contract = '{"utterance":"natural spoken line"}'
             content_plan = (
                 "\nBounded content plan (selected only from visible facts):\n"
-                f"- Answer using {plan['grounding_ref']} with {plan['required_polarity']} polarity.\n"
-                f"- Address {plan['counterpart']} with dialogue act {plan['dialogue_act']}.\n"
+                f"- Use history: {plan.get('use_history', plan.get('history_relevant', False))}.\n"
+                f"- Express the supplied {plan.get('event_type', 'event')} fact with "
+                f"{plan['required_polarity']} polarity.\n"
+                f"- Address {plan['counterpart']} with social intent "
+                f"{plan.get('social_intent', plan.get('dialogue_act', 'none'))}.\n"
+                f"- Allowed follow-through: {plan.get('follow_through', 'none')}.\n"
+                f"- Do not assert: {', '.join(plan.get('forbidden_assertions', [])) or 'anything beyond the plan'}.\n"
                 "- Realize this plan naturally; do not add any other historical claim.\n"
             )
         return f"""

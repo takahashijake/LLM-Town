@@ -74,6 +74,47 @@ def test_repeated_grounding_failure_uses_safe_fallback(tmp_path):
     assert "memory:" not in row["conversation"]
 
 
+def test_engine_plan_owns_metadata_but_surface_meaning_still_controls_validity(tmp_path):
+    engine, maya, ethan = build_engine(tmp_path, ScriptedLLM([]), max_turns=1)
+    context = {
+        "grounding_packet": [{
+            "ref": "g1", "fact": "The promise was fulfilled.",
+            "source_type": "commitment_fulfilled", "knowledge_basis": "participant",
+            "counterpart": ethan.name, "outcome_polarity": "fulfilled",
+        }],
+        "grounding_sources": {"g1": "The promise was fulfilled."},
+        "grounded_content_plan": {
+            "use_history": True, "grounding_ref": "g1",
+            "event_type": "commitment_fulfilled", "required_polarity": "fulfilled",
+            "counterpart": ethan.name, "social_intent": "acknowledge",
+            "follow_through": "acknowledge", "forbidden_assertions": [],
+        },
+    }
+    common = dict(
+        allowed_actions=["chat"], speaker=maya, listener=ethan,
+        old_relationship_label="neutral", location_id="market",
+        suggested_action="chat", current_day=1, conversation_context=context,
+        enforce_information_boundaries=True,
+    )
+    correct = engine.process_conversation_output(raw_output=json.dumps({
+        "utterance": "Yes, you kept the promise.", "grounding_refs": ["g99"],
+        "social_intent": "none",
+    }), **common)
+    assert correct["grounding"].valid
+    assert correct["grounding"].valid_refs == ["g1"]
+    assert set(correct["grounding_metadata_disagreements"]) == {
+        "grounding_refs", "social_intent",
+    }
+    reversed_result = engine.process_conversation_output(raw_output=json.dumps({
+        "utterance": "No, you failed that promise.", "grounding_refs": ["g1"],
+        "social_intent": "acknowledge",
+    }), **common)
+    assert not reversed_result["grounding"].valid
+    assert reversed_result["grounding"].reason in {
+        "outcome_polarity_reversed", "planned_outcome_reversed",
+    }
+
+
 def test_session_alternates_and_rebuilds_private_context(tmp_path):
     llm = ScriptedLLM([
         {"dialogue": "Would you like some help with the records?", "action": "offer_help"},

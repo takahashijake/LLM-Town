@@ -5,7 +5,30 @@ import pytest
 from types import SimpleNamespace
 
 from src.agents.memory import Memory
-from src.llm.grounding import GroundingValidator, build_grounding_packet, grounding_packet_for_prompt
+from src.llm.grounding import (
+    GroundingValidator, build_grounding_packet, grounded_fallback,
+    grounding_packet_for_prompt,
+)
+
+
+@pytest.mark.parametrize("polarity,good,bad", [
+    ("fulfilled", "Yes, you kept the promise.", "No, you failed the promise."),
+    ("failed", "No, I failed to do it.", "Yes, I fulfilled it."),
+    ("expired", "The deadline expired.", "It was completed."),
+    ("cancelled", "It was called off.", "It was delivered."),
+    ("completed_private", "I finished my plan.", "My plan failed."),
+    ("failed_private", "My plan failed.", "I finished my plan."),
+    ("witnessed", "I saw what happened.", "I never saw it."),
+    ("unknown_culprit", "I don't know who did it.", "Cy stole it."),
+    ("adjudicated", "The matter was adjudicated.", "It was never adjudicated."),
+    ("completed", "I received the restitution.", "They still owe restitution."),
+])
+def test_event_specific_plan_polarity(polarity, good, bad):
+    plan = {"use_history": True, "required_polarity": polarity}
+    validator = GroundingValidator()
+    assert validator.validate_realization(good, plan).valid
+    assert not validator.validate_realization(bad, plan).valid
+    assert validator.validate_realization(grounded_fallback(plan), plan).valid
 from src.llm.parser import parse_llm_conversation_output
 
 

@@ -45,16 +45,36 @@ def test_two_stage_plan_only_selects_visible_allowed_fact():
     plan = context_for_case(case, two_stage=True)["grounded_content_plan"]
     assert plan["grounding_ref"] in case["allowed_refs"]
     assert plan["counterpart"] == case["listener"]
-    irrelevant = load_benchmark()["cases"][-2]
+    assert plan["event_type"] == case["fact"]["source_type"]
+    irrelevant = next(
+        row for row in load_benchmark()["cases"]
+        if row["id"] == "must_not_irrelevant_archive"
+    )
     assert context_for_case(irrelevant, two_stage=True)["grounded_content_plan"] is None
 
 
 def test_acceptance_thresholds_are_not_relaxed():
-    metrics = {"schema_parse_success": .95, "valid_grounding_reference_rate": 1.0,
+    metrics = {"schema_parse_success": 1.0, "valid_grounding_reference_rate": 1.0,
+               "engine_owned_grounding_reference_validity": 1.0,
                "private_leakage": 0, "authority_contradictions": 0,
-               "required_history_use": .75, "irrelevant_history_intrusion": .10,
-               "polarity_accuracy": .90, "counterpart_accuracy": 1.0,
-               "generation_failures": .05}
+               "required_history_use": .90, "irrelevant_history_intrusion": .10,
+               "polarity_accuracy": .95, "counterpart_accuracy": 1.0,
+               "generation_failures": 0, "repair_rate": .15, "fallback_rate": .10}
     assert acceptance(metrics)["passed"]
-    metrics["required_history_use"] = .749
+    metrics["required_history_use"] = .899
     assert not acceptance(metrics)["passed"]
+
+
+def test_engine_metadata_cannot_make_wrong_surface_meaning_correct():
+    case = load_benchmark()["cases"][0]
+    raw = json.dumps({
+        "utterance": "No, I failed that promise.",
+        "grounding_refs": ["invented-id"],
+        "social_intent": "acknowledge",
+        "follow_through": {"kind": "none", "target": "", "grounding_ref": ""},
+    })
+    result = classify_response(case, raw, engine_owned_metadata=True)
+    assert result["engine_owned_grounding_reference_valid"]
+    assert result["metadata_disagreement"]
+    assert not result["history_used"]
+    assert not result["polarity_correct"]
