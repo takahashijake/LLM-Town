@@ -1,6 +1,11 @@
 
 import json
 
+from src.llm.response_contract import (
+    OutputConstraintMode,
+    TRANSFORMERS_CAPABILITIES,
+    compact_contract_example,
+)
 from src.systems.reputation import ReputationSystem
 
 
@@ -39,12 +44,25 @@ class TransformersLLMClient:
         max_new_tokens: int = 150,
         temperature: float = 0.4,
         top_p: float = 0.9,
+        top_k: int | None = None,
+        seed: int | None = None,
+        output_constraint: str = "prompted_json",
+        simplified_contract: bool = False,
+        prompt_refinement: bool = False,
+        few_shot: bool = False,
     ):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         self.torch = torch
         self.model_name = model_name
+        self.seed = seed
+        self.output_constraint = TRANSFORMERS_CAPABILITIES.select(
+            OutputConstraintMode(output_constraint)
+        )
+        self.simplified_contract = simplified_contract
+        self.prompt_refinement = prompt_refinement
+        self.few_shot = few_shot
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.generation_config = {
             "max_new_tokens": max_new_tokens,
@@ -52,6 +70,8 @@ class TransformersLLMClient:
             "temperature": temperature,
             "top_p": top_p,
         }
+        if top_k is not None:
+            self.generation_config["top_k"] = top_k
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -63,6 +83,15 @@ class TransformersLLMClient:
     def generate_conversation(self, context: dict) -> str:
         prompt = self._build_prompt(context)
 
+        contract = compact_contract_example() if self.simplified_contract else (
+            '{"dialogue": "short line of dialogue", "action": "one allowed action", '
+            '"tags": [], "grounding_refs": [], '
+            '"social_intent": "none|acknowledge|appreciate|request_explanation|apologize|propose_repair|decline_similar|cooperate", '
+            '"follow_through": {"kind": "none", "target": "", "source_ref": ""}, '
+            '"social_response": {"type": "accept_request|decline_request|counteroffer|acknowledge|unrelated|uncertain|none", "target": "help|meet|transfer|none", "confidence": "high|medium|low|none", "evidence": []}, '
+            '"commitment_relation": {"commitment_id": "", "relation": "planning_to_fulfill|fulfilling|references_fulfillment|acknowledges_failure|attempts_repair|unrelated|contradicts_state|none", "confidence": "high|medium|low|none"}, '
+            '"reason": "why this action fits"}'
+        )
         messages = [
             {
                 "role": "system",
@@ -70,15 +99,7 @@ class TransformersLLMClient:
                     "You generate dialogue for a town simulation. "
                     "Never invent facts outside the supplied speaker knowledge. "
                     "Return only valid JSON. "
-                    "Use exactly this JSON format: "
-                    '{"dialogue": "short line of dialogue", '
-                    '"action": "one allowed action", '
-                    '"tags": [], "grounding_refs": [], '
-                    '"social_intent": "none|acknowledge|appreciate|request_explanation|apologize|propose_repair|decline_similar|cooperate", '
-                    '"follow_through": {"kind": "none", "target": "", "source_ref": ""}, '
-                    '"social_response": {"type": "accept_request|decline_request|counteroffer|acknowledge|unrelated|uncertain|none", "target": "help|meet|transfer|none", "confidence": "high|medium|low|none", "evidence": []}, '
-                    '"commitment_relation": {"commitment_id": "", "relation": "planning_to_fulfill|fulfilling|references_fulfillment|acknowledges_failure|attempts_repair|unrelated|contradicts_state|none", "confidence": "high|medium|low|none"}, '
-                    '"reason": "why this action fits"}. '
+                    f"Use exactly this JSON format: {contract}. "
                     "The action must be the best semantic label for the dialogue, not always chat. "
                     "No narration. No markdown."
                 ),
@@ -88,16 +109,33 @@ class TransformersLLMClient:
                 "content": prompt,
             },
         ]
+        if self.few_shot:
+            messages[0]["content"] += (
+                ' Example when directly asked: {"utterance":"Yes, I kept that promise.",'
+                '"grounding_refs":["g1"],"social_intent":"acknowledge",'
+                '"follow_through":{"kind":"none","target":"","grounding_ref":""}}.'
+                ' Example when history is unrelated: {"utterance":"The market is quiet today.",'
+                '"grounding_refs":[],"social_intent":"none",'
+                '"follow_through":{"kind":"none","target":"","grounding_ref":""}}.'
+            )
 
+        return self._generate_messages(messages)
+
+    def _generate_messages(self, messages: list[dict]) -> str:
         text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True,
         )
+        self.last_messages = messages
+        self.last_rendered_prompt = text
 
         inputs = self.tokenizer([text], return_tensors="pt").to(self.device)
 
         with self.torch.no_grad():
+            if self.seed is not None:
+                self.torch.manual_seed(self.seed)
+                self.torch.cuda.manual_seed_all(self.seed)
             outputs = self.model.generate(
                 **inputs,
                 **self.generation_config,
@@ -105,9 +143,24 @@ class TransformersLLMClient:
             )
 
         generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
+        self.last_generated_token_count = int(generated_ids.shape[-1])
         response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
 
         return response.strip()
+
+    def repair_format(self, invalid_output: str, validation_error: str) -> str:
+        """Make one context-free format repair; never add grounding facts."""
+        messages = [{
+            "role": "user",
+            "content": (
+                "Rewrite the invalid output below as only one JSON object matching this shape. "
+                "Preserve its meaning and reference IDs exactly; do not add facts or IDs.\n"
+                f"Shape: {compact_contract_example()}\n"
+                f"Error: {validation_error[:160]}\n"
+                f"Invalid output: {invalid_output[:1200]}"
+            ),
+        }]
+        return self._generate_messages(messages)
 
     def _build_prompt(self, context: dict) -> str:
         def lines(values, empty="None supplied"):
@@ -225,6 +278,35 @@ class TransformersLLMClient:
                 "do not claim it was fulfilled and do not assume a proposal is accepted."
             )
 
+        response_contract = compact_contract_example() if getattr(self, "simplified_contract", False) else (
+            '{"dialogue":"spoken line","action":"allowed action","tags":[],'
+            '"grounding_refs":[],"social_intent":"none","follow_through":'
+            '{"kind":"none","target":"","source_ref":""},"social_response":'
+            '{"type":"none","target":"none","confidence":"none"},'
+            '"commitment_relation":{"commitment_id":"","relation":"none",'
+            '"confidence":"none"},"reason":"brief reason"}'
+        )
+        refined = ""
+        if getattr(self, "prompt_refinement", False):
+            refined = (
+                "\nGrounding decision:\n"
+                "- If the listener directly asks about a supplied historical fact, answer it and "
+                "include that fact's g-reference.\n"
+                "- Otherwise cite a reference only when the line actually states that fact.\n"
+                "- If no supplied fact answers the question, do not guess and keep grounding_refs empty.\n"
+            )
+        content_plan = ""
+        if context.get("grounded_content_plan"):
+            plan = context["grounded_content_plan"]
+            response_contract = response_contract.replace(
+                '"grounding_refs":[]', f'"grounding_refs":["{plan["grounding_ref"]}"]'
+            ).replace('"social_intent":"none"', f'"social_intent":"{plan["dialogue_act"]}"')
+            content_plan = (
+                "\nBounded content plan (selected only from visible facts):\n"
+                f"- Answer using {plan['grounding_ref']} with {plan['required_polarity']} polarity.\n"
+                f"- Address {plan['counterpart']} with dialogue act {plan['dialogue_act']}.\n"
+                "- Realize this plan naturally; do not add any other historical claim.\n"
+            )
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.
 
@@ -298,7 +380,9 @@ Requirements:
 - One spoken line, normally under 35 words. No narration, stage directions, speaker name, or hidden reasoning.
 {anti_echo_instruction}
 {grounding_correction}
+{refined}
+{content_plan}
 
 Return only valid JSON:
-{{"dialogue":"spoken line","action":"allowed action","tags":[],"grounding_refs":[],"social_intent":"none","follow_through":{{"kind":"none","target":"","source_ref":""}},"social_response":{{"type":"none","target":"none","confidence":"none"}},"commitment_relation":{{"commitment_id":"","relation":"none","confidence":"none"}},"reason":"brief reason"}}
+{response_contract}
 """.strip()

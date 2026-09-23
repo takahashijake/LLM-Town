@@ -652,6 +652,7 @@ Run the deterministic and cached no-model evaluations with:
 
 ```bash
 python scripts/evaluate_grounded_dialogue.py
+python scripts/benchmark_grounded_dialogue_live.py --models 3b 7b --seeds 42 73 101
 python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cached_3b.json
 python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cached_7b.json
 ```

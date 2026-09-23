@@ -47,7 +47,76 @@ python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cac
 python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cached_7b.json
 python scripts/evaluate_grounded_dialogue.py --live-model 3b --output outputs/grounded_dialogue/live-3b.json
 python scripts/evaluate_grounded_dialogue.py --live-model 7b --output outputs/grounded_dialogue/live-7b.json
+python scripts/benchmark_grounded_dialogue_live.py --models 3b 7b --seeds 42 73 101
 ```
+
+### V3 balanced live contract
+
+`data/grounded_dialogue_benchmark_v2.json` is the versioned acceptance corpus:
+24 cases, evenly divided among history-must-be-used, history-may-be-used, and
+history-must-not-be-used. It includes counterfactual fulfilled/failed and
+counterpart pairs plus cancelled commitments, self-private plan outcomes,
+witnessed crime, unknown culprit, adjudication, restitution, acquisition, and
+recent/archived memory. Every case declares allowed and forbidden references,
+required polarity/terms, forbidden claims, social intents, and follow-through.
+
+The live runner stores the commit and model/config digests, Transformers version,
+full chat template, seeds and sampling controls, token limit, benchmark and prompt
+hashes, exact rendered prompts, raw responses, parsed responses, validator result,
+retry count, and separate failure classifications. Generated artifacts live under
+`outputs/grounded_dialogue/v2/` and are not test dependencies.
+
+The local provider is `AutoModelForCausalLM.generate` through Hugging Face
+Transformers. It supports `prompted_json` and backward-compatible `legacy_text`
+in this application. No JSON-schema, grammar, JSON-mode, or tool-output processor
+is configured; requesting a native mode fails explicitly. Both Qwen sizes use the
+same provider path and tokenizer-specific chat template. Generation uses 120 new
+tokens, temperature 0.4, top-p 0.9, the recorded seed, EOS padding, and no custom
+stop strings. Consequently the “constrained decoding” ablation is an honestly
+recorded prompted-JSON control, not native constrained decoding.
+
+The compact canonical response contract is defined in
+`src/llm/response_contract.py`. The parser accepts legacy `dialogue`, compact
+`utterance`, known `response`/`text` aliases, code fences, whitespace, and harmless
+surrounding text. It never repairs reference IDs, polarity, counterpart, private
+facts, or follow-through semantics. An optional format repair receives only the
+invalid output, concise parse error, and compact shape, runs at most once, and is
+separately counted.
+
+Metrics intentionally separate schema parsing, legacy fallback, valid references,
+required and optional use, irrelevant intrusion, polarity and counterpart accuracy,
+unsupported claims, private leakage, authority contradictions, runtime failure,
+truncation, retries, valid-but-wrong structure, parser rejection, and ignored
+history. A reference alone does not count: required use also needs matching content
+and preserved polarity with no forbidden claim.
+
+### 2026-09-23 reliability envelope
+
+All A–H arms ran 24 cases × seeds 42/73/101 for each model. The frozen baseline
+used the exact inherited envelope and was 3B: parse 94.4%, refs 100%, required use
+0%, intrusion 0%, polarity 58.3%, seven truncations; and 7B: parse 80.6%, refs
+87.3%, required use 41.7%, intrusion 20.8%, polarity 71.9%, 21 truncations.
+There was no private leakage, authority contradiction, or runtime failure.
+
+No isolated change passed. For 3B, compact schema/prompt/few-shot/parser/combined
+required-use rates were 0/0/0/0/16.7%; the combination regressed refs to 70.7%
+and intrusion to 20.8%. For 7B the same arms were 25/33.3/37.5/41.7/29.2%, with
+reference validity 76.9–87.3% and intrusion 16.7–20.8%. The provider-constrained
+control matched baseline because native decoding constraints are unavailable.
+
+The corrected two-stage experiment withheld irrelevant facts and deterministically
+selected only visible allowed facts for required cases. It reached 62.5% required
+use / 62.5% polarity for 3B and 79.2% / 85% for 7B. Reference validity was
+100%/95%, intrusion 0%, counterpart accuracy 100%, and all hard leakage/authority/
+runtime counts remained zero. This is material improvement but still fails the
+frozen gates, so it remains an experiment rather than production behavior.
+
+The viable safety mode is therefore prompted JSON plus deterministic validation
+and safe fallback, not a freeze-quality grounded-response mode. 3B is structurally
+reliable but usually ignores historical facts; 7B uses them more often but can
+emit invalid reference content and miss polarity. Broader social follow-through
+must wait for a backend with real constrained decoding or a better realization
+model followed by the same benchmark.
 
 Ordinary tests never load a model. Artifacts require model/configuration, commit
 SHA, seed, scenario version, context hash, timestamp, parser version, validator

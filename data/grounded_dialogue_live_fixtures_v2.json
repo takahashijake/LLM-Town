@@ -1,0 +1,37 @@
+{
+  "fixture_version": "grounded-dialogue-live-fixtures-v2",
+  "note": "Representative seed-42 baseline requests and raw outputs. Runtime, timestamp, digest, and absolute paths removed.",
+  "requests": [
+    {
+      "case_id": "must_fulfilled_recent",
+      "speaker": "Ava",
+      "listener": "Bo",
+      "preceding_utterance": "Did you complete the promise you made me?",
+      "grounding_packet": [{"ref":"g1","fact":"Ava fulfilled the repair promise to Bo.","counterpart":"Bo","outcome_polarity":"fulfilled"}]
+    },
+    {
+      "case_id": "must_not_other_counterpart",
+      "speaker": "Ava",
+      "listener": "Dee",
+      "preceding_utterance": "Did you finish anything important recently?",
+      "grounding_packet": [{"ref":"g1","fact":"Ava fulfilled a promise to Bo.","counterpart":"Bo","outcome_polarity":"fulfilled"}]
+    }
+  ],
+  "outputs": [
+    {
+      "model": "Qwen/Qwen2.5-3B-Instruct",
+      "case_id": "must_fulfilled_recent",
+      "raw": "{\"dialogue\":\"That was quick, didn't expect you to keep your word so soon.\",\"action\":\"chat\",\"tags\":[],\"grounding_refs\":[],\"social_intent\":\"none\",\"follow_through\":{\"kind\":\"none\",\"target\":\"\",\"source_ref\":\"\"}}"
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "case_id": "must_fulfilled_recent",
+      "raw": "{\"dialogue\":\"Yes, I did. How was your day?\",\"action\":\"chat\",\"tags\":[],\"grounding_refs\":[\"g1\"],\"social_intent\":\"none\",\"follow_through\":{\"kind\":\"none\",\"target\":\"\",\"source_ref\":\"\"}}"
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "case_id": "must_not_other_counterpart",
+      "raw": "{\"dialogue\":\"Yeah, I helped Bo with a favor today.\",\"action\":\"chat\",\"tags\":[],\"grounding_refs\":[\"g1\"],\"social_intent\":\"none\",\"follow_through\":{\"kind\":\"none\",\"target\":\"\",\"source_ref\":\"\"}}"
+    }
+  ]
+}

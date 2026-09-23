@@ -1,5 +1,47 @@
 # Overnight engineering progress
 
+## Reliable live grounded dialogue V3 gate (2026-09-23)
+
+- Starting SHA: `c60aa0076ded1268336cbeb9ef3c8850491ee5a5`; clean `main`
+  aligned with `origin/main` (not one commit ahead as the prompt expected).
+- Initial verification: `git diff --check` and compileall PASS; 554 tests PASS.
+- Provider audit: both Qwen paths use local cached weights through Transformers
+  5.17.0 `AutoModelForCausalLM.generate` on CUDA. There is no configured native
+  JSON schema/grammar/JSON mode/tool output. Supported application modes are
+  explicit `prompted_json` and `legacy_text`; native requests fail clearly.
+- Added `grounded-dialogue-balanced-v2`: 24 cases in balanced 8/8/8 must/may/must-
+  not-use classes, three fixed seeds, precise per-failure metrics, exact prompt/raw/
+  parsed evidence, capability metadata, and the isolated A–H experiment runner.
+- Frozen baseline (72 samples/model, exact inherited contract): 3B parse 94.4%,
+  valid refs 100%, required use 0%, irrelevant intrusion 0%, polarity 58.3%,
+  seven truncations and one unsupported claim; 7B parse 80.6%, valid refs 87.3%,
+  required use 41.7%, intrusion 20.8%, polarity 71.9%, and 21 truncations.
+  Both had zero private leakage, authority contradictions, and runtime failures.
+- 3B isolated results: prompted constraint control and parser-only matched baseline;
+  simplified schema 0% required use / 50% polarity / 100% parse; prompt-only
+  0% / 25% / 69.4% parse with 31 truncations; few-shot 0% / 30.8% / 100% parse;
+  combined 16.7% / 53.1% but regressed valid refs to 70.7% and intrusion to 20.8%.
+  The first two-stage run was contaminated by that unsafe combination and is being
+  replaced with a plan layered only over the safe compact/refined contract.
+- Completed 7B isolated results: prompted constraint control and parser-only
+  matched baseline; simplified schema required use 25.0%, refs 80.5%, intrusion
+  20.8%, polarity 62.7%; prompt-only 33.3%/83.7%/20.8%/60.4%; few-shot
+  37.5%/87.2%/20.8%/65.3%; combined 29.2%/76.9%/16.7%/58.7%. None is
+  adoptable, and all remained free of private leakage, authority contradiction,
+  and runtime failure.
+- Corrected two-stage result (irrelevant facts withheld before realization): 3B
+  parse 100%, refs 100%, required use 62.5%, intrusion 0%, polarity 62.5%; 7B
+  parse 100%, refs 95%, required use 79.2%, intrusion 0%, polarity 85%. Both had
+  100% counterpart accuracy and zero leakage/authority/runtime failures. This is
+  a material semantic improvement but misses hard gates, so it is experimental
+  only and is not wired into ordinary conversation.
+- Selected production mode: capability-aware `prompted_json` with existing
+  deterministic validation and safe fallback. Bounded parser normalization is
+  retained; optional repair is one format-only retry and never invents a ref.
+  Neither model currently has a freeze-quality reliability envelope: 3B is safe
+  but ignores history; 7B is more responsive but not reference/polarity reliable.
+  V3 must not advance to broader social follow-through on this evidence.
+
 ## Grounded dialogue continuation (2026-09-23)
 
 - Starting SHA: `9cf1ca742f10d8ebfaf6d86690fe783e7cc8df54` (`main`, clean,

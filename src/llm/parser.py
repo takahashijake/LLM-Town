@@ -70,11 +70,17 @@ def clean_conversation_output(text: str) -> str:
 
 
 def extract_json_object(text: str) -> str | None:
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        return None
-
-    return match.group(0)
+    # Decode the first complete object instead of greedily joining multiple
+    # objects or prose. This is bounded format normalization, not semantic repair.
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r"\{", text):
+        try:
+            value, end = decoder.raw_decode(text[match.start():])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return text[match.start():match.start() + end]
+    return None
 
 
 def infer_conversation_tags(text: str) -> list[str]:
@@ -176,7 +182,9 @@ def parse_llm_conversation_output(
             "envelope_status": "malformed_json",
         }
 
-    dialogue = clean_conversation_output(str(data.get("utterance", data.get("dialogue", ""))))
+    dialogue = clean_conversation_output(str(data.get(
+        "utterance", data.get("dialogue", data.get("response", data.get("text", "")))
+    )))
     raw_action = str(data.get("action", "chat")).strip()
     action = normalize_action(raw_action)
     grounding_refs = data.get("grounding_refs", [])
@@ -189,6 +197,9 @@ def parse_llm_conversation_output(
     follow_through = data.get("follow_through", {})
     if not isinstance(follow_through, dict):
         follow_through = {"_malformed": True}
+    elif "grounding_ref" in follow_through and "source_ref" not in follow_through:
+        follow_through = dict(follow_through)
+        follow_through["source_ref"] = follow_through.pop("grounding_ref")
 
     allowed = set(allowed_actions or ALLOWED_ACTIONS)
 
