@@ -119,3 +119,16 @@ def test_follow_through_is_bounded_and_counterpart_scoped():
         follow_through={"kind": "appreciate", "target": "Else", "source_ref": "g1"})
     assert valid.valid and valid.follow_through["kind"] == "propose_repair"
     assert not invalid.valid and not invalid.follow_through
+
+
+def test_targeted_follow_through_requires_the_visible_counterpart():
+    packet = [{"ref": "g1", "fact": "promise failed", "source_type": "commitment_failed",
+               "knowledge_basis": "participant", "counterpart": "Bo",
+               "event_day": 2, "age_days": 1, "outcome_polarity": "failed"}]
+    context = {"grounding_packet": packet, "grounding_sources": {"g1": "promise failed"}}
+    result = GroundingValidator().validate(
+        "Could we try again tomorrow?", ["g1"], context,
+        follow_through={"kind": "propose_repair", "target": "", "source_ref": "g1"},
+    )
+    assert not result.valid
+    assert result.reason == "follow_through_counterpart_required"

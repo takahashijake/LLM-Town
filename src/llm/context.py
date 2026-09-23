@@ -172,6 +172,12 @@ def _prompt_context_text_chars(context: dict) -> int:
         *context.get("recent_topics", []),
         *context.get("recent_utterances", []),
         *(
+            f"{row.get('ref', '')} {row.get('fact', '')} "
+            f"{row.get('source_type', '')} {row.get('knowledge_basis', '')} "
+            f"{row.get('counterpart', '')} {row.get('outcome_polarity', '')}"
+            for row in context.get("grounding_packet", [])
+        ),
+        *(
             turn.get("dialogue", "")
             for turn in context.get("session_transcript", [])
         ),
@@ -629,7 +635,13 @@ def build_conversation_context(
         current_day=current_day,
     )
     context["grounding_packet"] = grounding_packet_for_prompt(packet)
+    # The packet is part of the same hard prompt budget. It is deliberately
+    # preserved while lower-priority summaries and ambient context are pruned.
+    _prune_context_to_budget(context)
     context["grounding_sources"] = build_grounding_sources(context)
     context["context_evidence"]["grounding_fact_count"] = len(packet)
     context["context_evidence"]["grounding_refs"] = [item.ref for item in packet]
+    context["context_evidence"]["prompt_context_text_chars"] = (
+        _prompt_context_text_chars(context)
+    )
     return context

@@ -61,6 +61,12 @@ high-risk claim shapes, not unrestricted semantic truth. Fresh live balanced
 artifacts are needed for post-change real-model quality; cached legacy artifacts
 measure the pre-change causal-memory prompt.
 
+The grounding packet is counted inside the existing 2,400-character dynamic
+context ceiling. Targeted follow-through (`propose_repair`, `decline_similar`,
+and `cooperate`) is accepted only when its target is the counterpart exposed by
+the cited prompt-local fact. Cancellation, adjudication, and private completion
+retain distinct polarity labels rather than falling back to neutral.
+
 ## Recorded baseline and ablation
 
 The preserved pre-change cached causal-history runs produced 0% correct history
@@ -72,3 +78,10 @@ malformation, and runtime failure. The 7B result remained 0% history use with
 0% contradiction and malformation. Both miss the 90% polarity-use quality goal;
 the results are retained honestly, and broader live balanced coverage remains a
 known limitation rather than being inferred from the deterministic suite.
+
+On 2026-09-23, fresh local runs at `9cf1ca7` completed with cached model weights.
+The 3B historical arm had 0/4 historical use, 0 contradictions, and 0 malformed
+outputs (recent-only malformed: 1/4). The 7B historical arm had 0/4 historical
+use, 0 contradictions, and 2/4 malformed outputs (recent-only malformed: 4/4).
+These runs therefore do not meet the real-model quality targets, despite the
+deterministic safety suite passing.

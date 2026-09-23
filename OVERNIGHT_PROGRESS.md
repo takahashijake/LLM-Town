@@ -1,5 +1,43 @@
 # Overnight engineering progress
 
+## Grounded dialogue continuation (2026-09-23)
+
+- Starting SHA: `9cf1ca742f10d8ebfaf6d86690fe783e7cc8df54` (`main`, clean,
+  aligned with `origin/main`); requested checkpoint `99ae9d9` had already advanced
+  through `b067256` (grounded dialogue) and `9cf1ca7` (repository instructions).
+- Initial validation: `compileall` PASS; `git diff --check` PASS; 553 tests PASS.
+- Current milestone: final validation and handoff.
+- Completed: live-state verification; conversation/grounding/authority path audit;
+  baseline deterministic suite.
+- Architecture decisions: retain source systems as sole authorities; prompt-local
+  `gN` facts remain advisory; follow-through continues through existing proposal
+  recognition and counterpart acceptance; no new trust score.
+- Baseline grounded metrics at inherited checkpoint: 15 scenarios, 19/19 stated
+  invariants, 100% validator reference/polarity figures, zero reported leakage or
+  authority violations. Cached legacy 3B/7B history use is 0%; parse success is
+  100%/37.5%. These cached artifacts predate the new balanced schema.
+- Known weaknesses: inherited evaluator derives several metrics from scenario
+  flags rather than validator observations; packet text was added after the
+  prompt budget calculation; final prompt JSON example omitted follow-through.
+- Completed milestone: grounding packet now participates in the 2,400-character
+  prompt budget; the final prompt schema advertises optional metadata; targeted
+  follow-through requires the cited visible counterpart; cancellation,
+  adjudication, and private completion have distinct polarity labels.
+- Validation: `compileall` PASS; `git diff --check` PASS; 554 tests PASS. Required
+  deterministic evaluators for commitments, execution, semantics, accountability,
+  planning, social decisions, relationships, economy, materials, production,
+  crime, justice, causal memory, grounded dialogue, and Whole V2 PASS.
+- Cached evaluation: legacy 3B valid (100% parse, 0% history use); legacy 7B valid
+  (37.5% parse, 0% history use). Fresh local live runs at starting SHA: 3B
+  historical arm 0/4 use, 0 contradictions, 0 malformed (recent-only 1/4
+  malformed); 7B historical arm 0/4 use, 0 contradictions, 2/4 malformed
+  (recent-only 4/4 malformed). Real-model targets are not met.
+- Artifact limitation: causal-memory stress analysis requires explicit generated
+  long-horizon save states; the previously reported seed-42/73 paths are not in
+  this checkout. No replacement 250/500-day campaign was fabricated.
+- Checkpoint commits: inherited `b067256`; no new checkpoint commit yet.
+- Next action: final diff review and local checkpoint commit after green verification.
+
 ## Causal memory run (2026-09-22)
 
 - Starting SHA: `54c102b43e0ba65c39c30101213877e77fc86225` (clean worktree).

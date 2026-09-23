@@ -15,8 +15,11 @@ GROUNDING_PREFIXES = {"memory", "relationship_event", "public_event", "reputatio
 POLARITY_BY_EVENT = {
     "commitment_accepted": "accepted", "commitment_fulfilled": "fulfilled",
     "commitment_failed": "failed", "commitment_expired": "failed",
+    "commitment_cancelled": "cancelled", "commitment_canceled": "cancelled",
     "plan_failed": "failed_private", "restitution_received": "completed",
-    "restitution_completed": "completed", "theft_committed": "witnessed",
+    "plan_completed": "completed_private",
+    "restitution_completed": "completed", "adjudicated_responsible": "adjudicated",
+    "theft_committed": "witnessed",
     "loss_discovered": "unknown_culprit",
 }
 ALLOWED_FOLLOW_THROUGH = {"none", "acknowledge", "appreciate", "request_explanation", "apologize", "propose_repair", "decline_similar", "cooperate"}
@@ -180,13 +183,20 @@ class GroundingValidator:
         if source_ref not in valid_refs or source_ref not in packet:
             return {}, ["follow_through_source_not_valid"]
         fact = packet[source_ref]
-        if target and fact.get("counterpart") and target != fact.get("counterpart"):
+        counterpart = str(fact.get("counterpart", "")).strip()
+        if target and counterpart and target != counterpart:
             return {}, ["follow_through_counterpart_mismatch"]
+        if kind in {"propose_repair", "decline_similar", "cooperate"} and (
+            not target or not counterpart or target != counterpart
+        ):
+            return {}, ["follow_through_counterpart_required"]
         allowed = {
             "fulfilled": {"acknowledge", "appreciate", "cooperate"},
             "failed": {"acknowledge", "request_explanation", "apologize", "propose_repair", "decline_similar"},
             "completed": {"acknowledge", "appreciate"}, "witnessed": {"acknowledge", "request_explanation"},
             "unknown_culprit": {"acknowledge"},
+            "cancelled": {"acknowledge", "request_explanation"},
+            "adjudicated": {"acknowledge"},
         }.get(fact.get("outcome_polarity"), {"acknowledge"})
         if kind not in allowed:
             return {}, ["follow_through_incompatible_with_outcome"]

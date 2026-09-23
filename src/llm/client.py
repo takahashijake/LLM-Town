@@ -300,5 +300,5 @@ Requirements:
 {grounding_correction}
 
 Return only valid JSON:
-{{"dialogue":"spoken line","action":"allowed action","tags":[],"grounding_refs":[],"social_response":{{"type":"none","target":"none","confidence":"none"}},"commitment_relation":{{"commitment_id":"","relation":"none","confidence":"none"}},"reason":"brief reason"}}
+{{"dialogue":"spoken line","action":"allowed action","tags":[],"grounding_refs":[],"social_intent":"none","follow_through":{{"kind":"none","target":"","source_ref":""}},"social_response":{{"type":"none","target":"none","confidence":"none"}},"commitment_relation":{{"commitment_id":"","relation":"none","confidence":"none"}},"reason":"brief reason"}}
 """.strip()
