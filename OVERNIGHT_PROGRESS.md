@@ -192,3 +192,18 @@
 - Stability fix: end-of-day compression now reapplies the 500-entry archive bound before saving; regression added.
 - Real-model note: no new planning-specific real-model run was performed. Planning correctness is model-independent, and the current real-model harness does not expose a plan-aware comparison metric; prior cached Qwen 2.5 3B/7B commitment runs remain the behavioral evidence. Extending that harness is unfinished.
 - Next unfinished step: broaden grounded causal outcome memory beyond transfer plans and add plan-aware real-model dialogue metrics before adding plan templates.
+# Deterministic parallel social execution (2026-09-24)
+
+- Starting state: `main` at `7302f89`, clean; baseline compile PASS and 579 tests PASS.
+- Added immutable tick snapshot identities, stable SHA-256-derived scheduling and
+  request seeds, multiple disjoint pairs per location, serial/concurrent execution
+  backends, pre-commit realization replicas, a full-result barrier, and stable
+  schedule-ordered authoritative commits.
+- Preserved activities-before-conversations tick placement, grounding authority,
+  explicit capability tiers, bounded repair/fallback, and all existing mutation
+  authorities. Ephemeral workers/snapshots are not persisted.
+- Added canonical tick/session telemetry, deterministic scheduler/barrier/error
+  tests, a 4/16/32/64-resident scaling check, and the parallel-social evaluator.
+- Local Transformers generation is locked because its model, tokenizer, RNG, and
+  diagnostics are not assumed thread-safe. This is functionally concurrent social
+  architecture, not a claim of batched or GPU-parallel generation.
