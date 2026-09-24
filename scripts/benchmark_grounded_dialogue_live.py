@@ -9,12 +9,14 @@ import json
 from pathlib import Path
 import platform
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.analysis.grounded_dialogue_benchmark import (
-    PARSER_VERSION, VALIDATOR_VERSION, acceptance, aggregate, capability_tier, classify_response,
+    PARSER_VERSION, VALIDATOR_VERSION, acceptance, aggregate, aggregate_breakdowns,
+    capability_tier, classify_response,
     context_for_case, git_sha, load_benchmark, prompt_hash,
 )
 from src.llm.client import TransformersLLMClient
@@ -65,6 +67,9 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
                 context["model_generated_grounding_metadata"] = True
             error, raw, retries = "", "", 0
             repair_used = fallback_used = False
+            repair_succeeded = False
+            started = time.monotonic()
+            initial_validation_result = ""
             try:
                 rendered = client.render_conversation_prompt(context)
                 prompts.append(rendered)
@@ -86,6 +91,7 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
                     cache_path.parent.mkdir(parents=True, exist_ok=True)
                     cache_path.write_text(json.dumps(cache, indent=2) + "\n")
                 first = classify_response(case, raw, engine_owned_metadata=engine_owned)
+                initial_validation_result = first["final_validation_result"]
                 if retry_format and not first["schema_parse_success"]:
                     raw = client.repair_format(raw, first["parsed_response"]["envelope_status"])
                     retries = 1
@@ -114,6 +120,11 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
                         case, raw, retry_count=retries,
                         engine_owned_metadata=engine_owned, repair_used=True,
                     )
+                    repair_succeeded = (
+                        repaired["schema_parse_success"] and repaired["history_used"]
+                        and repaired["polarity_correct"] and not repaired["private_leakage"]
+                        and not repaired["authority_contradiction"]
+                    )
                     if (not repaired["schema_parse_success"] or not repaired["history_used"]
                             or not repaired["polarity_correct"] or repaired["private_leakage"]
                             or repaired["authority_contradiction"]):
@@ -125,6 +136,9 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
                     case, raw, retry_count=retries,
                     engine_owned_metadata=engine_owned, repair_used=repair_used,
                     fallback_used=fallback_used,
+                    initial_validation_result=initial_validation_result,
+                    repair_succeeded=repair_succeeded,
+                    latency_seconds=time.monotonic() - started,
                     truncated=getattr(client, "last_generated_token_count", 0) >= client.generation_config["max_new_tokens"],
                 )
             except Exception as exc:
@@ -133,6 +147,9 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
                     case, raw, retry_count=retries, generation_error=error,
                     engine_owned_metadata=engine_owned, repair_used=repair_used,
                     fallback_used=fallback_used,
+                    initial_validation_result=initial_validation_result,
+                    repair_succeeded=repair_succeeded,
+                    latency_seconds=time.monotonic() - started,
                 )
             record.update({"seed": seed, "prompt_index": len(prompts) - 1})
             records.append(record)
@@ -156,7 +173,9 @@ def run_one(model_key: str, ablation: str, seeds: list[int], retry_format: bool,
         "platform": platform.platform(), "prompt_hash": prompt_hash(prompts),
         "benchmark_hash": hashlib.sha256(json.dumps(benchmark, sort_keys=True).encode()).hexdigest(),
         "metrics": metrics, "acceptance": acceptance(metrics),
-        "capability_tier": capability_tier(metrics), "prompts": prompts, "records": records,
+        "capability_tier": capability_tier(metrics),
+        "breakdowns": aggregate_breakdowns(records),
+        "prompts": prompts, "records": records,
     }
 
 
@@ -180,7 +199,9 @@ def main() -> int:
             path = args.output_dir / f"{model}-{ablation}.json"
             path.write_text(json.dumps(artifact, indent=2) + "\n")
             summaries.append({"model": model, "ablation": ablation,
-                              "metrics": artifact["metrics"], "passed": artifact["acceptance"]["passed"]})
+                              "capability_tier": artifact["capability_tier"],
+                              "metrics": artifact["metrics"],
+                              "passed": artifact["acceptance"]["passed"]})
             print(json.dumps(summaries[-1]))
     (args.output_dir / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n")
     return 0

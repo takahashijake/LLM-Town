@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from difflib import SequenceMatcher
+import json
 
 from src.llm.grounding import GroundingResult, grounded_fallback, plan_grounded_dialogue
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
@@ -66,6 +67,26 @@ class ConversationRunner:
             first_grounding_failure = ""
             grounded_repair_used = False
             grounded_fallback_used = False
+            if generation_error and context.get("grounded_content_plan"):
+                # Runtime failures are not retried. A planned turn can still be
+                # completed safely from engine-owned meaning, and the original
+                # error remains diagnostic telemetry.
+                raw_output = json.dumps({
+                    "utterance": grounded_fallback(context["grounded_content_plan"])
+                })
+                processed = engine.process_conversation_output(
+                    raw_output=raw_output, allowed_actions=setup["allowed_actions"],
+                    speaker=speaker, listener=listener,
+                    old_relationship_label=setup["old_relationship_label"],
+                    location_id=session.location, suggested_action=setup["suggested_action"],
+                    current_day=session.day, conversation_context=context,
+                    enforce_information_boundaries=True,
+                )
+                processed.setdefault("grounding_metadata_advisory", {})[
+                    "generation_error"
+                ] = generation_error
+                generation_error = ""
+                grounded_fallback_used = True
             if (
                 not generation_error
                 and not getattr(engine.llm, "is_deterministic_fake", False)
@@ -106,10 +127,21 @@ class ConversationRunner:
                                 "repair_error"
                             ] = generation_error
                             generation_error = ""
-                        processed["conversation"] = grounded_fallback(context["grounded_content_plan"])
-                        processed["parsed_output"]["grounding_refs"] = [
-                            context["grounded_content_plan"]["grounding_ref"]
-                        ]
+                        fallback_output = json.dumps({
+                            "utterance": grounded_fallback(
+                                context["grounded_content_plan"]
+                            )
+                        })
+                        processed = engine.process_conversation_output(
+                            raw_output=fallback_output,
+                            allowed_actions=setup["allowed_actions"], speaker=speaker,
+                            listener=listener,
+                            old_relationship_label=setup["old_relationship_label"],
+                            location_id=session.location,
+                            suggested_action=setup["suggested_action"],
+                            current_day=session.day, conversation_context=context,
+                            enforce_information_boundaries=True,
+                        )
                         grounded_fallback_used = True
                     else:
                         processed["conversation"] = engine.conversation_policy.get_grounded_fallback_dialogue(

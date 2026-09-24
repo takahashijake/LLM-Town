@@ -112,6 +112,7 @@ def test_engine_plan_owns_metadata_but_surface_meaning_still_controls_validity(t
     assert not reversed_result["grounding"].valid
     assert reversed_result["grounding"].reason in {
         "outcome_polarity_reversed", "planned_outcome_reversed",
+        "polarity_contradiction",
     }
 
 

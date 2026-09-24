@@ -11,6 +11,7 @@ from src.systems.reputation import ReputationSystem
 
 class FakeLLMClient:
     is_deterministic_fake = True
+    grounded_dialogue_capability_tier = "deterministic_test_double"
 
     def generate_conversation(self, context: dict) -> str:
         action = context.get("suggested_action", "chat")
@@ -50,6 +51,7 @@ class TransformersLLMClient:
         simplified_contract: bool = False,
         prompt_refinement: bool = False,
         few_shot: bool = False,
+        grounded_dialogue_capability_tier: str = "unverified",
     ):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -63,6 +65,11 @@ class TransformersLLMClient:
         self.simplified_contract = simplified_contract
         self.prompt_refinement = prompt_refinement
         self.few_shot = few_shot
+        if grounded_dialogue_capability_tier not in {
+            "full_grounded_realization_support", "safe_degraded_support", "unverified",
+        }:
+            raise ValueError("unsupported grounded-dialogue capability tier")
+        self.grounded_dialogue_capability_tier = grounded_dialogue_capability_tier
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.generation_config = {
             "max_new_tokens": max_new_tokens,
@@ -198,6 +205,34 @@ class TransformersLLMClient:
     def _build_prompt(self, context: dict) -> str:
         def lines(values, empty="None supplied"):
             return "\n".join(f"- {value}" for value in values) or f"- {empty}"
+
+        plan = context.get("grounded_content_plan")
+        if plan and not context.get("model_generated_grounding_metadata"):
+            transcript = context.get("session_transcript", [])[-2:]
+            recent = "\n".join(
+                f"{turn.get('speaker', 'Unknown')}: {turn.get('dialogue', '')}"
+                for turn in transcript
+            ) or "None"
+            prohibited = ", ".join(plan.get("forbidden_assertions", [])) or (
+                "all facts and outcomes beyond the permitted fact"
+            )
+            return (
+                f"Write one natural line from {context['speaker']} to {context['listener']}.\n"
+                f"Voice cue: {context.get('speaker_personality') or 'neutral'}\n"
+                f"Conversation:\n{recent}\n"
+                "Engine-owned meaning:\n"
+                f"- History use: {plan.get('history_use', 'required')}\n"
+                f"- Permitted fact: {plan.get('permitted_fact', 'the supplied fact')}\n"
+                f"- Knowledge basis: {plan.get('knowledge_basis', 'speaker-visible')}\n"
+                f"- Event/polarity: {plan.get('event_type', 'event')} / "
+                f"{plan['required_polarity']}\n"
+                f"- Dialogue act: {plan.get('social_intent', 'acknowledge')}\n"
+                f"- Prohibited: {prohibited}\n"
+                "Do not add people, reasons, transfers, rulings, or outcomes. Never speak IDs. "
+                "Examples: fulfilled='Yes, I completed it'; failed='No, I missed it'; "
+                "private=state only the outcome, never why; unknown culprit='I don't know who did it'; "
+                "irrelevant history=omit it. Return only the requested JSON utterance."
+            )
 
         allowed_actions = context.get("allowed_actions", ["chat"])
         suggested_action = context.get("suggested_action", "chat")
@@ -340,7 +375,9 @@ class TransformersLLMClient:
                 response_contract = '{"utterance":"natural spoken line"}'
             content_plan = (
                 "\nBounded content plan (selected only from visible facts):\n"
-                f"- Use history: {plan.get('use_history', plan.get('history_relevant', False))}.\n"
+                f"- History use: {plan.get('history_use', 'required')}.\n"
+                f"- Permitted fact: {plan.get('permitted_fact', 'the supplied fact')}.\n"
+                f"- Knowledge basis: {plan.get('knowledge_basis', 'supplied speaker knowledge')}.\n"
                 f"- Express the supplied {plan.get('event_type', 'event')} fact with "
                 f"{plan['required_polarity']} polarity.\n"
                 f"- Address {plan['counterpart']} with social intent "
@@ -348,6 +385,9 @@ class TransformersLLMClient:
                 f"- Allowed follow-through: {plan.get('follow_through', 'none')}.\n"
                 f"- Do not assert: {', '.join(plan.get('forbidden_assertions', [])) or 'anything beyond the plan'}.\n"
                 "- Realize this plan naturally; do not add any other historical claim.\n"
+                "- Pattern examples: fulfilled—'Yes, I completed it'; failed—'No, I missed it'; "
+                "private—state only the outcome, never why; unknown culprit—'I don't know who did it'; "
+                "irrelevant history—omit it.\n"
             )
         return f"""
 Write one natural line that {context['speaker']} says to {context['listener']}.

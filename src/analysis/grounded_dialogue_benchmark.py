@@ -39,9 +39,13 @@ def context_for_case(case: dict, *, two_stage: bool = False) -> dict:
     ):
         polarity = case["required_polarity"] or fact.get("outcome_polarity", "neutral")
         plan = {
-            "use_history": True, "grounding_ref": case["allowed_refs"][0],
+            "speaker": case["speaker"], "listener": case["listener"],
+            "history_use": "required", "use_history": True,
+            "grounding_ref": case["allowed_refs"][0],
             "event_type": fact["source_type"], "required_polarity": polarity,
             "counterpart": case["listener"],
+            "knowledge_basis": fact.get("knowledge_basis", ""),
+            "permitted_fact": fact["fact"],
             "social_intent": case["allowed_social_intents"][0],
             "follow_through": "acknowledge",
             "forbidden_assertions": list(case["forbidden_claims"]),
@@ -67,7 +71,10 @@ def _contains_any(text: str, values: list[str]) -> bool:
 def classify_response(case: dict, raw: str, *, retry_count: int = 0,
                       generation_error: str = "", truncated: bool = False,
                       engine_owned_metadata: bool = False,
-                      repair_used: bool = False, fallback_used: bool = False) -> dict:
+                      repair_used: bool = False, fallback_used: bool = False,
+                      initial_validation_result: str = "",
+                      repair_succeeded: bool = False,
+                      latency_seconds: float = 0.0) -> dict:
     json_text = extract_json_object(raw)
     syntactic_json = False
     if json_text:
@@ -115,8 +122,26 @@ def classify_response(case: dict, raw: str, *, retry_count: int = 0,
     if follow.get("target") and follow["target"] != case["listener"]:
         counterpart_ok = False
     parse_success = parsed["envelope_status"] == "parsed" and bool(utterance)
+    validation_result = "valid_realization"
+    if not parse_success:
+        validation_result = "unparseable_response"
+    elif realization and not realization.valid:
+        validation_result = realization.reason
+    elif forbidden_claims:
+        validation_result = "private_information_leak" if (
+            case["fact"]["knowledge_basis"] == "private_other"
+        ) else "unsupported_inference"
+    elif not counterpart_ok:
+        validation_result = "wrong_counterpart"
+    elif validation.candidate_type == "authority_boundary":
+        validation_result = "authority_claim"
     return {
         "case_id": case["id"], "expected_history_use": case["class"],
+        "event_type": case["fact"]["source_type"],
+        "history_use_category": case["class"].replace("must_use", "required").replace(
+            "may_use", "optional"
+        ).replace("must_not_use", "prohibited"),
+        "plan_created": bool(plan),
         "boundary_history_required": bool(
             case["class"] == "must_not_use" and case["required_polarity"]
         ),
@@ -130,6 +155,7 @@ def classify_response(case: dict, raw: str, *, retry_count: int = 0,
             not engine_owned_metadata or not plan or refs == [plan["grounding_ref"]]
         ),
         "metadata_disagreement": bool(engine_owned_metadata and advisory_refs != refs),
+        "engine_grounding_attached": bool(engine_owned_metadata and plan),
         "valid_refs": valid_refs, "invalid_refs": invalid_refs,
         "forbidden_refs": forbidden_refs, "history_used": history_used,
         "polarity_correct": polarity_correct, "counterpart_correct": counterpart_ok,
@@ -141,6 +167,16 @@ def classify_response(case: dict, raw: str, *, retry_count: int = 0,
         "generation_failure": bool(generation_error), "generation_error": generation_error,
         "truncated": truncated, "retry_count": retry_count,
         "repair_used": repair_used, "fallback_used": fallback_used,
+        "surface_history_realized": history_used,
+        "initial_validation_result": initial_validation_result or validation_result,
+        "final_validation_result": validation_result,
+        "repair_attempted": repair_used, "repair_succeeded": repair_succeeded,
+        "final_safety_result": not (
+            bool(forbidden_claims) or validation.candidate_type == "authority_boundary"
+            or not counterpart_ok
+        ),
+        "final_polarity_result": polarity_correct,
+        "latency_seconds": max(0.0, float(latency_seconds)),
     }
 
 
@@ -184,6 +220,26 @@ def aggregate(records: list[dict]) -> dict:
             ) for row in records
         ),
         "model_ignored_history": sum(row["schema_parse_success"] and not row["history_used"] for row in required),
+    }
+
+
+def aggregate_breakdowns(records: list[dict]) -> dict:
+    """Produce compact evaluator views without discarding per-record evidence."""
+    def grouped(key):
+        values = {}
+        for value in sorted({str(row.get(key, "")) for row in records}):
+            rows = [row for row in records if str(row.get(key, "")) == value]
+            values[value] = aggregate(rows)
+        return values
+    return {
+        "event_type": grouped("event_type"),
+        "history_use_category": grouped("history_use_category"),
+        "initial_validation_result": grouped("initial_validation_result"),
+        "repair_result": {
+            "not_attempted": aggregate([row for row in records if not row["repair_attempted"]]),
+            "succeeded": aggregate([row for row in records if row["repair_succeeded"]]),
+            "failed": aggregate([row for row in records if row["repair_attempted"] and not row["repair_succeeded"]]),
+        },
     }
 
 

@@ -3,6 +3,7 @@ import json
 from src.analysis.grounded_dialogue_benchmark import (
     acceptance, aggregate, classify_response, context_for_case, load_benchmark,
 )
+from src.llm.client import TransformersLLMClient
 
 
 def test_balanced_benchmark_is_versioned_and_machine_readable():
@@ -78,3 +79,29 @@ def test_engine_metadata_cannot_make_wrong_surface_meaning_correct():
     assert result["metadata_disagreement"]
     assert not result["history_used"]
     assert not result["polarity_correct"]
+
+
+def test_production_record_exposes_plan_repair_and_final_outcomes():
+    case = load_benchmark()["cases"][0]
+    result = classify_response(
+        case, '{"utterance":"Yes, I kept that promise."}',
+        engine_owned_metadata=True, repair_used=True, repair_succeeded=True,
+        initial_validation_result="history_omitted", latency_seconds=.25,
+    )
+    assert result["plan_created"] and result["engine_grounding_attached"]
+    assert result["history_use_category"] == "required"
+    assert result["surface_history_realized"]
+    assert result["initial_validation_result"] == "history_omitted"
+    assert result["repair_attempted"] and result["repair_succeeded"]
+    assert result["final_safety_result"] and result["final_polarity_result"]
+    assert result["latency_seconds"] == .25
+
+
+def test_production_realization_prompts_stay_within_character_budget():
+    client = object.__new__(TransformersLLMClient)
+    prompts = [
+        TransformersLLMClient._build_prompt(client, context)
+        for case in load_benchmark()["cases"]
+        if (context := context_for_case(case, two_stage=True))["grounded_content_plan"]
+    ]
+    assert prompts and max(map(len, prompts)) <= 2_400

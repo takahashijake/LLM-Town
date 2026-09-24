@@ -15,6 +15,14 @@ or misspelled IDs cannot displace it or reject an otherwise safe utterance.
 Surface language is scored separately, so correct metadata cannot make an
 incorrect or polarity-reversed utterance count as grounded.
 
+The immutable `GroundedDialoguePlan` names the speaker and listener, classifies
+history use as required/optional/prohibited, and carries only the selected
+prompt-local reference, event type, polarity, counterpart, knowledge basis,
+concise permitted fact, social intent, follow-through category, and prohibited
+assertions. It is ephemeral guidance, never saved world state. The live planner
+constructs it only from the current speaker's already-filtered grounding packet;
+it does not search global systems or another resident's memory.
+
 The validator has narrow event-specific contracts for fulfilled, failed, expired,
 cancelled, private-plan completion/failure, witnessed crime, unknown culprit,
 adjudication, and completed restitution/material outcomes. A contradiction gets
@@ -30,11 +38,10 @@ Qwen models: private leakage 0, authority contradictions 0, counterpart accuracy
 reached 100% parse success, required-history realization, and polarity accuracy,
 with 0% irrelevant-history intrusion.
 
-- Qwen2.5-3B is **safe degraded support**: repair 19.44%, deterministic fallback
-  19.44%. It exceeds both full-support frequency ceilings.
-- Qwen2.5-7B is **safe degraded support**: repair 15.28%, deterministic fallback
-  6.94%. It misses full support by one repair in 72 samples; the 15% threshold was
-  not relaxed.
+- Qwen2.5-3B is **safe degraded support**: repair 13.89%, deterministic fallback
+  13.89%. It passes the repair ceiling but exceeds the 10% fallback ceiling.
+- Qwen2.5-7B is **safe degraded support**: repair 18.06%, deterministic fallback
+  8.33%. It passes the fallback ceiling but exceeds the 15% repair ceiling.
 
 The targeted prior-failure cluster (five cases, seed 42) was safe and 100%
 correct after recovery: 3B repaired 4/5 and fell back 3/5; 7B repaired 2/5 and
@@ -46,9 +53,31 @@ the authority boundary. Since neither supported model meets the full-quality
 repair/fallback envelope, V3 should not yet advance to broader social
 follow-through.
 
+The runtime exposes this classification through `--grounded-dialogue-tier` and
+prints the selected tier at startup. The setting is capability-based rather than
+derived from a model-name allowlist. Use `unverified` for a model/configuration
+that has not passed this benchmark.
+
+### Experimental two-stage characterization
+
+The archived H arm deterministically selected a visible benchmark fact and its
+required polarity, but still asked the model to emit the grounding reference,
+intent, and follow-through metadata. History counted only when a supplied allowed
+reference, required surface terms, and non-forbidden meaning all agreed. The 7B
+95% reference result came from `must_not_unwitnessed_accusation` emitting fact
+text as an ID in seeds 42 and 101. Its polarity misses clustered in fulfillment,
+unknown-culprit uncertainty, cancellation, and restitution. The 3B misses
+clustered in cancellation, witnessed theft, archived fulfillment, adjudication,
+unknown-culprit uncertainty, and unwitnessed accusation. These records
+characterize the old behavior; benchmark scaffolding was not copied into the
+runtime planner.
+
 Generation caching keys include model digest, exact prompt hash, content-plan
 hash, seed, generation configuration, and parser version. Development used stored
 baselines and targeted failures; only D received the final three-seed run.
+The final post-hardening artifacts are in `outputs/grounded_dialogue/v3-production-final/`.
+Their planned-realization chat prompts are 1,035–1,092 characters, below the
+2,400-character limit; the engine plan itself renders to at most 713 characters.
 
 ## Contract and knowledge boundary
 
@@ -139,6 +168,12 @@ unsupported claims, private leakage, authority contradictions, runtime failure,
 truncation, retries, valid-but-wrong structure, parser rejection, and ignored
 history. A reference alone does not count: required use also needs matching content
 and preserved polarity with no forbidden claim.
+
+V3 records additionally expose plan creation, required/optional/prohibited history,
+surface realization, engine metadata attachment, advisory disagreement, initial
+and final validation outcomes, repair attempted/succeeded, fallback use, final
+safety and polarity, and elapsed latency. New artifacts include breakdowns by
+event type, history-use category, initial validation result, and repair result.
 
 ### 2026-09-23 reliability envelope
 

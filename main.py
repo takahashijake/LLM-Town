@@ -55,6 +55,12 @@ def parse_args() -> argparse.Namespace:
         default="Qwen/Qwen2.5-3B-Instruct",
         help="Hugging Face model name to use when not using --fake-llm.",
     )
+    parser.add_argument(
+        "--grounded-dialogue-tier",
+        choices=["full_grounded_realization_support", "safe_degraded_support", "unverified"],
+        default="unverified",
+        help="Validated grounded-dialogue capability classification for this model.",
+    )
 
     parser.add_argument(
         "--seed",
@@ -80,7 +86,10 @@ def build_llm_client(args: argparse.Namespace):
     if args.fake_llm:
         return FakeLLMClient()
 
-    return TransformersLLMClient(model_name=args.model_name)
+    return TransformersLLMClient(
+        model_name=args.model_name,
+        grounded_dialogue_capability_tier=args.grounded_dialogue_tier,
+    )
 
 
 def main() -> None:
@@ -93,6 +102,10 @@ def main() -> None:
         clear_run()
 
     llm_client = build_llm_client(args)
+    print(
+        "Grounded dialogue capability tier: "
+        f"{llm_client.grounded_dialogue_capability_tier}"
+    )
 
     engine = SimulationEngine(
         agents_path=args.agents_path,

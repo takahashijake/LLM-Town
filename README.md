@@ -646,12 +646,15 @@ provenance, polarity, counterpart, intent, and follow-through eligibility. The
 model realizes only the bounded meaning as natural dialogue. Model-emitted
 metadata is advisory; it cannot replace the selected reference. Event-specific
 validation allows one bounded repair and then a safe non-mutating fallback.
+The immutable plan also records required/optional/prohibited history use, the
+speaker-visible permitted fact, and its knowledge basis. Surface meaning—not an
+engine-attached reference—determines whether realization succeeded.
 
 The final 72-sample-per-model V3 run achieved 100% parse, required history,
 polarity, counterpart, and engine-reference validity with zero leakage,
 authority contradictions, intrusion, or runtime failures. Qwen2.5-3B is a safe
-degraded tier (19.44% repair/fallback). Qwen2.5-7B is also safe degraded (15.28%
-repair, 6.94% fallback), narrowly missing the unchanged 15% repair ceiling.
+degraded tier (13.89% repair/fallback; fallback exceeds 10%). Qwen2.5-7B is also
+safe degraded (18.06% repair, 8.33% fallback; repair exceeds 15%).
 
 Run the deterministic and cached no-model evaluations with:
 
@@ -665,6 +668,11 @@ python scripts/evaluate_grounded_dialogue.py --cached data/grounded_dialogue_cac
 See [the grounded-dialogue architecture and live 3B/7B commands](docs/grounded_dialogue.md)
 for the packet contract, artifact metadata, authority boundary, metrics, and
 known limitations.
+
+For live runs, select and expose the benchmarked capability explicitly, for
+example `--grounded-dialogue-tier safe_degraded_support`. Use `unverified` for an
+untested model/configuration; tiers are configuration capabilities, not model-name
+special cases.
 
 ## Current limitations
 

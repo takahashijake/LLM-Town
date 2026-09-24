@@ -101,6 +101,9 @@ class SimulationEngine:
         self.simulation_loop = SimulationLoop()
         self.journal_system = JournalSystem()
         self.llm = llm_client or TransformersLLMClient()
+        self.grounded_dialogue_capability_tier = getattr(
+            self.llm, "grounded_dialogue_capability_tier", "unverified"
+        )
         self.actions = ActionSystem()
         self.reputation_updates = []
         self.reputation_system = ReputationSystem(

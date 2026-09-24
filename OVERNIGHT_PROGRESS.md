@@ -1,5 +1,36 @@
 # Overnight engineering progress
 
+## V3 production hardening continuation (2026-09-24)
+
+- Actual start was clean `6473793` on `main`, aligned with `origin/main`; the
+  requested `1abaa3d` checkpoint had already advanced through the initial
+  engine-planned implementation.
+- Expanded the immutable content plan to explicitly carry speaker/listener,
+  required/optional/prohibited history use, permitted fact, and knowledge basis,
+  while preserving engine ownership of reference, polarity, counterpart, intent,
+  follow-through, and prohibitions.
+- Added explicit surface-validation outcomes for omitted history, reversed
+  polarity, private leakage, unsupported inference, wrong counterpart, authority
+  claims, and unparseable output. Added characterization tests for plan immutability
+  and evaluator telemetry.
+- A planned turn now handles an ordinary model exception with an immediately
+  validated event-specific fallback and no retry loop; the exception remains
+  advisory diagnostic telemetry.
+- Extended future live artifacts with plan/engine/surface fields, initial versus
+  repaired result, repair success, final safety/polarity, latency, and grouped
+  event/history/repair breakdowns. Preserved the completed 144-generation run;
+  no unchanged arm or model was regenerated.
+- Audited archived H failures: 7B invalid references were fact text emitted as an
+  ID in two unwitnessed-accusation samples; 3B realization misses concentrated in
+  cancellation, witnessed theft, archived fulfillment, adjudication, and boundary
+  uncertainty/accusation cases. Details are in `docs/grounded_dialogue.md`.
+- Final production-only live run completed: 144 generations, with 100% parse,
+  required surface history, polarity, counterpart, and engine-reference validity;
+  zero intrusion, leakage, authority contradiction, runtime failure, or truncation.
+  3B repair/fallback improved to 13.89%/13.89% and remains safe degraded on the
+  fallback ceiling. 7B measured 18.06%/8.33% and remains safe degraded on the
+  repair ceiling. Planned rendered prompts were 1,035–1,092 characters.
+
 ## Engine-planned grounded realization V3 gate (2026-09-23)
 
 - Starting SHA `1abaa3d331205d5d9fd75cae181482c3b7808afe`; clean `main`, aligned

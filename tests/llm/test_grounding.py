@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from src.agents.memory import Memory
 from src.llm.grounding import (
-    GroundingValidator, build_grounding_packet, grounded_fallback,
+    GroundedDialoguePlan, GroundingValidator, build_grounding_packet, grounded_fallback,
     grounding_packet_for_prompt,
 )
 
@@ -29,6 +29,36 @@ def test_event_specific_plan_polarity(polarity, good, bad):
     assert validator.validate_realization(good, plan).valid
     assert not validator.validate_realization(bad, plan).valid
     assert validator.validate_realization(grounded_fallback(plan), plan).valid
+
+
+def test_content_plan_is_immutable_and_contains_only_bounded_guidance():
+    plan = GroundedDialoguePlan(
+        speaker="Ava", listener="Bo", history_use="required",
+        grounding_ref="g1", event_type="commitment_failed",
+        required_polarity="failed", counterpart="Bo",
+        knowledge_basis="participant", permitted_fact="Ava missed the delivery.",
+        social_intent="acknowledge", follow_through="request_explanation",
+        forbidden_assertions=("invent a reason",),
+    )
+    rendered = plan.prompt_dict()
+    assert rendered["history_use"] == "required" and rendered["use_history"]
+    assert rendered["permitted_fact"] == "Ava missed the delivery."
+    with pytest.raises(Exception):
+        plan.required_polarity = "fulfilled"
+
+
+@pytest.mark.parametrize("dialogue,expected", [
+    ("It is nice to see you.", "history_omitted"),
+    ("Yes, I completed it.", "polarity_contradiction"),
+    ("Sorry, Cy, I failed it.", "wrong_counterpart"),
+])
+def test_realization_failure_categories_are_explicit(dialogue, expected):
+    plan = {
+        "history_use": "required", "use_history": True,
+        "required_polarity": "failed", "counterpart": "Bo", "listener": "Bo",
+    }
+    result = GroundingValidator().validate_realization(dialogue, plan)
+    assert not result.valid and result.reason == expected
 from src.llm.parser import parse_llm_conversation_output
 
 

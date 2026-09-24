@@ -29,17 +29,29 @@ ALLOWED_FOLLOW_THROUGH = {"none", "acknowledge", "appreciate", "request_explanat
 class GroundedDialoguePlan:
     """Engine-owned meaning that a model may phrase but may not redefine."""
 
-    use_history: bool
+    speaker: str = ""
+    listener: str = ""
+    history_use: str = "required"
     grounding_ref: str = ""
     event_type: str = ""
     required_polarity: str = "neutral"
     counterpart: str = ""
+    knowledge_basis: str = ""
+    permitted_fact: str = ""
     social_intent: str = "none"
     follow_through: str = "none"
     forbidden_assertions: tuple[str, ...] = ()
 
+    @property
+    def use_history(self) -> bool:
+        """Compatibility view for the former Boolean plan contract."""
+        return self.history_use != "prohibited"
+
     def prompt_dict(self) -> dict:
-        return {**asdict(self), "forbidden_assertions": list(self.forbidden_assertions)}
+        return {
+            **asdict(self), "use_history": self.use_history,
+            "forbidden_assertions": list(self.forbidden_assertions),
+        }
 
 
 FOLLOW_THROUGH_BY_POLARITY = {
@@ -94,9 +106,13 @@ def plan_grounded_dialogue(context: dict) -> GroundedDialoguePlan | None:
     if polarity in {"completed_private", "failed_private"}:
         forbidden.append("attribute the private plan or its reason to the listener")
     return GroundedDialoguePlan(
-        use_history=True, grounding_ref=str(best["ref"]),
+        speaker=str(context.get("speaker", "")),
+        listener=str(context.get("listener", "")), history_use="required",
+        grounding_ref=str(best["ref"]),
         event_type=str(best.get("source_type", "")), required_polarity=polarity,
-        counterpart=counterpart, social_intent=allowed[0],
+        counterpart=counterpart,
+        knowledge_basis=str(best.get("knowledge_basis", "")),
+        permitted_fact=_clean(best.get("fact", "")), social_intent=allowed[0],
         follow_through=allowed[0], forbidden_assertions=tuple(forbidden),
     )
 
@@ -260,18 +276,38 @@ class GroundingValidator:
         value = plan.prompt_dict() if isinstance(plan, GroundedDialoguePlan) else plan
         polarity = str(value.get("required_polarity", "neutral"))
         text = " ".join(str(dialogue).split())
+        if not text:
+            return GroundingResult(False, "unparseable_response", "unparseable_response")
+        history_use = value.get("history_use") or (
+            "required" if value.get("use_history") else "prohibited"
+        )
+        if history_use not in {"required", "optional", "prohibited"}:
+            return GroundingResult(False, "invalid_history_use", "unsupported_inference")
+        counterpart = str(value.get("counterpart", "")).strip()
+        listener = str(value.get("listener", "")).strip()
+        addressed = re.search(
+            r"\b(?:thanks|thank you|sorry|yes|no|listen),?\s+([A-Z][A-Za-z'-]+)\b",
+            text, re.I,
+        )
+        if (addressed and addressed.group(1)[0].isupper() and counterpart
+                and addressed.group(1) not in {counterpart, listener}):
+            return GroundingResult(False, "wrong_counterpart", "wrong_counterpart")
         reversed_rule = self.PLAN_REVERSED.get(polarity)
         if reversed_rule and reversed_rule.search(text):
-            return GroundingResult(False, "planned_outcome_reversed", "polarity")
+            return GroundingResult(False, "polarity_contradiction", "polarity_contradiction")
         required_rule = self.PLAN_REQUIRED.get(polarity)
-        if value.get("use_history") and required_rule and not required_rule.search(text):
-            return GroundingResult(False, "planned_outcome_not_realized", "polarity")
+        if history_use == "required" and required_rule and not required_rule.search(text):
+            return GroundingResult(False, "history_omitted", "history_omitted")
         if polarity == "unknown_culprit" and self.CULPRIT.search(text):
-            return GroundingResult(False, "unknown_culprit_asserted", "private_information")
+            return GroundingResult(False, "unsupported_inference", "unsupported_inference")
         if polarity in {"completed_private", "failed_private"} and re.search(
             r"\b(?:you|because you|your plan)\b", text, re.I
         ):
-            return GroundingResult(False, "private_plan_boundary", "private_information")
+            return GroundingResult(False, "private_information_leak", "private_information_leak")
+        if self.PRIVATE_REASON.search(text):
+            return GroundingResult(False, "private_information_leak", "private_information_leak")
+        if self.AUTHORITATIVE_ASSERTION.search(text) and polarity not in {"fulfilled", "completed"}:
+            return GroundingResult(False, "authority_claim", "authority_claim")
         return GroundingResult(True)
 
     def validate(self, dialogue: str, refs: list[str], context: dict, *, follow_through: dict | None = None) -> GroundingResult:
