@@ -21,6 +21,11 @@ from src.simulation.conversation_output_processor import ConversationOutputProce
 from src.simulation.conversation_policy import ConversationPolicy
 from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.conversation_runner import ConversationRunner
+from src.simulation.conversation_scheduler import ConversationScheduler
+from src.simulation.conversation_execution import (
+    ConcurrentConversationExecutionBackend,
+    SerialConversationExecutionBackend,
+)
 from src.simulation.conversation_selector import ConversationSelector
 from src.simulation.conversation_tagger import ConversationTagger
 from src.simulation.intent_system import IntentSystem
@@ -55,6 +60,9 @@ class SimulationEngine:
         materials_path: str | Path = "data/materials.json",
         crime_path: str | Path = "data/crime.json",
         justice_path: str | Path = "data/justice.json",
+        conversation_execution: str = "serial",
+        conversation_workers: int = 4,
+        simulation_seed: int = 0,
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
@@ -87,6 +95,16 @@ class SimulationEngine:
         self.conversation_runner = ConversationRunner(
             max_turns=self.max_conversation_turns
         )
+        self.conversation_scheduler = ConversationScheduler(seed=simulation_seed)
+        if conversation_execution == "serial":
+            self.conversation_execution_backend = SerialConversationExecutionBackend()
+        elif conversation_execution == "concurrent":
+            self.conversation_execution_backend = ConcurrentConversationExecutionBackend(
+                max_workers=conversation_workers,
+            )
+        else:
+            raise ValueError("conversation_execution must be 'serial' or 'concurrent'")
+        self.last_social_tick = {}
         self.conversation_tagger = ConversationTagger()
         self.relationships = RelationshipManager()
         self.conversation_selector = ConversationSelector(

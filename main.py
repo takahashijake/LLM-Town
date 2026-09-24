@@ -78,6 +78,14 @@ def parse_args() -> argparse.Namespace:
         "--max-conversation-turns", type=int, default=4,
         help="Maximum utterances in each conversation session (default: 4).",
     )
+    parser.add_argument(
+        "--conversation-execution", choices=["serial", "concurrent"],
+        default="serial", help="Conversation realization backend (default: serial).",
+    )
+    parser.add_argument(
+        "--conversation-workers", type=int, default=4,
+        help="Maximum local realization workers in concurrent mode.",
+    )
 
     return parser.parse_args()
 
@@ -113,6 +121,9 @@ def main() -> None:
         load_state=args.load_state,
         llm_client=llm_client,
         max_conversation_turns=args.max_conversation_turns,
+        conversation_execution=args.conversation_execution,
+        conversation_workers=args.conversation_workers,
+        simulation_seed=args.seed or 0,
     )
 
     engine.run(days=args.days, hours=args.hours)

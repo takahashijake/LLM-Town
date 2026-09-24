@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import copy
+from dataclasses import replace
 from difflib import SequenceMatcher
 import json
+import random
+from types import SimpleNamespace
 
 from src.llm.grounding import GroundingResult, grounded_fallback, plan_grounded_dialogue
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
+from src.simulation.conversation_execution import ConversationRealizationJob
+from src.simulation.social_snapshot import ConversationTickSnapshot
 from src.simulation.social_semantics import classify_commitment_relation
 
 
@@ -16,6 +22,111 @@ class ConversationRunner:
         self.outcomes = ResponseOutcomeResolver()
 
     def generate_conversations(self, engine, day: int, hour: int) -> None:
+        scheduler = getattr(engine, "conversation_scheduler", None)
+        backend = getattr(engine, "conversation_execution_backend", None)
+        # Keep small historical test doubles and integrations source-compatible.
+        if scheduler is None or backend is None or not hasattr(engine, "agents"):
+            return self._generate_conversations_legacy(engine, day, hour)
+
+        snapshot = ConversationTickSnapshot.capture(engine, day, hour)
+        plans = scheduler.schedule(snapshot)
+        # Characterization tests and downstream integrations historically
+        # override this method to force a specific pair. Honor an instance-level
+        # override for the first session without making production scheduling
+        # dependent on the process-global random module.
+        if plans and "choose_conversation_pair" in getattr(engine, "__dict__", {}):
+            first_plan = plans[0]
+            location_agents = [
+                agent for agent in engine.agents
+                if str(agent.location_id) == first_plan.location_id
+            ]
+            preferred = engine.choose_conversation_pair(location_agents)
+            preferred_ids = tuple(str(agent.id) for agent in preferred)
+            plans[0] = replace(
+                first_plan,
+                participant_ids=preferred_ids,
+                initiating_agent_id=preferred_ids[0],
+                session_id=self._session_id(
+                    day, hour, first_plan.location_id,
+                    preferred[0].name, preferred[1].name,
+                ),
+            )
+        if not plans:
+            print("No conversations this tick")
+            engine.last_social_tick = self._tick_telemetry(snapshot, plans, [], backend)
+            return
+
+        by_id = {str(agent.id): agent for agent in engine.agents}
+        jobs = []
+        for plan in plans:
+            # A private replica is captured before any commit. Query-like helpers
+            # can therefore never mutate the authoritative engine during realization.
+            replica = self._make_realization_replica(engine)
+            # The LLM is a proposal component, not authoritative state. Sharing
+            # it preserves client diagnostics and avoids copying model weights;
+            # real clients serialize unsafe model.generate calls internally.
+            replica.llm = engine.llm
+            replica.conversation_policy.rng = random.Random(plan.request_seed)
+            replica_by_id = {str(agent.id): agent for agent in replica.agents}
+            first = replica_by_id[plan.participant_ids[0]]
+            second = replica_by_id[plan.participant_ids[1]]
+
+            def realize(replica=replica, plan=plan, first=first, second=second):
+                session = ConversationSession(
+                    session_id=plan.session_id, day=plan.day, hour=plan.hour,
+                    location=plan.location_id,
+                    participants=[first.name, second.name],
+                    initiating_agent=first.name,
+                    snapshot_id=plan.snapshot_id,
+                    schedule_index=plan.schedule_index,
+                    request_seed=plan.request_seed,
+                )
+                self._generate_session(replica, session, first, second)
+                return session
+
+            jobs.append(ConversationRealizationJob(plan, realize))
+
+        # Barrier: the authoritative engine has not been passed to any worker.
+        results = backend.realize(jobs)
+        ordered = sorted(results, key=lambda item: item.plan.schedule_index)
+        for commit_position, result in enumerate(ordered):
+            if result.session is None:
+                continue
+            initiator = by_id[result.plan.participant_ids[0]]
+            other = by_id[result.plan.participant_ids[1]]
+            result.session.commit_position = commit_position
+            self._apply_and_record(engine, result.session, initiator, other)
+        engine.last_social_tick = self._tick_telemetry(
+            snapshot, plans, ordered, backend,
+        )
+
+    @staticmethod
+    def _make_realization_replica(engine):
+        """Copy only conversation-visible machinery, excluding world authorities.
+
+        A shallow shell preserves the engine's compatibility methods; the shell
+        is then deeply copied after unrelated and mutation-capable authorities
+        have been removed. Materials are retained only as an immutable-looking
+        goods catalog used by proposal recognition.
+        """
+        shell = copy.copy(engine)
+        for name in (
+            "economy", "crime", "justice", "plan_system", "state", "persistence",
+            "activity_system", "simulation_loop", "journal_system", "reporter",
+            "logger", "conversation_recorder", "conversation_effects_applier",
+            "conversation_execution_backend",
+        ):
+            if hasattr(shell, name):
+                setattr(shell, name, None)
+        shell.llm = None
+        shell.materials = SimpleNamespace(
+            goods=copy.deepcopy(getattr(getattr(engine, "materials", None), "goods", {}))
+        )
+        replica = copy.deepcopy(shell)
+        replica.llm = engine.llm
+        return replica
+
+    def _generate_conversations_legacy(self, engine, day: int, hour: int) -> None:
         created = 0
         for location_id, agents_here in engine.group_agents_by_location().items():
             if len(agents_here) < 2:
@@ -31,6 +142,31 @@ class ConversationRunner:
             self._apply_and_record(engine, session, initiator, other)
         if created == 0:
             print("No conversations this tick")
+
+    @staticmethod
+    def _tick_telemetry(snapshot, plans, results, backend) -> dict:
+        return {
+            "snapshot_id": snapshot.snapshot_id,
+            "eligible_agent_count": len(snapshot.participants),
+            "scheduled_session_count": len(plans),
+            "schedule_order": [plan.session_id for plan in plans],
+            "execution_backend": backend.name,
+            "commit_order": [
+                result.plan.session_id for result in results if result.session is not None
+            ],
+            "worker_failures": [
+                {"session_id": result.plan.session_id, "error": result.error}
+                for result in results if result.error
+            ],
+            "repair_count": sum(
+                turn.grounded_repair_used for result in results if result.session
+                for turn in result.session.turns
+            ),
+            "fallback_count": sum(
+                turn.grounded_fallback_used for result in results if result.session
+                for turn in result.session.turns
+            ),
+        }
 
     def _generate_session(self, engine, session, initiator, other) -> None:
         speaker, listener = initiator, other
@@ -49,6 +185,11 @@ class ConversationRunner:
             context = setup["context"]
             context["session_transcript"] = list(transcript)
             context["most_recent_utterance"] = transcript[-1]["dialogue"] if transcript else ""
+            context["conversation_snapshot_id"] = getattr(session, "snapshot_id", "")
+            context["conversation_session_id"] = session.session_id
+            context["conversation_schedule_index"] = getattr(session, "schedule_index", 0)
+            context["conversation_request_seed"] = getattr(session, "request_seed", 0)
+            context["conversation_turn_index"] = turn_index
             if "grounded_content_plan" not in context:
                 plan = plan_grounded_dialogue(context)
                 context["grounded_content_plan"] = plan.prompt_dict() if plan else None

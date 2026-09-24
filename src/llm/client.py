@@ -1,5 +1,6 @@
 
 import json
+import threading
 
 from src.llm.response_contract import (
     OutputConstraintMode,
@@ -86,10 +87,13 @@ class TransformersLLMClient:
             model_name,
             dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
         ).to(self.device)
+        self._generation_lock = threading.Lock()
 
     def generate_conversation(self, context: dict) -> str:
         messages = self._conversation_messages(context)
-        return self._generate_messages(messages)
+        return self._generate_messages(
+            messages, seed=context.get("conversation_request_seed", self.seed),
+        )
 
     def _conversation_messages(self, context: dict) -> list[dict]:
         prompt = self._build_prompt(context)
@@ -143,7 +147,11 @@ class TransformersLLMClient:
             add_generation_prompt=True,
         )
 
-    def _generate_messages(self, messages: list[dict]) -> str:
+    def _generate_messages(self, messages: list[dict], seed: int | None = None) -> str:
+        with self._generation_lock:
+            return self._generate_messages_locked(messages, seed=seed)
+
+    def _generate_messages_locked(self, messages: list[dict], seed: int | None = None) -> str:
         text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -155,9 +163,10 @@ class TransformersLLMClient:
         inputs = self.tokenizer([text], return_tensors="pt").to(self.device)
 
         with self.torch.no_grad():
-            if self.seed is not None:
-                self.torch.manual_seed(self.seed)
-                self.torch.cuda.manual_seed_all(self.seed)
+            effective_seed = self.seed if seed is None else seed
+            if effective_seed is not None:
+                self.torch.manual_seed(effective_seed)
+                self.torch.cuda.manual_seed_all(effective_seed)
             outputs = self.model.generate(
                 **inputs,
                 **self.generation_config,

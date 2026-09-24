@@ -16,6 +16,7 @@ class ConversationPolicy:
         self.actions = actions
         self.recent_dialogues = recent_dialogues
         self.recent_actions = recent_actions
+        self.rng = None
 
     def remember_dialogue(self, conversation: str, limit: int = 50) -> None:
         normalized = conversation.strip().lower()
@@ -320,4 +321,4 @@ class ConversationPolicy:
         if not weighted_actions:
             return "chat"
 
-        return random.choice(weighted_actions)
+        return (self.rng or random).choice(weighted_actions)
