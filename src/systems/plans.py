@@ -190,6 +190,7 @@ class PlanSystem:
         self.outcome_memory = outcome_memory
         self.execution_records: list[dict] = []
         self.planning_records: list[dict] = []
+        self.goal_planning_records: list[dict] = []
 
     def to_dict(self) -> dict:
         return {"schema_version": PLAN_SCHEMA_VERSION,
@@ -197,7 +198,8 @@ class PlanSystem:
                 "goal_plans": [plan.to_dict() for plan in self.goal_plans],
                 "next_number": self.next_number,
                 "execution_records": list(self.execution_records),
-                "planning_records": list(self.planning_records)}
+                "planning_records": list(self.planning_records),
+                "goal_planning_records": list(self.goal_planning_records)}
 
     @classmethod
     def from_dict(cls, data: dict | None, *, commitment_system=None, agents=None,
@@ -214,6 +216,7 @@ class PlanSystem:
                      outcome_memory=outcome_memory)
         system.execution_records = list(data.get("execution_records", []))
         system.planning_records = list(data.get("planning_records", []))
+        system.goal_planning_records = list(data.get("goal_planning_records", []))
         system._synchronize_terminal_sources()
         system._synchronize_terminal_goals()
         system.validate_invariants()
@@ -254,7 +257,7 @@ class PlanSystem:
                 )
             elif expected == "paused" and plan.active:
                 plan.status = "paused"
-                plan.transitions.append({
+                self._append_goal_transition(plan, {
                     "day": goal.last_review_day or plan.created_day,
                     "type": "paused", "reason": "source_paused",
                 })
@@ -267,11 +270,28 @@ class PlanSystem:
         plan.status = status
         plan.completed_day = day if status in TERMINAL_GOAL_PLAN_STATUSES else None
         plan.terminal_reason = reason if status in TERMINAL_GOAL_PLAN_STATUSES else ""
-        plan.transitions.append({"day": day, "type": status, "reason": reason})
+        PlanSystem._append_goal_transition(
+            plan, {"day": day, "type": status, "reason": reason},
+        )
 
     def get_goal_plan(self, goal_id: str) -> GoalPlan | None:
         return next((plan for plan in self.goal_plans
                      if plan.source_goal_id == goal_id), None)
+
+    @staticmethod
+    def _append_goal_transition(plan: GoalPlan, transition: dict) -> None:
+        plan.transitions.append(transition)
+        plan.transitions = plan.transitions[-50:]
+
+    def record_goal_planning_failure(self, goal, agent, *, day: int,
+                                     reason: str) -> None:
+        if any(record["source_goal_id"] == goal.id
+               for record in self.goal_planning_records):
+            return
+        self.goal_planning_records.append({
+            "source_goal_id": goal.id, "agent_id": agent.id,
+            "day": day, "eligible": False, "reason": reason,
+        })
 
     def _synchronize_terminal_sources(self) -> None:
         if self.commitment_system is None:
@@ -431,12 +451,12 @@ class PlanSystem:
             )
         elif goal.status == "paused" and plan.active:
             plan.status = "paused"
-            plan.transitions.append({
+            self._append_goal_transition(plan, {
                 "day": day, "type": "paused", "reason": "source_paused",
             })
         elif goal.status == "active" and plan.status == "paused":
             plan.status = "active"
-            plan.transitions.append({
+            self._append_goal_transition(plan, {
                 "day": day, "type": "resumed", "reason": "source_active",
             })
         return plan
@@ -472,7 +492,7 @@ class PlanSystem:
         plan.score_at_selection = candidate.score
         plan.feasibility_at_selection = candidate.feasible
         plan.review_day = day
-        plan.transitions.append({
+        self._append_goal_transition(plan, {
             "day": day, "type": "adapted", "trigger": trigger,
             "old_strategy": old["strategy"],
             "new_strategy": candidate.name,
@@ -785,6 +805,9 @@ class PlanSystem:
                 len(plan.processed_evidence_keys) == len(set(plan.processed_evidence_keys))
                 for plan in self.goal_plans
             ),
+            "goal_planning_decisions_unique": len({
+                record["source_goal_id"] for record in self.goal_planning_records
+            }) == len(self.goal_planning_records),
         }
         goal_sources = self._goal_sources()
         checks["valid_goal_sources"] = all(

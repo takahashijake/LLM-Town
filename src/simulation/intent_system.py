@@ -182,6 +182,11 @@ class IntentSystem:
             for candidate_goal in list(agent.get_active_goals()):
                 if not any(candidate.feasible for candidate in
                            self.goal_planner.generate_strategies(candidate_goal, agent, engine)):
+                    if plan_system:
+                        plan_system.record_goal_planning_failure(
+                            candidate_goal, agent, day=current_day,
+                            reason="no_feasible_strategy",
+                        )
                     candidate_goal.status = "blocked"
                     candidate_goal.current_intent_id = None
                     candidate_goal.evidence.append({
@@ -517,6 +522,15 @@ class IntentSystem:
 
             return None
 
+        goal = speaker.get_goal(intent.parent_goal_id)
+        evidence_key = evidence_key or (
+            f"goal:{goal.id}:social:{intent.id}:{day}:{listener.name}:"
+            f"{location_id}:{action}"
+            if goal else None
+        )
+        if goal and evidence_key in goal.processed_evidence_keys:
+            return None
+
         evidence = (
             f"Day {day}: {speaker.name} used action '{action}' with "
             f"{listener.name} at {location_id}; relationship change "
@@ -528,12 +542,7 @@ class IntentSystem:
             evidence=evidence,
         )
 
-        goal = speaker.get_goal(intent.parent_goal_id)
         if goal:
-            evidence_key = evidence_key or (
-                f"goal:{goal.id}:social:{intent.id}:{day}:{listener.name}:"
-                f"{location_id}:{action}"
-            )
             advanced = goal.add_progress(
                 progress_amount,
                 day,

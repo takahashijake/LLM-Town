@@ -1,4 +1,8 @@
+import json
+from unittest.mock import patch
+
 from src.agents.goal import Goal
+from src.behavior.goal_planner import StrategyCandidate
 from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
 from src.systems.reputation import ReputationBelief, ReputationEvidence
@@ -272,6 +276,13 @@ def test_goal_becomes_blocked_only_when_no_feasible_route_exists(tmp_path):
         for intent in engine.agent_intents.values()
     )
     assert goal.evidence[-1]["type"] == "blocked"
+    assert engine.plan_system.goal_planning_records == [{
+        "source_goal_id": goal.id,
+        "agent_id": maya.id,
+        "day": 1,
+        "eligible": False,
+        "reason": "no_feasible_strategy",
+    }]
 
 
 def test_repair_progress_cannot_complete_while_relationship_is_still_negative(tmp_path):
@@ -296,3 +307,214 @@ def test_repair_progress_cannot_complete_while_relationship_is_still_negative(tm
     )
 
     assert complete is False
+
+
+def test_successor_intent_continues_strategy_after_expiration(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-multi-day", agent_name=maya.name,
+        description="Build useful knowledge about town activity",
+        category="increase_knowledge", priority=5, created_day=1,
+        review_day=7, progress_target=4, target_locations=["library"],
+    )
+    maya.goals = [goal]
+    engine.update_agent_intents(1)
+    first = engine.agent_intents[maya.name]
+    plan = engine.plan_system.get_goal_plan(goal.id)
+    first.expires_day = 1
+
+    engine.update_agent_intents(2)
+    successor = engine.agent_intents[maya.name]
+
+    assert first.status == "expired"
+    assert successor.id != first.id
+    assert successor.strategy == first.strategy == plan.strategy_name
+    assert successor.source_goal_plan_id == first.source_goal_plan_id == plan.id
+    assert successor.source_goal_plan_revision == plan.revision == 0
+
+
+def test_authoritative_activity_evidence_is_mirrored_once_and_completes_plan(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-evidence", agent_name=maya.name,
+        description="Learn at the library", category="increase_knowledge",
+        priority=5, created_day=1, review_day=7, progress_target=1,
+        target_locations=["library"],
+    )
+    maya.goals = [goal]
+    engine.update_agent_intents(1)
+    intent = engine.agent_intents[maya.name]
+    plan = engine.plan_system.get_goal_plan(goal.id)
+
+    engine.intent_system.update_intent_after_activity(
+        day=1, agent=maya, location_id="library",
+        activity_name="Inspect town records",
+    )
+    before = (goal.progress, list(plan.processed_evidence_keys),
+              list(plan.evidence_records))
+    engine.intent_system.agent_intents[maya.name] = intent
+    intent.status = "active"
+    engine.intent_system.update_intent_after_activity(
+        day=1, agent=maya, location_id="library",
+        activity_name="Inspect town records",
+    )
+
+    assert (goal.progress, plan.processed_evidence_keys,
+            plan.evidence_records) == before
+    assert goal.status == "achieved"
+    assert plan.status == "completed"
+    assert plan.evidence_records[0]["intent_id"] == intent.id
+
+
+def test_plan_cannot_accept_unproven_social_text_but_existing_path_can(tmp_path):
+    engine = build_engine(tmp_path)
+    maya, ethan = engine.agents[:2]
+    goal = Goal(
+        id="goal-social-proof", agent_name=maya.name,
+        description=f"Build friendship with {ethan.name}",
+        category="build_friendship", priority=5, created_day=1,
+        review_day=7, progress_target=4, target_agents=[ethan.name],
+    )
+    maya.goals = [goal]
+    engine.update_agent_intents(1)
+    intent = engine.agent_intents[maya.name]
+    plan = engine.plan_system.get_goal_plan(goal.id)
+
+    accepted = engine.plan_system.observe_goal_evidence(
+        goal, evidence_key="model-said-we-cooperated", day=1,
+        intent_id=intent.id, evidence_type="social_action",
+        details={"dialogue": "We are friends now."},
+    )
+    assert accepted is False
+    assert goal.progress == 0 and plan.evidence_records == []
+
+    engine.update_intents_after_conversation(
+        day=1, location_id="cafe", speaker=maya, listener=ethan,
+        action="cooperate", relationship_change=1, new_score=1,
+        conversation_tags=["cooperate"],
+        evidence_key="conversation:authoritative:turn:0",
+    )
+    assert goal.progress == 1
+    assert plan.processed_evidence_keys == ["conversation:authoritative:turn:0"]
+
+
+def test_goal_plan_adaptation_history_and_budget_are_bounded(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-adaptation-budget", agent_name=maya.name,
+        description="Learn at the library", category="increase_knowledge",
+        priority=5, created_day=1, review_day=7, progress=1,
+        target_locations=["library"],
+    )
+    maya.goals = [goal]
+    plan = engine.plan_system.ensure_goal_plan(
+        goal, maya, engine, engine.goal_planner, 1,
+    )
+    alternatives = ["observe_relevant_activity", "seek_information_at_location"]
+    for day in (2, 3, 4):
+        candidate = StrategyCandidate(
+            alternatives[day % 2], "investigate", 4.0,
+            target_location="library", score=4.0,
+        )
+        assert engine.plan_system.adapt_goal_plan(
+            plan, candidate, day=day, trigger="hard_constraint",
+            preserved_progress=goal.progress, goal_planner=engine.goal_planner,
+        )
+    rejected = engine.plan_system.adapt_goal_plan(
+        plan,
+        StrategyCandidate(
+            "seek_information_at_location", "investigate", 4.0,
+            target_location="library", score=4.0,
+        ),
+        day=5, trigger="hard_constraint", preserved_progress=goal.progress,
+        goal_planner=engine.goal_planner,
+    )
+
+    assert rejected is False
+    assert plan.status == "blocked"
+    assert plan.terminal_reason == "adaptation_budget_exhausted"
+    assert plan.revision == engine.plan_system.MAX_GOAL_ADAPTATIONS
+    assert all(row["preserved_progress"] == 1
+               for row in plan.transitions if row["type"] == "adapted")
+
+
+def test_unsupported_required_action_fails_closed(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-unsupported-action", agent_name=maya.name,
+        description="Socialize", category="socialize", priority=5,
+        created_day=1, review_day=7, target_locations=["cafe"],
+    )
+    maya.goals = [goal]
+    plan = engine.plan_system.ensure_goal_plan(
+        goal, maya, engine, engine.goal_planner, 1,
+    )
+    candidate = StrategyCandidate(
+        "low_risk_chat", "socialize", 4.0,
+        required_action="invent_authoritative_action", score=4.0,
+    )
+
+    assert engine.plan_system.adapt_goal_plan(
+        plan, candidate, day=2, trigger="hard_constraint",
+        preserved_progress=0, goal_planner=engine.goal_planner,
+    ) is False
+    assert plan.status == "blocked"
+    assert plan.no_plan_reason == "unsupported_required_action"
+
+
+def test_goal_plan_save_resume_preserves_progress_and_private_mechanics(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-resume", agent_name=maya.name,
+        description="Learn across days", category="increase_knowledge",
+        priority=5, created_day=1, review_day=7, progress_target=3,
+        target_locations=["library"],
+    )
+    maya.goals = [goal]
+    engine.update_agent_intents(1)
+    engine.intent_system.update_intent_after_activity(
+        day=1, agent=maya, location_id="library",
+        activity_name="Inspect records",
+    )
+    expected = engine.plan_system.to_dict()
+    plan_id = engine.plan_system.get_goal_plan(goal.id).id
+    other_context = engine.prepare_conversation_context(
+        "cafe", engine.agents[1], maya, 1,
+    )["context"]
+    assert plan_id not in json.dumps(other_context)
+
+    engine.state.save(engine, 1, 8)
+    restored = SimulationEngine(
+        agents_path="data/agents.json", locations_path="data/locations.json",
+        load_state=True, llm_client=FakeLLMClient(),
+        state_path=tmp_path / "state.json", logs_dir=tmp_path / "restored-logs",
+    )
+    assert restored.plan_system.to_dict() == expected
+    assert restored.agents[0].get_goal(goal.id).progress == 1
+
+
+def test_due_commitment_retains_priority_when_goal_plan_exists(tmp_path):
+    engine = build_engine(tmp_path)
+    engine.update_agent_intents(1)
+    item = engine.commitment_system.create(
+        proposer_id="agent_002", counterpart_id="agent_001",
+        commitment_type="meet", day=1, due_day=1,
+        metadata={"location": "cafe"}, status="proposed",
+    )
+    engine.commitment_system.transition(item.id, "accepted", day=1, reason="accepted")
+
+    with patch("src.behavior.planner.random.random", return_value=0.0):
+        engine.activity_system.run_agent_activities(
+            [engine.agents[0]], [place.id for place in engine.locations],
+            1, 8, None, engine.agent_intents,
+        )
+
+    assert engine.plan_system.goal_plans
+    assert engine.plan_system.plans
+    assert engine.activity_records[-1]["source_commitment_id"] == item.id
+    assert engine.commitment_system.get(item.id).status == "fulfilled"

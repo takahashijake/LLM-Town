@@ -68,6 +68,7 @@ class Goal:
     last_relationship_score: int | None = None
     last_reputation_risk: float = 0.0
     evidence: list[dict] = field(default_factory=list)
+    processed_evidence_keys: list[str] = field(default_factory=list)
     completion_day: int | None = None
     adaptation_count: int = 0
     recovered_after_adaptation: bool = False
@@ -101,9 +102,7 @@ class Goal:
         if not self.is_active() or amount <= 0:
             return False
         evidence_key = record.get("evidence_key")
-        if evidence_key and any(
-            item.get("evidence_key") == evidence_key for item in self.evidence
-        ):
+        if evidence_key and evidence_key in self.processed_evidence_keys:
             return False
         old_progress = self.progress
         self.progress = min(self.progress_target, self.progress + amount)
@@ -112,6 +111,9 @@ class Goal:
              "new_progress": self.progress, **record}
         )
         self.evidence = self.evidence[-30:]
+        if evidence_key:
+            self.processed_evidence_keys.append(evidence_key)
+            self.processed_evidence_keys = self.processed_evidence_keys[-100:]
         return True
 
     def mark_achieved(self, day: int, reason: str) -> None:
