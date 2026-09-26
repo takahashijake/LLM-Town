@@ -426,11 +426,20 @@ class CommitmentSystem:
         actor = names.get(item.counterpart_id, "The responsible person")
         recipient = names.get(item.proposer_id, "the recipient")
         subject = item.metadata.get("good_id", item.metadata.get("task", item.commitment_type))
+        repair = bool(item.repair_of_commitment_id)
         if status == "accepted":
-            text = f"{actor} agreed with {recipient} to {item.commitment_type} {subject}."
+            prefix = "As a repair for an earlier commitment, " if repair else ""
+            text = (
+                f"{prefix}{actor} agreed with {recipient} to "
+                f"{item.commitment_type} {subject}."
+            )
             sentiment = 1
         elif status == "fulfilled":
-            text = f"{actor} fulfilled the promise to {recipient} concerning {subject}."
+            prefix = "The repair commitment succeeded: " if repair else ""
+            text = (
+                f"{prefix}{actor} fulfilled the promise to {recipient} "
+                f"concerning {subject}."
+            )
             sentiment = 2
         elif status in {"expired", "failed"}:
             text = f"{actor}'s promise to {recipient} concerning {subject} was not fulfilled."
@@ -440,7 +449,12 @@ class CommitmentSystem:
             sentiment = -1
         self.outcome_memory.project(
             source_system="commitments", source_id=item.id,
-            event_type=f"commitment_{status}", day=day, hour=tick,
+            event_type=(
+                f"commitment_repair_{status}"
+                if repair and status in {"accepted", "fulfilled"}
+                else f"commitment_{status}"
+            ),
+            day=day, hour=tick,
             recipients=[
                 KnowledgeRecipient(item.proposer_id, "participant", text,
                                    (item.counterpart_id,), sentiment),
@@ -486,8 +500,19 @@ class CommitmentSystem:
         if help_request and bounded:
             task = re.split(r"\b(?:tomorrow|today|after|before|at)\b", help_request.group(1))[0].strip(" ?.!,")
             if len(task) >= 3:
+                metadata = {"task": task[:120]}
+                explicit_location = next((
+                    location_id for location_id in sorted(self.location_ids)
+                    if re.search(
+                        rf"\b(?:at|in) (?:the )?{re.escape(location_id.replace('_', ' '))}"
+                        rf"(?:\b|$)",
+                        normalized,
+                    )
+                ), None)
+                if explicit_location:
+                    metadata["location"] = explicit_location
                 return {"commitment_type": "help", "due_day": due_day,
-                        "metadata": {"task": task[:120]}}
+                        "metadata": metadata}
         return None
 
     def process_response(
@@ -604,8 +629,13 @@ class CommitmentSystem:
                     {item.proposer_id, item.counterpart_id} == {agent_id, counterpart_id}
                     and (item.active or (item.resolution_day is not None and current_day - item.resolution_day <= 2))]
         relevant.sort(key=lambda item: (not item.active, -(item.due_day or 10**9), item.id))
-        return [{"commitment_id": item.id, "status": item.status,
-                 "text": self._format_context(item, agent_id)} for item in relevant[:limit]]
+        return [{
+            "commitment_id": item.id,
+            "commitment_type": item.commitment_type,
+            "status": item.status,
+            "repair_of_commitment_id": item.repair_of_commitment_id,
+            "text": self._format_context(item, agent_id),
+        } for item in relevant[:limit]]
 
     def _format_context(self, item: SocialCommitment, agent_id: str) -> str:
         names = {agent.id: agent.name for agent in self.agents}
@@ -630,6 +660,9 @@ class CommitmentSystem:
             task = item.metadata.get("task") or "with the agreed task"
             active = f"{actor} agreed to help {proposer} {task}{due}."
             fulfilled = f"{actor} helped {proposer} {task} as agreed{due}."
+        if item.repair_of_commitment_id:
+            active = f"As a repair for an earlier commitment, {active[0].lower()}{active[1:]}"
+            fulfilled = f"The repair commitment succeeded: {fulfilled[0].lower()}{fulfilled[1:]}"
         if item.status == "accepted":
             return active
         if item.status == "fulfilled":

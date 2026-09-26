@@ -489,6 +489,7 @@ class TransformersLLMClient:
         commitment_records = context.get("commitment_records", [])
         commitment_lines = [
             f"[{row['commitment_id']}; {row['status']}; "
+            f"lifecycle={row.get('lifecycle_state', row['status'])}; "
             f"plan={row.get('plan_stage', 'unplanned')}] {row['text']}"
             for row in commitment_records
         ] or context.get("active_commitments", [])

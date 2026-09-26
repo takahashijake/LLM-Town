@@ -159,6 +159,16 @@ def test_plan_model_rejects_unbounded_or_unknown_steps():
         PlanStep("bad", "invent_resource")
     with pytest.raises(ValueError, match="one to four"):
         AgentPlan("p", "a", "x", "commitment", "c", 1, [])
+    with pytest.raises(ValueError, match="unknown bounded plan template"):
+        AgentPlan(
+            "p", "a", "commitment_invented", "commitment", "c", 1,
+            [PlanStep("s", "commitment_help")],
+        )
+    with pytest.raises(ValueError, match="steps do not match"):
+        AgentPlan(
+            "p", "a", "commitment_meet", "commitment", "c", 1,
+            [PlanStep("s", "commitment_help")],
+        )
 
 
 @pytest.mark.parametrize(("commitment_type", "metadata", "action_type"), [
@@ -349,4 +359,58 @@ def test_pair_context_exposes_lifecycle_without_private_plan_details(tmp_path):
                   if row["commitment_id"] == item.id)
     assert record["status"] == "accepted"
     assert record["plan_stage"] == "pending"
+    assert record["lifecycle_state"] == "pending"
     assert "plan_id" not in record and "step_id" not in record
+
+
+def test_pair_context_distinguishes_preparation_and_active_repair(tmp_path):
+    preparing = town(tmp_path / "preparing")
+    transfer = accepted_transfer(preparing)
+    preparing.plan_system.ensure_commitment_plans(1)
+    context = preparing.prepare_conversation_context(
+        "cafe", preparing.agents[0], preparing.agents[1], 1,
+    )["context"]
+    record = next(row for row in context["commitment_records"]
+                  if row["commitment_id"] == transfer.id)
+    assert record["lifecycle_state"] == "preparing"
+    assert record["plan_stage"] == "preparing"
+
+    repair = town(tmp_path / "repair")
+    parent = accepted_social(
+        repair, "help", metadata={"task": "review records", "location": "cafe"},
+        due=1,
+    )
+    repair.commitment_system.transition(
+        parent.id, "failed", day=2, reason="controlled_failure",
+    )
+    child = repair.commitment_system.create(
+        proposer_id="agent_002", counterpart_id="agent_001",
+        commitment_type="help", day=2, due_day=3,
+        metadata={"task": "review records", "location": "cafe"},
+        status="proposed", repair_of_commitment_id=parent.id,
+    )
+    repair.commitment_system.transition(
+        child.id, "accepted", day=2, reason="accepted_repair",
+    )
+    repair.plan_system.ensure_commitment_plans(2)
+    context = repair.prepare_conversation_context(
+        "cafe", repair.agents[0], repair.agents[1], 2,
+    )["context"]
+    record = next(row for row in context["commitment_records"]
+                  if row["commitment_id"] == child.id)
+    assert record["lifecycle_state"] == "repair_successor_active"
+    assert "repair for an earlier commitment" in record["text"].lower()
+    for agent in repair.agents[:2]:
+        assert any(
+            memory.source_id == child.id
+            and memory.event_type == "commitment_repair_accepted"
+            for memory in agent.memory
+        )
+    run_actor(repair, 3, 8)
+    assert child.status == "fulfilled"
+    for agent in repair.agents[:2]:
+        assert any(
+            memory.source_id == child.id
+            and memory.event_type == "commitment_repair_fulfilled"
+            for memory in agent.memory
+        )

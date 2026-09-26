@@ -37,6 +37,21 @@ def test_clear_proposal_acceptance_and_duplicate_processing():
     assert system.duplicate_attempts == 1
 
 
+def test_explicit_help_location_is_preserved_for_bounded_planning(tmp_path):
+    town = engine(tmp_path)
+    item = town.commitment_system.process_response(
+        proposer_id="agent_002", counterpart_id="agent_001",
+        proposal_text="Could you help me review records at the cafe tomorrow?",
+        response_text="Yes, I can help tomorrow.", outcome="accepted",
+        day=1, tick=8, session_id="located-help", proposal_turn=0,
+        response_turn=1, known_goods={},
+    )
+    assert item.metadata == {"task": "review records", "location": "cafe"}
+    town.plan_system.ensure_commitment_plans(1)
+    assert town.plan_system.plans[0].source_id == item.id
+    assert town.plan_system.plans[0].plan_type == "commitment_help"
+
+
 def test_clear_decline_is_terminal_and_inactive():
     system = CommitmentSystem()
     item = system.process_response(

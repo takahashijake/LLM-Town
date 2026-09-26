@@ -540,6 +540,12 @@ class SimulationEngine:
         )
         for record in result["context"]["commitment_records"]:
             record.update(self.plan_system.context_for_commitment(record["commitment_id"]))
+            if record["status"] == "accepted" and record.get("repair_of_commitment_id"):
+                record["lifecycle_state"] = "repair_successor_active"
+            elif record["status"] == "accepted":
+                record["lifecycle_state"] = record.get("plan_stage", "pending")
+            else:
+                record["lifecycle_state"] = record["status"]
         result["context"]["repair_opportunities"] = (
             self.commitment_system.repair_opportunities(
                 speaker.id, listener.id, day=current_day,

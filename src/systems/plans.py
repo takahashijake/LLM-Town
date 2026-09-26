@@ -20,6 +20,7 @@ TEMPLATE_ACTIONS = {
     "meet": ("commitment_meet",),
     "transfer": ("commitment_acquire_resource", "commitment_transfer"),
 }
+KNOWN_PLAN_TYPES = {f"commitment_{name}" for name in TEMPLATE_ACTIONS}
 
 
 @dataclass
@@ -66,6 +67,11 @@ class AgentPlan:
             raise ValueError(f"invalid plan status: {self.status}")
         if not self.steps or len(self.steps) > 4:
             raise ValueError("plans require one to four bounded steps")
+        if self.source_type != "commitment" or self.plan_type not in KNOWN_PLAN_TYPES:
+            raise ValueError(f"unknown bounded plan template: {self.plan_type}")
+        template = self.plan_type.removeprefix("commitment_")
+        if tuple(step.action_type for step in self.steps) != TEMPLATE_ACTIONS[template]:
+            raise ValueError(f"steps do not match bounded plan template: {self.plan_type}")
 
     @property
     def active(self) -> bool:
