@@ -69,6 +69,13 @@ class ActivitySystem:
             "commitment_decision": getattr(activity, "commitment_decision", None),
             "source_plan_id": getattr(activity, "source_plan_id", None),
             "source_plan_step_id": getattr(activity, "source_plan_step_id", None),
+            "source_goal_id": getattr(activity, "source_goal_id", None),
+            "source_goal_plan_id": getattr(activity, "source_goal_plan_id", None),
+            "source_goal_plan_revision": getattr(
+                activity, "source_goal_plan_revision", None
+            ),
+            "source_goal_strategy": getattr(activity, "source_goal_strategy", None),
+            "source_intent_id": getattr(activity, "source_intent_id", None),
         }
 
         self.activity_records.append(activity_record)

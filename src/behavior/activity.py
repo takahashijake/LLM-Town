@@ -13,3 +13,8 @@ class Activity:
     commitment_decision: dict | None = None
     source_plan_id: str | None = None
     source_plan_step_id: str | None = None
+    source_goal_id: str | None = None
+    source_goal_plan_id: str | None = None
+    source_goal_plan_revision: int | None = None
+    source_goal_strategy: str | None = None
+    source_intent_id: str | None = None

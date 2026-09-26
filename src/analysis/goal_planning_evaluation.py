@@ -44,6 +44,16 @@ def _knowledge_goal(engine: SimulationEngine, goal_id: str,
     return goal
 
 
+def _execute_goal_activity(engine: SimulationEngine, day: int, hour: int = 8) -> None:
+    agent = engine.agents[0]
+    intent = engine.agent_intents[agent.name]
+    activity = engine.activity_planner.create_intent_activity(intent)
+    engine.activity_system.log_activity_event(day, hour, agent, activity)
+    engine.intent_system.update_intent_after_activity(
+        day=day, agent=agent, activity_record=engine.activity_records[-1],
+    )
+
+
 def evaluate_goal_planning() -> dict:
     scenarios: dict[str, bool] = {}
     diagnostics: dict[str, str] = {}
@@ -91,13 +101,10 @@ def evaluate_goal_planning() -> dict:
             and successor.source_goal_plan_id == plan.id
             and successor.source_goal_plan_revision == plan.revision
         )
-        stable.intent_system.update_intent_after_activity(
-            day=2, agent=stable.agents[0], location_id="library",
-            activity_name="Inspect town records",
-        )
+        _execute_goal_activity(stable, 2)
         scenarios["target_location_evidence_advances_goal"] = (
             goal.progress == 1 and len(plan.evidence_records) == 1
-            and plan.evidence_records[0]["type"] == "activity"
+            and plan.evidence_records[0]["type"] == "strategy_activity"
         )
         progress_projection = stable.plan_system.to_dict()
         stable.state.save(stable, 2, 8)
@@ -148,8 +155,10 @@ def evaluate_goal_planning() -> dict:
         )
         scenarios["authoritative_social_evidence_advances"] = (
             social_goal.progress == 1
-            and social_plan.processed_evidence_keys
-            == ["conversation:evaluation:turn:0"]
+            and len(social_plan.processed_evidence_keys) == 1
+            and social_plan.processed_evidence_keys[0].endswith(
+                ":social:conversation:evaluation:turn:0"
+            )
         )
 
         adapting = _engine(root, "adapting")
@@ -241,10 +250,7 @@ def evaluate_goal_planning() -> dict:
         complete = _engine(root, "complete")
         complete_goal = _knowledge_goal(complete, "goal-complete", target=1)
         complete.update_agent_intents(1)
-        complete.intent_system.update_intent_after_activity(
-            day=1, agent=complete.agents[0], location_id="library",
-            activity_name="Read records",
-        )
+        _execute_goal_activity(complete, 1)
         complete_plan = complete.plan_system.get_goal_plan(complete_goal.id)
         scenarios["goal_achievement_completes_plan"] = (
             complete_goal.status == "achieved"

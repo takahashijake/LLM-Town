@@ -1,6 +1,11 @@
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
 from src.behavior.goal_planner import StrategyCandidate
+from src.behavior.goal_strategy_contracts import (
+    ACTIVITY_EXECUTION,
+    SOCIAL_EXECUTION,
+    strategy_contract,
+)
 from src.behavior.intent_planner import IntentPlanner
 
 
@@ -337,38 +342,68 @@ class IntentSystem:
         *,
         day: int,
         agent: Agent,
-        location_id: str,
-        activity_name: str,
+        activity_record: dict | None = None,
+        location_id: str | None = None,
+        activity_name: str | None = None,
     ) -> dict | None:
-        """Count a real target-location visit at most once per intent per day."""
+        """Consume authoritative activity proof, with strict V4 provenance."""
         intent = self.agent_intents.get(agent.name)
+        record = activity_record or {}
+        location_id = record.get("location", location_id)
+        activity_name = record.get("activity_name", activity_name or "")
         if (
             not intent or intent.status != "active" or not intent.target_location
             or intent.target_location != location_id
         ):
             return None
         intent.opportunity_count += 1
-        marker = f"Day {day}: reached target location"
+        goal = agent.get_goal(intent.parent_goal_id)
+        bound = bool(intent.source_goal_plan_id)
+        plan = self._matching_active_goal_plan(agent, goal, intent) if bound else None
+        contract = strategy_contract(intent.strategy) if bound else None
+        if bound and not self._activity_proves_strategy(
+            record, goal, intent, plan, contract, location_id
+        ):
+            return None
+        marker = (
+            f"Day {day}: executed {intent.strategy}"
+            if bound else f"Day {day}: reached target location"
+        )
         if any(item.startswith(marker) for item in intent.evidence):
             return None
-        evidence = f"{marker} {location_id} during '{activity_name}'."
+        evidence = f"{marker} at {location_id} during '{activity_name}'."
         intent.add_progress(1, evidence)
-        goal = agent.get_goal(intent.parent_goal_id)
         if goal:
-            evidence_key = (
-                f"goal:{goal.id}:activity:{intent.id}:{day}:{location_id}"
-            )
+            if bound:
+                execution_id = (
+                    f"{record.get('day', day)}:{record.get('hour', 'unknown')}:"
+                    f"{record.get('activity_id', '')}"
+                )
+                evidence_key = self._strategy_evidence_key(
+                    agent, goal, plan, intent, "activity", execution_id
+                )
+            else:
+                evidence_key = f"goal:{goal.id}:activity:{intent.id}:{day}:{location_id}"
             advanced = goal.add_progress(1, day, {
                 "evidence_key": evidence_key,
                 "intent_id": intent.id, "strategy": intent.strategy,
                 "activity": activity_name, "location": location_id,
+                "source_goal_plan_id": getattr(plan, "id", None),
+                "source_goal_plan_revision": getattr(plan, "revision", None),
+                "agent_id": agent.id,
             })
             plan_system = getattr(self._engine_for_goal_check, "plan_system", None)
             if advanced and plan_system:
                 plan_system.observe_goal_evidence(
                     goal, evidence_key=evidence_key, day=day,
-                    intent_id=intent.id, evidence_type="activity",
-                    details={"activity": activity_name, "location": location_id},
+                    intent_id=intent.id, evidence_type=contract.evidence_type,
+                    details={
+                        "activity": activity_name, "location": location_id,
+                        "strategy": intent.strategy,
+                        "source_goal_plan_id": getattr(plan, "id", None),
+                        "source_goal_plan_revision": getattr(plan, "revision", None),
+                        "agent_id": agent.id,
+                    },
                 )
             if advanced and goal.adaptation_count:
                 goal.recovered_after_adaptation = True
@@ -405,6 +440,47 @@ class IntentSystem:
             "status": intent.status, "progress": intent.progress,
         }
 
+    def _matching_active_goal_plan(self, agent, goal, intent):
+        engine = getattr(self, "_engine_for_goal_check", None)
+        plan_system = getattr(engine, "plan_system", None)
+        if goal is None or plan_system is None or not goal.is_active():
+            return None
+        plan = plan_system.get_goal_plan(goal.id)
+        if (
+            plan is None or not plan.active or plan.agent_id != agent.id
+            or plan.source_goal_id != goal.id
+            or plan.id != intent.source_goal_plan_id
+            or plan.revision != intent.source_goal_plan_revision
+            or plan.strategy_name != intent.strategy
+        ):
+            return None
+        return plan
+
+    @staticmethod
+    def _activity_proves_strategy(record, goal, intent, plan, contract, location_id) -> bool:
+        if not record or goal is None or plan is None or contract is None:
+            return False
+        if contract.execution_mode != ACTIVITY_EXECUTION:
+            return False
+        return (
+            record.get("agent") == goal.agent_name
+            and record.get("activity_id") == contract.activity_id
+            and set(contract.required_activity_tags).issubset(record.get("tags", []))
+            and record.get("location") == plan.target_location == location_id
+            and record.get("source_goal_id") == goal.id
+            and record.get("source_goal_plan_id") == plan.id
+            and record.get("source_goal_plan_revision") == plan.revision
+            and record.get("source_goal_strategy") == plan.strategy_name
+            and record.get("source_intent_id") == intent.id
+        )
+
+    @staticmethod
+    def _strategy_evidence_key(agent, goal, plan, intent, proof_type, execution_id) -> str:
+        return (
+            f"goal-execution:{agent.id}:{goal.id}:{plan.id}:r{plan.revision}:"
+            f"{intent.id}:{plan.strategy_name}:{proof_type}:{execution_id}"
+        )
+
     def adjust_action_weights_for_intent(
         self,
         weights: dict[str, int],
@@ -424,18 +500,13 @@ class IntentSystem:
         if not target_matches:
             return adjusted
 
-        strategy_bonuses = {
-            "direct_cooperation": {"cooperate": 4},
-            "apologize_directly": {"apologize": 5, "chat": 1},
-            "offer_help": {"offer_help": 4},
-            "low_risk_chat": {"chat": 4},
-            "ask_target_directly": {"ask_for_help": 4},
-            "ask_informed_agent": {"ask_for_help": 3, "chat": 1},
-            "ask_reliable_partner": {"ask_for_help": 4, "chat": 1},
-        }
-        for action, bonus in strategy_bonuses.get(intent.strategy, {}).items():
-            if action in adjusted:
-                adjusted[action] += bonus
+        contract = strategy_contract(intent.strategy)
+        if (
+            contract is not None
+            and contract.execution_mode == SOCIAL_EXECUTION
+            and contract.required_social_action in adjusted
+        ):
+            adjusted[contract.required_social_action] += 4
 
         if intent.intent_type == "repair_relationship":
             if "apologize" in adjusted:
@@ -505,15 +576,24 @@ class IntentSystem:
         if applicable:
             intent.opportunity_count += 1
 
-        progress_amount = self.get_conversation_progress_amount(
-            intent=intent,
-            location_id=location_id,
-            listener=listener,
-            action=action,
-            relationship_change=relationship_change,
-            new_score=new_score,
-            conversation_tags=conversation_tags,
+        goal = speaker.get_goal(intent.parent_goal_id)
+        bound = bool(intent.source_goal_plan_id)
+        plan = self._matching_active_goal_plan(speaker, goal, intent) if bound else None
+        contract = strategy_contract(intent.strategy) if bound else None
+        contract_matches = not bound or self._social_action_proves_strategy(
+            listener.name, action, plan, contract
         )
+        progress_amount = 0
+        if contract_matches:
+            progress_amount = self.get_conversation_progress_amount(
+                intent=intent,
+                location_id=location_id,
+                listener=listener,
+                action=action,
+                relationship_change=relationship_change,
+                new_score=new_score,
+                conversation_tags=conversation_tags,
+            )
 
         if progress_amount <= 0:
             failure_reason = self.get_conversation_failure_reason(
@@ -549,11 +629,16 @@ class IntentSystem:
 
             return None
 
-        goal = speaker.get_goal(intent.parent_goal_id)
-        evidence_key = evidence_key or (
+        execution_key = evidence_key or (
             f"goal:{goal.id}:social:{intent.id}:{day}:{listener.name}:"
             f"{location_id}:{action}"
             if goal else None
+        )
+        evidence_key = (
+            self._strategy_evidence_key(
+                speaker, goal, plan, intent, "social", execution_key
+            )
+            if bound else execution_key
         )
         if goal and evidence_key in goal.processed_evidence_keys:
             return None
@@ -578,6 +663,9 @@ class IntentSystem:
                     "intent_id": intent.id, "strategy": intent.strategy,
                     "action": action, "target_agent": listener.name,
                     "location": location_id,
+                    "source_goal_plan_id": getattr(plan, "id", None),
+                    "source_goal_plan_revision": getattr(plan, "revision", None),
+                    "agent_id": speaker.id,
                 },
             )
             plan_system = getattr(self._engine_for_goal_check, "plan_system", None)
@@ -589,6 +677,10 @@ class IntentSystem:
                         "action": action, "target_agent": listener.name,
                         "location": location_id,
                         "relationship_change": relationship_change,
+                        "strategy": intent.strategy,
+                        "source_goal_plan_id": getattr(plan, "id", None),
+                        "source_goal_plan_revision": getattr(plan, "revision", None),
+                        "agent_id": speaker.id,
                     },
                 )
             if advanced and goal.adaptation_count:
@@ -637,6 +729,18 @@ class IntentSystem:
             "progress_goal": intent.progress_goal,
             "reason": intent.completion_reason,
         }
+
+    @staticmethod
+    def _social_action_proves_strategy(listener_name, action, plan, contract) -> bool:
+        if plan is None or contract is None or contract.execution_mode != SOCIAL_EXECUTION:
+            return False
+        if action != contract.required_social_action:
+            return False
+        if contract.target_agent_policy == "selected_required":
+            return bool(plan.target_agent) and listener_name == plan.target_agent
+        if contract.target_agent_policy == "selected_if_present":
+            return plan.target_agent is None or listener_name == plan.target_agent
+        return False
 
     def get_conversation_progress_amount(
         self,

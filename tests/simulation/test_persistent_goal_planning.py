@@ -36,6 +36,15 @@ def strong_hostility(target_name: str) -> ReputationBelief:
     )
 
 
+def execute_goal_activity(engine, agent, day: int, hour: int = 8):
+    intent = engine.agent_intents[agent.name]
+    activity = engine.activity_planner.create_intent_activity(intent)
+    engine.activity_system.log_activity_event(day, hour, agent, activity)
+    return engine.intent_system.update_intent_after_activity(
+        day=day, agent=agent, activity_record=engine.activity_records[-1],
+    )
+
+
 def test_direct_reputation_evidence_supersedes_tactic_but_preserves_goal(tmp_path):
     engine = build_engine(tmp_path)
     maya, ethan = engine.agents[:2]
@@ -165,12 +174,7 @@ def test_multiple_intents_accumulate_progress_and_achieve_goal(tmp_path):
 
     for day in (1, 2, 3):
         engine.update_agent_intents(day)
-        engine.intent_system.update_intent_after_activity(
-            day=day,
-            agent=maya,
-            location_id="library",
-            activity_name="Check supplier records",
-        )
+        execute_goal_activity(engine, maya, day)
 
     linked = [item for item in engine.intent_history if item.parent_goal_id == goal.id]
     assert len(linked) == 2
@@ -371,17 +375,13 @@ def test_authoritative_activity_evidence_is_mirrored_once_and_completes_plan(tmp
     intent = engine.agent_intents[maya.name]
     plan = engine.plan_system.get_goal_plan(goal.id)
 
-    engine.intent_system.update_intent_after_activity(
-        day=1, agent=maya, location_id="library",
-        activity_name="Inspect town records",
-    )
+    execute_goal_activity(engine, maya, 1)
     before = (goal.progress, list(plan.processed_evidence_keys),
               list(plan.evidence_records))
     engine.intent_system.agent_intents[maya.name] = intent
     intent.status = "active"
     engine.intent_system.update_intent_after_activity(
-        day=1, agent=maya, location_id="library",
-        activity_name="Inspect town records",
+        day=1, agent=maya, activity_record=engine.activity_records[-1],
     )
 
     assert (goal.progress, plan.processed_evidence_keys,
@@ -420,7 +420,10 @@ def test_plan_cannot_accept_unproven_social_text_but_existing_path_can(tmp_path)
         evidence_key="conversation:authoritative:turn:0",
     )
     assert goal.progress == 1
-    assert plan.processed_evidence_keys == ["conversation:authoritative:turn:0"]
+    assert len(plan.processed_evidence_keys) == 1
+    assert plan.processed_evidence_keys[0].endswith(
+        ":social:conversation:authoritative:turn:0"
+    )
 
 
 def test_goal_plan_adaptation_history_and_budget_are_bounded(tmp_path):
@@ -524,10 +527,7 @@ def test_goal_plan_save_resume_preserves_progress_and_private_mechanics(tmp_path
     )
     maya.goals = [goal]
     engine.update_agent_intents(1)
-    engine.intent_system.update_intent_after_activity(
-        day=1, agent=maya, location_id="library",
-        activity_name="Inspect records",
-    )
+    execute_goal_activity(engine, maya, 1)
     expected = engine.plan_system.to_dict()
     plan_id = engine.plan_system.get_goal_plan(goal.id).id
     other_context = engine.prepare_conversation_context(

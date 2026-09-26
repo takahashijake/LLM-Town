@@ -127,12 +127,38 @@ class GoalPlan:
     processed_evidence_keys: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        from src.behavior.goal_planner import GoalPlanner
+        from src.behavior.goal_strategy_contracts import (
+            ACTIVITY_EXECUTION,
+            SOCIAL_EXECUTION,
+            strategy_contract,
+            strategy_vocabulary,
+        )
 
         if self.status not in GOAL_PLAN_STATUSES:
             raise ValueError(f"invalid goal plan status: {self.status}")
-        if self.strategy_name not in GoalPlanner.strategy_vocabulary():
+        if self.strategy_name not in strategy_vocabulary():
             raise ValueError(f"unknown goal plan strategy: {self.strategy_name}")
+        contract = strategy_contract(self.strategy_name)
+        if contract is None:
+            raise ValueError(f"unknown goal plan strategy: {self.strategy_name}")
+        if (
+            self.status in {"active", "paused"}
+            and contract.execution_mode == SOCIAL_EXECUTION
+            and self.required_action != contract.required_social_action
+        ):
+            raise ValueError(f"goal plan action violates strategy contract: {self.strategy_name}")
+        if (
+            self.status in {"active", "paused"}
+            and contract.target_agent_policy == "selected_required"
+            and not self.target_agent
+        ):
+            raise ValueError(f"goal plan target required: {self.strategy_name}")
+        if (
+            self.status in {"active", "paused"}
+            and contract.execution_mode == ACTIVITY_EXECUTION
+            and not self.target_location
+        ):
+            raise ValueError(f"goal plan location required: {self.strategy_name}")
         if self.revision < 0:
             raise ValueError("goal plan revision must be non-negative")
         if len(self.transitions) > 50 or len(self.evidence_records) > 50:
@@ -509,14 +535,33 @@ class PlanSystem:
                               intent_id: str, evidence_type: str,
                               details: dict) -> bool:
         """Mirror already-authoritative goal evidence exactly once."""
+        from src.behavior.goal_strategy_contracts import strategy_contract
+
         plan = self.get_goal_plan(goal.id)
-        if plan is None or evidence_key in plan.processed_evidence_keys:
+        if (
+            plan is None or not plan.active
+            or evidence_key in plan.processed_evidence_keys
+        ):
             return False
         # The goal record must already exist; a caller cannot use this API as
         # an alternative route to increment goal progress.
-        if not any(
-            record.get("evidence_key") == evidence_key
-            for record in goal.evidence
+        authoritative = next((
+            record for record in goal.evidence
+            if record.get("evidence_key") == evidence_key
+        ), None)
+        contract = strategy_contract(plan.strategy_name)
+        if (
+            authoritative is None or contract is None
+            or evidence_type != contract.evidence_type
+            or authoritative.get("intent_id") != intent_id
+            or authoritative.get("strategy") != plan.strategy_name
+            or authoritative.get("source_goal_plan_id") != plan.id
+            or authoritative.get("source_goal_plan_revision") != plan.revision
+            or authoritative.get("agent_id") != plan.agent_id
+            or details.get("strategy") != plan.strategy_name
+            or details.get("source_goal_plan_id") != plan.id
+            or details.get("source_goal_plan_revision") != plan.revision
+            or details.get("agent_id") != plan.agent_id
         ):
             return False
         plan.processed_evidence_keys.append(evidence_key)

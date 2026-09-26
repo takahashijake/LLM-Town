@@ -879,11 +879,17 @@ class SimulationEngine:
         self.sync_intent_system_refs()
         self.intent_system._engine_for_goal_check = self
         for agent in self.agents:
+            activity_record = next((
+                record for record in reversed(self.activity_records)
+                if record.get("type") == "activity"
+                and record.get("day") == day
+                and record.get("hour") == hour
+                and record.get("agent") == agent.name
+            ), None)
             self.intent_system.update_intent_after_activity(
                 day=day,
                 agent=agent,
-                location_id=agent.location_id,
-                activity_name=agent.current_activity,
+                activity_record=activity_record,
             )
         self.agent_intents = self.intent_system.agent_intents
         self.intent_history = self.intent_system.intent_history

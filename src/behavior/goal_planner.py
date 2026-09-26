@@ -5,6 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from src.agents.goal import Goal
+from src.behavior.goal_strategy_contracts import (
+    ACTIVITY_EXECUTION,
+    SOCIAL_EXECUTION,
+    registered_social_actions,
+    required_social_action,
+    strategy_contract,
+    strategy_vocabulary,
+)
 from src.systems.reputation import ReputationBelief
 
 
@@ -34,39 +42,32 @@ class GoalPlanner:
     MAX_ACTIVE_GOALS = 2
     MIN_COMMITMENT_DAYS = 1
     ADAPTATION_MARGIN = 0.75
-    STRATEGY_EXECUTION_MODES = {
-        "direct_cooperation": "validated_social_action",
-        "apologize_directly": "validated_social_action",
-        "offer_help": "validated_social_action",
-        "low_risk_chat": "validated_social_action",
-        "ask_target_directly": "validated_social_action",
-        "ask_informed_agent": "validated_social_action",
-        "seek_information_at_location": "target_location_activity",
-        "observe_relevant_activity": "target_location_activity",
-        "ask_reliable_partner": "validated_social_action",
-        "direct_participation": "target_location_activity",
-    }
-    REGISTERED_SOCIAL_ACTIONS = {
-        "apologize", "ask_for_help", "chat", "cooperate", "offer_help",
-    }
-
     @classmethod
     def strategy_vocabulary(cls) -> frozenset[str]:
-        return frozenset(cls.STRATEGY_EXECUTION_MODES)
+        return strategy_vocabulary()
 
     @classmethod
     def strategy_execution_support(
         cls, candidate: StrategyCandidate,
     ) -> tuple[bool, str]:
-        mode = cls.STRATEGY_EXECUTION_MODES.get(candidate.name)
-        if mode is None:
+        contract = strategy_contract(candidate.name)
+        if contract is None:
             return False, "unsupported_strategy_execution_path"
-        if mode == "target_location_activity" and not candidate.target_location:
+        if contract.execution_mode == ACTIVITY_EXECUTION and not candidate.target_location:
             return False, "target_location_unavailable"
-        if (
-            mode == "validated_social_action"
-            and candidate.required_action not in cls.REGISTERED_SOCIAL_ACTIONS
-        ):
+        if contract.execution_mode == SOCIAL_EXECUTION:
+            if candidate.required_action not in registered_social_actions():
+                return False, "unsupported_required_action"
+            if candidate.required_action != contract.required_social_action:
+                return False, "strategy_contract_action_mismatch"
+            if (
+                contract.target_agent_policy == "selected_required"
+                and not candidate.target_agent
+            ):
+                return False, "strategy_target_required"
+        if contract.requires_target_location and not candidate.target_location:
+            return False, "target_location_unavailable"
+        if contract.execution_mode not in {SOCIAL_EXECUTION, ACTIVITY_EXECUTION}:
             return False, "unsupported_required_action"
         return True, ""
 
@@ -236,16 +237,20 @@ class GoalPlanner:
         if goal.category in {"build_friendship", "repair_relationship"}:
             raw = [
                 StrategyCandidate("direct_cooperation", intent_type, 6.0, target,
-                                  required_action="cooperate", social_risk_factor=0.8,
+                                  required_action=required_social_action("direct_cooperation"),
+                                  social_risk_factor=0.8,
                                   reputation_risk_factor=2.5, opportunity_relevance=0.5),
                 StrategyCandidate("apologize_directly", intent_type, 5.2, target,
-                                  required_action="apologize", social_risk_factor=0.25,
+                                  required_action=required_social_action("apologize_directly"),
+                                  social_risk_factor=0.25,
                                   reputation_risk_factor=0.35, opportunity_relevance=0.4),
                 StrategyCandidate("offer_help", intent_type, 5.0, target,
-                                  required_action="offer_help", social_risk_factor=0.45,
+                                  required_action=required_social_action("offer_help"),
+                                  social_risk_factor=0.45,
                                   reputation_risk_factor=0.7, opportunity_relevance=0.4),
                 StrategyCandidate("low_risk_chat", intent_type, 4.4, target,
-                                  required_action="chat", social_risk_factor=0.1,
+                                  required_action=required_social_action("low_risk_chat"),
+                                  social_risk_factor=0.1,
                                   reputation_risk_factor=0.2, opportunity_relevance=0.3),
             ]
         elif goal.category in {"investigate", "increase_knowledge"}:
@@ -255,12 +260,14 @@ class GoalPlanner:
             )
             raw = [
                 StrategyCandidate("ask_target_directly", intent_type, 5.5, target,
-                                  required_action="ask_for_help", social_risk_factor=0.5,
+                                  required_action=required_social_action("ask_target_directly"),
+                                  social_risk_factor=0.5,
                                   reputation_risk_factor=0.9, opportunity_relevance=0.5,
                                   feasible=bool(target),
                                   infeasible_reason="goal has no direct target" if not target else ""),
                 StrategyCandidate("ask_informed_agent", intent_type, 4.8, alternate,
-                                  required_action="ask_for_help", social_risk_factor=0.2,
+                                  required_action=required_social_action("ask_informed_agent"),
+                                  social_risk_factor=0.2,
                                   reputation_risk_factor=0.1, opportunity_relevance=0.4),
                 StrategyCandidate("seek_information_at_location", intent_type, 4.6,
                                   target_location=location, opportunity_relevance=0.7),
@@ -275,7 +282,8 @@ class GoalPlanner:
                 StrategyCandidate(
                     "ask_reliable_partner", intent_type, 4.9,
                     target_agent=self._best_social_target(agent, engine, available_agents),
-                    required_action="ask_for_help", social_risk_factor=0.45,
+                    required_action=required_social_action("ask_reliable_partner"),
+                    social_risk_factor=0.45,
                     reputation_risk_factor=0.6, opportunity_relevance=0.4,
                     feasible=bool(available_agents),
                     infeasible_reason="no social partner is available" if not available_agents else "",
@@ -283,7 +291,8 @@ class GoalPlanner:
                 StrategyCandidate("direct_participation", intent_type, 5.0,
                                   target_location=location, opportunity_relevance=0.7),
                 StrategyCandidate("low_risk_chat", intent_type, 4.2,
-                                  required_action="chat", reputation_risk_factor=0.15,
+                                  required_action=required_social_action("low_risk_chat"),
+                                  reputation_risk_factor=0.15,
                                   opportunity_relevance=0.4),
             ]
 

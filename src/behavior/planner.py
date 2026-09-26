@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass
 
 from src.agents.agent import Agent
 from src.behavior.activity import Activity
+from src.behavior.goal_strategy_contracts import ACTIVITY_EXECUTION, strategy_contract
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,31 @@ class ActivityPlanner:
         return [str(goal) for goal in getattr(agent, "goals", [])]
 
     def create_intent_activity(self, current_intent) -> Activity:
+        strategy = getattr(current_intent, "strategy", "")
+        source_goal_plan_id = getattr(current_intent, "source_goal_plan_id", None)
+        contract = strategy_contract(strategy)
+        if source_goal_plan_id and (
+            contract is None or contract.execution_mode != ACTIVITY_EXECUTION
+        ):
+            raise ValueError("bound goal intent has no activity execution contract")
+        if contract is not None and contract.execution_mode == ACTIVITY_EXECUTION:
+            return Activity(
+                id=contract.activity_id,
+                name={
+                    "seek_information_at_location": "Seek goal-relevant information",
+                    "observe_relevant_activity": "Observe goal-relevant activity",
+                    "direct_participation": "Participate directly in goal-relevant activity",
+                }[strategy],
+                location_id=current_intent.target_location,
+                reason=current_intent.description,
+                tags=list(contract.required_activity_tags)
+                + self.get_intent_activity_tags(current_intent),
+                source_goal_id=current_intent.parent_goal_id,
+                source_goal_plan_id=source_goal_plan_id,
+                source_goal_plan_revision=current_intent.source_goal_plan_revision,
+                source_goal_strategy=strategy,
+                source_intent_id=current_intent.id,
+            )
         return Activity(
             id=f"intent_{current_intent.intent_type}",
             name=f"Work on intent: {current_intent.intent_type}",
