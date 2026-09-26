@@ -319,6 +319,23 @@ def test_old_unversioned_plan_save_loads_with_defaults(tmp_path):
     assert restored.plans[0].source_id == engine.plan_system.plans[0].source_id
 
 
+def test_loading_terminal_source_with_unproven_active_plan_fails_closed(tmp_path):
+    engine = town(tmp_path)
+    item = accepted_social(engine, "meet", metadata={"location": "cafe"})
+    engine.plan_system.ensure_commitment_plans(1)
+    serialized = engine.plan_system.to_dict()
+    engine.commitment_system.transition(
+        item.id, "fulfilled", day=2, reason="external_authoritative_record",
+        evidence={"activity_event_key": "external-proof"},
+    )
+    restored = type(engine.plan_system).from_dict(
+        serialized, commitment_system=engine.commitment_system,
+        agents=engine.agents, outcome_memory=engine.outcome_memory,
+    )
+    assert restored.plans[0].status == "abandoned"
+    assert restored.plans[0].steps[0].status == "pending"
+
+
 def test_pair_context_exposes_lifecycle_without_private_plan_details(tmp_path):
     engine = town(tmp_path)
     item = accepted_social(engine, "meet", metadata={"location": "cafe"})

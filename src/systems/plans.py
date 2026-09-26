@@ -155,8 +155,7 @@ class PlanSystem:
             source = commitments.get(plan.source_id)
             if not plan.active or source is None or source.status == "accepted":
                 continue
-            status = {"fulfilled": "completed", "failed": "failed",
-                      "expired": "expired"}.get(source.status, "abandoned")
+            status = self._terminal_status_for_source(plan, source.status)
             self._terminate(
                 plan, status, source.resolution_day or plan.created_day,
                 f"source_{source.status}",
@@ -214,9 +213,9 @@ class PlanSystem:
                 continue
             source = commitments.get(plan.source_id)
             if source is None or source.status != "accepted":
-                status = {
-                    "fulfilled": "completed", "failed": "failed", "expired": "expired",
-                }.get(source.status if source else "", "abandoned")
+                status = self._terminal_status_for_source(
+                    plan, source.status if source else "missing",
+                )
                 self._terminate(plan, status, day, f"source_{source.status if source else 'missing'}")
         existing = {(plan.source_type, plan.source_id) for plan in self.plans}
         for item in self.commitment_system.commitments:
@@ -240,6 +239,17 @@ class PlanSystem:
             self._remember_plan(plan, day, "plan_created", 0)
             existing.add(("commitment", item.id))
         self.validate_invariants()
+
+    @staticmethod
+    def _terminal_status_for_source(plan, source_status: str) -> str:
+        if source_status == "fulfilled":
+            # A terminal source without matching step proof is fail-closed, not
+            # retroactive plan success (relevant to old/inconsistent saves).
+            return ("completed" if all(step.status in {"completed", "skipped"}
+                                       for step in plan.steps) else "abandoned")
+        return {"failed": "failed", "expired": "expired"}.get(
+            source_status, "abandoned",
+        )
 
     def opportunities_for_agent(self, agent_id: str, *, day: int, tick: int | None) -> list[PlanOpportunity]:
         self.ensure_commitment_plans(day)
