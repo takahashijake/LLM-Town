@@ -819,6 +819,11 @@ class PlanSystem:
             not plan.active or goal_sources[plan.source_goal_id][1].status == "active"
             for plan in self.goal_plans if plan.source_goal_id in goal_sources
         )
+        checks["valid_goal_planning_sources"] = all(
+            record["source_goal_id"] in goal_sources
+            and goal_sources[record["source_goal_id"]][0].id == record["agent_id"]
+            for record in self.goal_planning_records
+        )
         if goal_planner is not None:
             vocabulary = goal_planner.strategy_vocabulary()
             checks["known_goal_strategies"] = all(

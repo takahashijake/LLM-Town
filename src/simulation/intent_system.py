@@ -92,6 +92,25 @@ class IntentSystem:
                 plan = plan_system.ensure_goal_plan(
                     goal, agent, engine, self.goal_planner, current_day,
                 )
+            if plan_system and goal and plan:
+                plan_system.synchronize_goal_plan(goal, day=current_day)
+            if current_intent and goal and goal.status in {
+                "paused", "blocked", "abandoned", "achieved",
+            }:
+                if goal.status == "achieved":
+                    current_intent.mark_succeeded(
+                        current_day, "Parent goal is achieved.",
+                    )
+                else:
+                    current_intent.mark_superseded(
+                        current_day,
+                        f"Parent goal is {goal.status}.",
+                        trigger=f"goal_{goal.status}",
+                    )
+                self.archive_intent(current_intent)
+                self.agent_intents.pop(agent.name, None)
+                goal.current_intent_id = None
+                continue
 
             if current_intent and current_intent.is_active(current_day) and goal:
                 complete, reason = self.goal_planner.goal_is_complete(goal, agent, engine)

@@ -21,6 +21,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Separate semantic action records and effect eligibility/rate limiting
 - One bounded anti-echo regeneration attempt on the real-model path
 - Persistent memories, daily journals, goals, intents, and adaptive goal strategies
+- Persistent bounded goal plans that carry one deterministic strategy across intents
 - Persistent bounded plans whose steps invoke existing authoritative actions
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
@@ -164,8 +165,12 @@ provenance. Private beliefs and memories are rebuilt per speaker and are not cop
 into the other participant's prompt context.
 
 State can be saved and resumed. Structured goal evidence supports bounded strategy
-selection/adaptation, while deterministic effect guards prevent repeated dialogue
-actions from double-advancing goals or relationship state.
+selection/adaptation. V4 Phase 1 persists the selected finite `GoalPlanner`
+strategy across intent expiration and save/resume; existing activities and
+validated social outcomes remain the only evidence path. See
+[`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
+prevent repeated dialogue actions from double-advancing goals or relationship
+state.
 
 ## V2 economic foundation
 

@@ -232,6 +232,25 @@ def test_v2_commitment_plan_document_migrates_without_behavior_change(tmp_path):
     assert [plan.to_dict() for plan in restored.plans] == version_two["plans"]
 
 
+def test_v1_commitment_plan_document_loads_with_goal_defaults(tmp_path):
+    engine = town(tmp_path)
+    accepted_transfer(engine)
+    engine.plan_system.ensure_commitment_plans(1)
+    version_one = engine.plan_system.to_dict()
+    version_one["schema_version"] = 1
+    version_one.pop("goal_plans")
+    version_one.pop("goal_planning_records")
+
+    restored = type(engine.plan_system).from_dict(
+        version_one, commitment_system=engine.commitment_system,
+        agents=engine.agents, outcome_memory=engine.outcome_memory,
+    )
+
+    assert restored.goal_plans == []
+    assert restored.goal_planning_records == []
+    assert restored.plans[0].source_id == engine.plan_system.plans[0].source_id
+
+
 def test_goal_lifecycle_synchronizes_without_reopening_terminal_plan(tmp_path):
     engine = town(tmp_path)
     agent = engine.agents[0]

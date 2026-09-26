@@ -334,6 +334,29 @@ def test_successor_intent_continues_strategy_after_expiration(tmp_path):
     assert successor.source_goal_plan_revision == plan.revision == 0
 
 
+def test_paused_goal_terminalizes_tactic_and_plan_does_not_execute(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-paused", agent_name=maya.name,
+        description="Learn later", category="increase_knowledge",
+        priority=5, created_day=1, review_day=7,
+        target_locations=["library"],
+    )
+    maya.goals = [goal]
+    engine.update_agent_intents(1)
+    intent = engine.agent_intents[maya.name]
+    plan = engine.plan_system.get_goal_plan(goal.id)
+    goal.status = "paused"
+
+    engine.update_agent_intents(2)
+
+    assert intent.status == "superseded"
+    assert intent.terminal_trigger == "goal_paused"
+    assert maya.name not in engine.agent_intents
+    assert plan.status == "paused"
+
+
 def test_authoritative_activity_evidence_is_mirrored_once_and_completes_plan(tmp_path):
     engine = build_engine(tmp_path)
     maya = engine.agents[0]
