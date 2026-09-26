@@ -19,6 +19,11 @@ when current authoritative inventory, seller stock, price, and balance checks
 find a legal route. Delivery requires real owned stock and preserves material-lot
 provenance.
 
+The commitment recognizer retains a help location only when the proposal names a
+registered place explicitly (for example, “at the cafe”). It never substitutes
+the conversation location. This lets concrete dialogue-originated help promises
+enter the same template while vague help remains unplanned.
+
 Plans nominate ordinary registered activities. The activity, commitment,
 material, and economy systems make all world mutations. A plan step cannot edit
 money, inventory, ownership, commitment/relationship/reputation state, memory,
@@ -51,11 +56,13 @@ and save/resume projection idempotent. Memory remains downstream knowledge and
 has no route back into plan or commitment authority.
 
 Pair-private conversation context exposes commitment status and only a coarse plan
-stage: pending, preparing, terminal, or unsupported. It does not expose plan/step
-IDs or private failure reasons. Grounding distinguishes accepted/pending,
-fulfilled, failed, expired, and cancelled polarity. Generated claims are evidence
-text only; false fulfillment is rejected or safely replaced under the existing
-one-repair-then-fallback policy.
+stage: pending, preparing, terminal, or unsupported. Active repair successors are
+identified as such to the same two participants, and their accepted/fulfilled
+memories retain repair-specific event provenance. Context does not expose
+plan/step IDs or private failure reasons. Grounding distinguishes accepted/pending,
+preparing, repair-successor-active, fulfilled, failed, expired, and cancelled
+states. Generated claims are evidence text only; false fulfillment is rejected or
+safely replaced under the existing one-repair-then-fallback policy.
 
 ## Snapshot, batching, and persistence
 
@@ -81,10 +88,11 @@ Run the model-free acceptance suite with:
 python scripts/evaluate_v3_freeze.py
 ```
 
-It covers 22 scenarios: transfer acquisition/delivery, concrete and vague help and
-meet, temporary blocking, all terminal states, proof replay/source isolation,
-before/after save-resume, knowledge routing and authority independence, lifecycle
-grounding and false claims, batched snapshot/commit invariants, longitudinal
+It covers 25 scenarios: transfer acquisition/delivery, concrete and vague help and
+meet, explicit dialogue-originated help, temporary blocking, all terminal states,
+proof replay/source isolation, before/after save-resume, knowledge routing and
+authority independence, pending/preparing/repair-successor lifecycle grounding
+and outcomes, false claims, batched snapshot/commit invariants, longitudinal
 retention, and old-save loading. It reports scenario and invariant counts with
 named diagnostics and returns nonzero on failure.
 

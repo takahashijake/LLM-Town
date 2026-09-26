@@ -1,5 +1,22 @@
 # Overnight engineering progress
 
+## V3 bounded social-planning integration audit (2026-09-26)
+
+- Actual start was clean `17b0f550416b06942923adfe48acb758a37b5334` on
+  `main`, aligned with `origin/main`; V3 planning and freeze commits had already
+  landed beyond the requested `bbf0550` checkpoint.
+- Preserved explicit registered locations from dialogue-originated help proposals,
+  allowing sufficiently concrete accepted help commitments to enter the bounded
+  one-step template without inferring the conversation location.
+- Added pair-private lifecycle labels for preparation and active repair successors,
+  plus repair-specific accepted/fulfilled causal-memory event types and polarity
+  validation. Plan/step identities and private failure reasons remain hidden.
+- Plan loading now fails closed for unknown templates and template/action
+  mismatches while retaining version-1/unversioned transfer compatibility.
+- The V3 freeze evaluator now reports 25/25 scenarios and 9/9 invariants, adding
+  dialogue-to-help planning, preparing/repair lifecycle grounding, and explicit
+  template-policy validation.
+
 ## V3 production hardening continuation (2026-09-24)
 
 - Actual start was clean `6473793` on `main`, aligned with `origin/main`; the

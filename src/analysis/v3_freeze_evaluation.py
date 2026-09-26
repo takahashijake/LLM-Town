@@ -9,7 +9,7 @@ from src.llm.client import FakeLLMClient
 from src.llm.grounding import GroundingValidator
 from src.simulation.engine import SimulationEngine
 from src.simulation.social_semantics import classify_commitment_relation
-from src.systems.plans import KNOWN_ACTION_TYPES, PlanSystem
+from src.systems.plans import KNOWN_ACTION_TYPES, TEMPLATE_ACTIONS, PlanSystem
 
 
 def _engine(root: Path, name: str, *, load: bool = False) -> SimulationEngine:
@@ -104,6 +104,21 @@ def evaluate_v3_freeze() -> dict:
         scenarios["concrete_help_plan"] = (
             len(help_plan.steps) == 1
             and help_plan.steps[0].action_type == "commitment_help"
+        )
+
+        dialogue_help = _engine(root, "dialogue-help")
+        dialogue_help_item = dialogue_help.commitment_system.process_response(
+            proposer_id="agent_002", counterpart_id="agent_001",
+            proposal_text="Could you help me review records at the cafe tomorrow?",
+            response_text="Yes, I can help tomorrow.", outcome="accepted",
+            day=1, tick=8, session_id="freeze-located-help",
+            proposal_turn=0, response_turn=1, known_goods={},
+        )
+        dialogue_help.plan_system.ensure_commitment_plans(1)
+        scenarios["dialogue_help_terms_are_plannable"] = (
+            dialogue_help_item.metadata
+            == {"task": "review records", "location": "cafe"}
+            and dialogue_help.plan_system.plans[0].source_id == dialogue_help_item.id
         )
         _act(help_town, 2, 8)
         unrelated = _accept(
@@ -243,9 +258,67 @@ def evaluate_v3_freeze() -> dict:
             pending.plan_system.to_dict(), pending.commitment_system.to_dict()
         )
 
+        preparing = _engine(root, "preparing-context")
+        preparing_item = _accept(
+            preparing, "transfer",
+            metadata={"good_id": "trade_materials", "quantity": 1},
+        )
+        preparing.plan_system.ensure_commitment_plans(1)
+        preparing_context = preparing.prepare_conversation_context(
+            "cafe", preparing.agents[0], preparing.agents[1], 1,
+        )["context"]
+        preparing_record = next(
+            row for row in preparing_context["commitment_records"]
+            if row["commitment_id"] == preparing_item.id
+        )
+
+        repair = _engine(root, "repair-context")
+        repair_parent = _accept(
+            repair, "help", metadata={"task": "review records", "location": "cafe"},
+            due=1,
+        )
+        repair.commitment_system.transition(
+            repair_parent.id, "failed", day=2, reason="controlled_failure",
+        )
+        repair_child = repair.commitment_system.create(
+            proposer_id="agent_002", counterpart_id="agent_001",
+            commitment_type="help", day=2, due_day=3,
+            metadata={"task": "review records", "location": "cafe"},
+            status="proposed", repair_of_commitment_id=repair_parent.id,
+        )
+        repair.commitment_system.transition(
+            repair_child.id, "accepted", day=2, reason="accepted_repair",
+        )
+        repair.plan_system.ensure_commitment_plans(2)
+        repair_context = repair.prepare_conversation_context(
+            "cafe", repair.agents[0], repair.agents[1], 2,
+        )["context"]
+        repair_record = next(
+            row for row in repair_context["commitment_records"]
+            if row["commitment_id"] == repair_child.id
+        )
+        scenarios["active_lifecycle_grounding"] = (
+            preparing_record["lifecycle_state"] == "preparing"
+            and repair_record["lifecycle_state"] == "repair_successor_active"
+            and _participant_memory(
+                repair, repair_child, "commitment_repair_accepted",
+            )
+        )
+        _act(repair, 3, 8)
+        scenarios["repair_successor_outcome_knowledge"] = (
+            repair_child.status == "fulfilled"
+            and repair.plan_system.plans[0].status == "completed"
+            and _participant_memory(
+                repair, repair_child, "commitment_repair_fulfilled",
+            )
+        )
+
         validator = GroundingValidator()
         lifecycle_examples = {
             "accepted": ("I still plan to do it.", "I already completed it."),
+            "repair_active": (
+                "I will try again to make this right.", "I already completed it.",
+            ),
             "fulfilled": ("I fulfilled it.", "I failed it."),
             "failed": ("I failed it.", "I fulfilled it."),
             "expired": ("The deadline expired.", "I completed it."),
@@ -306,6 +379,12 @@ def evaluate_v3_freeze() -> dict:
                 step.action_type in KNOWN_ACTION_TYPES
                 for town in (transfer, meet, help_town)
                 for plan in town.plan_system.plans for step in plan.steps
+            ),
+            "template_steps_match_policy": all(
+                tuple(step.action_type for step in plan.steps)
+                == TEMPLATE_ACTIONS[plan.plan_type.removeprefix("commitment_")]
+                for town in (transfer, meet, help_town, dialogue_help, repair)
+                for plan in town.plan_system.plans
             ),
             "stable_owner_scoped_ids": all(
                 plan.id == town.plan_system.plan_id_for(plan.agent_id, plan.source_id)

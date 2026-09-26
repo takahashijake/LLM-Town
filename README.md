@@ -604,12 +604,14 @@ python scripts/evaluate_long_horizon_planning.py
 python scripts/evaluate_v3_freeze.py
 ```
 
-The V3 freeze evaluator adds 22 end-to-end scenarios and shared invariants for all
+The V3 freeze evaluator adds 25 end-to-end scenarios and shared invariants for all
 three templates, proof/source isolation, lifecycle synchronization, private causal
-knowledge, grounded status distinctions, save compatibility, and the existing
-batched snapshot/barrier/ordered-commit architecture. Plan persistence is schema
-version 2; unversioned legacy plan documents load with deterministic defaults,
-while unknown versions and action types fail closed.
+knowledge, explicit dialogue-to-help planning, pending/preparing/repair-successor
+grounding, save compatibility, and the existing batched
+snapshot/barrier/ordered-commit architecture. Plan persistence is schema version
+2; unversioned legacy plan documents load with deterministic defaults, while
+unknown versions, templates, template/action mismatches, and action types fail
+closed.
 
 This evaluator proves authoritative behavior without loading a model. Real-model
 evaluation remains a separate measurement of whether generated dialogue notices
