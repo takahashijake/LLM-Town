@@ -55,6 +55,7 @@ class GroundedDialoguePlan:
 
 
 FOLLOW_THROUGH_BY_POLARITY = {
+    "accepted": ("acknowledge", "cooperate"),
     "fulfilled": ("acknowledge", "appreciate", "cooperate"),
     "failed": ("acknowledge", "request_explanation", "apologize", "propose_repair", "decline_similar"),
     "expired": ("acknowledge", "request_explanation", "propose_repair"),
@@ -118,6 +119,7 @@ def plan_grounded_dialogue(context: dict) -> GroundedDialoguePlan | None:
 
 
 FALLBACK_BY_POLARITY = {
+    "accepted": "Yes, that commitment is still pending.",
     "fulfilled": "Yes, that was fulfilled.",
     "failed": "No, that failed.",
     "expired": "No, that expired before completion.",
@@ -247,6 +249,7 @@ class GroundingValidator:
     HONORIFIC_PERSON = re.compile(r"\b(?:Mr|Mrs|Ms|Dr)\.\s*[A-Z][A-Za-z'-]+\b")
 
     PLAN_REQUIRED = {
+        "accepted": re.compile(r"\b(?:accepted|agreed|pending|still (?:need|plan|intend)|will|going to)\b", re.I),
         "fulfilled": re.compile(r"\b(?:fulfilled|kept|completed|came through|did it|yes,? i did)\b", re.I),
         "failed": re.compile(r"\b(?:failed|missed|didn't|did not|couldn't|could not|sorry)\b", re.I),
         "expired": re.compile(r"\b(?:expired|ran out|too late|deadline passed)\b", re.I),
@@ -259,6 +262,7 @@ class GroundingValidator:
         "completed": re.compile(r"\b(?:completed|finished|received|restitution|acquired|got)\b", re.I),
     }
     PLAN_REVERSED = {
+        "accepted": re.compile(r"\b(?:fulfilled|completed|already did|failed|expired|cancelled)\b", re.I),
         "fulfilled": re.compile(r"\b(?:failed|missed|didn't|did not|not (?:fulfilled|completed))\b", re.I),
         "failed": re.compile(r"\b(?:fulfilled|kept (?:the |your )?promise|came through|completed it)\b", re.I),
         "expired": re.compile(r"\b(?:fulfilled|completed|still active|still valid)\b", re.I),
@@ -382,6 +386,7 @@ class GroundingValidator:
         ):
             return {}, ["follow_through_counterpart_required"]
         allowed = {
+            "accepted": {"acknowledge", "cooperate"},
             "fulfilled": {"acknowledge", "appreciate", "cooperate"},
             "failed": {"acknowledge", "request_explanation", "apologize", "propose_repair", "decline_similar"},
             "completed": {"acknowledge", "appreciate"}, "witnessed": {"acknowledge", "request_explanation"},

@@ -12,6 +12,7 @@ from src.llm.grounding import (
 
 
 @pytest.mark.parametrize("polarity,good,bad", [
+    ("accepted", "Yes, I still plan to do it.", "I already completed it."),
     ("fulfilled", "Yes, you kept the promise.", "No, you failed the promise."),
     ("failed", "No, I failed to do it.", "Yes, I fulfilled it."),
     ("expired", "The deadline expired.", "It was completed."),

@@ -179,6 +179,8 @@ class ActivitySystem:
                         self.plan_system.record_execution(
                             plan_id, activity.source_plan_step_id, day=day, tick=hour,
                             execution_key=execution_key,
+                            source_commitment_id=result.get("source_commitment_id"),
+                            action_type=activity.id,
                         )
                 except ValueError as error:
                     record["execution_status"] = "failed"

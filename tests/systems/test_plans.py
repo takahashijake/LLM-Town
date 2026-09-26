@@ -27,6 +27,17 @@ def accepted_transfer(engine, due=3):
     )
 
 
+def accepted_social(engine, commitment_type, *, metadata, due=2):
+    item = engine.commitment_system.create(
+        proposer_id="agent_002", counterpart_id="agent_001",
+        commitment_type=commitment_type, day=1, due_day=due,
+        metadata=metadata, status="proposed",
+    )
+    return engine.commitment_system.transition(
+        item.id, "accepted", day=1, reason="accepted",
+    )
+
+
 def run_actor(engine, day, hour):
     actor = engine.agents[0]
     with patch("src.behavior.planner.random.random", return_value=0.0):
@@ -146,3 +157,176 @@ def test_plan_model_rejects_unbounded_or_unknown_steps():
         PlanStep("bad", "invent_resource")
     with pytest.raises(ValueError, match="one to four"):
         AgentPlan("p", "a", "x", "commitment", "c", 1, [])
+
+
+@pytest.mark.parametrize(("commitment_type", "metadata", "action_type"), [
+    ("meet", {"location": "cafe"}, "commitment_meet"),
+    ("help", {"task": "review records", "location": "cafe"}, "commitment_help"),
+])
+def test_concrete_social_commitment_gets_one_stable_bounded_plan(
+    tmp_path, commitment_type, metadata, action_type,
+):
+    engine = town(tmp_path)
+    item = accepted_social(engine, commitment_type, metadata=metadata)
+    engine.plan_system.ensure_commitment_plans(1)
+    engine.plan_system.ensure_commitment_plans(1)
+    plan = engine.plan_system.plans[0]
+    assert plan.id == f"plan:commitment:agent_001:{item.id}"
+    assert plan.plan_type == f"commitment_{commitment_type}"
+    assert [step.action_type for step in plan.steps] == [action_type]
+    assert len(engine.plan_system.plans) == 1
+
+
+@pytest.mark.parametrize(("commitment_type", "metadata", "reason"), [
+    ("meet", {}, "missing_meeting_location"),
+    ("meet", {"location": "cafe"}, "missing_meeting_time"),
+    ("help", {"location": "cafe"}, "missing_help_task"),
+    ("help", {"task": "review records"}, "missing_help_location"),
+])
+def test_vague_social_commitment_has_inspectable_no_plan_reason(
+    tmp_path, commitment_type, metadata, reason,
+):
+    engine = town(tmp_path)
+    item = accepted_social(
+        engine, commitment_type, metadata=metadata,
+        due=None if reason.endswith("time") else 2,
+    )
+    engine.plan_system.ensure_commitment_plans(1)
+    assert engine.plan_system.plans == []
+    assert engine.plan_system.planning_records == [{
+        "commitment_id": item.id, "agent_id": "agent_001",
+        "commitment_type": commitment_type, "eligible": False,
+        "reason": reason, "day": 1,
+    }]
+
+
+@pytest.mark.parametrize(("commitment_type", "metadata"), [
+    ("meet", {"location": "cafe"}),
+    ("help", {"task": "review records", "location": "cafe"}),
+])
+def test_authoritative_social_activity_fulfills_matching_plan_once(
+    tmp_path, commitment_type, metadata,
+):
+    engine = town(tmp_path)
+    item = accepted_social(engine, commitment_type, metadata=metadata)
+    run_actor(engine, 2, 8)
+    plan = engine.plan_system.plans[0]
+    assert item.status == "fulfilled"
+    assert plan.status == "completed"
+    assert len(engine.plan_system.execution_records) == 1
+    assert all(any(
+        memory.type == "commitment_fulfilled"
+        and f"source_id:{item.id}" in memory.tags
+        for memory in agent.memory
+    ) for agent in engine.agents[:2])
+    assert not any(
+        f"source_id:{item.id}" in memory.tags
+        for memory in engine.agents[2].memory
+    )
+    record = engine.plan_system.execution_records[0]
+    before = engine.plan_system.to_dict()
+    engine.plan_system.record_execution(
+        plan.id, plan.steps[0].id, day=2, tick=8,
+        execution_key=record["execution_key"],
+        source_commitment_id=item.id,
+        action_type=f"commitment_{commitment_type}",
+    )
+    assert engine.plan_system.to_dict() == before
+
+
+def test_temporary_meeting_absence_keeps_plan_pending_and_bounded(tmp_path):
+    engine = town(tmp_path)
+    accepted_social(engine, "meet", metadata={"location": "library"})
+    engine.plan_system.opportunities_for_agent("agent_001", day=2, tick=8)
+    engine.plan_system.opportunities_for_agent("agent_001", day=2, tick=8)
+    plan = engine.plan_system.plans[0]
+    observations = [event for event in plan.transitions
+                    if event["type"] == "blocked_observation"]
+    assert plan.status == "active" and plan.steps[0].attempts == 0
+    assert len(observations) == 1
+
+
+def test_unproven_or_cross_commitment_execution_cannot_advance_plan(tmp_path):
+    engine = town(tmp_path)
+    first = accepted_social(engine, "meet", metadata={"location": "cafe"})
+    second = accepted_social(
+        engine, "help", metadata={"task": "review records", "location": "cafe"},
+    )
+    engine.plan_system.ensure_commitment_plans(1)
+    meet_plan, help_plan = engine.plan_system.plans
+    engine.plan_system.record_execution(
+        meet_plan.id, meet_plan.steps[0].id, day=2, tick=8,
+        execution_key="dialogue-claimed-fulfillment",
+        source_commitment_id=first.id, action_type="commitment_meet",
+    )
+    engine.commitment_system.execution_records.append({
+        "event_key": "proof-for-second", "source_commitment_id": second.id,
+        "commitment_id": second.id, "activity_id": "commitment_help",
+    })
+    engine.plan_system.record_execution(
+        meet_plan.id, meet_plan.steps[0].id, day=2, tick=8,
+        execution_key="proof-for-second",
+        source_commitment_id=second.id, action_type="commitment_help",
+    )
+    assert meet_plan.current_step_index == help_plan.current_step_index == 0
+    assert engine.plan_system.execution_records == []
+
+
+def test_terminal_commitment_synchronizes_plan_without_reopening(tmp_path):
+    engine = town(tmp_path)
+    item = accepted_social(
+        engine, "help", metadata={"task": "review records", "location": "cafe"},
+    )
+    engine.plan_system.ensure_commitment_plans(1)
+    plan = engine.plan_system.plans[0]
+    engine.commitment_system.transition(item.id, "failed", day=2, reason="authoritative_failure")
+    engine.plan_system.ensure_commitment_plans(2)
+    engine.plan_system.ensure_commitment_plans(3)
+    assert plan.status == "failed"
+    assert len(engine.plan_system.plans) == 1
+
+
+def test_social_plan_save_resume_before_and_after_execution_is_idempotent(tmp_path):
+    engine = town(tmp_path)
+    item = accepted_social(engine, "meet", metadata={"location": "cafe"})
+    engine.plan_system.ensure_commitment_plans(1)
+    stable_id = engine.plan_system.plans[0].id
+    engine.state.save(engine, 1, 8)
+    resumed = town(tmp_path, load=True)
+    assert resumed.plan_system.plans[0].id == stable_id
+    run_actor(resumed, 2, 8)
+    resumed.state.save(resumed, 2, 8)
+    after = town(tmp_path, load=True)
+    run_actor(after, 2, 12)
+    assert after.commitment_system.get(item.id).status == "fulfilled"
+    assert after.plan_system.plans[0].status == "completed"
+    assert len(after.plan_system.execution_records) == 1
+
+
+def test_old_unversioned_plan_save_loads_with_defaults(tmp_path):
+    engine = town(tmp_path)
+    accepted_transfer(engine)
+    engine.plan_system.ensure_commitment_plans(1)
+    legacy = engine.plan_system.to_dict()
+    legacy.pop("schema_version")
+    legacy.pop("planning_records")
+    restored = type(engine.plan_system).from_dict(
+        legacy, commitment_system=engine.commitment_system,
+        agents=engine.agents, outcome_memory=engine.outcome_memory,
+    )
+    assert restored.planning_records == []
+    assert restored.plans[0].source_id == engine.plan_system.plans[0].source_id
+
+
+def test_pair_context_exposes_lifecycle_without_private_plan_details(tmp_path):
+    engine = town(tmp_path)
+    item = accepted_social(engine, "meet", metadata={"location": "cafe"})
+    engine.plan_system.ensure_commitment_plans(1)
+    context = engine.prepare_conversation_context(
+        "cafe", engine.agents[0], engine.agents[1], 1,
+    )["context"]
+    record = next(row for row in context["commitment_records"]
+                  if row["commitment_id"] == item.id)
+    assert record["status"] == "accepted"
+    assert record["plan_stage"] == "pending"
+    assert "plan_id" not in record and "step_id" not in record

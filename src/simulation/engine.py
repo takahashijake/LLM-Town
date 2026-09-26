@@ -537,6 +537,8 @@ class SimulationEngine:
             self.commitment_system.relevant_context_records(speaker.id, listener.id, current_day)
             if self.commitment_grounding_enabled else []
         )
+        for record in result["context"]["commitment_records"]:
+            record.update(self.plan_system.context_for_commitment(record["commitment_id"]))
         result["context"]["repair_opportunities"] = (
             self.commitment_system.repair_opportunities(
                 speaker.id, listener.id, day=current_day,
