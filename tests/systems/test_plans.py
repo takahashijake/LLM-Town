@@ -3,8 +3,9 @@ from unittest.mock import patch
 import pytest
 
 from src.llm.client import FakeLLMClient
+from src.agents.goal import Goal
 from src.simulation.engine import SimulationEngine
-from src.systems.plans import AgentPlan, PlanStep
+from src.systems.plans import AgentPlan, GoalPlan, PlanStep
 
 
 def town(tmp_path, load=False):
@@ -169,6 +170,96 @@ def test_plan_model_rejects_unbounded_or_unknown_steps():
             "p", "a", "commitment_meet", "commitment", "c", 1,
             [PlanStep("s", "commitment_help")],
         )
+
+
+def test_goal_plan_has_stable_owner_scoped_identity_and_is_idempotent(tmp_path):
+    engine = town(tmp_path)
+    agent = engine.agents[0]
+    goal = Goal(
+        id="goal-stable-plan", agent_name=agent.name,
+        description="Build useful knowledge about town activity",
+        category="increase_knowledge", priority=5, created_day=1,
+        review_day=7, target_locations=["library"],
+    )
+    agent.goals = [goal]
+
+    first = engine.plan_system.ensure_goal_plan(
+        goal, agent, engine, engine.goal_planner, 1,
+    )
+    second = engine.plan_system.ensure_goal_plan(
+        goal, agent, engine, engine.goal_planner, 2,
+    )
+
+    assert first is second
+    assert first.id == f"plan:goal:{agent.id}:{goal.id}"
+    assert len(engine.plan_system.goal_plans) == 1
+    assert first.strategy_name in engine.goal_planner.strategy_vocabulary()
+    assert first.target_location == "library"
+    assert first.transitions[0]["score"] == first.score_at_selection
+
+
+def test_goal_plan_rejects_unknown_strategy_and_future_schema(tmp_path):
+    with pytest.raises(ValueError, match="unknown goal plan strategy"):
+        GoalPlan(
+            id="plan:goal:a:g", agent_id="a", source_goal_id="g",
+            created_day=1, strategy_name="invent_a_plan",
+            intent_type="investigate", selected_day=1,
+            score_at_selection=1.0,
+        )
+    engine = town(tmp_path)
+    with pytest.raises(ValueError, match="unsupported plan schema version"):
+        type(engine.plan_system).from_dict(
+            {"schema_version": 999},
+            commitment_system=engine.commitment_system,
+            agents=engine.agents,
+        )
+
+
+def test_v2_commitment_plan_document_migrates_without_behavior_change(tmp_path):
+    engine = town(tmp_path)
+    accepted_transfer(engine)
+    engine.plan_system.ensure_commitment_plans(1)
+    version_two = engine.plan_system.to_dict()
+    version_two["schema_version"] = 2
+    version_two.pop("goal_plans")
+
+    restored = type(engine.plan_system).from_dict(
+        version_two, commitment_system=engine.commitment_system,
+        agents=engine.agents, outcome_memory=engine.outcome_memory,
+    )
+
+    assert restored.goal_plans == []
+    assert [plan.to_dict() for plan in restored.plans] == version_two["plans"]
+
+
+def test_goal_lifecycle_synchronizes_without_reopening_terminal_plan(tmp_path):
+    engine = town(tmp_path)
+    agent = engine.agents[0]
+    goal = Goal(
+        id="goal-lifecycle", agent_name=agent.name,
+        description="Build useful knowledge", category="increase_knowledge",
+        priority=5, created_day=1, review_day=7,
+        target_locations=["library"],
+    )
+    agent.goals = [goal]
+    plan = engine.plan_system.ensure_goal_plan(
+        goal, agent, engine, engine.goal_planner, 1,
+    )
+    goal.status = "paused"
+    engine.plan_system.synchronize_goal_plan(goal, day=2)
+    assert plan.status == "paused"
+    goal.status = "active"
+    engine.plan_system.synchronize_goal_plan(goal, day=3)
+    assert plan.status == "active"
+    goal.mark_achieved(4, "authoritative progress complete")
+    engine.plan_system.synchronize_goal_plan(goal, day=4)
+    assert plan.status == "completed"
+    goal.status = "active"
+    engine.plan_system.ensure_goal_plan(
+        goal, agent, engine, engine.goal_planner, 5,
+    )
+    assert plan.status == "completed"
+    assert len(engine.plan_system.goal_plans) == 1
 
 
 @pytest.mark.parametrize(("commitment_type", "metadata", "action_type"), [

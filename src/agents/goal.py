@@ -97,9 +97,14 @@ class Goal:
     def is_active(self) -> bool:
         return self.status == "active"
 
-    def add_progress(self, amount: int, day: int, record: dict) -> None:
+    def add_progress(self, amount: int, day: int, record: dict) -> bool:
         if not self.is_active() or amount <= 0:
-            return
+            return False
+        evidence_key = record.get("evidence_key")
+        if evidence_key and any(
+            item.get("evidence_key") == evidence_key for item in self.evidence
+        ):
+            return False
         old_progress = self.progress
         self.progress = min(self.progress_target, self.progress + amount)
         self.evidence.append(
@@ -107,6 +112,7 @@ class Goal:
              "new_progress": self.progress, **record}
         )
         self.evidence = self.evidence[-30:]
+        return True
 
     def mark_achieved(self, day: int, reason: str) -> None:
         self.status = "achieved"

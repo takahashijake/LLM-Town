@@ -403,6 +403,7 @@ class SimulationEngine:
         relationship_change: int,
         new_score: int,
         conversation_tags: list[str],
+        evidence_key: str | None = None,
     ) -> dict | None:
         self.sync_intent_system_refs()
         self.intent_system._engine_for_goal_check = self
@@ -416,6 +417,7 @@ class SimulationEngine:
             relationship_change=relationship_change,
             new_score=new_score,
             conversation_tags=conversation_tags,
+            evidence_key=evidence_key,
         )
     
         self.agent_intents = self.intent_system.agent_intents

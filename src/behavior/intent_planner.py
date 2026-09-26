@@ -3,7 +3,9 @@ from src.agents.intent import AgentIntent
 import random 
 
 class IntentPlanner:
-    def create_intent_from_goal(self, goal, strategy, current_day: int) -> AgentIntent:
+    def create_intent_from_goal(
+        self, goal, strategy, current_day: int, goal_plan=None,
+    ) -> AgentIntent:
         description = (
             f"{goal.agent_name} is pursuing '{goal.description}' through "
             f"{strategy.name.replace('_', ' ')}."
@@ -20,6 +22,8 @@ class IntentPlanner:
             target_location=strategy.target_location,
             progress_goal=2,
             parent_goal_id=goal.id,
+            source_goal_plan_id=getattr(goal_plan, "id", None),
+            source_goal_plan_revision=getattr(goal_plan, "revision", 0),
             strategy=strategy.name,
             strategy_score=strategy.score,
             relationship_influenced=strategy.relationship_influenced,

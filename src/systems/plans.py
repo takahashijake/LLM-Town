@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from src.systems.outcome_memory import KnowledgeRecipient
 
 
-PLAN_SCHEMA_VERSION = 2
+PLAN_SCHEMA_VERSION = 3
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
 STEP_STATUSES = {"pending", "completed", "skipped", "failed"}
 KNOWN_ACTION_TYPES = {
@@ -21,6 +21,8 @@ TEMPLATE_ACTIONS = {
     "transfer": ("commitment_acquire_resource", "commitment_transfer"),
 }
 KNOWN_PLAN_TYPES = {f"commitment_{name}" for name in TEMPLATE_ACTIONS}
+GOAL_PLAN_STATUSES = {"active", "paused", "completed", "blocked", "abandoned"}
+TERMINAL_GOAL_PLAN_STATUSES = {"completed", "blocked", "abandoned"}
 
 
 @dataclass
@@ -94,6 +96,63 @@ class AgentPlan:
         return cls(**values)
 
 
+@dataclass
+class GoalPlan:
+    """Persistent coordination state for one durable goal strategy.
+
+    This object has no world-mutation methods. Goal, intent, activity, and
+    conversation systems remain authoritative for progress and effects.
+    """
+
+    id: str
+    agent_id: str
+    source_goal_id: str
+    created_day: int
+    strategy_name: str
+    intent_type: str
+    selected_day: int
+    score_at_selection: float
+    target_agent: str | None = None
+    target_location: str | None = None
+    required_action: str | None = None
+    feasibility_at_selection: bool = True
+    status: str = "active"
+    revision: int = 0
+    review_day: int | None = None
+    no_plan_reason: str = ""
+    completed_day: int | None = None
+    terminal_reason: str = ""
+    transitions: list[dict] = field(default_factory=list)
+    evidence_records: list[dict] = field(default_factory=list)
+    processed_evidence_keys: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        from src.behavior.goal_planner import GoalPlanner
+
+        if self.status not in GOAL_PLAN_STATUSES:
+            raise ValueError(f"invalid goal plan status: {self.status}")
+        if self.strategy_name not in GoalPlanner.strategy_vocabulary():
+            raise ValueError(f"unknown goal plan strategy: {self.strategy_name}")
+        if self.revision < 0:
+            raise ValueError("goal plan revision must be non-negative")
+        if len(self.transitions) > 50 or len(self.evidence_records) > 50:
+            raise ValueError("goal plan audit history exceeds bounded storage")
+
+    @property
+    def active(self) -> bool:
+        return self.status == "active"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "GoalPlan":
+        return cls(**{
+            key: value for key, value in data.items()
+            if key in cls.__dataclass_fields__
+        })
+
+
 @dataclass(frozen=True)
 class PlanOpportunity:
     plan_id: str
@@ -119,9 +178,12 @@ class PlanOpportunity:
 class PlanSystem:
     """Owns plan lifecycle; delegates every world mutation to existing systems."""
 
-    def __init__(self, plans=None, *, next_number=1, commitment_system=None, agents=None,
-                 outcome_memory=None):
+    MAX_GOAL_ADAPTATIONS = 3
+
+    def __init__(self, plans=None, *, goal_plans=None, next_number=1,
+                 commitment_system=None, agents=None, outcome_memory=None):
         self.plans = list(plans or [])
+        self.goal_plans = list(goal_plans or [])
         self.next_number = max(1, int(next_number))
         self.commitment_system = commitment_system
         self.agents = list(agents or [])
@@ -132,6 +194,7 @@ class PlanSystem:
     def to_dict(self) -> dict:
         return {"schema_version": PLAN_SCHEMA_VERSION,
                 "plans": [plan.to_dict() for plan in self.plans],
+                "goal_plans": [plan.to_dict() for plan in self.goal_plans],
                 "next_number": self.next_number,
                 "execution_records": list(self.execution_records),
                 "planning_records": list(self.planning_records)}
@@ -141,17 +204,74 @@ class PlanSystem:
                   outcome_memory=None) -> "PlanSystem":
         data = data or {}
         version = int(data.get("schema_version", 1))
-        if version not in {1, PLAN_SCHEMA_VERSION}:
+        if version not in {1, 2, PLAN_SCHEMA_VERSION}:
             raise ValueError(f"unsupported plan schema version: {version}")
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
+                     goal_plans=[GoalPlan.from_dict(item)
+                                 for item in data.get("goal_plans", [])],
                      next_number=data.get("next_number", 1),
                      commitment_system=commitment_system, agents=agents,
                      outcome_memory=outcome_memory)
         system.execution_records = list(data.get("execution_records", []))
         system.planning_records = list(data.get("planning_records", []))
         system._synchronize_terminal_sources()
+        system._synchronize_terminal_goals()
         system.validate_invariants()
         return system
+
+    @staticmethod
+    def goal_plan_id_for(agent_id: str, goal_id: str) -> str:
+        return f"plan:goal:{agent_id}:{goal_id}"
+
+    def _goal_sources(self) -> dict[str, tuple[object, object]]:
+        return {
+            goal.id: (agent, goal)
+            for agent in self.agents
+            for goal in getattr(agent, "goals", [])
+            if hasattr(goal, "id")
+        }
+
+    def _synchronize_terminal_goals(self) -> None:
+        sources = self._goal_sources()
+        for plan in self.goal_plans:
+            source = sources.get(plan.source_goal_id)
+            if source is None:
+                self._terminate_goal_plan(plan, "abandoned", plan.created_day,
+                                          "source_missing")
+                continue
+            _agent, goal = source
+            expected = {
+                "achieved": "completed",
+                "blocked": "blocked",
+                "abandoned": "abandoned",
+                "paused": "paused",
+                "active": "active",
+            }[goal.status]
+            if expected in TERMINAL_GOAL_PLAN_STATUSES:
+                self._terminate_goal_plan(
+                    plan, expected, goal.completion_day or plan.created_day,
+                    f"source_{goal.status}",
+                )
+            elif expected == "paused" and plan.active:
+                plan.status = "paused"
+                plan.transitions.append({
+                    "day": goal.last_review_day or plan.created_day,
+                    "type": "paused", "reason": "source_paused",
+                })
+
+    @staticmethod
+    def _terminate_goal_plan(plan: GoalPlan, status: str, day: int,
+                             reason: str) -> None:
+        if plan.status in TERMINAL_GOAL_PLAN_STATUSES:
+            return
+        plan.status = status
+        plan.completed_day = day if status in TERMINAL_GOAL_PLAN_STATUSES else None
+        plan.terminal_reason = reason if status in TERMINAL_GOAL_PLAN_STATUSES else ""
+        plan.transitions.append({"day": day, "type": status, "reason": reason})
+
+    def get_goal_plan(self, goal_id: str) -> GoalPlan | None:
+        return next((plan for plan in self.goal_plans
+                     if plan.source_goal_id == goal_id), None)
 
     def _synchronize_terminal_sources(self) -> None:
         if self.commitment_system is None:
@@ -245,6 +365,152 @@ class PlanSystem:
             self._remember_plan(plan, day, "plan_created", 0)
             existing.add(("commitment", item.id))
         self.validate_invariants()
+
+    def ensure_goal_plan(self, goal, agent, engine, goal_planner,
+                         day: int) -> GoalPlan | None:
+        """Create or synchronize the one stable plan for ``goal``."""
+        existing = self.get_goal_plan(goal.id)
+        if existing is not None:
+            self.synchronize_goal_plan(goal, day=day)
+            return existing
+        if goal.status != "active":
+            return None
+
+        candidate = goal_planner.select_strategy(goal, agent, engine)
+        if candidate is None:
+            return None
+        supported, reason = goal_planner.strategy_execution_support(candidate)
+        plan_id = self.goal_plan_id_for(agent.id, goal.id)
+        plan = GoalPlan(
+            id=plan_id,
+            agent_id=agent.id,
+            source_goal_id=goal.id,
+            created_day=day,
+            strategy_name=candidate.name,
+            intent_type=candidate.intent_type,
+            selected_day=day,
+            score_at_selection=candidate.score,
+            target_agent=candidate.target_agent,
+            target_location=candidate.target_location,
+            required_action=candidate.required_action,
+            feasibility_at_selection=candidate.feasible,
+            status="active" if supported else "blocked",
+            review_day=goal.review_day,
+            no_plan_reason=reason,
+            terminal_reason=reason if not supported else "",
+            completed_day=day if not supported else None,
+            transitions=[{
+                "day": day,
+                "type": "created" if supported else "blocked",
+                "strategy": candidate.name,
+                "target_agent": candidate.target_agent,
+                "target_location": candidate.target_location,
+                "required_action": candidate.required_action,
+                "score": candidate.score,
+                "feasible": candidate.feasible,
+                "reason": reason,
+                "revision": 0,
+            }],
+        )
+        self.goal_plans.append(plan)
+        self.validate_invariants(goal_planner=goal_planner)
+        return plan
+
+    def synchronize_goal_plan(self, goal, *, day: int) -> GoalPlan | None:
+        plan = self.get_goal_plan(goal.id)
+        if plan is None:
+            return None
+        target_status = {
+            "achieved": "completed",
+            "blocked": "blocked",
+            "abandoned": "abandoned",
+        }.get(goal.status)
+        if target_status:
+            self._terminate_goal_plan(
+                plan, target_status, day, f"source_{goal.status}",
+            )
+        elif goal.status == "paused" and plan.active:
+            plan.status = "paused"
+            plan.transitions.append({
+                "day": day, "type": "paused", "reason": "source_paused",
+            })
+        elif goal.status == "active" and plan.status == "paused":
+            plan.status = "active"
+            plan.transitions.append({
+                "day": day, "type": "resumed", "reason": "source_active",
+            })
+        return plan
+
+    def adapt_goal_plan(self, plan: GoalPlan, candidate, *, day: int,
+                        trigger: str, preserved_progress: int,
+                        goal_planner) -> bool:
+        if not plan.active:
+            return False
+        supported, reason = goal_planner.strategy_execution_support(candidate)
+        if not supported:
+            self._terminate_goal_plan(plan, "blocked", day, reason)
+            plan.no_plan_reason = reason
+            return False
+        if plan.revision >= self.MAX_GOAL_ADAPTATIONS:
+            self._terminate_goal_plan(
+                plan, "blocked", day, "adaptation_budget_exhausted",
+            )
+            plan.no_plan_reason = "adaptation_budget_exhausted"
+            return False
+        old = {
+            "strategy": plan.strategy_name,
+            "target_agent": plan.target_agent,
+            "target_location": plan.target_location,
+        }
+        plan.revision += 1
+        plan.strategy_name = candidate.name
+        plan.intent_type = candidate.intent_type
+        plan.target_agent = candidate.target_agent
+        plan.target_location = candidate.target_location
+        plan.required_action = candidate.required_action
+        plan.selected_day = day
+        plan.score_at_selection = candidate.score
+        plan.feasibility_at_selection = candidate.feasible
+        plan.review_day = day
+        plan.transitions.append({
+            "day": day, "type": "adapted", "trigger": trigger,
+            "old_strategy": old["strategy"],
+            "new_strategy": candidate.name,
+            "old_target_agent": old["target_agent"],
+            "new_target_agent": candidate.target_agent,
+            "old_target_location": old["target_location"],
+            "new_target_location": candidate.target_location,
+            "preserved_progress": preserved_progress,
+            "revision": plan.revision,
+        })
+        return True
+
+    def observe_goal_evidence(self, goal, *, evidence_key: str, day: int,
+                              intent_id: str, evidence_type: str,
+                              details: dict) -> bool:
+        """Mirror already-authoritative goal evidence exactly once."""
+        plan = self.get_goal_plan(goal.id)
+        if plan is None or evidence_key in plan.processed_evidence_keys:
+            return False
+        # The goal record must already exist; a caller cannot use this API as
+        # an alternative route to increment goal progress.
+        if not any(
+            record.get("evidence_key") == evidence_key
+            for record in goal.evidence
+        ):
+            return False
+        plan.processed_evidence_keys.append(evidence_key)
+        plan.processed_evidence_keys = plan.processed_evidence_keys[-50:]
+        plan.evidence_records.append({
+            "evidence_key": evidence_key,
+            "day": day,
+            "intent_id": intent_id,
+            "type": evidence_type,
+            "goal_progress": goal.progress,
+            **details,
+        })
+        plan.evidence_records = plan.evidence_records[-50:]
+        return True
 
     def synchronize_source(self, commitment_id: str, *, day: int) -> None:
         """Immediately invalidate a plan after a terminal source transition."""
@@ -472,7 +738,7 @@ class PlanSystem:
             "plan_type": plan.plan_type,
         }
 
-    def validate_invariants(self) -> dict[str, bool]:
+    def validate_invariants(self, goal_planner=None) -> dict[str, bool]:
         ids = [plan.id for plan in self.plans]
         source_ids = {item.id for item in self.commitment_system.commitments} if self.commitment_system else set()
         record_keys = [record["execution_key"] for record in self.execution_records]
@@ -503,7 +769,38 @@ class PlanSystem:
                 not plan.active or self.commitment_system.get(plan.source_id).status == "accepted"
                 for plan in self.plans
             ) if self.commitment_system else True,
+            "unique_goal_plan_ids": len({plan.id for plan in self.goal_plans}) == len(self.goal_plans),
+            "one_goal_plan_per_source": len({plan.source_goal_id for plan in self.goal_plans}) == len(self.goal_plans),
+            "stable_goal_plan_ids": all(
+                plan.id == self.goal_plan_id_for(plan.agent_id, plan.source_goal_id)
+                for plan in self.goal_plans
+            ),
+            "bounded_goal_plan_audit": all(
+                len(plan.transitions) <= 50
+                and len(plan.evidence_records) <= 50
+                and len(plan.processed_evidence_keys) <= 50
+                for plan in self.goal_plans
+            ),
+            "goal_evidence_unique": all(
+                len(plan.processed_evidence_keys) == len(set(plan.processed_evidence_keys))
+                for plan in self.goal_plans
+            ),
         }
+        goal_sources = self._goal_sources()
+        checks["valid_goal_sources"] = all(
+            plan.source_goal_id in goal_sources
+            and goal_sources[plan.source_goal_id][0].id == plan.agent_id
+            for plan in self.goal_plans
+        )
+        checks["active_goal_plan_has_active_source"] = all(
+            not plan.active or goal_sources[plan.source_goal_id][1].status == "active"
+            for plan in self.goal_plans if plan.source_goal_id in goal_sources
+        )
+        if goal_planner is not None:
+            vocabulary = goal_planner.strategy_vocabulary()
+            checks["known_goal_strategies"] = all(
+                plan.strategy_name in vocabulary for plan in self.goal_plans
+            )
         if not all(checks.values()):
             raise ValueError(f"plan invariant violation: {[key for key, value in checks.items() if not value]}")
         return checks

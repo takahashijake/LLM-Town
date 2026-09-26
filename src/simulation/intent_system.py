@@ -1,5 +1,6 @@
 from src.agents.agent import Agent
 from src.agents.intent import AgentIntent
+from src.behavior.goal_planner import StrategyCandidate
 from src.behavior.intent_planner import IntentPlanner
 
 
@@ -53,16 +54,14 @@ class IntentSystem:
         engine,
     ) -> None:
         self._engine_for_goal_check = engine
+        plan_system = getattr(engine, "plan_system", None)
         intent_type_counts = {}
         agents_by_name = {agent.name: agent for agent in agents}
 
         for agent_name, intent in list(self.agent_intents.items()):
             if intent.status == "active" and intent.is_expired(current_day):
-                intent.mark_failed(
-                    day=current_day,
-                    reason="Intent expired before reaching enough progress.",
-                    status="expired",
-                )
+                intent.mark_failed(current_day,
+                    "Intent expired before reaching enough progress.", "expired")
                 intent.expiration_reason = (
                     "no_opportunity" if intent.opportunity_count == 0
                     else "despite_opportunity"
@@ -78,9 +77,7 @@ class IntentSystem:
                         "expiration_reason": intent.expiration_reason,
                     })
                 self.agent_intents.pop(agent_name, None)
-                continue
-
-            if intent.is_active(current_day):
+            elif intent.is_active(current_day):
                 intent_type_counts[intent.intent_type] = (
                     intent_type_counts.get(intent.intent_type, 0) + 1
                 )
@@ -89,24 +86,46 @@ class IntentSystem:
             if self.goal_planner:
                 self.goal_planner.ensure_goals(agent, engine, current_day)
             current_intent = self.agent_intents.get(agent.name)
+            goal = agent.get_goal(current_intent.parent_goal_id) if current_intent else None
+            plan = plan_system.get_goal_plan(goal.id) if plan_system and goal else None
+            if plan_system and goal and goal.status == "active" and plan is None:
+                plan = plan_system.ensure_goal_plan(
+                    goal, agent, engine, self.goal_planner, current_day,
+                )
 
-            if current_intent and current_intent.is_active(current_day):
-                goal = agent.get_goal(current_intent.parent_goal_id)
-                if goal:
-                    complete, reason = self.goal_planner.goal_is_complete(
-                        goal, agent, engine
+            if current_intent and current_intent.is_active(current_day) and goal:
+                complete, reason = self.goal_planner.goal_is_complete(goal, agent, engine)
+                if complete:
+                    goal.mark_achieved(current_day, reason)
+                    current_intent.mark_succeeded(current_day, "Parent goal achieved.")
+                    self.archive_intent(current_intent)
+                    self.agent_intents.pop(agent.name, None)
+                    if plan_system:
+                        plan_system.synchronize_goal_plan(goal, day=current_day)
+                    current_intent = None
+                elif plan and (
+                    current_intent.source_goal_plan_id != plan.id
+                    or current_intent.source_goal_plan_revision != plan.revision
+                ):
+                    current_intent.mark_superseded(
+                        current_day, "Persistent goal plan strategy changed.",
+                        trigger="plan_revision",
                     )
-                    if complete:
-                        goal.mark_achieved(current_day, reason)
-                        current_intent.mark_succeeded(current_day, "Parent goal achieved.")
-                        self.archive_intent(current_intent)
-                        self.agent_intents.pop(agent.name, None)
-                        current_intent = None
-                    else:
-                        replacement, trigger = self.goal_planner.should_adapt(
-                            goal, current_intent, agent, engine, current_day
+                    self.archive_intent(current_intent)
+                    self.agent_intents.pop(agent.name, None)
+                    goal.current_intent_id = None
+                    current_intent = None
+                else:
+                    replacement, trigger = self.goal_planner.should_adapt(
+                        goal, current_intent, agent, engine, current_day
+                    )
+                    if replacement:
+                        adapted = plan is not None and plan_system.adapt_goal_plan(
+                            plan, replacement, day=current_day, trigger=trigger,
+                            preserved_progress=goal.progress,
+                            goal_planner=self.goal_planner,
                         )
-                        if replacement:
+                        if adapted:
                             old_strategy = current_intent.strategy
                             current_intent.mark_superseded(
                                 current_day,
@@ -114,10 +133,12 @@ class IntentSystem:
                                 trigger=trigger,
                             )
                             self.archive_intent(current_intent)
+                            self.agent_intents.pop(agent.name, None)
                             goal.current_intent_id = None
-                            goal.adaptation_count += 1
+                            goal.adaptation_count = plan.revision
                             goal.current_strategy = replacement.name
                             goal.current_strategy_target = replacement.target_agent
+                            goal.strategy_started_day = current_day
                             goal.evidence.append({
                                 "type": "strategy_adaptation", "day": current_day,
                                 "trigger": trigger, "old_strategy": old_strategy,
@@ -125,153 +146,151 @@ class IntentSystem:
                                 "preserved_progress": goal.progress,
                                 "old_target_agent": current_intent.target_agent,
                                 "new_target_agent": replacement.target_agent,
-                                "relationship_reason": replacement.relationship_reason,
-                                "relationship_snapshot": replacement.relationship_snapshot,
-                                "relevant_social_memories": list(
-                                    replacement.relevant_social_memories
-                                ),
-                                "prior_counterpart_memories": [
-                                    memory.summary for memory in agent.get_social_memories(
-                                        current_intent.target_agent, limit=3
-                                    )
-                                ] if current_intent.target_agent else [],
                             })
-                            self.agent_intents.pop(agent.name, None)
                             current_intent = None
-                        elif trigger == "hard_constraint":
-                            current_intent.mark_blocked(
-                                current_day, "No feasible strategy remains."
+                        elif plan and plan.status == "blocked":
+                            self._block_goal_and_intent(
+                                goal, current_intent, current_day,
+                                plan.terminal_reason or "No executable strategy remains.",
+                                plan_system,
                             )
-                            self.archive_intent(current_intent)
-                            goal.current_intent_id = None
-                            goal.status = "blocked"
-                            goal.evidence.append({
-                                "type": "blocked", "day": current_day,
-                                "reason": "No feasible strategy remains.",
-                            })
-                            self.agent_intents.pop(agent.name, None)
                             current_intent = None
+                    elif trigger == "hard_constraint":
+                        self._block_goal_and_intent(
+                            goal, current_intent, current_day,
+                            "No feasible strategy remains.", plan_system,
+                        )
+                        current_intent = None
 
                 if current_intent and current_intent.is_active(current_day):
                     continue
 
-            if self.goal_planner:
-                for blocked_goal in agent.get_active_goals():
-                    if not any(
-                        candidate.feasible for candidate in
-                        self.goal_planner.generate_strategies(
-                            blocked_goal, agent, engine
-                        )
+            if current_intent and current_intent.is_active(current_day) and not goal:
+                continue
+
+            if not self.goal_planner:
+                new_intent = self.intent_planner.create_intent_for_agent(
+                    agent=agent, engine=engine, current_day=current_day,
+                )
+                if new_intent and intent_type_counts.get(new_intent.intent_type, 0) < 2:
+                    self.agent_intents[agent.name] = new_intent
+                    intent_type_counts[new_intent.intent_type] = (
+                        intent_type_counts.get(new_intent.intent_type, 0) + 1
+                    )
+                continue
+
+            for candidate_goal in list(agent.get_active_goals()):
+                if not any(candidate.feasible for candidate in
+                           self.goal_planner.generate_strategies(candidate_goal, agent, engine)):
+                    candidate_goal.status = "blocked"
+                    candidate_goal.current_intent_id = None
+                    candidate_goal.evidence.append({
+                        "type": "blocked", "day": current_day,
+                        "reason": "No feasible strategy remains.",
+                    })
+                    if plan_system:
+                        plan_system.synchronize_goal_plan(candidate_goal, day=current_day)
+
+            goal = self.goal_planner.choose_primary_goal(agent, engine, current_day)
+            if not goal:
+                continue
+            if plan_system:
+                plan = plan_system.ensure_goal_plan(
+                    goal, agent, engine, self.goal_planner, current_day,
+                )
+            else:
+                plan = None
+            if plan is None or not plan.active:
+                continue
+            prior_intent = next((
+                item for item in reversed(self.intent_history)
+                if item.parent_goal_id == goal.id
+                and item.source_goal_plan_revision == plan.revision
+            ), None)
+            if prior_intent is not None:
+                replacement, trigger = self.goal_planner.should_adapt(
+                    goal, prior_intent, agent, engine, current_day,
+                )
+                if replacement:
+                    old_strategy = plan.strategy_name
+                    if plan_system.adapt_goal_plan(
+                        plan, replacement, day=current_day, trigger=trigger,
+                        preserved_progress=goal.progress,
+                        goal_planner=self.goal_planner,
                     ):
-                        blocked_goal.status = "blocked"
-                        blocked_goal.current_intent_id = None
-                        blocked_goal.evidence.append({
-                            "type": "blocked", "day": current_day,
-                            "reason": "No feasible strategy remains.",
-                        })
-                goal = self.goal_planner.choose_primary_goal(agent, engine, current_day)
-                if goal:
-                    strategy = self.goal_planner.select_strategy(goal, agent, engine)
-                    if strategy:
-                        previous_strategy = goal.current_strategy
-                        previous_target = goal.current_strategy_target
-                        if previous_strategy and (
-                            previous_strategy != strategy.name
-                            or previous_target != strategy.target_agent
-                        ):
-                            target = previous_target or (
-                                goal.target_agents[0] if goal.target_agents else None
-                            )
-                            relationship = (
-                                engine.relationships.get_score(agent.name, target)
-                                if target else None
-                            )
-                            risk = self.goal_planner.reputation_risk(agent, target)
-                            if abs(risk - goal.last_reputation_risk) >= 0.75:
-                                trigger = "reputation"
-                            elif (
-                                relationship is not None
-                                and goal.last_relationship_score is not None
-                                and relationship // 3 != goal.last_relationship_score // 3
-                            ) or (
-                                previous_target != strategy.target_agent
-                                and strategy.relationship_influenced
-                            ):
-                                trigger = "relationship"
-                            else:
-                                trigger = "terminal_state"
-                            goal.adaptation_count += 1
-                            goal.evidence.append({
-                                "type": "strategy_adaptation", "day": current_day,
-                                "trigger": trigger,
-                                "old_strategy": previous_strategy,
-                                "new_strategy": strategy.name,
-                                "old_target_agent": previous_target,
-                                "preserved_progress": goal.progress,
-                                "new_target_agent": strategy.target_agent,
-                                "relationship_reason": strategy.relationship_reason,
-                                "relationship_snapshot": strategy.relationship_snapshot,
-                                "relevant_social_memories": list(
-                                    strategy.relevant_social_memories
-                                ),
-                                "prior_counterpart_memories": [
-                                    memory.summary for memory in agent.get_social_memories(
-                                        previous_target, limit=3
-                                    )
-                                ] if previous_target else [],
-                            })
-                        new_intent = self.intent_planner.create_intent_from_goal(
-                            goal, strategy, current_day
-                        )
-                        goal.current_intent_id = new_intent.id
-                        goal.current_strategy = strategy.name
-                        goal.current_strategy_target = strategy.target_agent
+                        goal.adaptation_count = plan.revision
+                        goal.current_strategy = replacement.name
+                        goal.current_strategy_target = replacement.target_agent
                         goal.strategy_started_day = current_day
-                        goal.last_review_day = current_day
-                        target = strategy.target_agent or (
-                            goal.target_agents[0] if goal.target_agents else None
-                        )
-                        goal.last_relationship_score = (
-                            engine.relationships.get_score(agent.name, target)
-                            if target else None
-                        )
-                        goal.last_reputation_risk = self.goal_planner.reputation_risk(
-                            agent, target
-                        )
                         goal.evidence.append({
-                            "type": "strategy_selected", "day": current_day,
-                            "strategy": strategy.name, "score": strategy.score,
-                            "intent_id": new_intent.id,
-                            "target_agent": strategy.target_agent,
-                            "relationship_influenced": strategy.relationship_influenced,
-                            "relationship_reason": strategy.relationship_reason,
-                            "relationship_snapshot": strategy.relationship_snapshot,
-                            "relevant_social_memories": list(
-                                strategy.relevant_social_memories
-                            ),
+                            "type": "strategy_adaptation", "day": current_day,
+                            "trigger": trigger, "old_strategy": old_strategy,
+                            "new_strategy": replacement.name,
+                            "preserved_progress": goal.progress,
+                            "old_target_agent": prior_intent.target_agent,
+                            "new_target_agent": replacement.target_agent,
                         })
-                        self.agent_intents[agent.name] = new_intent
+                    else:
+                        goal.status = "blocked"
+                        goal.evidence.append({
+                            "type": "blocked", "day": current_day,
+                            "reason": plan.terminal_reason,
+                        })
+                        plan_system.synchronize_goal_plan(goal, day=current_day)
+                        continue
+                elif trigger == "hard_constraint":
+                    goal.status = "blocked"
+                    goal.evidence.append({
+                        "type": "blocked", "day": current_day,
+                        "reason": "No feasible strategy remains.",
+                    })
+                    plan_system.synchronize_goal_plan(goal, day=current_day)
                     continue
-                continue
-
-            new_intent = self.intent_planner.create_intent_for_agent(
-                agent=agent,
-                engine=engine,
-                current_day=current_day,
+            strategy = StrategyCandidate(
+                name=plan.strategy_name,
+                intent_type=plan.intent_type,
+                expected_progress=0.0,
+                target_agent=plan.target_agent,
+                target_location=plan.target_location,
+                required_action=plan.required_action,
+                feasible=plan.feasibility_at_selection,
+                score=plan.score_at_selection,
             )
-
-            if not new_intent:
-                continue
-
-            # Prevent all agents from collapsing into the same intent type.
-            # With 4 agents, allow at most 2 agents to share the same active intent type.
-            if intent_type_counts.get(new_intent.intent_type, 0) >= 2:
-                continue
-
+            new_intent = self.intent_planner.create_intent_from_goal(
+                goal, strategy, current_day, goal_plan=plan,
+            )
+            goal.current_intent_id = new_intent.id
+            goal.current_strategy = plan.strategy_name
+            goal.current_strategy_target = plan.target_agent
+            goal.strategy_started_day = plan.selected_day
+            goal.last_review_day = current_day
+            target = plan.target_agent or (
+                goal.target_agents[0] if goal.target_agents else None
+            )
+            goal.last_relationship_score = (
+                engine.relationships.get_score(agent.name, target) if target else None
+            )
+            goal.last_reputation_risk = self.goal_planner.reputation_risk(agent, target)
+            goal.evidence.append({
+                "type": "strategy_selected", "day": current_day,
+                "strategy": plan.strategy_name, "score": plan.score_at_selection,
+                "intent_id": new_intent.id, "goal_plan_id": plan.id,
+                "goal_plan_revision": plan.revision,
+                "target_agent": plan.target_agent,
+                "target_location": plan.target_location,
+            })
             self.agent_intents[agent.name] = new_intent
-            intent_type_counts[new_intent.intent_type] = (
-                intent_type_counts.get(new_intent.intent_type, 0) + 1
-            )
+
+    def _block_goal_and_intent(self, goal, intent, day: int, reason: str,
+                               plan_system) -> None:
+        intent.mark_blocked(day, reason)
+        self.archive_intent(intent)
+        self.agent_intents.pop(intent.agent_name, None)
+        goal.current_intent_id = None
+        goal.status = "blocked"
+        goal.evidence.append({"type": "blocked", "day": day, "reason": reason})
+        if plan_system:
+            plan_system.synchronize_goal_plan(goal, day=day)
 
     def get_agent_intent_text(self, agent_name: str) -> str:
         intent = self.agent_intents.get(agent_name)
@@ -304,11 +323,22 @@ class IntentSystem:
         intent.add_progress(1, evidence)
         goal = agent.get_goal(intent.parent_goal_id)
         if goal:
-            goal.add_progress(1, day, {
+            evidence_key = (
+                f"goal:{goal.id}:activity:{intent.id}:{day}:{location_id}"
+            )
+            advanced = goal.add_progress(1, day, {
+                "evidence_key": evidence_key,
                 "intent_id": intent.id, "strategy": intent.strategy,
                 "activity": activity_name, "location": location_id,
             })
-            if goal.adaptation_count:
+            plan_system = getattr(self._engine_for_goal_check, "plan_system", None)
+            if advanced and plan_system:
+                plan_system.observe_goal_evidence(
+                    goal, evidence_key=evidence_key, day=day,
+                    intent_id=intent.id, evidence_type="activity",
+                    details={"activity": activity_name, "location": location_id},
+                )
+            if advanced and goal.adaptation_count:
                 goal.recovered_after_adaptation = True
         goal_achieved = False
         if goal and self.goal_planner and hasattr(self, "_engine_for_goal_check"):
@@ -334,6 +364,10 @@ class IntentSystem:
                     )
                     if achieved and goal.status != "achieved":
                         goal.mark_achieved(day, reason)
+                    if getattr(self._engine_for_goal_check, "plan_system", None):
+                        self._engine_for_goal_check.plan_system.synchronize_goal_plan(
+                            goal, day=day,
+                        )
         return {
             "agent": agent.name, "intent_id": intent.id,
             "status": intent.status, "progress": intent.progress,
@@ -425,6 +459,7 @@ class IntentSystem:
         relationship_change: int,
         new_score: int,
         conversation_tags: list[str],
+        evidence_key: str | None = None,
     ) -> dict | None:
         intent = self.agent_intents.get(speaker.name)
 
@@ -495,16 +530,32 @@ class IntentSystem:
 
         goal = speaker.get_goal(intent.parent_goal_id)
         if goal:
-            goal.add_progress(
+            evidence_key = evidence_key or (
+                f"goal:{goal.id}:social:{intent.id}:{day}:{listener.name}:"
+                f"{location_id}:{action}"
+            )
+            advanced = goal.add_progress(
                 progress_amount,
                 day,
                 {
+                    "evidence_key": evidence_key,
                     "intent_id": intent.id, "strategy": intent.strategy,
                     "action": action, "target_agent": listener.name,
                     "location": location_id,
                 },
             )
-            if goal.adaptation_count:
+            plan_system = getattr(self._engine_for_goal_check, "plan_system", None)
+            if advanced and plan_system:
+                plan_system.observe_goal_evidence(
+                    goal, evidence_key=evidence_key, day=day,
+                    intent_id=intent.id, evidence_type="social_action",
+                    details={
+                        "action": action, "target_agent": listener.name,
+                        "location": location_id,
+                        "relationship_change": relationship_change,
+                    },
+                )
+            if advanced and goal.adaptation_count:
                 goal.recovered_after_adaptation = True
 
         goal_achieved = False
@@ -536,6 +587,10 @@ class IntentSystem:
                     goal_reason = "Deterministic goal progress target reached."
                 if complete and goal.status != "achieved":
                     goal.mark_achieved(day, goal_reason)
+                if getattr(self._engine_for_goal_check, "plan_system", None):
+                    self._engine_for_goal_check.plan_system.synchronize_goal_plan(
+                        goal, day=day,
+                    )
 
         return {
             "agent": speaker.name,

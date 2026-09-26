@@ -914,6 +914,9 @@ class ConversationRunner:
                         action=turn.final_action,
                         relationship_change=effects["relationship_change"],
                         new_score=effects["new_score"], conversation_tags=d["tags"],
+                        evidence_key=(
+                            f"conversation:{session.session_id}:turn:{turn.turn_index}"
+                        ),
                     )
             all_tags.extend(d["tags"])
             self._log_turn(engine, session, turn, agents, effects)

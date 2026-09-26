@@ -34,6 +34,41 @@ class GoalPlanner:
     MAX_ACTIVE_GOALS = 2
     MIN_COMMITMENT_DAYS = 1
     ADAPTATION_MARGIN = 0.75
+    STRATEGY_EXECUTION_MODES = {
+        "direct_cooperation": "validated_social_action",
+        "apologize_directly": "validated_social_action",
+        "offer_help": "validated_social_action",
+        "low_risk_chat": "validated_social_action",
+        "ask_target_directly": "validated_social_action",
+        "ask_informed_agent": "validated_social_action",
+        "seek_information_at_location": "target_location_activity",
+        "observe_relevant_activity": "target_location_activity",
+        "ask_reliable_partner": "validated_social_action",
+        "direct_participation": "target_location_activity",
+    }
+    REGISTERED_SOCIAL_ACTIONS = {
+        "apologize", "ask_for_help", "chat", "cooperate", "offer_help",
+    }
+
+    @classmethod
+    def strategy_vocabulary(cls) -> frozenset[str]:
+        return frozenset(cls.STRATEGY_EXECUTION_MODES)
+
+    @classmethod
+    def strategy_execution_support(
+        cls, candidate: StrategyCandidate,
+    ) -> tuple[bool, str]:
+        mode = cls.STRATEGY_EXECUTION_MODES.get(candidate.name)
+        if mode is None:
+            return False, "unsupported_strategy_execution_path"
+        if mode == "target_location_activity" and not candidate.target_location:
+            return False, "target_location_unavailable"
+        if (
+            mode == "validated_social_action"
+            and candidate.required_action not in cls.REGISTERED_SOCIAL_ACTIONS
+        ):
+            return False, "unsupported_required_action"
+        return True, ""
 
     def ensure_goals(self, agent, engine, current_day: int) -> None:
         if len(agent.get_active_goals()) >= self.MAX_ACTIVE_GOALS:

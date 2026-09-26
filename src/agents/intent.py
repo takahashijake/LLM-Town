@@ -19,6 +19,8 @@ class AgentIntent:
     completion_reason: str = ""
     evidence: list[str] = field(default_factory=list)
     parent_goal_id: str | None = None
+    source_goal_plan_id: str | None = None
+    source_goal_plan_revision: int = 0
     strategy: str = ""
     strategy_score: float = 0.0
     relationship_influenced: bool = False
