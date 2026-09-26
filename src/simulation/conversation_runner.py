@@ -247,7 +247,11 @@ class ConversationRunner:
                 for turn in result.session.turns
             ),
             "fallback_count": sum(
-                turn.grounded_fallback_used for result in results if result.session
+                (
+                    turn.grounded_fallback_used
+                    or turn.dialogue_source.startswith("policy_fallback")
+                )
+                for result in results if result.session
                 for turn in result.session.turns
             ),
         }

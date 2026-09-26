@@ -68,7 +68,11 @@ class BatchedConversationExecutionBackend:
     name = "batched"
 
     def __init__(self, batch_size: int = 4):
-        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+        if (
+            isinstance(batch_size, bool)
+            or not isinstance(batch_size, int)
+            or batch_size < 1
+        ):
             raise ValueError("conversation_batch_size must be a positive integer")
         self.batch_size = batch_size
 

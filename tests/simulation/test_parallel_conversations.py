@@ -247,7 +247,7 @@ def test_repair_is_bounded_and_fallback_is_per_session(tmp_path):
     engine.generate_conversations(1, 8)
     assert sum(len(batch) for batch in client.batches) == 3
     assert engine.last_social_tick["repair_count"] == 0
-    assert engine.last_social_tick["fallback_count"] == 0
+    assert engine.last_social_tick["fallback_count"] == 1
     rows = [
         json.loads(line) for line in engine.logger.conversations_file.read_text().splitlines()
     ]

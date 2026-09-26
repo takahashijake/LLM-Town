@@ -15,7 +15,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 
 - Bounded, alternating conversation sessions (four utterances by default)
 - Multiple disjoint same-tick sessions with snapshot isolation and ordered commit
-- Serial reference and bounded concurrent conversation-realization backends
+- Serial, bounded thread-concurrent, and turn-wave batched realization backends
 - Per-speaker context boundaries for memories, journals, goals, intents, and beliefs
 - Deterministic semantic-action inference and conservative response outcomes
 - Separate semantic action records and effect eligibility/rate limiting
@@ -124,10 +124,14 @@ barrier, and applies effects in stable schedule order. Thus an earlier worker ca
 never make its effects visible to another session merely by finishing first.
 See [`docs/parallel_social_execution.md`](docs/parallel_social_execution.md).
 
-Use `--conversation-execution serial` (the default/reference behavior) or
-`--conversation-execution concurrent --conversation-workers 4`. Concurrent mode
-is simulation-level concurrency; the local Transformers client deliberately
-serializes unsafe single-model generation and does not claim GPU batching.
+Use `--conversation-execution serial` for the default/reference behavior,
+`--conversation-execution concurrent --conversation-workers 4` for bounded
+thread-level session concurrency, or
+`--conversation-execution batched --conversation-batch-size 4` for synchronized
+turn-wave local-model inference. The worker count controls CPU realization
+threads; batch size controls how many ready prompts share one padded tensor and
+one `model.generate()` invocation. Batched mode is explicit because changing
+batch composition can change stochastic model text.
 
 At a shared location, deterministic policy selects a pair and prepares context for
 the current speaker only. The first turn can choose a grounded focus. Follow-up

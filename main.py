@@ -6,6 +6,13 @@ from src.simulation.engine import SimulationEngine
 from src.utils.clear_run import clear_run
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the LLM-Town simulation."
@@ -87,7 +94,7 @@ def parse_args() -> argparse.Namespace:
         help="Maximum local realization workers in concurrent mode.",
     )
     parser.add_argument(
-        "--conversation-batch-size", type=int, default=4,
+        "--conversation-batch-size", type=positive_int, default=4,
         help="Maximum requests in each local-model generation batch.",
     )
 

@@ -286,12 +286,16 @@ class TransformersLLMClient:
         token_counts = []
         for request, row in zip(requests, outputs):
             generated_ids = row[prompt_width:]
-            token_count = int(generated_ids.shape[-1])
+            eos_positions = (generated_ids == self.tokenizer.eos_token_id).nonzero()
+            token_count = (
+                int(eos_positions[0].item()) + 1
+                if len(eos_positions) else int(generated_ids.shape[-1])
+            )
             token_counts.append(token_count)
             results.append(ConversationGenerationResult(
                 request_id=request.request_id,
                 output=self.tokenizer.decode(
-                    generated_ids, skip_special_tokens=True,
+                    generated_ids[:token_count], skip_special_tokens=True,
                 ).strip(),
                 generated_token_count=token_count,
             ))

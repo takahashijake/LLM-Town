@@ -1,6 +1,7 @@
 # Deterministic parallel social execution
 
-Conversation ticks use a plan → realize → barrier → commit architecture.
+Conversation ticks use a plan → realize → barrier → commit architecture. The
+batched realization backend advances all active private sessions in turn waves.
 
 ```text
 authoritative state after activities
@@ -10,10 +11,22 @@ authoritative state after activities
               |
               v
  deterministic disjoint scheduler
-       /             \
- session realization  session realization
- (private replica)     (private replica)
-       \             /
+              |
+              v
+       private session states
+              |
+              v
+ collect one ready turn per active session
+              |
+              v
+  bounded padded generation batch
+              |
+              v
+ per-row validation and selective repair batch
+              |
+              v
+       next turn wave
+              |
         result barrier
               |
               v
@@ -31,12 +44,26 @@ book a resident.
 
 Realization runs against a private, pre-commit copy of conversation-visible
 state. Economy, crime, justice, plans, persistence, activity machinery, loggers,
-and effect appliers are removed from that view. A worker can build each speaker's
-private context, invoke parsing and grounding validation, repair once, and create
-turn records, but it cannot mutate the live town. The serial backend is the
-reference implementation. The concurrent backend uses a bounded thread pool and
-collects all results before any commit. Worker completion order is discarded;
-results commit by `schedule_index`.
+and effect appliers are removed from that view. A realization state can build each
+speaker's private context, invoke parsing and grounding validation, repair once,
+and create turn records, but it cannot mutate the live town. All backends use the
+same per-turn semantic state machine.
+
+The three explicit modes have different computational behavior:
+
+- `serial` is the reference and completes private sessions one at a time;
+- `concurrent` uses `--conversation-workers` bounded threads for whole private
+  sessions, while a shared local Transformers client still locks each model call;
+- `batched` uses `--conversation-batch-size` to collect one ready request from
+  each active session, tokenize those requests as one left-padded tensor batch,
+  and invoke `model.generate()` once per bounded batch.
+
+Sessions that close early are absent from later waves. Parsing, grounding,
+engine-plan surface validation, commitment-state validation, anti-echo handling,
+action inference, outcome resolution, and termination remain row-local. If one
+row needs recovery, only qualifying rows enter the corresponding repair sub-batch;
+valid rows are never regenerated. Recovery remains bounded to the existing one
+repair followed by deterministic safe fallback.
 
 Simultaneous means **the same authoritative snapshot and independent
 realization**, not unsynchronized concurrent mutation of world state. Commit-time
@@ -44,20 +71,44 @@ relationship, reputation, intent, commitment, memory, rate-cap, and logging rule
 remain deterministic authorities. A failed worker becomes a diagnostic result
 and cannot leave a partial world update.
 
-Simulation concurrency and GPU generation concurrency are different. The local
-Transformers client protects its tokenizer/model generation and mutable
-diagnostics with a lock because thread safety is not guaranteed. Concurrent mode
-therefore establishes correct independent sessions and can overlap thread-safe
-clients or remote requests, but a single local Transformers model may still
-serialize generation. True GPU throughput improvement requires deterministic
-model batching or a serving backend; neither is claimed here.
+Simulation concurrency and GPU generation concurrency remain different.
+`concurrent` may overlap thread-safe clients or remote requests but does not batch
+a single local model. `batched` performs actual tensor batching inside one
+explicitly controlled, lock-protected local-model call; it does not remove the
+generation lock or invoke mutable model state concurrently. Model weights load
+once and remain shared. A client without `generate_conversation_batch(requests)`
+is rejected clearly when batched mode is selected rather than silently degraded.
 
-Per-session request seeds are derived from the simulation seed, day, hour,
-session ID, turn, and attempt using SHA-256 rather than Python's randomized
-`hash()`. The current runner exposes the session seed in context and telemetry.
+Decoder-only prompts are left-padded. Generated tokens are decoded after the
+common input tensor boundary, while attention-mask sums retain each row's true
+prompt-token length for diagnostics. Rows are always demultiplexed by immutable
+request ID, never return position or completion timing.
+
+Every request ID and seed includes simulation seed, day, hour, session ID,
+schedule index, turn index, generation attempt, and request kind. Both use SHA-256
+rather than Python's randomized `hash()`. Request kinds distinguish primary,
+grounding repair/retry, commitment repair, and anti-echo generation.
+
+Transformers 5.17 does not expose a supported per-row `generator` parameter on
+the installed `generate()` API. Batched sampling therefore derives one batch RNG
+seed from the ordered immutable row seeds while holding the generation lock. The
+reproducibility contract is the same repository revision, model/runtime versions,
+hardware class, simulation seed, schedule, generation configuration, and batch
+size/composition. Changing batch size may change stochastic text. Serial and
+batched stochastic transcripts are not promised to be bitwise identical; the
+invariants across backends are deterministic authority, isolation, safety, and
+ordered commit.
+
 Ephemeral snapshots, replicas, pools, and futures are never saved. Saves occur
 after the tick barrier through the existing simulation loop, while committed
 authoritative records continue through the existing schema.
+
+Tick telemetry includes backend, snapshot and schedule identity, active sessions
+per wave, batch count and sizes, request successes/failures, repair batches,
+fallbacks, generation time, tokens and throughput, and ordered commit. A real
+Transformers client also reports model name, device, dtype, runtime versions, and
+peak CUDA allocation. Timing and performance fields are diagnostic only and are
+never simulation inputs.
 
 The tick order remains:
 
@@ -74,3 +125,18 @@ follow-through eligibility. Model metadata remains advisory, validation scores
 surface meaning, and recovery remains one bounded repair followed by fallback.
 Capability tiers remain explicit; no model-name promotion occurs.
 
+Run the model-free architectural acceptance evaluator with:
+
+```bash
+python scripts/evaluate_batched_social.py
+```
+
+The opt-in real-model benchmark never downloads weights and skips cleanly when
+CUDA or the requested cached model is unavailable:
+
+```bash
+python scripts/benchmark_batched_local_llm.py \
+  --model Qwen/Qwen2.5-3B-Instruct \
+  --batch-sizes 2 4 8 16 \
+  --output outputs/batched_local_llm_benchmark.json
+```
