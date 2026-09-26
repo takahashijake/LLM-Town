@@ -556,11 +556,16 @@ queue. A goal describes a durable desired outcome; an intent is a short-lived
 behavioral strategy; an activity is the single action selected for a tick; and a
 commitment is a social obligation between two agents. A plan is narrower: a
 small, deterministic sequence of known activity types linked to one authoritative
-source. The current template exists only for accepted transfer commitments and
-contains at most an acquisition step followed by a delivery step.
+source. V3 has exactly three explicit templates: a one-step help activity, a
+one-step meeting-attendance activity, and the established transfer template with
+at most an acquisition step followed by delivery. Help and meet receive plans
+only when their stored task/location/time terms are concrete enough for existing
+authoritative activity checks. Otherwise the legacy narrow execution path remains
+available and the plan system persists an inspectable no-plan reason; it never
+invents missing terms.
 
 ```text
-accepted transfer commitment
+accepted concrete help / meet / transfer commitment
         -> persistent plan (source ID + owner + bounded steps)
         -> current-state feasibility and bounded priority comparison
         -> one selected activity
@@ -569,12 +574,16 @@ accepted transfer commitment
         -> terminal plan + pair-private causal memory
 ```
 
-Plan IDs and step IDs are stable. Active, completed, failed, and abandoned states
+Plan IDs derive from immutable owner and commitment identity; step IDs derive from
+that plan identity, ordinal, and registered action. Active, completed, expired,
+failed, and abandoned states
 are persisted; terminal plans cannot resume. Steps name only registered action
 types and cannot directly edit inventory, money, commitment status, relationships,
 or memory. A missing resource can produce an acquisition candidate only from an
 existing active seller with stock and at a price the agent can pay. Three distinct
-blocked observations exhaust the current retry budget. A cancelled, fulfilled,
+failed transfer-acquisition attempts exhaust the current retry budget and
+synchronize the source commitment to failed. Temporary meeting absence is a
+deduplicated observation and does not consume that budget. A cancelled, fulfilled,
 expired, or otherwise incompatible source invalidates its active plan before the
 next action. Execution keys make resume/replay idempotent.
 
@@ -592,7 +601,15 @@ information boundaries, replay idempotency, memory provenance, and cleanup:
 
 ```bash
 python scripts/evaluate_long_horizon_planning.py
+python scripts/evaluate_v3_freeze.py
 ```
+
+The V3 freeze evaluator adds 22 end-to-end scenarios and shared invariants for all
+three templates, proof/source isolation, lifecycle synchronization, private causal
+knowledge, grounded status distinctions, save compatibility, and the existing
+batched snapshot/barrier/ordered-commit architecture. Plan persistence is schema
+version 2; unversioned legacy plan documents load with deterministic defaults,
+while unknown versions and action types fail closed.
 
 This evaluator proves authoritative behavior without loading a model. Real-model
 evaluation remains a separate measurement of whether generated dialogue notices
@@ -702,8 +719,9 @@ special cases.
   only an existing-seller transfer purchase, and there is no general calendar,
   contract engine, negotiation planner, multi-party promise, or hierarchical
   autonomous planner.
-- Persistent plans currently have one deterministic two-step template for transfer
-  commitments. There is no free-form decomposition, multi-party plan, general
+- Persistent plans have only the bounded help, meet, and transfer templates.
+  Vague help or meet commitments deliberately remain unplanned. There is no
+  free-form decomposition, multi-party plan, general
   calendar, plan-to-plan dependency, or LLM-authored authoritative step. Blocked
   acquisition rediscovery can find a newly valid configured seller route, but the
   planner does not negotiate or synthesize alternate strategies.

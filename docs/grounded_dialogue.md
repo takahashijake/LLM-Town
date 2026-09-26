@@ -23,7 +23,7 @@ assertions. It is ephemeral guidance, never saved world state. The live planner
 constructs it only from the current speaker's already-filtered grounding packet;
 it does not search global systems or another resident's memory.
 
-The validator has narrow event-specific contracts for fulfilled, failed, expired,
+The validator has narrow event-specific contracts for accepted/pending, fulfilled, failed, expired,
 cancelled, private-plan completion/failure, witnessed crime, unknown culprit,
 adjudication, and completed restitution/material outcomes. A contradiction gets
 at most one plan-scoped repair. Failure then produces a personality-neutral,
@@ -89,9 +89,15 @@ concise fact, event type, knowledge basis, relevant counterpart, day/age, and
 explicit outcome polarity. Authoritative IDs, private provenance internals,
 hidden plan reasons, and other agents' memories are not rendered.
 
-The packet distinguishes accepted, fulfilled, failed/expired, privately failed
+The packet distinguishes accepted/pending, fulfilled, failed/expired/cancelled, privately failed
 plans, witnessed theft, unknown-culprit loss discovery, and completed
 restitution. Empty packets and ordinary recent dialogue context are valid.
+
+Pair-private active commitment records also carry only the public plan stage
+(`pending`, `preparing`, terminal, or unsupported) and never expose plan or step
+IDs. The engine selects this state before generation. A model line claiming that
+pending help or a meeting already happened is a contradiction, triggers the
+existing bounded repair/fallback path, and cannot advance either authority.
 
 ## Optional response envelope
 
