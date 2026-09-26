@@ -21,7 +21,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Separate semantic action records and effect eligibility/rate limiting
 - One bounded anti-echo regeneration attempt on the real-model path
 - Persistent memories, daily journals, goals, intents, and adaptive goal strategies
-- Persistent bounded goal plans that carry one deterministic strategy across intents
+- Persistent bounded goal plans with exact, revision-bound execution contracts
 - Persistent bounded plans whose steps invoke existing authoritative actions
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
@@ -166,11 +166,15 @@ into the other participant's prompt context.
 
 State can be saved and resumed. Structured goal evidence supports bounded strategy
 selection/adaptation. V4 Phase 1 persists the selected finite `GoalPlanner`
-strategy across intent expiration and save/resume; existing activities and
-validated social outcomes remain the only evidence path. See
+strategy across intent expiration and save/resume. V4 Phase 2 gives every finite
+strategy one immutable execution contract: social strategies require their exact
+registered action and selected target, while location strategies nominate distinct
+provenance-bearing activities. Proof is bound to owner, goal, plan, revision,
+intent, strategy, and authoritative execution identity. See
 [`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
 prevent repeated dialogue actions from double-advancing goals or relationship
-state.
+state. Run `python scripts/evaluate_goal_strategy_execution.py` for the model-free
+Phase 2 acceptance evaluation.
 
 ## V2 economic foundation
 

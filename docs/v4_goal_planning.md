@@ -1,10 +1,11 @@
-# V4 Phase 1: bounded autonomous goal planning
+# V4 Phases 1–2: bounded goal planning and execution fidelity
 
 ## Contract
 
-V4 Phase 1 makes one deterministic strategy for an active durable goal persist
-across short-lived intents and save/resume. It is not a general planner. It does
-not create free-form steps, facts, resources, places, actions, or goals.
+Phase 1 makes one deterministic strategy for an active durable goal persist
+across short-lived intents and save/resume. Phase 2 makes each strategy denote a
+distinct, authoritatively provable behavior. Neither phase is a general planner;
+they do not create free-form steps, facts, resources, places, actions, or goals.
 
 ```text
 Goal (authoritative desired outcome)
@@ -16,21 +17,26 @@ GoalPlanner finite candidates and deterministic score
 GoalPlan (persistent strategy and audit state)
   |
   v
-Intent (short-lived tactical attempt, bound to plan revision)
+Intent bound to plan + revision
   |
-  +----------------------+
-  v                      v
-target-location activity validated social action
-  |                      |
-  +----------+-----------+
-             v
-existing IntentSystem evidence rules
-             |
-             v
-Goal progress/status (authority)
-             |
-             v
-GoalPlan observes evidence and synchronizes lifecycle
+  +-----------------------------+
+  |                             |
+  v                             v
+strategy-specific          exact registered
+activity                   social action
+  |                             |
+  +-------------+---------------+
+                v
+       authoritative runtime record
+                |
+                v
+       strategy contract validation
+                |
+                v
+           Goal evidence
+                |
+                v
+       GoalPlan mirrors evidence
 ```
 
 The distinctions are deliberate:
@@ -96,42 +102,56 @@ limited to three revisions. A fourth request blocks the plan with
 `adaptation_budget_exhausted`; the runtime then blocks the source goal instead of
 spinning.
 
-## Current strategy support matrix
+## Finite strategy execution contract
 
-Every executable name comes from `GoalPlanner.STRATEGY_EXECUTION_MODES`.
+`GOAL_STRATEGY_EXECUTION_CONTRACTS` is the single source of truth consumed by
+goal planning, activity construction, intent validation, plan validation, and
+evaluation. Each immutable entry declares its execution mode, authoritative
+evidence type, exact action or activity identity, target policy, required tags,
+and location requirement. Unknown strategies and malformed plans fail closed.
 
-| Strategy | Classification | Runtime/proof path |
-| --- | --- | --- |
-| `direct_cooperation` | Existing authoritative runtime | Registered `cooperate` action; normal validation/effects/goal evidence |
-| `apologize_directly` | Existing authoritative runtime | Registered `apologize` action; normal validation/effects/goal evidence |
-| `offer_help` | Existing authoritative runtime | Registered `offer_help` action; normal validation/effects/goal evidence |
-| `low_risk_chat` | Existing authoritative runtime | Registered `chat` action; normal validation/effects/goal evidence |
-| `ask_target_directly` | Existing authoritative runtime | Registered `ask_for_help`, with the selected target and relationship eligibility |
-| `ask_informed_agent` | Existing authoritative runtime | Registered `ask_for_help`, with the deterministic alternate target |
-| `ask_reliable_partner` | Existing authoritative runtime | Registered `ask_for_help`, with the deterministic relationship target |
-| `seek_information_at_location` | Small V4 integration | Persistent target-location intent; existing activity evidence advances the goal |
-| `observe_relevant_activity` | Small V4 integration | Persistent target-location intent; existing activity evidence advances the goal |
-| `direct_participation` | Small V4 integration | Persistent target-location intent; existing activity evidence advances the goal |
+| Strategy | Mode | Required authoritative behavior | Target rule |
+| --- | --- | --- | --- |
+| `direct_cooperation` | social | registered `cooperate` | selected resident required |
+| `apologize_directly` | social | registered `apologize` | selected resident required |
+| `offer_help` | social | registered `offer_help` | selected resident required |
+| `low_risk_chat` | social | registered `chat` | selected resident if present; otherwise any scheduled listener |
+| `ask_target_directly` | social | registered `ask_for_help` | selected goal target required |
+| `ask_informed_agent` | social | registered `ask_for_help` | selected alternate resident required |
+| `ask_reliable_partner` | social | registered `ask_for_help` | selected relationship target required |
+| `seek_information_at_location` | activity | `goal_seek_information` | selected location required |
+| `observe_relevant_activity` | activity | `goal_observe_relevant_activity` | selected location required |
+| `direct_participation` | activity | `goal_direct_participation` | selected location required |
 
-No current named strategy needs a new world-effect authority. A social strategy
-is feasible only if its target exists and relationship rules allow its registered
-action. A location strategy is executable only if the configured location exists.
+No strategy adds a world-effect authority. A social strategy is feasible only if
+its target policy is satisfied and relationship rules allow its registered action.
+A location strategy is executable only if the configured location exists.
 Unknown strategies, unknown required actions, missing targets/locations, and any
 future candidate without an explicit mapping are not safely executable and fail
 closed. Existing legacy intent behavior remains available only outside a safely
 bound goal-plan path.
 
+The three location activities carry internal `source_goal_id`,
+`source_goal_plan_id`, `source_goal_plan_revision`, `source_goal_strategy`, and
+`source_intent_id` provenance. Activity records persist those optional fields.
+They are diagnostic proof inputs only: they do not mutate a plan or goal and are
+not exposed in unrelated residents' prompt context. Reaching the location through
+`wander`, a purchase, an event, or another goal strategy is not proof.
+
 ## Evidence and authority boundaries
 
-Target-location evidence uses a stable key derived from goal, intent, day, and
-location. Ordered social commit passes a stable conversation-session/turn key.
-Both the goal and goal plan reject a processed key. A reload or replay therefore
-cannot increment goal progress, append a second plan evidence record, or complete
-an intent twice.
+V4 evidence keys include the owner, source goal, stable goal-plan ID, plan
+revision, intent, strategy, proof mode, and authoritative activity or conversation
+execution identity. Both the goal and goal plan retain bounded replay guards.
+Proof from another owner, goal, plan, revision, intent, strategy, target, or
+activity is rejected. A reload or replay cannot increment progress or append a
+second mirrored record.
 
-`GoalPlan.observe_goal_evidence()` first verifies that the key is already present
-in authoritative goal evidence. Calling it with generated dialogue or an invented
-claim is a no-op. Conversation replicas, concurrent workers, and batch rows never
+`GoalPlan.observe_goal_evidence()` verifies the current active contract and that
+the fully bound key and metadata already exist in authoritative goal evidence.
+Calling it with generated dialogue or an invented claim is a no-op. Broad legacy
+intent categories may still weight ordinary behavior, but cannot certify a bound
+strategy. Conversation replicas, concurrent workers, and batch rows never
 receive the live `PlanSystem`; they only realize prepared context. The existing
 snapshot, disjoint schedule, private session, realization barrier, and stable
 ordered commit architecture is unchanged.
@@ -154,18 +174,19 @@ unchanged.
 
 ## Evaluation
 
-Run `python scripts/evaluate_goal_planning.py`. The evaluator uses
-`FakeLLMClient`, isolates global random state, reports named scenarios and
-invariants, and exits non-zero on failure.
+Run `python scripts/evaluate_goal_planning.py` for Phase 1 lifecycle coverage and
+`python scripts/evaluate_goal_strategy_execution.py` for Phase 2 execution
+fidelity. Both use `FakeLLMClient`, isolate global random state, report named
+scenarios and invariants, and exit non-zero on failure.
 
 ## Known limitations and next slice
 
-This phase has one strategy per goal plan, one goal plan per source goal, and no
-plan dependencies or multi-party coordination. Location strategies use the
-existing target-location evidence granularity; they do not add navigation or a
-new knowledge model. Social success remains constrained by existing action and
-relationship evidence rather than natural-language claims.
+The implementation still has one selected strategy per goal-plan revision, no
+general plan dependencies, no arbitrary multi-step decomposition, no navigation,
+no model-authored authoritative actions, a limited finite vocabulary, limited
+resource/opportunity awareness, and no multi-party coordination.
 
-The next logical V4 slice is richer deterministic execution/evidence for selected
-finite strategies that currently share broad target-location or social evidence,
-without widening mutation authority or adding LLM-authored steps.
+The next major V4 slice should be bounded resource/opportunity-aware strategy
+dependencies: a finite strategy may recognize a real prerequisite before
+execution while continuing to use only registered deterministic activities and
+existing authoritative systems.
