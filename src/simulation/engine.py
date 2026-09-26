@@ -23,6 +23,7 @@ from src.simulation.conversation_recorder import ConversationRecorder
 from src.simulation.conversation_runner import ConversationRunner
 from src.simulation.conversation_scheduler import ConversationScheduler
 from src.simulation.conversation_execution import (
+    BatchedConversationExecutionBackend,
     ConcurrentConversationExecutionBackend,
     SerialConversationExecutionBackend,
 )
@@ -62,6 +63,7 @@ class SimulationEngine:
         justice_path: str | Path = "data/justice.json",
         conversation_execution: str = "serial",
         conversation_workers: int = 4,
+        conversation_batch_size: int = 4,
         simulation_seed: int = 0,
     ):
         self.state_path = Path(state_path)
@@ -102,8 +104,21 @@ class SimulationEngine:
             self.conversation_execution_backend = ConcurrentConversationExecutionBackend(
                 max_workers=conversation_workers,
             )
+        elif conversation_execution == "batched":
+            if llm_client is not None and not callable(
+                getattr(llm_client, "generate_conversation_batch", None)
+            ):
+                raise TypeError(
+                    "batched conversation execution requires an LLM client with "
+                    "generate_conversation_batch(requests)"
+                )
+            self.conversation_execution_backend = BatchedConversationExecutionBackend(
+                batch_size=conversation_batch_size,
+            )
         else:
-            raise ValueError("conversation_execution must be 'serial' or 'concurrent'")
+            raise ValueError(
+                "conversation_execution must be 'serial', 'concurrent', or 'batched'"
+            )
         self.last_social_tick = {}
         self.conversation_tagger = ConversationTagger()
         self.relationships = RelationshipManager()

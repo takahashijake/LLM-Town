@@ -3,17 +3,88 @@
 from __future__ import annotations
 
 import copy
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 import json
 import random
 from types import SimpleNamespace
 
 from src.llm.grounding import GroundingResult, grounded_fallback, plan_grounded_dialogue
+from src.llm.generation import (
+    ConversationGenerationRequest,
+    ConversationGenerationResult,
+    generation_request_id,
+)
 from src.simulation.conversation_session import ConversationSession, ConversationTurn, ResponseOutcomeResolver
-from src.simulation.conversation_execution import ConversationRealizationJob
+from src.simulation.conversation_execution import (
+    ConversationRealizationJob,
+    ConversationSessionResult,
+)
+from src.simulation.conversation_scheduler import derive_conversation_seed
 from src.simulation.social_snapshot import ConversationTickSnapshot
 from src.simulation.social_semantics import classify_commitment_relation
+
+
+@dataclass
+class _ConversationRealizationState:
+    plan: object
+    engine: object
+    session: ConversationSession
+    first: object
+    second: object
+    speaker: object
+    listener: object
+    transcript: list[dict]
+
+
+@dataclass
+class _PendingTurn:
+    state: _ConversationRealizationState
+    turn_index: int
+    setup: dict
+    context: dict
+    raw_output: str = ""
+    processed: dict | None = None
+    generation_error: str = ""
+    generation_attempt_count: int = 1
+    regenerated_for_repetition: bool = False
+    regenerated_for_grounding: bool = False
+    regenerated_for_commitment_state: bool = False
+    first_grounding_failure: str = ""
+    grounded_repair_used: bool = False
+    grounded_fallback_used: bool = False
+    commitment_state: dict | None = None
+
+
+class _SingleRequestClientAdapter:
+    """Preserve custom single-request client semantics outside batched mode."""
+
+    def __init__(self, client):
+        self.client = client
+
+    def generate_conversation_batch(self, requests):
+        results = []
+        for request in requests:
+            try:
+                if request.request_kind == "grounding_repair" and callable(
+                    getattr(self.client, "repair_grounded_realization", None)
+                ):
+                    output = self.client.repair_grounded_realization(
+                        dict(request.context),
+                        request.invalid_output,
+                        request.validation_error,
+                    )
+                else:
+                    output = self.client.generate_conversation(dict(request.context))
+                results.append(ConversationGenerationResult(
+                    request.request_id, output=output,
+                ))
+            except Exception as error:
+                results.append(ConversationGenerationResult(
+                    request.request_id,
+                    error=f"{type(error).__name__}: {error}",
+                ))
+        return results
 
 
 class ConversationRunner:
@@ -57,7 +128,7 @@ class ConversationRunner:
             return
 
         by_id = {str(agent.id): agent for agent in engine.agents}
-        jobs = []
+        states = []
         for plan in plans:
             # A private replica is captured before any commit. Query-like helpers
             # can therefore never mutate the authoritative engine during realization.
@@ -71,23 +142,36 @@ class ConversationRunner:
             first = replica_by_id[plan.participant_ids[0]]
             second = replica_by_id[plan.participant_ids[1]]
 
-            def realize(replica=replica, plan=plan, first=first, second=second):
-                session = ConversationSession(
-                    session_id=plan.session_id, day=plan.day, hour=plan.hour,
-                    location=plan.location_id,
-                    participants=[first.name, second.name],
-                    initiating_agent=first.name,
-                    snapshot_id=plan.snapshot_id,
-                    schedule_index=plan.schedule_index,
-                    request_seed=plan.request_seed,
-                )
-                self._generate_session(replica, session, first, second)
-                return session
-
-            jobs.append(ConversationRealizationJob(plan, realize))
+            session = ConversationSession(
+                session_id=plan.session_id, day=plan.day, hour=plan.hour,
+                location=plan.location_id,
+                participants=[first.name, second.name],
+                initiating_agent=first.name,
+                snapshot_id=plan.snapshot_id,
+                schedule_index=plan.schedule_index,
+                request_seed=plan.request_seed,
+                simulation_seed=plan.simulation_seed,
+            )
+            states.append(_ConversationRealizationState(
+                plan, replica, session, first, second, first, second, [],
+            ))
 
         # Barrier: the authoritative engine has not been passed to any worker.
-        results = backend.realize(jobs)
+        if backend.name == "batched":
+            results, batch_telemetry = self._realize_batched(
+                states, engine.llm, backend.batch_size,
+            )
+        else:
+            jobs = []
+            for state in states:
+                def realize(state=state):
+                    self._generate_session(
+                        state.engine, state.session, state.first, state.second,
+                    )
+                    return state.session
+                jobs.append(ConversationRealizationJob(state.plan, realize))
+            results = backend.realize(jobs)
+            batch_telemetry = {}
         ordered = sorted(results, key=lambda item: item.plan.schedule_index)
         for commit_position, result in enumerate(ordered):
             if result.session is None:
@@ -97,7 +181,7 @@ class ConversationRunner:
             result.session.commit_position = commit_position
             self._apply_and_record(engine, result.session, initiator, other)
         engine.last_social_tick = self._tick_telemetry(
-            snapshot, plans, ordered, backend,
+            snapshot, plans, ordered, backend, batch_telemetry,
         )
 
     @staticmethod
@@ -144,8 +228,8 @@ class ConversationRunner:
             print("No conversations this tick")
 
     @staticmethod
-    def _tick_telemetry(snapshot, plans, results, backend) -> dict:
-        return {
+    def _tick_telemetry(snapshot, plans, results, backend, batch_telemetry=None) -> dict:
+        telemetry = {
             "snapshot_id": snapshot.snapshot_id,
             "eligible_agent_count": len(snapshot.participants),
             "scheduled_session_count": len(plans),
@@ -167,277 +251,568 @@ class ConversationRunner:
                 for turn in result.session.turns
             ),
         }
+        telemetry.update(batch_telemetry or {})
+        return telemetry
 
-    def _generate_session(self, engine, session, initiator, other) -> None:
-        speaker, listener = initiator, other
-        transcript = []
-        for turn_index in range(self.max_turns):
-            try:
-                setup = engine.prepare_conversation_context(
-                    location_id=session.location, speaker=speaker, listener=listener,
-                    current_day=session.day, session_transcript=transcript,
-                )
-            except TypeError:  # Compatibility with existing lightweight doubles.
-                setup = engine.prepare_conversation_context(
-                    location_id=session.location, speaker=speaker, listener=listener,
-                    current_day=session.day,
-                )
-            context = setup["context"]
-            context["session_transcript"] = list(transcript)
-            context["most_recent_utterance"] = transcript[-1]["dialogue"] if transcript else ""
-            context["conversation_snapshot_id"] = getattr(session, "snapshot_id", "")
-            context["conversation_session_id"] = session.session_id
-            context["conversation_schedule_index"] = getattr(session, "schedule_index", 0)
-            context["conversation_request_seed"] = getattr(session, "request_seed", 0)
-            context["conversation_turn_index"] = turn_index
-            if "grounded_content_plan" not in context:
-                plan = plan_grounded_dialogue(context)
-                context["grounded_content_plan"] = plan.prompt_dict() if plan else None
-            raw_output, processed, generation_error = self._generate_and_process(
-                engine=engine,
-                context=context,
-                setup=setup,
-                speaker=speaker,
-                listener=listener,
-                session=session,
+    def _realize_batched(self, states, llm, batch_size):
+        """Advance private sessions one turn wave at a time."""
+        ordered_states = sorted(states, key=lambda state: state.plan.schedule_index)
+        active = list(ordered_states)
+        failures = {}
+        metrics = {
+            "active_session_count_by_wave": [],
+            "generation_batch_count": 0,
+            "batch_sizes": [],
+            "repair_batch_count": 0,
+            "generation_request_count": 0,
+            "successful_generation_requests": 0,
+            "failed_generation_requests": 0,
+            "generation_wall_clock_seconds": 0.0,
+            "generated_token_count": 0,
+        }
+        while active:
+            metrics["active_session_count_by_wave"].append(len(active))
+            pending = []
+            for state in active:
+                try:
+                    pending.append(self._prepare_pending_turn(state))
+                except Exception as error:
+                    failures[state.plan.session_id] = (
+                        f"{type(error).__name__}: {error}"
+                    )
+            pending = [
+                item for item in pending
+                if item.state.plan.session_id not in failures
+            ]
+            if not pending:
+                break
+
+            primary = [self._generation_request(item, "primary", 0) for item in pending]
+            primary_results = self._invoke_generation_batches(
+                llm, primary, batch_size, metrics, repair=False,
             )
-            generation_attempt_count = 1
-            regenerated_for_repetition = False
-            regenerated_for_grounding = False
-            regenerated_for_commitment_state = False
-            first_grounding_failure = ""
-            grounded_repair_used = False
-            grounded_fallback_used = False
-            if generation_error and context.get("grounded_content_plan"):
-                # Runtime failures are not retried. A planned turn can still be
-                # completed safely from engine-owned meaning, and the original
-                # error remains diagnostic telemetry.
-                raw_output = json.dumps({
-                    "utterance": grounded_fallback(context["grounded_content_plan"])
-                })
-                processed = engine.process_conversation_output(
-                    raw_output=raw_output, allowed_actions=setup["allowed_actions"],
-                    speaker=speaker, listener=listener,
-                    old_relationship_label=setup["old_relationship_label"],
-                    location_id=session.location, suggested_action=setup["suggested_action"],
-                    current_day=session.day, conversation_context=context,
-                    enforce_information_boundaries=True,
+            grounding_repairs = []
+            for item, request in zip(pending, primary):
+                result = primary_results[request.request_id]
+                self._accept_primary_result(item, result)
+                if self._needs_grounding_repair(item):
+                    grounding_repairs.append(self._generation_request(
+                        item,
+                        "grounding_repair" if item.context.get(
+                            "grounded_content_plan"
+                        ) else "grounding_retry",
+                        item.generation_attempt_count - 1,
+                        invalid_output=item.raw_output,
+                        validation_error=item.first_grounding_failure,
+                    ))
+            repair_results = self._invoke_generation_batches(
+                llm, grounding_repairs, batch_size, metrics, repair=True,
+            )
+            repair_by_session = {
+                request.session_id: repair_results[request.request_id]
+                for request in grounding_repairs
+            }
+            for item in pending:
+                result = repair_by_session.get(item.state.session.session_id)
+                if result:
+                    self._accept_grounding_repair(item, result)
+
+            commitment_repairs = []
+            for item in pending:
+                item.commitment_state = self._commitment_state_check(
+                    item.context, item.processed,
                 )
-                processed.setdefault("grounding_metadata_advisory", {})[
-                    "generation_error"
-                ] = generation_error
-                generation_error = ""
-                grounded_fallback_used = True
-            if (
-                not generation_error
-                and not getattr(engine.llm, "is_deterministic_fake", False)
-                and not processed["grounding"].valid
-            ):
-                first_grounding_failure = processed["grounding"].reason
-                generation_attempt_count += 1
-                regenerated_for_grounding = True
-                invalid_output = raw_output
-                context = {**context, "grounding_correction": first_grounding_failure,
-                           "invalid_grounded_output": invalid_output}
-                repair = getattr(engine.llm, "repair_grounded_realization", None)
-                if context.get("grounded_content_plan") and repair:
-                    grounded_repair_used = True
-                    try:
-                        raw_output = repair(context, invalid_output, first_grounding_failure)
-                        generation_error = ""
-                    except Exception as error:
-                        raw_output = ""
-                        generation_error = f"{type(error).__name__}: {error}"
-                    processed = engine.process_conversation_output(
-                        raw_output=raw_output, allowed_actions=setup["allowed_actions"],
-                        speaker=speaker, listener=listener,
-                        old_relationship_label=setup["old_relationship_label"],
-                        location_id=session.location, suggested_action=setup["suggested_action"],
-                        current_day=session.day, conversation_context=context,
-                        enforce_information_boundaries=True,
-                    )
-                else:
-                    raw_output, processed, generation_error = self._generate_and_process(
-                        engine=engine, context=context, setup=setup, speaker=speaker,
-                        listener=listener, session=session,
-                    )
-                if generation_error or not processed["grounding"].valid:
-                    if context.get("grounded_content_plan"):
-                        if generation_error:
-                            processed.setdefault("grounding_metadata_advisory", {})[
-                                "repair_error"
-                            ] = generation_error
-                            generation_error = ""
-                        fallback_output = json.dumps({
-                            "utterance": grounded_fallback(
-                                context["grounded_content_plan"]
-                            )
-                        })
-                        processed = engine.process_conversation_output(
-                            raw_output=fallback_output,
-                            allowed_actions=setup["allowed_actions"], speaker=speaker,
-                            listener=listener,
-                            old_relationship_label=setup["old_relationship_label"],
-                            location_id=session.location,
-                            suggested_action=setup["suggested_action"],
-                            current_day=session.day, conversation_context=context,
-                            enforce_information_boundaries=True,
-                        )
-                        grounded_fallback_used = True
-                    else:
-                        processed["conversation"] = engine.conversation_policy.get_grounded_fallback_dialogue(
-                            speaker=speaker, context=context, location_id=session.location,
-                        )
-                    processed["parsed_action"] = "chat"
-                    processed["dialogue_source"] = "policy_fallback_unsupported_grounding"
-                    processed["grounding"] = GroundingResult(
-                        True, valid_refs=processed["parsed_output"].get("grounding_refs", []),
-                        follow_through=processed["grounding"].follow_through,
-                    )
-            commitment_state = self._commitment_state_check(context, processed)
-            if (
-                not generation_error and not commitment_state["valid"]
-                and not getattr(engine.llm, "is_deterministic_fake", False)
-            ):
-                generation_attempt_count += 1
-                regenerated_for_commitment_state = True
-                context = {**context,
-                           "commitment_state_correction": commitment_state["reason"]}
-                raw_output, processed, generation_error = self._generate_and_process(
-                    engine=engine, context=context, setup=setup, speaker=speaker,
-                    listener=listener, session=session,
-                )
-                commitment_state = self._commitment_state_check(context, processed)
-                if not generation_error and not commitment_state["valid"]:
-                    processed["conversation"] = "I understand."
-                    processed["parsed_action"] = "chat"
-                    processed["dialogue_source"] = "policy_fallback_commitment_state"
-                    processed["parsed_output"]["commitment_relation"] = {
-                        "commitment_id": commitment_state["commitment_id"],
-                        "relation": "unrelated", "confidence": "none",
+                if self._needs_commitment_repair(item):
+                    item.generation_attempt_count += 1
+                    item.regenerated_for_commitment_state = True
+                    item.context = {
+                        **item.context,
+                        "commitment_state_correction": item.commitment_state["reason"],
                     }
-            if (
-                transcript
-                and not generation_error
-                and not getattr(engine.llm, "is_deterministic_fake", False)
-                and self._matches_prior_turn(processed["conversation"], transcript)
-            ):
-                generation_attempt_count += 1
-                regenerated_for_repetition = True
-                context = {
-                    **context,
-                    "anti_echo_retry": True,
-                    "repeated_candidate": processed["conversation"],
+                    commitment_repairs.append(self._generation_request(
+                        item, "commitment_repair",
+                        item.generation_attempt_count - 1,
+                    ))
+            commitment_results = self._invoke_generation_batches(
+                llm, commitment_repairs, batch_size, metrics, repair=True,
+            )
+            commitment_by_session = {
+                request.session_id: commitment_results[request.request_id]
+                for request in commitment_repairs
+            }
+            for item in pending:
+                result = commitment_by_session.get(item.state.session.session_id)
+                if result:
+                    self._accept_commitment_repair(item, result)
+
+            echo_repairs = []
+            for item in pending:
+                if self._needs_anti_echo_repair(item):
+                    item.generation_attempt_count += 1
+                    item.regenerated_for_repetition = True
+                    item.context = {
+                        **item.context,
+                        "anti_echo_retry": True,
+                        "repeated_candidate": item.processed["conversation"],
+                    }
+                    echo_repairs.append(self._generation_request(
+                        item, "anti_echo", item.generation_attempt_count - 1,
+                    ))
+            echo_results = self._invoke_generation_batches(
+                llm, echo_repairs, batch_size, metrics, repair=True,
+            )
+            echo_by_session = {
+                request.session_id: echo_results[request.request_id]
+                for request in echo_repairs
+            }
+            for item in pending:
+                result = echo_by_session.get(item.state.session.session_id)
+                if result:
+                    self._accept_ordinary_regeneration(item, result)
+
+            next_active = []
+            for item in pending:
+                state = item.state
+                try:
+                    self._finalize_pending_turn(item)
+                except Exception as error:
+                    failures[state.plan.session_id] = (
+                        f"{type(error).__name__}: {error}"
+                    )
+                    continue
+                if not state.session.termination_reason:
+                    if len(state.session.turns) >= self.max_turns:
+                        state.session.termination_reason = "max_turns"
+                    else:
+                        next_active.append(state)
+            active = next_active
+
+        results = []
+        for state in ordered_states:
+            error = failures.get(state.plan.session_id, "")
+            results.append(ConversationSessionResult(
+                state.plan, None if error else state.session, error,
+            ))
+        elapsed = metrics["generation_wall_clock_seconds"]
+        requests = metrics["generation_request_count"]
+        tokens = metrics["generated_token_count"]
+        metrics["generation_requests_per_second"] = (
+            requests / elapsed if elapsed else 0.0
+        )
+        metrics["generated_tokens_per_second"] = tokens / elapsed if elapsed else 0.0
+        metrics["configured_batch_size"] = batch_size
+        return results, metrics
+
+    def _prepare_pending_turn(self, state):
+        turn_index = len(state.session.turns)
+        try:
+            setup = state.engine.prepare_conversation_context(
+                location_id=state.session.location,
+                speaker=state.speaker,
+                listener=state.listener,
+                current_day=state.session.day,
+                session_transcript=state.transcript,
+            )
+        except TypeError:
+            setup = state.engine.prepare_conversation_context(
+                location_id=state.session.location,
+                speaker=state.speaker,
+                listener=state.listener,
+                current_day=state.session.day,
+            )
+        context = setup["context"]
+        context["session_transcript"] = list(state.transcript)
+        context["most_recent_utterance"] = (
+            state.transcript[-1]["dialogue"] if state.transcript else ""
+        )
+        context["conversation_snapshot_id"] = state.session.snapshot_id
+        context["conversation_session_id"] = state.session.session_id
+        context["conversation_schedule_index"] = state.session.schedule_index
+        context["conversation_turn_index"] = turn_index
+        if "grounded_content_plan" not in context:
+            plan = plan_grounded_dialogue(context)
+            context["grounded_content_plan"] = plan.prompt_dict() if plan else None
+        return _PendingTurn(state, turn_index, setup, context)
+
+    @staticmethod
+    def _invoke_generation_batches(llm, requests, batch_size, metrics, *, repair):
+        results = {}
+        for offset in range(0, len(requests), batch_size):
+            batch = requests[offset:offset + batch_size]
+            metrics["generation_batch_count"] += 1
+            metrics["batch_sizes"].append(len(batch))
+            metrics["generation_request_count"] += len(batch)
+            if repair:
+                metrics["repair_batch_count"] += 1
+            started = __import__("time").perf_counter()
+            try:
+                rows = llm.generate_conversation_batch(batch)
+                by_id = {row.request_id: row for row in rows}
+                if len(by_id) != len(rows):
+                    raise ValueError("batch client returned duplicate request IDs")
+                missing = [row.request_id for row in batch if row.request_id not in by_id]
+                extra = set(by_id) - {row.request_id for row in batch}
+                if missing or extra:
+                    raise ValueError(
+                        f"batch result identity mismatch: missing={missing}, extra={sorted(extra)}"
+                    )
+            except Exception as error:
+                message = f"{type(error).__name__}: {error}"
+                by_id = {
+                    row.request_id: ConversationGenerationResult(
+                        row.request_id, error=message,
+                    )
+                    for row in batch
                 }
-                raw_output, processed, generation_error = self._generate_and_process(
-                    engine=engine,
-                    context=context,
-                    setup=setup,
-                    speaker=speaker,
-                    listener=listener,
-                    session=session,
+            metrics["generation_wall_clock_seconds"] += (
+                __import__("time").perf_counter() - started
+            )
+            for request in batch:
+                result = by_id[request.request_id]
+                results[request.request_id] = result
+                metrics["generated_token_count"] += result.generated_token_count
+                if result.error:
+                    metrics["failed_generation_requests"] += 1
+                else:
+                    metrics["successful_generation_requests"] += 1
+        return results
+
+    @staticmethod
+    def _generation_request(
+        item, request_kind, generation_attempt, *, invalid_output="",
+        validation_error="",
+    ):
+        session = item.state.session
+        seed = derive_conversation_seed(
+            session.simulation_seed, session.day, session.hour,
+            session.session_id, item.turn_index, generation_attempt,
+            schedule_index=session.schedule_index,
+            request_kind=request_kind,
+        )
+        context = {**item.context, "conversation_request_seed": seed}
+        item.context = context
+        request_id = generation_request_id(
+            simulation_seed=session.simulation_seed,
+            day=session.day,
+            hour=session.hour,
+            session_id=session.session_id,
+            schedule_index=session.schedule_index,
+            turn_index=item.turn_index,
+            generation_attempt=generation_attempt,
+            request_kind=request_kind,
+        )
+        return ConversationGenerationRequest(
+            request_id=request_id,
+            session_id=session.session_id,
+            schedule_index=session.schedule_index,
+            turn_index=item.turn_index,
+            generation_attempt=generation_attempt,
+            seed=seed,
+            request_kind=request_kind,
+            context=context,
+            invalid_output=invalid_output,
+            validation_error=validation_error,
+        )
+
+    def _process_pending_output(self, item, result, *, enforce=None):
+        item.raw_output = result.output
+        item.generation_error = result.error
+        if enforce is None:
+            enforce = not getattr(item.state.engine.llm, "is_deterministic_fake", False)
+        item.processed = item.state.engine.process_conversation_output(
+            raw_output=item.raw_output,
+            allowed_actions=item.setup["allowed_actions"],
+            speaker=item.state.speaker,
+            listener=item.state.listener,
+            old_relationship_label=item.setup["old_relationship_label"],
+            location_id=item.state.session.location,
+            suggested_action=item.setup["suggested_action"],
+            current_day=item.state.session.day,
+            conversation_context=item.context,
+            enforce_information_boundaries=enforce,
+        )
+
+    def _accept_primary_result(self, item, result):
+        self._process_pending_output(item, result)
+        if item.generation_error and item.context.get("grounded_content_plan"):
+            self._apply_grounded_fallback(item, advisory_key="generation_error")
+
+    @staticmethod
+    def _needs_grounding_repair(item):
+        if item.generation_error:
+            return False
+        if getattr(item.state.engine.llm, "is_deterministic_fake", False):
+            return False
+        if item.processed["grounding"].valid:
+            return False
+        item.first_grounding_failure = item.processed["grounding"].reason
+        item.generation_attempt_count += 1
+        item.regenerated_for_grounding = True
+        item.grounded_repair_used = bool(item.context.get("grounded_content_plan"))
+        item.context = {
+            **item.context,
+            "grounding_correction": item.first_grounding_failure,
+            "invalid_grounded_output": item.raw_output,
+        }
+        return True
+
+    def _accept_grounding_repair(self, item, result):
+        self._process_pending_output(item, result, enforce=True)
+        if item.generation_error or not item.processed["grounding"].valid:
+            if item.context.get("grounded_content_plan"):
+                self._apply_grounded_fallback(
+                    item,
+                    advisory_key="repair_error" if item.generation_error else "",
                 )
-            parsed = processed["parsed_output"]
-            grounding = processed.get("grounding", GroundingResult(True))
-            dialogue = processed["conversation"]
-            tags = engine.get_initial_conversation_tags(
-                conversation=dialogue, parsed_tags=parsed.get("tags", []),
-            )
-            infer = getattr(engine.actions, "infer_action_with_reason", None)
-            if infer:
-                inferred, inference_reason = infer(dialogue, tags)
             else:
-                inferred = engine.actions.infer_action(dialogue, tags)
-                inference_reason = "not_available"
-            action, final_reason = engine.choose_final_action_with_reason(
-                conversation=dialogue, parsed_action=processed["parsed_action"],
-                conversation_tags=tags, allowed_actions=setup["allowed_actions"],
-                inferred_action=inferred,
+                item.processed["conversation"] = (
+                    item.state.engine.conversation_policy.get_grounded_fallback_dialogue(
+                        speaker=item.state.speaker,
+                        context=item.context,
+                        location_id=item.state.session.location,
+                    )
+                )
+                item.processed["parsed_action"] = "chat"
+                item.processed["dialogue_source"] = (
+                    "policy_fallback_unsupported_grounding"
+                )
+                item.processed["grounding"] = GroundingResult(
+                    True,
+                    valid_refs=item.processed["parsed_output"].get(
+                        "grounding_refs", []
+                    ),
+                    follow_through=item.processed["grounding"].follow_through,
+                )
+
+    def _apply_grounded_fallback(self, item, advisory_key=""):
+        original_error = item.generation_error
+        fallback_output = json.dumps({
+            "utterance": grounded_fallback(item.context["grounded_content_plan"])
+        })
+        item.raw_output = fallback_output
+        item.processed = item.state.engine.process_conversation_output(
+            raw_output=fallback_output,
+            allowed_actions=item.setup["allowed_actions"],
+            speaker=item.state.speaker,
+            listener=item.state.listener,
+            old_relationship_label=item.setup["old_relationship_label"],
+            location_id=item.state.session.location,
+            suggested_action=item.setup["suggested_action"],
+            current_day=item.state.session.day,
+            conversation_context=item.context,
+            enforce_information_boundaries=True,
+        )
+        if advisory_key and original_error:
+            item.processed.setdefault("grounding_metadata_advisory", {})[
+                advisory_key
+            ] = original_error
+        item.generation_error = ""
+        item.grounded_fallback_used = True
+        if advisory_key == "repair_error" or (
+            not item.processed["grounding"].valid
+        ):
+            item.processed["parsed_action"] = "chat"
+            item.processed["dialogue_source"] = (
+                "policy_fallback_unsupported_grounding"
             )
-            tags = engine.finalize_conversation_tags(
-                conversation=dialogue, conversation_tags=tags,
-                relationship_label=setup["old_relationship_label"], action=action,
+            item.processed["grounding"] = GroundingResult(
+                True,
+                valid_refs=item.processed["parsed_output"].get("grounding_refs", []),
+                follow_through=item.processed["grounding"].follow_through,
             )
-            response_to = None
-            outcome = None
-            resolution_reason = ""
-            if session.turns and session.turns[-1].final_action in self.outcomes.RESPONSIVE_ACTIONS:
-                previous = session.turns[-1]
-                goods = {good_id: definition.name for good_id, definition in getattr(engine.materials, "goods", {}).items()}
-                proposal = engine.commitment_system.recognize_proposal(previous.dialogue, day=session.day, known_goods=goods) if getattr(engine, "commitment_system", None) else None
+
+    @staticmethod
+    def _needs_commitment_repair(item):
+        return bool(
+            not item.generation_error
+            and not item.commitment_state["valid"]
+            and not getattr(item.state.engine.llm, "is_deterministic_fake", False)
+        )
+
+    def _accept_commitment_repair(self, item, result):
+        self._process_pending_output(item, result)
+        item.commitment_state = self._commitment_state_check(
+            item.context, item.processed,
+        )
+        if not item.generation_error and not item.commitment_state["valid"]:
+            item.processed["conversation"] = "I understand."
+            item.processed["parsed_action"] = "chat"
+            item.processed["dialogue_source"] = "policy_fallback_commitment_state"
+            item.processed["parsed_output"]["commitment_relation"] = {
+                "commitment_id": item.commitment_state["commitment_id"],
+                "relation": "unrelated",
+                "confidence": "none",
+            }
+
+    def _needs_anti_echo_repair(self, item):
+        return bool(
+            item.state.transcript
+            and not item.generation_error
+            and not getattr(item.state.engine.llm, "is_deterministic_fake", False)
+            and self._matches_prior_turn(
+                item.processed["conversation"], item.state.transcript,
+            )
+        )
+
+    def _accept_ordinary_regeneration(self, item, result):
+        self._process_pending_output(item, result)
+
+    def _finalize_pending_turn(self, item):
+        state = item.state
+        engine = state.engine
+        session = state.session
+        speaker = state.speaker
+        listener = state.listener
+        setup = item.setup
+        context = item.context
+        processed = item.processed
+        commitment_state = item.commitment_state or self._commitment_state_check(
+            context, processed,
+        )
+        parsed = processed["parsed_output"]
+        grounding = processed.get("grounding", GroundingResult(True))
+        dialogue = processed["conversation"]
+        tags = engine.get_initial_conversation_tags(
+            conversation=dialogue, parsed_tags=parsed.get("tags", []),
+        )
+        infer = getattr(engine.actions, "infer_action_with_reason", None)
+        if infer:
+            inferred, inference_reason = infer(dialogue, tags)
+        else:
+            inferred = engine.actions.infer_action(dialogue, tags)
+            inference_reason = "not_available"
+        action, final_reason = engine.choose_final_action_with_reason(
+            conversation=dialogue,
+            parsed_action=processed["parsed_action"],
+            conversation_tags=tags,
+            allowed_actions=setup["allowed_actions"],
+            inferred_action=inferred,
+        )
+        tags = engine.finalize_conversation_tags(
+            conversation=dialogue,
+            conversation_tags=tags,
+            relationship_label=setup["old_relationship_label"],
+            action=action,
+        )
+        response_to = None
+        resolution_reason = ""
+        if session.turns and session.turns[-1].final_action in self.outcomes.RESPONSIVE_ACTIONS:
+            previous = session.turns[-1]
+            goods = {
+                good_id: definition.name
+                for good_id, definition in getattr(engine.materials, "goods", {}).items()
+            }
+            proposal = (
+                engine.commitment_system.recognize_proposal(
+                    previous.dialogue, day=session.day, known_goods=goods,
+                )
+                if getattr(engine, "commitment_system", None) else None
+            )
+            outcome, resolution_reason = self.outcomes.resolve_with_reason(
+                previous.final_action,
+                dialogue,
+                proposal=proposal,
+                parsed_action=processed["parsed_action"],
+                social_response=parsed.get("social_response"),
+            )
+            response_to = previous.turn_index
+            previous.response_outcome = outcome
+        elif session.turns and getattr(engine, "commitment_system", None):
+            previous = session.turns[-1]
+            goods = {
+                good_id: definition.name
+                for good_id, definition in getattr(engine.materials, "goods", {}).items()
+            }
+            proposal = engine.commitment_system.recognize_proposal(
+                previous.dialogue, day=session.day, known_goods=goods,
+            )
+            if proposal:
+                semantic_action = (
+                    "cooperate" if proposal["commitment_type"] == "meet"
+                    else "ask_for_help"
+                )
                 outcome, resolution_reason = self.outcomes.resolve_with_reason(
-                    previous.final_action, dialogue, proposal=proposal,
+                    semantic_action,
+                    dialogue,
+                    proposal=proposal,
                     parsed_action=processed["parsed_action"],
                     social_response=parsed.get("social_response"),
                 )
                 response_to = previous.turn_index
                 previous.response_outcome = outcome
-            elif session.turns and getattr(engine, "commitment_system", None):
-                previous = session.turns[-1]
-                goods = {
-                    good_id: definition.name
-                    for good_id, definition in getattr(engine.materials, "goods", {}).items()
-                }
-                proposal = engine.commitment_system.recognize_proposal(
-                    previous.dialogue, day=session.day, known_goods=goods,
-                )
-                if proposal:
-                    semantic_action = (
-                        "cooperate" if proposal["commitment_type"] == "meet" else "ask_for_help"
-                    )
-                    outcome, resolution_reason = self.outcomes.resolve_with_reason(
-                        semantic_action, dialogue, proposal=proposal,
-                        parsed_action=processed["parsed_action"],
-                        social_response=parsed.get("social_response"),
-                    )
-                    response_to = previous.turn_index
-                    previous.response_outcome = outcome
-            turn = ConversationTurn(
-                turn_index=turn_index, speaker=speaker.name, listener=listener.name,
-                dialogue=dialogue, suggested_action=setup["suggested_action"],
-                parsed_action=processed["parsed_action"], inferred_action=inferred,
-                inference_reason=inference_reason, final_action=action,
-                final_action_reason=final_reason,
-                action_source=parsed.get("action_source", ""),
-                dialogue_source=processed["dialogue_source"],
-                generation_attempt_count=generation_attempt_count,
-                regenerated_for_repetition=regenerated_for_repetition,
-                regenerated_for_grounding=regenerated_for_grounding,
-                regenerated_for_commitment_state=regenerated_for_commitment_state,
-                commitment_state_valid=commitment_state["valid"],
-                commitment_state_reason=commitment_state["reason"],
-                related_commitment_id=commitment_state["commitment_id"],
-                grounding_valid=grounding.valid,
-                grounding_reason=(grounding.reason or first_grounding_failure),
-                grounding_candidate_type=grounding.candidate_type,
-                grounding_refs=grounding.valid_refs,
-                invalid_grounding_refs=grounding.invalid_refs,
-                grounding_metadata_advisory=processed.get("grounding_metadata_advisory", {}),
-                grounding_metadata_disagreements=processed.get("grounding_metadata_disagreements", []),
-                grounded_repair_used=grounded_repair_used,
-                grounded_fallback_used=grounded_fallback_used,
-                generation_error=generation_error, response_to_turn=response_to,
-                response_outcome=None,
-                social_response=parsed.get("social_response", {}),
-                commitment_relation=parsed.get("commitment_relation", {}),
-                follow_through=grounding.follow_through,
-                response_resolution_reason=resolution_reason,
-                context_evidence=context.get("context_evidence", {}),
-                context_snapshot=self._context_snapshot(context),
-                diagnostics=self._diagnostics(setup, parsed, tags, raw_output),
-            )
-            turn._speaker_intent = setup.get("speaker_intent")
-            turn._listener_intent = setup.get("listener_intent")
-            session.turns.append(turn)
-            transcript.append({"turn_index": turn_index, "speaker": speaker.name,
-                               "listener": listener.name, "dialogue": dialogue})
-            reason = self._termination_reason(engine, session, turn)
-            if reason:
-                session.termination_reason = reason
-                break
-            speaker, listener = listener, speaker
-        if not session.termination_reason:
-            session.termination_reason = "max_turns"
+        turn = ConversationTurn(
+            turn_index=item.turn_index,
+            speaker=speaker.name,
+            listener=listener.name,
+            dialogue=dialogue,
+            suggested_action=setup["suggested_action"],
+            parsed_action=processed["parsed_action"],
+            inferred_action=inferred,
+            inference_reason=inference_reason,
+            final_action=action,
+            final_action_reason=final_reason,
+            action_source=parsed.get("action_source", ""),
+            dialogue_source=processed["dialogue_source"],
+            generation_attempt_count=item.generation_attempt_count,
+            regenerated_for_repetition=item.regenerated_for_repetition,
+            regenerated_for_grounding=item.regenerated_for_grounding,
+            regenerated_for_commitment_state=item.regenerated_for_commitment_state,
+            commitment_state_valid=commitment_state["valid"],
+            commitment_state_reason=commitment_state["reason"],
+            related_commitment_id=commitment_state["commitment_id"],
+            grounding_valid=grounding.valid,
+            grounding_reason=(grounding.reason or item.first_grounding_failure),
+            grounding_candidate_type=grounding.candidate_type,
+            grounding_refs=grounding.valid_refs,
+            invalid_grounding_refs=grounding.invalid_refs,
+            grounding_metadata_advisory=processed.get(
+                "grounding_metadata_advisory", {}
+            ),
+            grounding_metadata_disagreements=processed.get(
+                "grounding_metadata_disagreements", []
+            ),
+            grounded_repair_used=item.grounded_repair_used,
+            grounded_fallback_used=item.grounded_fallback_used,
+            generation_error=item.generation_error,
+            response_to_turn=response_to,
+            response_outcome=None,
+            social_response=parsed.get("social_response", {}),
+            commitment_relation=parsed.get("commitment_relation", {}),
+            follow_through=grounding.follow_through,
+            response_resolution_reason=resolution_reason,
+            context_evidence=context.get("context_evidence", {}),
+            context_snapshot=self._context_snapshot(context),
+            diagnostics=self._diagnostics(setup, parsed, tags, item.raw_output),
+        )
+        turn._speaker_intent = setup.get("speaker_intent")
+        turn._listener_intent = setup.get("listener_intent")
+        session.turns.append(turn)
+        state.transcript.append({
+            "turn_index": item.turn_index,
+            "speaker": speaker.name,
+            "listener": listener.name,
+            "dialogue": dialogue,
+        })
+        reason = self._termination_reason(engine, session, turn)
+        if reason:
+            session.termination_reason = reason
+        else:
+            state.speaker, state.listener = listener, speaker
+
+    def _generate_session(self, engine, session, initiator, other) -> None:
+        """Realize one session through the shared turn-wave state machine."""
+        plan = SimpleNamespace(
+            session_id=session.session_id,
+            schedule_index=getattr(session, "schedule_index", 0),
+        )
+        state = _ConversationRealizationState(
+            plan, engine, session, initiator, other, initiator, other, [],
+        )
+        results, _ = self._realize_batched(
+            [state], _SingleRequestClientAdapter(engine.llm), 1,
+        )
+        if results[0].error:
+            raise RuntimeError(results[0].error)
 
     def _apply_and_record(self, engine, session, initiator, other) -> None:
         agents = {initiator.name: initiator, other.name: other}

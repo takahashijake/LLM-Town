@@ -60,3 +60,19 @@ class ConcurrentConversationExecutionBackend:
             for future in as_completed(futures):
                 results.append(future.result())
         return results
+
+
+class BatchedConversationExecutionBackend:
+    """Configuration boundary for synchronized turn-wave realization."""
+
+    name = "batched"
+
+    def __init__(self, batch_size: int = 4):
+        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+            raise ValueError("conversation_batch_size must be a positive integer")
+        self.batch_size = batch_size
+
+    def realize(self, jobs: list[ConversationRealizationJob]) -> list[ConversationSessionResult]:
+        raise RuntimeError(
+            "batched realization requires ConversationRunner turn-wave orchestration"
+        )

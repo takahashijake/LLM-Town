@@ -65,6 +65,7 @@ class ConversationSession:
     snapshot_id: str = ""
     schedule_index: int = 0
     request_seed: int = 0
+    simulation_seed: int = 0
     commit_position: int | None = None
     turns: list[ConversationTurn] = field(default_factory=list)
     termination_reason: str = ""

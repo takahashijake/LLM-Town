@@ -11,9 +11,12 @@ from src.simulation.social_snapshot import ConversationTickSnapshot
 
 def derive_conversation_seed(global_seed: int, day: int, hour: int,
                              session_id: str, turn_index: int = 0,
-                             generation_attempt: int = 0) -> int:
+                             generation_attempt: int = 0, *,
+                             schedule_index: int = 0,
+                             request_kind: str = "conversation") -> int:
     value = "|".join(map(str, (
-        global_seed, day, hour, session_id, turn_index, generation_attempt,
+        global_seed, day, hour, session_id, schedule_index, turn_index,
+        generation_attempt, request_kind,
     )))
     return int.from_bytes(hashlib.sha256(value.encode()).digest()[:8], "big")
 
@@ -29,6 +32,7 @@ class PlannedConversationSession:
     snapshot_id: str
     schedule_index: int
     request_seed: int
+    simulation_seed: int = 0
 
 
 class ConversationScheduler:
@@ -69,7 +73,7 @@ class ConversationScheduler:
                     request_seed=derive_conversation_seed(
                         self.seed, snapshot.day, snapshot.hour, session_id,
                     ),
+                    simulation_seed=self.seed,
                 ))
                 index += 1
         return pending
-

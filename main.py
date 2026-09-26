@@ -79,12 +79,16 @@ def parse_args() -> argparse.Namespace:
         help="Maximum utterances in each conversation session (default: 4).",
     )
     parser.add_argument(
-        "--conversation-execution", choices=["serial", "concurrent"],
+        "--conversation-execution", choices=["serial", "concurrent", "batched"],
         default="serial", help="Conversation realization backend (default: serial).",
     )
     parser.add_argument(
         "--conversation-workers", type=int, default=4,
         help="Maximum local realization workers in concurrent mode.",
+    )
+    parser.add_argument(
+        "--conversation-batch-size", type=int, default=4,
+        help="Maximum requests in each local-model generation batch.",
     )
 
     return parser.parse_args()
@@ -123,6 +127,7 @@ def main() -> None:
         max_conversation_turns=args.max_conversation_turns,
         conversation_execution=args.conversation_execution,
         conversation_workers=args.conversation_workers,
+        conversation_batch_size=args.conversation_batch_size,
         simulation_seed=args.seed or 0,
     )
 

@@ -1,6 +1,13 @@
 
 import json
+import hashlib
 import threading
+import time
+
+from src.llm.generation import (
+    ConversationGenerationRequest,
+    ConversationGenerationResult,
+)
 
 from src.llm.response_contract import (
     OutputConstraintMode,
@@ -38,6 +45,24 @@ class FakeLLMClient:
             )
 
         return json.dumps({"dialogue": dialogue, "action": action})
+
+    def generate_conversation_batch(
+        self, requests: list[ConversationGenerationRequest],
+    ) -> list[ConversationGenerationResult]:
+        """Model-free ordered batch API used by deterministic tests."""
+        results = []
+        for request in requests:
+            try:
+                output = self.generate_conversation(dict(request.context))
+                results.append(ConversationGenerationResult(request.request_id, output))
+            except Exception as error:
+                results.append(ConversationGenerationResult(
+                    request.request_id,
+                    error=f"{type(error).__name__}: {error}",
+                ))
+        return results
+
+
 class TransformersLLMClient:
     def __init__(
         self,
@@ -88,6 +113,7 @@ class TransformersLLMClient:
             dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
         ).to(self.device)
         self._generation_lock = threading.Lock()
+        self.batch_metrics: list[dict] = []
 
     def generate_conversation(self, context: dict) -> str:
         messages = self._conversation_messages(context)
@@ -179,6 +205,95 @@ class TransformersLLMClient:
 
         return response.strip()
 
+    def generate_conversation_batch(
+        self, requests: list[ConversationGenerationRequest],
+    ) -> list[ConversationGenerationResult]:
+        """Generate an ordered padded tensor batch in one model invocation.
+
+        Transformers 5.17 does not expose a supported per-row generator on
+        ``generate``. The ordered row seeds therefore derive one batch seed;
+        reproducibility includes batch composition and batch size.
+        """
+        if not requests:
+            return []
+        with self._generation_lock:
+            return self._generate_conversation_batch_locked(requests)
+
+    def _generate_conversation_batch_locked(
+        self, requests: list[ConversationGenerationRequest],
+    ) -> list[ConversationGenerationResult]:
+        messages = [self._messages_for_request(request) for request in requests]
+        texts = [
+            self.tokenizer.apply_chat_template(
+                row, tokenize=False, add_generation_prompt=True,
+            )
+            for row in messages
+        ]
+        self.last_messages = messages
+        self.last_rendered_prompts = texts
+        original_padding_side = getattr(self.tokenizer, "padding_side", "right")
+        self.tokenizer.padding_side = "left"
+        try:
+            inputs = self.tokenizer(texts, return_tensors="pt", padding=True).to(
+                self.device
+            )
+        finally:
+            self.tokenizer.padding_side = original_padding_side
+
+        seed_material = "|".join(str(request.seed) for request in requests)
+        batch_seed = int.from_bytes(
+            hashlib.sha256(seed_material.encode()).digest()[:8], "big"
+        )
+        started = time.perf_counter()
+        with self.torch.no_grad():
+            self.torch.manual_seed(batch_seed)
+            if self.torch.cuda.is_available():
+                self.torch.cuda.manual_seed_all(batch_seed)
+            outputs = self.model.generate(
+                **inputs,
+                **self.generation_config,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+        elapsed = time.perf_counter() - started
+
+        # Decoder-only generation returns each left-padded prompt followed by
+        # generated tokens. The generated boundary is the common tensor width;
+        # attention-mask lengths are retained as the per-row semantic lengths.
+        prompt_width = int(inputs["input_ids"].shape[-1])
+        prompt_lengths = [int(value) for value in inputs["attention_mask"].sum(dim=1)]
+        results = []
+        token_counts = []
+        for request, row in zip(requests, outputs):
+            generated_ids = row[prompt_width:]
+            token_count = int(generated_ids.shape[-1])
+            token_counts.append(token_count)
+            results.append(ConversationGenerationResult(
+                request_id=request.request_id,
+                output=self.tokenizer.decode(
+                    generated_ids, skip_special_tokens=True,
+                ).strip(),
+                generated_token_count=token_count,
+            ))
+        self.last_generated_token_count = sum(token_counts)
+        self.batch_metrics.append({
+            "batch_size": len(requests),
+            "wall_clock_seconds": elapsed,
+            "generated_token_count": sum(token_counts),
+            "prompt_token_counts": prompt_lengths,
+            "batch_seed": batch_seed,
+        })
+        return results
+
+    def _messages_for_request(
+        self, request: ConversationGenerationRequest,
+    ) -> list[dict]:
+        if request.request_kind == "grounding_repair":
+            return self._grounded_repair_messages(
+                dict(request.context), request.invalid_output,
+                request.validation_error,
+            )
+        return self._conversation_messages(dict(request.context))
+
     def repair_format(self, invalid_output: str, validation_error: str) -> str:
         """Make one context-free format repair; never add grounding facts."""
         messages = [{
@@ -197,8 +312,19 @@ class TransformersLLMClient:
         self, context: dict, invalid_output: str, validation_error: str
     ) -> str:
         """Perform the sole bounded semantic repair allowed by the runtime."""
+        messages = self._grounded_repair_messages(
+            context, invalid_output, validation_error,
+        )
+        return self._generate_messages(
+            messages, seed=context.get("conversation_request_seed", self.seed),
+        )
+
+    @staticmethod
+    def _grounded_repair_messages(
+        context: dict, invalid_output: str, validation_error: str,
+    ) -> list[dict]:
         plan = context.get("grounded_content_plan") or {}
-        messages = [{
+        return [{
             "role": "user",
             "content": (
                 "Rewrite only the utterance as one natural, personality-neutral JSON line. "
@@ -209,7 +335,6 @@ class TransformersLLMClient:
                 'Return: {"utterance":"corrected spoken line"}'
             ),
         }]
-        return self._generate_messages(messages)
 
     def _build_prompt(self, context: dict) -> str:
         def lines(values, empty="None supplied"):
