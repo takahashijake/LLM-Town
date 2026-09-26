@@ -1,6 +1,8 @@
 """Deterministic end-to-end acceptance evaluation for the V3 planning loop."""
 
+from contextlib import contextmanager
 from pathlib import Path
+import random
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
@@ -10,6 +12,17 @@ from src.llm.grounding import GroundingValidator
 from src.simulation.engine import SimulationEngine
 from src.simulation.social_semantics import classify_commitment_relation
 from src.systems.plans import KNOWN_ACTION_TYPES, TEMPLATE_ACTIONS, PlanSystem
+
+
+@contextmanager
+def _isolated_random_state(seed: int = 0):
+    """Keep evaluator setup deterministic without contaminating its caller."""
+    state = random.getstate()
+    random.seed(seed)
+    try:
+        yield
+    finally:
+        random.setstate(state)
 
 
 def _engine(root: Path, name: str, *, load: bool = False) -> SimulationEngine:
@@ -49,7 +62,7 @@ def _participant_memory(engine, item, event_type: str) -> bool:
 def evaluate_v3_freeze() -> dict:
     scenarios: dict[str, bool] = {}
     diagnostics: dict[str, str] = {}
-    with TemporaryDirectory() as directory:
+    with _isolated_random_state(), TemporaryDirectory() as directory:
         root = Path(directory)
 
         transfer = _engine(root, "transfer")

@@ -3,7 +3,10 @@ from src.behavior.planner import ActivityPlanner
 from src.town.daily_event import DailyEvent
 
 
-def test_choose_activity_for_social_need(location_ids):
+def test_choose_activity_for_social_need(location_ids, monkeypatch):
+    monkeypatch.setattr(
+        "src.behavior.planner.random.choice", lambda candidates: candidates[0],
+    )
     planner = ActivityPlanner()
     agent = Agent(
         id="agent_001",
