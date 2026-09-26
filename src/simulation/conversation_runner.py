@@ -401,6 +401,9 @@ class ConversationRunner:
         )
         metrics["generated_tokens_per_second"] = tokens / elapsed if elapsed else 0.0
         metrics["configured_batch_size"] = batch_size
+        runtime_metadata = getattr(llm, "generation_runtime_metadata", None)
+        if callable(runtime_metadata):
+            metrics.update(runtime_metadata())
         return results, metrics
 
     def _prepare_pending_turn(self, state):

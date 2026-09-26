@@ -78,6 +78,7 @@ class TransformersLLMClient:
         prompt_refinement: bool = False,
         few_shot: bool = False,
         grounded_dialogue_capability_tier: str = "unverified",
+        local_files_only: bool = False,
     ):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -106,14 +107,34 @@ class TransformersLLMClient:
         if top_k is not None:
             self.generation_config["top_k"] = top_k
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name, local_files_only=local_files_only,
+        )
+        if self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            local_files_only=local_files_only,
         ).to(self.device)
         self._generation_lock = threading.Lock()
         self.batch_metrics: list[dict] = []
+
+    def generation_runtime_metadata(self) -> dict:
+        import transformers
+
+        peak_cuda = 0
+        if self.torch.cuda.is_available():
+            peak_cuda = int(self.torch.cuda.max_memory_allocated(self.device))
+        return {
+            "model_name": self.model_name,
+            "device": str(self.device),
+            "dtype": str(getattr(self.model, "dtype", "unknown")),
+            "torch_version": self.torch.__version__,
+            "transformers_version": transformers.__version__,
+            "peak_cuda_memory_bytes": peak_cuda,
+        }
 
     def generate_conversation(self, context: dict) -> str:
         messages = self._conversation_messages(context)

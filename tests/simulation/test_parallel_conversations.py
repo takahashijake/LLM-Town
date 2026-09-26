@@ -308,3 +308,15 @@ def test_batched_fake_runs_are_reproducible_and_batch_size_is_bounded(tmp_path):
         ])
         assert max(engine.last_social_tick["batch_sizes"]) == 1
     assert recordings[0] == recordings[1]
+
+
+def test_save_contains_no_transient_batch_state(tmp_path):
+    engine = build_batched_engine(tmp_path, WaveRecordingClient(), turns=2)
+    engine.generate_conversations(1, 8)
+    engine.state.save(engine, 1, 8)
+    saved = engine.state.path.read_text().lower()
+    for transient in (
+        "request_id", "generated_token_count", "tensor", "future",
+        "private replica", "active_session_count_by_wave",
+    ):
+        assert transient not in saved
