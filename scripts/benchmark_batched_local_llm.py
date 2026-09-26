@@ -20,6 +20,7 @@ from src.llm.generation import (
     ConversationGenerationRequest,
     generation_request_id,
 )
+from src.llm.grounding import GroundingValidator
 from src.simulation.conversation_scheduler import derive_conversation_seed
 
 
@@ -90,6 +91,7 @@ def _serial(client, requests):
         "output_sha256": hashlib.sha256(
             json.dumps(outputs, sort_keys=True).encode()
         ).hexdigest(),
+        **_grounded_quality(outputs, requests),
     }
 
 
@@ -116,6 +118,26 @@ def _batched(client, requests, batch_size):
         "output_sha256": hashlib.sha256(
             json.dumps(outputs, sort_keys=True).encode()
         ).hexdigest(),
+        **_grounded_quality(outputs, requests),
+    }
+
+
+def _grounded_quality(outputs, requests):
+    validator = GroundingValidator()
+    valid = 0
+    for output, request in zip(outputs, requests):
+        try:
+            parsed = json.loads(output)
+        except (TypeError, json.JSONDecodeError):
+            continue
+        dialogue = parsed.get("utterance", parsed.get("dialogue", ""))
+        result = validator.validate_realization(
+            dialogue, request.context["grounded_content_plan"],
+        )
+        valid += int(result.valid)
+    return {
+        "grounded_valid_count": valid,
+        "grounded_valid_rate": valid / len(requests) if requests else 0.0,
     }
 
 
