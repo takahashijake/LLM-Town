@@ -224,6 +224,14 @@ class IntentSystem:
                 )
             else:
                 plan = None
+            if plan is not None and plan.status == "blocked" and goal.status == "active":
+                goal.status = "blocked"
+                goal.current_intent_id = None
+                goal.evidence.append({
+                    "type": "blocked", "day": current_day,
+                    "reason": plan.no_plan_reason or plan.terminal_reason,
+                })
+                plan_system.synchronize_goal_plan(goal, day=current_day)
             if plan is None or not plan.active:
                 continue
             prior_intent = next((

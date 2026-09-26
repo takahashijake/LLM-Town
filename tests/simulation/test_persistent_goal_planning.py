@@ -489,6 +489,30 @@ def test_unsupported_required_action_fails_closed(tmp_path):
     assert plan.no_plan_reason == "unsupported_required_action"
 
 
+def test_runtime_blocks_goal_when_selected_strategy_has_no_safe_path(tmp_path):
+    engine = build_engine(tmp_path)
+    maya = engine.agents[0]
+    goal = Goal(
+        id="goal-runtime-unsupported", agent_name=maya.name,
+        description="Socialize", category="socialize", priority=5,
+        created_day=1, review_day=7, target_locations=["cafe"],
+    )
+    maya.goals = [goal]
+    unsafe = StrategyCandidate(
+        "low_risk_chat", "socialize", 4.0,
+        required_action="invent_authoritative_action", score=4.0,
+    )
+
+    with patch.object(engine.goal_planner, "select_strategy", return_value=unsafe):
+        engine.update_agent_intents(1)
+
+    plan = engine.plan_system.get_goal_plan(goal.id)
+    assert plan.status == "blocked"
+    assert plan.no_plan_reason == "unsupported_required_action"
+    assert goal.status == "blocked"
+    assert maya.name not in engine.agent_intents
+
+
 def test_goal_plan_save_resume_preserves_progress_and_private_mechanics(tmp_path):
     engine = build_engine(tmp_path)
     maya = engine.agents[0]
