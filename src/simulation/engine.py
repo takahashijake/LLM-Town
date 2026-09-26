@@ -326,6 +326,7 @@ class SimulationEngine:
             agents=self.agents,
             outcome_memory=self.outcome_memory,
         )
+        self.commitment_system.plan_system = self.plan_system
         self.outcome_memory.bind_authorities(
             commitments=self.commitment_system, plans=self.plan_system,
             crime=self.crime, justice=self.justice, materials=self.materials,

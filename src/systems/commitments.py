@@ -133,6 +133,7 @@ class CommitmentSystem:
         self.materials = materials
         self.location_ids = list(location_ids or [])
         self.outcome_memory = outcome_memory
+        self.plan_system = None
         self.execution_records: list[dict] = []
         self.attempt_records: list[dict] = []
         self.duplicate_attempts = 0
@@ -412,6 +413,8 @@ class CommitmentSystem:
             item.resolution_reason = reason
             self._apply_consequence_once(item, day)
         self._project_transition(item, status, day, tick)
+        if status in {"cancelled", "expired", "failed"} and self.plan_system is not None:
+            self.plan_system.synchronize_source(item.id, day=day)
         return item
 
     def _project_transition(self, item, status, day, tick) -> None:

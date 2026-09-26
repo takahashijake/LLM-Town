@@ -154,7 +154,6 @@ def evaluate_v3_freeze() -> dict:
             dialogue="I cannot help review records.", day=1, tick=12,
             session_id="freeze-cancel", turn_index=1,
         )
-        cancelled.plan_system.ensure_commitment_plans(1)
         scenarios["cancellation_no_orphan"] = (
             cancelled_item.status == "cancelled"
             and not cancelled.plan_system.plans[0].active

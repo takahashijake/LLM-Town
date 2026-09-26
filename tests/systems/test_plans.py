@@ -95,6 +95,7 @@ def test_terminal_source_abandons_stale_plan_before_action(tmp_path):
     engine.plan_system.ensure_commitment_plans(1)
     plan = engine.plan_system.plans[0]
     engine.commitment_system.transition(item.id, "cancelled", day=2, reason="cancelled")
+    assert plan.status == "abandoned"
     assert engine.plan_system.opportunities_for_agent("agent_001", day=2, tick=8) == []
     assert plan.status == "abandoned"
     assert plan.terminal_reason == "source_cancelled"
@@ -281,6 +282,7 @@ def test_terminal_commitment_synchronizes_plan_without_reopening(tmp_path):
     engine.plan_system.ensure_commitment_plans(1)
     plan = engine.plan_system.plans[0]
     engine.commitment_system.transition(item.id, "failed", day=2, reason="authoritative_failure")
+    assert plan.status == "failed"
     engine.plan_system.ensure_commitment_plans(2)
     engine.plan_system.ensure_commitment_plans(3)
     assert plan.status == "failed"

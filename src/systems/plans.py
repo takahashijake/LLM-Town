@@ -240,6 +240,18 @@ class PlanSystem:
             existing.add(("commitment", item.id))
         self.validate_invariants()
 
+    def synchronize_source(self, commitment_id: str, *, day: int) -> None:
+        """Immediately invalidate a plan after a terminal source transition."""
+        source = self.commitment_system.get(commitment_id)
+        for plan in self.plans:
+            if plan.source_id != commitment_id or not plan.active:
+                continue
+            self._terminate(
+                plan, self._terminal_status_for_source(plan, source.status), day,
+                f"source_{source.status}",
+            )
+        self.validate_invariants()
+
     @staticmethod
     def _terminal_status_for_source(plan, source_status: str) -> str:
         if source_status == "fulfilled":
