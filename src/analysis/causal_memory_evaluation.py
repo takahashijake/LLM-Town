@@ -86,8 +86,8 @@ def evaluate_causal_memory() -> dict:
         scenarios["private_plan_failure"] = (
             any(m.event_type == "plan_failed" for m in failed.agents[0].memory)
             and not any(m.event_type == "plan_failed" for m in failed.agents[1].memory)
-            and any(m.event_type == "commitment_expired" for m in failed.agents[1].memory)
-            and missed.status == "expired"
+            and any(m.event_type == "commitment_failed" for m in failed.agents[1].memory)
+            and missed.status == "failed"
         )
         for agent in failed.agents[:2]:
             failed.journal_system.compress_old_memories(agent, current_day=40)

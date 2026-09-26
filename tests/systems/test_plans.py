@@ -108,6 +108,7 @@ def test_unavailable_resource_has_bounded_observations_and_private_failure_memor
         engine.plan_system.opportunities_for_agent("agent_001", day=2, tick=hour)
     plan = engine.plan_system.plans[0]
     assert plan.status == "failed"
+    assert item.status == "failed"
     assert plan.steps[0].attempts == 3
     assert len([event for event in plan.transitions if event["type"] == "blocked"]) == 3
     actor, counterpart = engine.agents[:2]
