@@ -1,11 +1,13 @@
-# V4 Phases 1–2: bounded goal planning and execution fidelity
+# V4 Phases 1–3: bounded goal planning and prerequisite-aware execution
 
 ## Contract
 
 Phase 1 makes one deterministic strategy for an active durable goal persist
 across short-lived intents and save/resume. Phase 2 makes each strategy denote a
-distinct, authoritatively provable behavior. Neither phase is a general planner;
-they do not create free-form steps, facts, resources, places, actions, or goals.
+distinct, authoritatively provable behavior. Phase 3 gives strategies one optional
+finite prerequisite checked against authoritative world state. These phases are
+not a general planner; they do not create free-form steps, facts, resources,
+places, actions, dependencies, or goals.
 
 ```text
 Goal (authoritative desired outcome)
@@ -66,16 +68,19 @@ creates a second one. Strategy adaptation retains that ID and increments a
 revision. Each generated intent records the plan ID and revision; an intent from
 a superseded revision is terminalized before it can continue.
 
-Plan schema version 3 adds `goal_plans` and `goal_planning_records` beside the
-unchanged commitment-plan representation. Unversioned/version-1 and version-2
-documents load with empty goal-plan fields. Version-2 commitment plans retain
+Plan schema version 4 adds bounded dependency state to goal plans. Versions 1
+and 2 load with empty goal-plan fields; version 3 goal plans load without
+fabricating dependencies. Version-2 commitment plans retain
 their exact template, step, proof, and lifecycle behavior. Unknown future schema
 versions and unknown goal strategy names fail closed.
 
 A goal plan stores only bounded diagnostic state: source and owner IDs, strategy,
 intent type, target agent/location, required action, feasibility and score at
 selection, selected/review day, revision, lifecycle, at most 50 transitions, at
-most 50 mirrored evidence records, and at most 50 plan evidence keys. It never
+most 50 mirrored evidence records, at most 50 plan evidence keys, and at most 20
+dependency transitions. Dependency state stores only kind, deterministic subject,
+revision, status, last check, optional preparation activity, and authority
+reference. It never
 stores prompts, model output, whole memories, or context snapshots. Goals retain
 up to 100 processed evidence keys as their authoritative replay guard.
 
@@ -120,8 +125,8 @@ and location requirement. Unknown strategies and malformed plans fail closed.
 | `ask_informed_agent` | social | registered `ask_for_help` | selected alternate resident required |
 | `ask_reliable_partner` | social | registered `ask_for_help` | selected relationship target required |
 | `seek_information_at_location` | activity | `goal_seek_information` | selected location required |
-| `observe_relevant_activity` | activity | `goal_observe_relevant_activity` | selected location required |
-| `direct_participation` | activity | `goal_direct_participation` | selected location required |
+| `observe_relevant_activity` | activity | `goal_observe_relevant_activity` | selected location plus current event there |
+| `direct_participation` | activity | `goal_direct_participation` | selected location plus current event there |
 
 No strategy adds a world-effect authority. A social strategy is feasible only if
 its target policy is satisfied and relationship rules allow its registered action.
@@ -137,6 +142,49 @@ The three location activities carry internal `source_goal_id`,
 They are diagnostic proof inputs only: they do not mutate a plan or goal and are
 not exposed in unrelated residents' prompt context. Reaching the location through
 `wander`, a purchase, an event, or another goal strategy is not proof.
+
+## Phase 3 dependency contract
+
+Phase 3 extends the same immutable strategy registry. A contract may specify zero
+or one dependency from a closed vocabulary. The currently supported kind is:
+
+| Kind | Meaning | Authority | Preparation | Failure behavior | Strategies |
+| --- | --- | --- | --- | --- | --- |
+| `daily_event_at_target_location` | A real current daily event exists at the plan's selected location | `SimulationEngine.current_daily_event` (`DailyEvent.id` and `location_id`) | none; the plan waits | absence or a different location remains `waiting`; unknown kinds fail closed | `observe_relevant_activity`, `direct_participation` |
+
+```text
+Goal
+ ↓
+GoalPlan revision
+ ↓
+finite strategy
+ ↓
+dependency contract
+ ↓
+authoritative prerequisite state
+ ├── satisfied ─────────────┐
+ ├── preparable → activity ─┤  (no live strategy currently declares preparation)
+ └── unavailable → adapt    │
+                            ↓
+                   exact strategy execution
+                            ↓
+                   authoritative evidence
+                            ↓
+                       Goal progress
+```
+
+The daily-event dependency is recomputed before activity selection and again
+before proof acceptance. A persisted `satisfied` label is diagnostic, not
+authority: resume must still observe the current event. The selected activity
+carries dependency kind, subject, and event ID in addition to Phase 2 provenance.
+A different event, location, revision, strategy, plan, intent, owner, or goal
+cannot cross-credit. The event appearing changes no goal progress; only the exact
+Phase 2 activity does.
+
+No current finite goal strategy has a semantically honest material prerequisite.
+Phase 3 therefore does not force a meal or trade good onto an unrelated tactic.
+`MaterialSystem`, configured sellers, purchase rules, stock, prices, and funds
+remain the authorities for a future explicitly resource-dependent strategy.
 
 ## Evidence and authority boundaries
 
@@ -174,19 +222,23 @@ unchanged.
 
 ## Evaluation
 
-Run `python scripts/evaluate_goal_planning.py` for Phase 1 lifecycle coverage and
+Run `python scripts/evaluate_goal_planning.py` for Phase 1 lifecycle coverage,
 `python scripts/evaluate_goal_strategy_execution.py` for Phase 2 execution
-fidelity. Both use `FakeLLMClient`, isolate global random state, report named
+fidelity, and `python scripts/evaluate_goal_strategy_dependencies.py` for Phase 3
+dependency lifecycle, persistence, revision, arbitration, privacy, and authority
+coverage. All use `FakeLLMClient`, isolate global random state, report named
 scenarios and invariants, and exit non-zero on failure.
 
 ## Known limitations and next slice
 
-The implementation still has one selected strategy per goal-plan revision, no
-general plan dependencies, no arbitrary multi-step decomposition, no navigation,
-no model-authored authoritative actions, a limited finite vocabulary, limited
-resource/opportunity awareness, and no multi-party coordination.
+The implementation still has one selected strategy and at most one dependency per
+goal-plan revision, no dependency graphs, no arbitrary multi-step decomposition,
+no navigation, no model-authored authoritative actions, a limited finite
+vocabulary, no live resource-dependent goal strategy, and no multi-party
+coordination. Event relevance is deliberately narrow: a current event at the
+selected location is relevant; there is no semantic topic-matching language.
 
-The next major V4 slice should be bounded resource/opportunity-aware strategy
-dependencies: a finite strategy may recognize a real prerequisite before
-execution while continuing to use only registered deterministic activities and
-existing authoritative systems.
+The next major V4 slice should add one semantically explicit resource-dependent
+strategy (or another finite authoritative opportunity type), using a registered
+preparation activity and the existing Materials/Economy mutation path. It should
+not generalize dependencies into arbitrary plan steps or predicates.

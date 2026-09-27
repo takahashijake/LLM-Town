@@ -22,6 +22,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - One bounded anti-echo regeneration attempt on the real-model path
 - Persistent memories, daily journals, goals, intents, and adaptive goal strategies
 - Persistent bounded goal plans with exact, revision-bound execution contracts
+- Bounded opportunity dependencies checked against authoritative daily events
 - Persistent bounded plans whose steps invoke existing authoritative actions
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
@@ -170,11 +171,19 @@ strategy across intent expiration and save/resume. V4 Phase 2 gives every finite
 strategy one immutable execution contract: social strategies require their exact
 registered action and selected target, while location strategies nominate distinct
 provenance-bearing activities. Proof is bound to owner, goal, plan, revision,
-intent, strategy, and authoritative execution identity. See
+intent, strategy, and authoritative execution identity. V4 Phase 3 lets a contract
+declare one finite prerequisite. Observation and direct participation now require
+a real current daily event at the selected location; absence waits, event presence
+alone adds no progress, and the exact Phase 2 activity remains required. The
+bounded dependency state persists for diagnostics but is rechecked from authority
+after resume. No current goal strategy invents an artificial resource requirement.
+See
 [`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
 prevent repeated dialogue actions from double-advancing goals or relationship
 state. Run `python scripts/evaluate_goal_strategy_execution.py` for the model-free
 Phase 2 acceptance evaluation.
+Run `python scripts/evaluate_goal_strategy_dependencies.py` for the model-free
+Phase 3 acceptance evaluation.
 
 ## V2 economic foundation
 

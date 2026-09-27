@@ -7,6 +7,24 @@ from dataclasses import dataclass
 
 SOCIAL_EXECUTION = "validated_social_action"
 ACTIVITY_EXECUTION = "strategy_activity"
+DAILY_EVENT_AT_TARGET = "daily_event_at_target_location"
+DEPENDENCY_KINDS = frozenset({DAILY_EVENT_AT_TARGET})
+
+
+@dataclass(frozen=True)
+class GoalStrategyDependencyContract:
+    """One finite, authoritative prerequisite for a strategy revision."""
+
+    kind: str
+    authority: str
+    preparation_activity_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind not in DEPENDENCY_KINDS:
+            raise ValueError(f"unknown goal strategy dependency kind: {self.kind}")
+        if self.kind == DAILY_EVENT_AT_TARGET:
+            if self.authority != "current_daily_event" or self.preparation_activity_id:
+                raise ValueError("malformed daily-event dependency contract")
 
 
 @dataclass(frozen=True)
@@ -19,6 +37,7 @@ class GoalStrategyExecutionContract:
     activity_id: str | None = None
     required_activity_tags: tuple[str, ...] = ()
     requires_target_location: bool = False
+    dependency: GoalStrategyDependencyContract | None = None
 
     def __post_init__(self) -> None:
         if self.execution_mode == SOCIAL_EXECUTION:
@@ -77,12 +96,18 @@ GOAL_STRATEGY_EXECUTION_CONTRACTS = {
             activity_id="goal_observe_relevant_activity",
             required_activity_tags=("goal_strategy", "observe_relevant_activity"),
             requires_target_location=True,
+            dependency=GoalStrategyDependencyContract(
+                DAILY_EVENT_AT_TARGET, "current_daily_event",
+            ),
         ),
         GoalStrategyExecutionContract(
             "direct_participation", ACTIVITY_EXECUTION, "strategy_activity",
             activity_id="goal_direct_participation",
             required_activity_tags=("goal_strategy", "direct_participation"),
             requires_target_location=True,
+            dependency=GoalStrategyDependencyContract(
+                DAILY_EVENT_AT_TARGET, "current_daily_event",
+            ),
         ),
     )
 }

@@ -76,6 +76,15 @@ class ActivitySystem:
             ),
             "source_goal_strategy": getattr(activity, "source_goal_strategy", None),
             "source_intent_id": getattr(activity, "source_intent_id", None),
+            "source_goal_dependency_kind": getattr(
+                activity, "source_goal_dependency_kind", None
+            ),
+            "source_goal_dependency_subject": getattr(
+                activity, "source_goal_dependency_subject", None
+            ),
+            "source_goal_dependency_authority_ref": getattr(
+                activity, "source_goal_dependency_authority_ref", None
+            ),
         }
 
         self.activity_records.append(activity_record)
@@ -104,12 +113,22 @@ class ActivitySystem:
                     agent.id, day=day, tick=hour)
                 if item.commitment_id not in planned_commitments
             ] if self.commitment_system else [])
+            goal_dependency = (
+                self.plan_system.goal_dependency_for_agent(
+                    agent.id, day=day, tick=hour,
+                    current_daily_event=current_daily_event,
+                    goal_plan_id=getattr(
+                        agent_intents.get(agent.name), "source_goal_plan_id", None
+                    ),
+                ) if self.plan_system else None
+            )
             try:
                 activity = self.activity_planner.choose_activity(
                     agent=agent, location_ids=location_ids, current_day=day, hour=hour,
                     daily_event=current_daily_event,
                     current_intent=agent_intents.get(agent.name),
                     commitment_opportunities=opportunities,
+                    goal_dependency=goal_dependency,
                 )
             except TypeError as error:
                 if "commitment_opportunities" not in str(error):

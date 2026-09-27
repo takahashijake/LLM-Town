@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from src.systems.outcome_memory import KnowledgeRecipient
 
 
-PLAN_SCHEMA_VERSION = 3
+PLAN_SCHEMA_VERSION = 4
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
 STEP_STATUSES = {"pending", "completed", "skipped", "failed"}
 KNOWN_ACTION_TYPES = {
@@ -23,6 +23,53 @@ TEMPLATE_ACTIONS = {
 KNOWN_PLAN_TYPES = {f"commitment_{name}" for name in TEMPLATE_ACTIONS}
 GOAL_PLAN_STATUSES = {"active", "paused", "completed", "blocked", "abandoned"}
 TERMINAL_GOAL_PLAN_STATUSES = {"completed", "blocked", "abandoned"}
+GOAL_DEPENDENCY_STATUSES = {"waiting", "preparable", "satisfied", "blocked"}
+
+
+@dataclass
+class GoalDependencyState:
+    kind: str
+    subject_id: str
+    revision: int
+    status: str = "waiting"
+    preparation_activity_id: str | None = None
+    last_checked_day: int | None = None
+    last_checked_tick: int | None = None
+    authority_reference: str | None = None
+    transitions: list[dict] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        from src.behavior.goal_strategy_contracts import DEPENDENCY_KINDS
+
+        if self.kind not in DEPENDENCY_KINDS:
+            raise ValueError(f"unknown goal strategy dependency kind: {self.kind}")
+        if self.status not in GOAL_DEPENDENCY_STATUSES:
+            raise ValueError(f"invalid goal dependency status: {self.status}")
+        if self.revision < 0 or not self.subject_id:
+            raise ValueError("goal dependency requires bounded revision and subject")
+        if len(self.transitions) > 20:
+            raise ValueError("goal dependency history exceeds bounded storage")
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "GoalDependencyState":
+        return cls(**{
+            key: value for key, value in data.items()
+            if key in cls.__dataclass_fields__
+        })
+
+
+@dataclass(frozen=True)
+class GoalDependencyOpportunity:
+    plan_id: str
+    goal_id: str
+    agent_id: str
+    revision: int
+    strategy: str
+    kind: str
+    subject_id: str
+    status: str
+    preparation_activity_id: str | None
+    authority_reference: str | None
 
 
 @dataclass
@@ -125,6 +172,7 @@ class GoalPlan:
     transitions: list[dict] = field(default_factory=list)
     evidence_records: list[dict] = field(default_factory=list)
     processed_evidence_keys: list[str] = field(default_factory=list)
+    dependency: GoalDependencyState | None = None
 
     def __post_init__(self) -> None:
         from src.behavior.goal_strategy_contracts import (
@@ -163,6 +211,13 @@ class GoalPlan:
             raise ValueError("goal plan revision must be non-negative")
         if len(self.transitions) > 50 or len(self.evidence_records) > 50:
             raise ValueError("goal plan audit history exceeds bounded storage")
+        if self.dependency is not None:
+            if isinstance(self.dependency, dict):
+                self.dependency = GoalDependencyState.from_dict(self.dependency)
+            if self.dependency.revision != self.revision:
+                raise ValueError("goal dependency revision does not match plan")
+            if contract.dependency is None or self.dependency.kind != contract.dependency.kind:
+                raise ValueError("goal dependency violates strategy contract")
 
     @property
     def active(self) -> bool:
@@ -173,10 +228,13 @@ class GoalPlan:
 
     @classmethod
     def from_dict(cls, data: dict) -> "GoalPlan":
-        return cls(**{
+        values = {
             key: value for key, value in data.items()
             if key in cls.__dataclass_fields__
-        })
+        }
+        if values.get("dependency") is not None:
+            values["dependency"] = GoalDependencyState.from_dict(values["dependency"])
+        return cls(**values)
 
 
 @dataclass(frozen=True)
@@ -232,7 +290,7 @@ class PlanSystem:
                   outcome_memory=None) -> "PlanSystem":
         data = data or {}
         version = int(data.get("schema_version", 1))
-        if version not in {1, 2, PLAN_SCHEMA_VERSION}:
+        if version not in {1, 2, 3, PLAN_SCHEMA_VERSION}:
             raise ValueError(f"unsupported plan schema version: {version}")
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
                      goal_plans=[GoalPlan.from_dict(item)
@@ -457,8 +515,13 @@ class PlanSystem:
                 "reason": reason,
                 "revision": 0,
             }],
+            dependency=self._dependency_for_candidate(candidate, revision=0),
         )
         self.goal_plans.append(plan)
+        self.refresh_goal_dependency(
+            plan, day=day, tick=None,
+            current_daily_event=getattr(engine, "current_daily_event", None),
+        )
         self.validate_invariants(goal_planner=goal_planner)
         return plan
 
@@ -518,6 +581,9 @@ class PlanSystem:
         plan.score_at_selection = candidate.score
         plan.feasibility_at_selection = candidate.feasible
         plan.review_day = day
+        plan.dependency = self._dependency_for_candidate(
+            candidate, revision=plan.revision,
+        )
         self._append_goal_transition(plan, {
             "day": day, "type": "adapted", "trigger": trigger,
             "old_strategy": old["strategy"],
@@ -530,6 +596,82 @@ class PlanSystem:
             "revision": plan.revision,
         })
         return True
+
+    @staticmethod
+    def _dependency_for_candidate(candidate, *, revision: int):
+        from src.behavior.goal_strategy_contracts import strategy_contract
+
+        contract = strategy_contract(candidate.name)
+        dependency = contract.dependency if contract else None
+        if dependency is None:
+            return None
+        subject_id = candidate.target_location or candidate.target_agent
+        if not subject_id:
+            raise ValueError("goal strategy dependency has no deterministic subject")
+        return GoalDependencyState(
+            kind=dependency.kind,
+            subject_id=subject_id,
+            revision=revision,
+            preparation_activity_id=dependency.preparation_activity_id,
+        )
+
+    def refresh_goal_dependency(self, plan: GoalPlan, *, day: int,
+                                tick: int | None, current_daily_event=None):
+        """Recompute diagnostic dependency state from current authority."""
+        from src.behavior.goal_strategy_contracts import DAILY_EVENT_AT_TARGET
+
+        state = plan.dependency
+        if state is None:
+            return None
+        if state.revision != plan.revision:
+            state.status = "blocked"
+            authority_reference = None
+        elif state.kind == DAILY_EVENT_AT_TARGET:
+            matches = (
+                current_daily_event is not None
+                and current_daily_event.location_id == state.subject_id
+            )
+            state.status = "satisfied" if matches else "waiting"
+            authority_reference = current_daily_event.id if matches else None
+        else:  # Defensive fail-closed guard for corrupted in-memory state.
+            state.status = "blocked"
+            authority_reference = None
+        changed = (
+            state.status,
+            authority_reference,
+        ) != (
+            state.transitions[-1].get("status") if state.transitions else None,
+            state.transitions[-1].get("authority_reference") if state.transitions else None,
+        )
+        state.last_checked_day = int(day)
+        state.last_checked_tick = None if tick is None else int(tick)
+        state.authority_reference = authority_reference
+        if changed:
+            state.transitions.append({
+                "day": int(day), "tick": tick, "status": state.status,
+                "authority_reference": authority_reference,
+                "revision": plan.revision,
+            })
+            state.transitions = state.transitions[-20:]
+        return state
+
+    def goal_dependency_for_agent(self, agent_id: str, *, day: int,
+                                  tick: int | None, current_daily_event=None,
+                                  goal_plan_id: str | None = None):
+        plans = [plan for plan in self.goal_plans
+                 if plan.active and plan.agent_id == agent_id and plan.dependency
+                 and (goal_plan_id is None or plan.id == goal_plan_id)]
+        if not plans:
+            return None
+        plan = max(plans, key=lambda item: (item.selected_day, item.id))
+        state = self.refresh_goal_dependency(
+            plan, day=day, tick=tick, current_daily_event=current_daily_event,
+        )
+        return GoalDependencyOpportunity(
+            plan.id, plan.source_goal_id, plan.agent_id, plan.revision,
+            plan.strategy_name, state.kind, state.subject_id, state.status,
+            state.preparation_activity_id, state.authority_reference,
+        )
 
     def observe_goal_evidence(self, goal, *, evidence_key: str, day: int,
                               intent_id: str, evidence_type: str,
@@ -844,6 +986,13 @@ class PlanSystem:
                 len(plan.transitions) <= 50
                 and len(plan.evidence_records) <= 50
                 and len(plan.processed_evidence_keys) <= 50
+                and (plan.dependency is None
+                     or len(plan.dependency.transitions) <= 20)
+                for plan in self.goal_plans
+            ),
+            "goal_dependency_revision_bound": all(
+                plan.dependency is None
+                or plan.dependency.revision == plan.revision
                 for plan in self.goal_plans
             ),
             "goal_evidence_unique": all(

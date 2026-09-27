@@ -18,6 +18,7 @@ from src.behavior.goal_strategy_contracts import (
 from src.llm.client import FakeLLMClient
 from src.simulation.conversation_runner import ConversationRunner
 from src.simulation.engine import SimulationEngine
+from src.town.daily_event import DailyEvent
 
 
 @contextmanager
@@ -75,7 +76,19 @@ def _social(engine, actor, listener, action, key):
 
 def _activity(engine, actor, day=1, hour=8):
     intent = engine.agent_intents[actor.name]
-    activity = engine.activity_planner.create_intent_activity(intent)
+    contract = strategy_contract(intent.strategy)
+    if contract.dependency and engine.current_daily_event is None:
+        engine.current_daily_event = DailyEvent(
+            "evaluation_opportunity", "Evaluation Opportunity",
+            "An authoritative deterministic opportunity.",
+            intent.target_location, ["evaluation"],
+        )
+    dependency = engine.plan_system.goal_dependency_for_agent(
+        actor.id, day=day, tick=hour,
+        current_daily_event=engine.current_daily_event,
+        goal_plan_id=intent.source_goal_plan_id,
+    )
+    activity = engine.activity_planner.create_intent_activity(intent, dependency)
     engine.activity_system.log_activity_event(day, hour, actor, activity)
     return engine.activity_records[-1]
 

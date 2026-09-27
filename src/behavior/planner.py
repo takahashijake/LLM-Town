@@ -39,7 +39,7 @@ class ActivityPlanner:
             return agent.goal_descriptions()
         return [str(goal) for goal in getattr(agent, "goals", [])]
 
-    def create_intent_activity(self, current_intent) -> Activity:
+    def create_intent_activity(self, current_intent, goal_dependency=None) -> Activity:
         strategy = getattr(current_intent, "strategy", "")
         source_goal_plan_id = getattr(current_intent, "source_goal_plan_id", None)
         contract = strategy_contract(strategy)
@@ -64,6 +64,11 @@ class ActivityPlanner:
                 source_goal_plan_revision=current_intent.source_goal_plan_revision,
                 source_goal_strategy=strategy,
                 source_intent_id=current_intent.id,
+                source_goal_dependency_kind=getattr(goal_dependency, "kind", None),
+                source_goal_dependency_subject=getattr(goal_dependency, "subject_id", None),
+                source_goal_dependency_authority_ref=getattr(
+                    goal_dependency, "authority_reference", None
+                ),
             )
         return Activity(
             id=f"intent_{current_intent.intent_type}",
@@ -125,6 +130,7 @@ class ActivityPlanner:
         daily_event=None,
         current_intent=None,
         commitment_opportunities=None,
+        goal_dependency=None,
     ) -> Activity:
         agent.initialize_needs()
         deferred_commitment_decision = None
@@ -152,13 +158,33 @@ class ActivityPlanner:
                 return self.create_commitment_activity(agent, opportunity, decision)
             deferred_commitment_decision = asdict(decision)
 
+        intent_contract = (
+            strategy_contract(getattr(current_intent, "strategy", ""))
+            if current_intent else None
+        )
+        dependency_required = bool(
+            intent_contract is not None and intent_contract.dependency is not None
+        )
+        dependency_allows_intent = (
+            not dependency_required
+            or (
+                goal_dependency is not None
+                and goal_dependency.status == "satisfied"
+                and current_intent is not None
+                and goal_dependency.plan_id == current_intent.source_goal_plan_id
+                and goal_dependency.revision == current_intent.source_goal_plan_revision
+                and goal_dependency.strategy == current_intent.strategy
+            )
+        )
+
         if (
             current_intent
+            and dependency_allows_intent
             and current_intent.target_location
             and current_intent.target_location in location_ids
             and self.should_prioritize_intent_before_event(current_intent)
         ):
-            activity = self.create_intent_activity(current_intent)
+            activity = self.create_intent_activity(current_intent, goal_dependency)
             activity.commitment_decision = deferred_commitment_decision
             return activity
 
@@ -174,14 +200,14 @@ class ActivityPlanner:
             activity.commitment_decision = deferred_commitment_decision
             return activity
 
-        if current_intent and current_intent.target_location:
+        if current_intent and dependency_allows_intent and current_intent.target_location:
             follow_probability = self.get_intent_activity_probability(current_intent)
 
             if (
                 current_intent.target_location in location_ids
                 and random.random() < follow_probability
             ):
-                activity = self.create_intent_activity(current_intent)
+                activity = self.create_intent_activity(current_intent, goal_dependency)
                 activity.commitment_decision = deferred_commitment_decision
                 return activity
 

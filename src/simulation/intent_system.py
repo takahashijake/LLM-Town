@@ -361,6 +361,14 @@ class IntentSystem:
         bound = bool(intent.source_goal_plan_id)
         plan = self._matching_active_goal_plan(agent, goal, intent) if bound else None
         contract = strategy_contract(intent.strategy) if bound else None
+        if bound and plan and contract and contract.dependency:
+            engine = getattr(self, "_engine_for_goal_check", None)
+            plan_system = getattr(engine, "plan_system", None)
+            if plan_system:
+                plan_system.refresh_goal_dependency(
+                    plan, day=day, tick=record.get("hour"),
+                    current_daily_event=getattr(engine, "current_daily_event", None),
+                )
         if bound and not self._activity_proves_strategy(
             record, goal, intent, plan, contract, location_id
         ):
@@ -462,7 +470,20 @@ class IntentSystem:
             return False
         if contract.execution_mode != ACTIVITY_EXECUTION:
             return False
-        return (
+        dependency_matches = True
+        if contract.dependency is not None:
+            state = plan.dependency
+            dependency_matches = (
+                state is not None
+                and state.revision == plan.revision
+                and state.kind == contract.dependency.kind
+                and state.status == "satisfied"
+                and record.get("source_goal_dependency_kind") == state.kind
+                and record.get("source_goal_dependency_subject") == state.subject_id
+                and record.get("source_goal_dependency_authority_ref")
+                == state.authority_reference
+            )
+        return dependency_matches and (
             record.get("agent") == goal.agent_name
             and record.get("activity_id") == contract.activity_id
             and set(contract.required_activity_tags).issubset(record.get("tags", []))
