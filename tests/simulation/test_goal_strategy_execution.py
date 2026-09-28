@@ -27,7 +27,8 @@ def bind_strategy(engine, strategy, *, target=None, location=None, goal_id=None)
         "repair_relationship" if strategy in {
             "direct_cooperation", "apologize_directly", "offer_help",
         } else "investigate" if strategy.startswith("ask_")
-        or strategy in {"seek_information_at_location", "observe_relevant_activity"}
+        or strategy in {"seek_information_at_location", "observe_relevant_activity",
+                        "study_reference_material"}
         else "socialize"
     )
     goal = Goal(
@@ -58,6 +59,15 @@ def social_proof(engine, actor, listener, action, key):
 
 def activity_record(engine, actor, day=1, hour=8):
     intent = engine.agent_intents[actor.name]
+    if intent.strategy == "study_reference_material":
+        seller = engine.materials.sellers["seller:market_stall"]
+        inventory = engine.materials.inventory_for_agent(actor.id)
+        engine.materials.transfer_good(
+            seller.inventory_id, inventory.id, "reference_book", 1,
+            day=day, hour=hour - 1, reason="test strategy setup",
+            authorization_type="test", authorization_id=f"owned:{intent.id}",
+            event_key=f"owned:{intent.id}",
+        )
     dependency = engine.plan_system.goal_dependency_for_agent(
         actor.id, day=day, tick=hour,
         current_daily_event=engine.current_daily_event,
@@ -120,7 +130,7 @@ def test_ask_strategy_requires_exact_selected_target(tmp_path, strategy):
 
 @pytest.mark.parametrize("strategy", (
     "seek_information_at_location", "observe_relevant_activity",
-    "direct_participation",
+    "direct_participation", "study_reference_material",
 ))
 def test_location_strategy_requires_its_authoritative_activity(tmp_path, strategy):
     engine = engine_at(tmp_path, strategy)

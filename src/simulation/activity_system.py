@@ -156,12 +156,18 @@ class ActivitySystem:
                 )
 
             if self.material_system is not None:
-                self.material_system.process_activity(
+                material_result = self.material_system.process_activity(
                     agent,
                     activity,
                     day=day,
                     hour=hour,
                 )
+                if material_result is not None:
+                    record = self.activity_records[-1]
+                    record["material_result_id"] = material_result.id
+                    if activity.id == "goal_acquire_reference_book":
+                        record["preparation_exchange_id"] = material_result.id
+                        record["execution_status"] = "prepared"
 
             completed_activities.append((agent, activity, self.activity_records[-1]))
 

@@ -54,6 +54,7 @@ class ActivityPlanner:
                     "seek_information_at_location": "Seek goal-relevant information",
                     "observe_relevant_activity": "Observe goal-relevant activity",
                     "direct_participation": "Participate directly in goal-relevant activity",
+                    "study_reference_material": "Study owned reference material",
                 }[strategy],
                 location_id=current_intent.target_location,
                 reason=current_intent.description,
@@ -157,6 +158,20 @@ class ActivityPlanner:
                     return self.create_commitment_preparation_activity(agent, opportunity, decision)
                 return self.create_commitment_activity(agent, opportunity, decision)
             deferred_commitment_decision = asdict(decision)
+
+        if (
+            current_intent is not None
+            and goal_dependency is not None
+            and goal_dependency.status == "preparable"
+            and goal_dependency.preparation_activity_id
+            and goal_dependency.plan_id == current_intent.source_goal_plan_id
+            and goal_dependency.revision == current_intent.source_goal_plan_revision
+            and goal_dependency.strategy == current_intent.strategy
+            and goal_dependency.preparation_location in location_ids
+        ):
+            return self.create_goal_preparation_activity(
+                agent, current_intent, goal_dependency,
+            )
 
         intent_contract = (
             strategy_contract(getattr(current_intent, "strategy", ""))
@@ -302,6 +317,24 @@ class ActivityPlanner:
             commitment_decision=asdict(decision),
             source_plan_id=getattr(opportunity, "plan_id", None),
             source_plan_step_id=getattr(opportunity, "step_id", None),
+        )
+
+    def create_goal_preparation_activity(self, agent, intent, dependency) -> Activity:
+        return Activity(
+            id=dependency.preparation_activity_id,
+            name="Acquire reference material through an authorized seller",
+            location_id=dependency.preparation_location,
+            reason=(f"{agent.name} is preparing the bound goal strategy through "
+                    "a current authorized purchase route."),
+            tags=["goal_strategy", "preparation", "purchase", "reference_book"],
+            source_goal_id=intent.parent_goal_id,
+            source_goal_plan_id=intent.source_goal_plan_id,
+            source_goal_plan_revision=intent.source_goal_plan_revision,
+            source_goal_strategy=intent.strategy,
+            source_intent_id=intent.id,
+            source_goal_dependency_kind=dependency.kind,
+            source_goal_dependency_subject=dependency.subject_id,
+            source_goal_dependency_authority_ref=dependency.authority_reference,
         )
 
     def should_attend_daily_event(self, agent: Agent, daily_event) -> bool:

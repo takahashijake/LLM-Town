@@ -74,6 +74,12 @@
       "seller_id": "seller:market_stall",
       "good_id": "prepared_meal",
       "quantity": 1
+    },
+    {
+      "activity_id": "goal_acquire_reference_book",
+      "seller_id": "seller:market_stall",
+      "good_id": "reference_book",
+      "quantity": 1
     }
   ],
   "consumption_activity_rules": [
