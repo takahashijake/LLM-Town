@@ -255,6 +255,16 @@ class GoalPlanner:
             ]
         elif goal.category in {"investigate", "increase_knowledge"}:
             location = (goal.target_locations or ["library"])[0]
+            try:
+                inventory = engine.materials.inventory_for_agent(agent.id)
+                owns_reference = inventory.quantity("reference_book") >= 1
+                reference_route = engine.materials.find_purchase_route(
+                    agent.id, "reference_book", 1,
+                )
+            except (KeyError, ValueError, AttributeError):
+                owns_reference = False
+                reference_route = None
+            reference_feasible = owns_reference or reference_route is not None
             alternate = self._best_social_target(
                 agent, engine, [name for name in available_agents if name != target]
             )
@@ -271,6 +281,16 @@ class GoalPlanner:
                                   reputation_risk_factor=0.1, opportunity_relevance=0.4),
                 StrategyCandidate("seek_information_at_location", intent_type, 4.6,
                                   target_location=location, opportunity_relevance=0.7),
+                StrategyCandidate(
+                    "study_reference_material", intent_type, 4.85,
+                    target_location=location,
+                    opportunity_relevance=0.8 if owns_reference else 0.35,
+                    feasible=reference_feasible,
+                    infeasible_reason=(
+                        "reference_book is neither owned nor legally purchasable"
+                        if not reference_feasible else ""
+                    ),
+                ),
                 StrategyCandidate("observe_relevant_activity", intent_type, 3.8,
                                   target_location=location, opportunity_relevance=0.5),
             ]

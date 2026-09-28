@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from src.systems.outcome_memory import KnowledgeRecipient
 
 
-PLAN_SCHEMA_VERSION = 4
+PLAN_SCHEMA_VERSION = 5
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
 STEP_STATUSES = {"pending", "completed", "skipped", "failed"}
 KNOWN_ACTION_TYPES = {
@@ -70,6 +70,7 @@ class GoalDependencyOpportunity:
     status: str
     preparation_activity_id: str | None
     authority_reference: str | None
+    preparation_location: str | None = None
 
 
 @dataclass
@@ -218,6 +219,15 @@ class GoalPlan:
                 raise ValueError("goal dependency revision does not match plan")
             if contract.dependency is None or self.dependency.kind != contract.dependency.kind:
                 raise ValueError("goal dependency violates strategy contract")
+            expected_subject = (
+                contract.dependency.subject_id or self.target_location or self.target_agent
+            )
+            if (
+                self.dependency.subject_id != expected_subject
+                or self.dependency.preparation_activity_id
+                != contract.dependency.preparation_activity_id
+            ):
+                raise ValueError("malformed goal dependency state")
 
     @property
     def active(self) -> bool:
@@ -265,13 +275,15 @@ class PlanSystem:
     MAX_GOAL_ADAPTATIONS = 3
 
     def __init__(self, plans=None, *, goal_plans=None, next_number=1,
-                 commitment_system=None, agents=None, outcome_memory=None):
+                 commitment_system=None, agents=None, outcome_memory=None,
+                 materials=None):
         self.plans = list(plans or [])
         self.goal_plans = list(goal_plans or [])
         self.next_number = max(1, int(next_number))
         self.commitment_system = commitment_system
         self.agents = list(agents or [])
         self.outcome_memory = outcome_memory
+        self.materials = materials
         self.execution_records: list[dict] = []
         self.planning_records: list[dict] = []
         self.goal_planning_records: list[dict] = []
@@ -287,17 +299,17 @@ class PlanSystem:
 
     @classmethod
     def from_dict(cls, data: dict | None, *, commitment_system=None, agents=None,
-                  outcome_memory=None) -> "PlanSystem":
+                  outcome_memory=None, materials=None) -> "PlanSystem":
         data = data or {}
         version = int(data.get("schema_version", 1))
-        if version not in {1, 2, 3, PLAN_SCHEMA_VERSION}:
+        if version not in {1, 2, 3, 4, PLAN_SCHEMA_VERSION}:
             raise ValueError(f"unsupported plan schema version: {version}")
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
                      goal_plans=[GoalPlan.from_dict(item)
                                  for item in data.get("goal_plans", [])],
                      next_number=data.get("next_number", 1),
                      commitment_system=commitment_system, agents=agents,
-                     outcome_memory=outcome_memory)
+                     outcome_memory=outcome_memory, materials=materials)
         system.execution_records = list(data.get("execution_records", []))
         system.planning_records = list(data.get("planning_records", []))
         system.goal_planning_records = list(data.get("goal_planning_records", []))
@@ -605,7 +617,7 @@ class PlanSystem:
         dependency = contract.dependency if contract else None
         if dependency is None:
             return None
-        subject_id = candidate.target_location or candidate.target_agent
+        subject_id = dependency.subject_id or candidate.target_location or candidate.target_agent
         if not subject_id:
             raise ValueError("goal strategy dependency has no deterministic subject")
         return GoalDependencyState(
@@ -618,7 +630,7 @@ class PlanSystem:
     def refresh_goal_dependency(self, plan: GoalPlan, *, day: int,
                                 tick: int | None, current_daily_event=None):
         """Recompute diagnostic dependency state from current authority."""
-        from src.behavior.goal_strategy_contracts import DAILY_EVENT_AT_TARGET
+        from src.behavior.goal_strategy_contracts import DAILY_EVENT_AT_TARGET, OWNED_GOOD
 
         state = plan.dependency
         if state is None:
@@ -633,6 +645,24 @@ class PlanSystem:
             )
             state.status = "satisfied" if matches else "waiting"
             authority_reference = current_daily_event.id if matches else None
+        elif state.kind == OWNED_GOOD:
+            try:
+                inventory = self.materials.inventory_for_agent(plan.agent_id)
+                owned = inventory.quantity(state.subject_id) >= 1
+            except (KeyError, ValueError, AttributeError):
+                inventory = None
+                owned = False
+            if owned:
+                state.status = "satisfied"
+                authority_reference = inventory.id
+            else:
+                route = (
+                    self.materials.find_purchase_route(
+                        plan.agent_id, state.subject_id, 1,
+                    ) if self.materials else None
+                )
+                state.status = "preparable" if route else "blocked"
+                authority_reference = route.seller_id if route else None
         else:  # Defensive fail-closed guard for corrupted in-memory state.
             state.status = "blocked"
             authority_reference = None
@@ -667,10 +697,15 @@ class PlanSystem:
         state = self.refresh_goal_dependency(
             plan, day=day, tick=tick, current_daily_event=current_daily_event,
         )
+        preparation_location = None
+        if state.status == "preparable" and self.materials and state.authority_reference:
+            seller = self.materials.sellers.get(state.authority_reference)
+            preparation_location = seller.location_id if seller else None
         return GoalDependencyOpportunity(
             plan.id, plan.source_goal_id, plan.agent_id, plan.revision,
             plan.strategy_name, state.kind, state.subject_id, state.status,
             state.preparation_activity_id, state.authority_reference,
+            preparation_location,
         )
 
     def observe_goal_evidence(self, goal, *, evidence_key: str, day: int,

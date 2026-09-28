@@ -159,6 +159,16 @@ class ExchangeRecord:
 
 
 @dataclass(frozen=True)
+class PurchaseRoute:
+    seller_id: str
+    location_id: str
+    good_id: str
+    quantity: int
+    unit_price: int
+    total_price: int
+
+
+@dataclass(frozen=True)
 class ConsumptionRecord:
     id: str
     day: int
@@ -916,6 +926,37 @@ class MaterialSystem:
         self.next_exchange_number += 1
         return exchange
 
+    def find_purchase_route(
+        self, agent_id: str, good_id: str, quantity: int,
+    ) -> PurchaseRoute | None:
+        """Return one current legal configured route without mutating authority."""
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+            return None
+        try:
+            inventory = self.inventory_for_agent(agent_id)
+            account = self.economy.account_for_agent(agent_id)
+            good = self.get_good(good_id)
+        except (KeyError, ValueError, AttributeError):
+            return None
+        if inventory.account_id != account.id:
+            return None
+        total_price = good.unit_price * quantity
+        if account.balance < total_price:
+            return None
+        for seller in sorted(self.sellers.values(), key=lambda value: value.id):
+            if not seller.active or not seller.location_id:
+                continue
+            try:
+                stock = self.quantity(seller.inventory_id, good_id)
+            except (KeyError, ValueError):
+                continue
+            if stock >= quantity:
+                return PurchaseRoute(
+                    seller.id, seller.location_id, good_id, quantity,
+                    good.unit_price, total_price,
+                )
+        return None
+
     def consume(
         self,
         agent,
@@ -987,9 +1028,28 @@ class MaterialSystem:
             seller = self.sellers[rule.seller_id]
             if activity.location_id != seller.location_id or "purchase" not in activity.tags:
                 return None
+            if activity.id == "goal_acquire_reference_book" and not (
+                "goal_strategy" in activity.tags
+                and "preparation" in activity.tags
+                and getattr(activity, "source_goal_dependency_kind", None) == "owned_good"
+                and getattr(activity, "source_goal_dependency_subject", None) == rule.good_id
+                and getattr(activity, "source_goal_dependency_authority_ref", None)
+                == seller.id
+                and getattr(activity, "source_goal_plan_id", None)
+                and getattr(activity, "source_intent_id", None)
+            ):
+                return None
             inventory = self.inventory_for_agent(agent.id)
             account = self.economy.account_for_agent(agent.id)
             try:
+                event_key = f"purchase:{agent.id}:{activity.id}:{day}"
+                if getattr(activity, "source_goal_plan_id", None):
+                    event_key = (
+                        f"goal-preparation:{agent.id}:{activity.source_goal_id}:"
+                        f"{activity.source_goal_plan_id}:r{activity.source_goal_plan_revision}:"
+                        f"{activity.source_intent_id}:{activity.source_goal_strategy}:"
+                        f"{activity.source_goal_dependency_subject}"
+                    )
                 return self.purchase(
                     inventory.id,
                     account.id,
@@ -998,7 +1058,7 @@ class MaterialSystem:
                     rule.quantity,
                     day=day,
                     hour=hour,
-                    event_key=f"purchase:{agent.id}:{activity.id}:{day}",
+                    event_key=event_key,
                 )
             except MaterialError:
                 return None

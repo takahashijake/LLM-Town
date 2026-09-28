@@ -8,7 +8,8 @@ from dataclasses import dataclass
 SOCIAL_EXECUTION = "validated_social_action"
 ACTIVITY_EXECUTION = "strategy_activity"
 DAILY_EVENT_AT_TARGET = "daily_event_at_target_location"
-DEPENDENCY_KINDS = frozenset({DAILY_EVENT_AT_TARGET})
+OWNED_GOOD = "owned_good"
+DEPENDENCY_KINDS = frozenset({DAILY_EVENT_AT_TARGET, OWNED_GOOD})
 
 
 @dataclass(frozen=True)
@@ -18,13 +19,22 @@ class GoalStrategyDependencyContract:
     kind: str
     authority: str
     preparation_activity_id: str | None = None
+    subject_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in DEPENDENCY_KINDS:
             raise ValueError(f"unknown goal strategy dependency kind: {self.kind}")
         if self.kind == DAILY_EVENT_AT_TARGET:
-            if self.authority != "current_daily_event" or self.preparation_activity_id:
+            if (self.authority != "current_daily_event" or self.preparation_activity_id
+                    or self.subject_id):
                 raise ValueError("malformed daily-event dependency contract")
+        elif self.kind == OWNED_GOOD:
+            if (
+                self.authority != "material_inventory"
+                or self.preparation_activity_id != "goal_acquire_reference_book"
+                or self.subject_id != "reference_book"
+            ):
+                raise ValueError("malformed owned-good dependency contract")
 
 
 @dataclass(frozen=True)
@@ -90,6 +100,17 @@ GOAL_STRATEGY_EXECUTION_CONTRACTS = {
             activity_id="goal_seek_information",
             required_activity_tags=("goal_strategy", "seek_information"),
             requires_target_location=True,
+        ),
+        GoalStrategyExecutionContract(
+            "study_reference_material", ACTIVITY_EXECUTION, "strategy_activity",
+            activity_id="goal_study_reference_material",
+            required_activity_tags=("goal_strategy", "study_reference_material"),
+            requires_target_location=True,
+            dependency=GoalStrategyDependencyContract(
+                OWNED_GOOD, "material_inventory",
+                preparation_activity_id="goal_acquire_reference_book",
+                subject_id="reference_book",
+            ),
         ),
         GoalStrategyExecutionContract(
             "observe_relevant_activity", ACTIVITY_EXECUTION, "strategy_activity",

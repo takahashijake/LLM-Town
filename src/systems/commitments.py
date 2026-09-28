@@ -256,20 +256,10 @@ class CommitmentSystem:
         """Return an existing legal seller route; never create stock or prices."""
         if not self.materials or not good_id or quantity <= 0:
             return None
-        try:
-            account = self.materials.economy.account_for_agent(agent_id)
-            price = self.materials.price_for_good(good_id) * quantity
-        except (KeyError, ValueError, AttributeError):
-            return None
-        for seller in sorted(self.materials.sellers.values(), key=lambda value: value.id):
-            try:
-                stock = self.materials.quantity(seller.inventory_id, good_id)
-            except (KeyError, ValueError):
-                continue
-            if seller.active and stock >= quantity and account.balance >= price:
-                return {"seller_id": seller.id, "location_id": seller.location_id,
-                        "quantity": quantity, "good_id": good_id}
-        return None
+        route = self.materials.find_purchase_route(agent_id, good_id, quantity)
+        return ({"seller_id": route.seller_id, "location_id": route.location_id,
+                 "quantity": route.quantity, "good_id": route.good_id}
+                if route else None)
 
     def record_attempt(self, commitment_id: str, *, agent_id: str, day: int,
                        tick: int | None, kind: str, activity_id: str) -> dict:

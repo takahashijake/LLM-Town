@@ -325,6 +325,7 @@ class SimulationEngine:
             commitment_system=self.commitment_system,
             agents=self.agents,
             outcome_memory=self.outcome_memory,
+            materials=self.materials,
         )
         self.commitment_system.plan_system = self.plan_system
         self.outcome_memory.bind_authorities(
