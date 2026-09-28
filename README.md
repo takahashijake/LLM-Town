@@ -23,6 +23,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Persistent memories, daily journals, goals, intents, and adaptive goal strategies
 - Persistent bounded goal plans with exact, revision-bound execution contracts
 - Bounded opportunity dependencies checked against authoritative daily events
+- One bounded resource-dependent study strategy using authoritative book ownership
 - Persistent bounded plans whose steps invoke existing authoritative actions
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
@@ -176,7 +177,22 @@ declare one finite prerequisite. Observation and direct participation now requir
 a real current daily event at the selected location; absence waits, event presence
 alone adds no progress, and the exact Phase 2 activity remains required. The
 bounded dependency state persists for diagnostics but is rechecked from authority
-after resume. No current goal strategy invents an artificial resource requirement.
+after resume. V4 Phase 4 adds one fixed resource path:
+`study_reference_material` requires ownership of the configured `reference_book`.
+If it is missing, the bound plan may select `goal_acquire_reference_book` only
+when existing material/economy authority finds an active configured seller,
+stock, location, price, and sufficient funds. That activity performs a real
+atomic purchase; a later `goal_study_reference_material` activity at the goal's
+knowledge location remains required for progress.
+
+```text
+GoalPlan -> reference_book dependency
+              | owned -> study -> goal evidence
+              ` missing -> authorized seller -> real purchase -> owned -> study
+```
+
+**Acquisition satisfies only the prerequisite. Goal progress requires the exact
+strategy execution.** Dialogue cannot purchase, own, consume, or prove the book.
 See
 [`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
 prevent repeated dialogue actions from double-advancing goals or relationship
@@ -184,6 +200,8 @@ state. Run `python scripts/evaluate_goal_strategy_execution.py` for the model-fr
 Phase 2 acceptance evaluation.
 Run `python scripts/evaluate_goal_strategy_dependencies.py` for the model-free
 Phase 3 acceptance evaluation.
+Run `python scripts/evaluate_goal_resource_dependencies.py` for the model-free
+Phase 4 authoritative resource-preparation evaluation.
 
 ## V2 economic foundation
 

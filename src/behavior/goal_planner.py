@@ -284,7 +284,9 @@ class GoalPlanner:
                 StrategyCandidate(
                     "study_reference_material", intent_type, 4.85,
                     target_location=location,
-                    opportunity_relevance=0.8 if owns_reference else 0.35,
+                    opportunity_relevance=(
+                        0.8 if owns_reference else 0.55 if goal.progress > 0 else 0.35
+                    ),
                     feasible=reference_feasible,
                     infeasible_reason=(
                         "reference_book is neither owned nor legally purchasable"

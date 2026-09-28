@@ -325,6 +325,9 @@ def test_production_strategy_candidate_is_bounded_and_adapts_when_route_disappea
     resource = next(item for item in candidates if item.name == "study_reference_material")
     assert resource.feasible
     assert engine.goal_planner.select_strategy(goal, actor, engine).name == "seek_information_at_location"
+    goal.progress = 1
+    assert engine.goal_planner.select_strategy(goal, actor, engine).name == resource.name
+    goal.progress = 0
     grant_book(engine, actor)
     assert engine.goal_planner.select_strategy(goal, actor, engine).name == resource.name
     engine.materials.transfer_good(

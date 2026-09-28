@@ -46,7 +46,8 @@ def _bind(engine, strategy, *, target=None, location=None, goal_id=None):
         "repair_relationship" if strategy in {
             "direct_cooperation", "apologize_directly", "offer_help",
         } else "investigate" if strategy.startswith("ask_")
-        or strategy in {"seek_information_at_location", "observe_relevant_activity"}
+        or strategy in {"seek_information_at_location", "observe_relevant_activity",
+                        "study_reference_material"}
         else "socialize"
     )
     goal = Goal(
@@ -77,7 +78,17 @@ def _social(engine, actor, listener, action, key):
 def _activity(engine, actor, day=1, hour=8):
     intent = engine.agent_intents[actor.name]
     contract = strategy_contract(intent.strategy)
-    if contract.dependency and engine.current_daily_event is None:
+    if strategy_contract(intent.strategy).dependency and intent.strategy == "study_reference_material":
+        seller = engine.materials.sellers["seller:market_stall"]
+        inventory = engine.materials.inventory_for_agent(actor.id)
+        if inventory.quantity("reference_book") == 0:
+            engine.materials.transfer_good(
+                seller.inventory_id, inventory.id, "reference_book", 1,
+                day=day, hour=hour - 1, reason="strategy evaluation setup",
+                authorization_type="evaluation", authorization_id=f"owned:{intent.id}",
+                event_key=f"evaluation:owned:{intent.id}",
+            )
+    elif contract.dependency and engine.current_daily_event is None:
         engine.current_daily_event = DailyEvent(
             "evaluation_opportunity", "Evaluation Opportunity",
             "An authoritative deterministic opportunity.",
@@ -348,7 +359,7 @@ def evaluate_goal_strategy_execution() -> dict:
             ],
             "finite_contract_covers_all_strategies": len(
                 GOAL_STRATEGY_EXECUTION_CONTRACTS
-            ) == 10,
+            ) == 11,
             "plan_invariants_hold": all(all(checks.values()) for checks in invariant_sets),
         }
 
