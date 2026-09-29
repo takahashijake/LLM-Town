@@ -189,6 +189,12 @@ one composite strategy: `study_reference_material_at_active_location`. It
 requires both current ownership of that same configured book and a current
 `DailyEvent` at the selected knowledge location. The event proves presence only,
 not topic or meaning.
+V4 Phase 6 adds one narrow cross-agent strategy, `request_research_help`.
+The goal owner makes a fixed `ask_for_help` request to one deterministically
+selected reliable resident. Acceptance creates a normal V3 `help` commitment
+owned by the helper; only the helper's later authoritative `commitment_help`
+execution and resulting fulfilled status can advance the requester's current
+goal-plan revision.
 
 ```text
 GoalPlan -> reference_book dependency
@@ -198,10 +204,17 @@ GoalPlan -> reference_book dependency
 Goal -> GoalPlan revision -> finite composite strategy
   -> [owned reference_book, current event at target location]
   -> ALL satisfied -> exact composite study activity -> goal evidence
+
+Agent A goal -> request_research_help(B) -> accepted V3 help commitment
+  -> B's normal plan/arbitration -> commitment_help -> fulfilled
+  -> current binding verified -> exactly-once progress for A
 ```
 
 **Acquisition satisfies only the prerequisite. Goal progress requires the exact
 strategy execution.** Dialogue cannot purchase, own, consume, or prove the book.
+Likewise, asking or acceptance does not prove delegated work. **The goal system
+may depend on a commitment outcome, but it cannot fulfill, rewrite, or fabricate
+that commitment.**
 See
 [`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
 prevent repeated dialogue actions from double-advancing goals or relationship
@@ -213,6 +226,8 @@ Run `python scripts/evaluate_goal_resource_dependencies.py` for the model-free
 Phase 4 authoritative resource-preparation evaluation.
 Run `python scripts/evaluate_goal_composite_dependencies.py` for the model-free
 Phase 5 bounded conjunction and staged-preparation evaluation.
+Run `python scripts/evaluate_goal_delegation.py` for the model-free Phase 6
+delegation-through-V3-commitments evaluation.
 
 ## V2 economic foundation
 

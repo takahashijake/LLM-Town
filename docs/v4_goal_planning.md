@@ -1,4 +1,4 @@
-# V4 Phases 1–5: bounded goal planning and staged authoritative preparation
+# V4 Phases 1–6: bounded goal planning and authoritative delegation
 
 ## Contract
 
@@ -8,6 +8,8 @@ distinct, authoritatively provable behavior. Phase 3 proves one optional finite
 opportunity prerequisite, and Phase 4 adds one fixed authoritative resource
 preparation path. Phase 5 permits an ordered conjunction of at most two closed-
 registry prerequisites and stages at most one preparation mutation per tick.
+Phase 6 adds one bounded cross-agent strategy whose proof is a separately owned,
+normally executed V3 commitment.
 These phases are not a general planner. They do not create free-form steps,
 facts, resources, places, actions, dependencies, or goals.
 
@@ -70,12 +72,14 @@ creates a second one. Strategy adaptation retains that ID and increments a
 revision. Each generated intent records the plan ID and revision; an intent from
 a superseded revision is terminalized before it can continue.
 
-Plan schema version 6 stores the bounded ordered dependency collection. Versions
+Plan schema version 7 stores the optional minimal delegation binding in addition
+to the bounded ordered dependency collection. Versions
 1 and 2 load with empty goal-plan fields; version 3 goal plans load without
 fabricating dependencies, and version 4 retains its Phase 3 semantics. A
 version-5 singular dependency migrates deterministically to a zero/one-element
 collection. No migration fabricates ownership, an event, a seller route, or
-preparation success; persisted status remains diagnostic and every authority is
+preparation success. Versions 1–6 fabricate no request, helper, commitment,
+acceptance, or fulfillment; persisted status remains diagnostic and every authority is
 rechecked at runtime. Version-2 commitment plans retain
 their exact template, step, proof, and lifecycle behavior. Unknown future schema
 versions and unknown goal strategy names fail closed.
@@ -131,6 +135,7 @@ and location requirement. Unknown strategies and malformed plans fail closed.
 | `ask_target_directly` | social | registered `ask_for_help` | selected goal target required |
 | `ask_informed_agent` | social | registered `ask_for_help` | selected alternate resident required |
 | `ask_reliable_partner` | social | registered `ask_for_help` | selected relationship target required |
+| `request_research_help` | delegation | fulfilled V3 `help` commitment for fixed `goal_research_help` task | selected reliable resident and knowledge location required |
 | `seek_information_at_location` | activity | `goal_seek_information` | selected location required |
 | `study_reference_material` | activity | `goal_study_reference_material` | selected knowledge location plus owned `reference_book` |
 | `study_reference_material_at_active_location` | activity | `goal_study_reference_material_at_active_location` | selected knowledge location plus owned `reference_book` and a current event there |
@@ -324,6 +329,75 @@ one dependency it mutates. Cross-owner, cross-goal, cross-plan, cross-revision,
 cross-intent, cross-strategy, wrong-resource, wrong-event, and wrong-location
 records fail closed.
 
+## Phase 6 bounded delegation through V3 commitments
+
+Phase 6 adds exactly one delegation strategy, `request_research_help`, only for
+`investigate` and `increase_knowledge`. Deterministic relationship/reputation-aware
+target selection chooses one helper. The fixed task code is
+`goal_research_help`; its bounded realization is “help with research at the
+library” (or the goal's configured knowledge location). Model text may phrase the
+request, but cannot choose the task, helper, location, IDs, revision, or outcome.
+
+```text
+Agent A Goal
+    ↓
+GoalPlan revision
+    ↓
+request_research_help(B)
+    ↓
+bounded ask_for_help proposal
+    ↓
+B accepts
+    ↓
+SocialCommitment(A ← B)
+    ↓
+V3 commitment plan for B
+    ↓
+normal activity arbitration
+    ↓
+B executes commitment_help
+    ↓
+CommitmentSystem: fulfilled
+    ↓
+current GoalPlan binding verified
+    ↓
+exactly-once progress for A
+```
+
+The goal plan stores one small binding: goal owner, source goal, stable plan ID,
+revision, strategy, helper, task code, target location, stable request ID, optional
+linked commitment ID, and bounded lifecycle diagnostics. It does not copy the
+commitment, its evidence, memories, conversation, or execution record. The
+authoritative commitment metadata carries the matching engine-owned provenance,
+while ordinary participant-facing context exposes only task and location.
+
+Asking, acknowledgment, acceptance, commitment-plan creation, preparation, and
+attempted execution all add zero goal progress. After acceptance the requester
+waits while the helper's existing V3 opportunity and pressure path arbitrates the
+normal `commitment_help` activity. Proof acceptance rechecks the current plan
+revision, exact participants, `help` type, task code, location, commitment ID,
+fulfilled status, and the authoritative `CommitmentSystem.execution_records`
+entry. The fulfilled commitment ID and current plan revision form an exactly-once
+goal evidence key.
+
+Declined, failed, cancelled, and expired attempts add no progress and permit the
+existing bounded revision mechanism to select another finite strategy; the same
+binding is never re-requested each tick. Adaptation, abandonment, or achievement
+does not cancel or rewrite the helper's commitment. A commitment from an obsolete
+revision may still finish and retain all V3 relationship, reputation, and memory
+effects, but cannot cross-credit the old or new goal revision.
+
+Conversation realization receives a snapshot of eligible bounded requests. Public
+task wording enters the prompt, while private provenance remains prepared context
+outside model-visible and serialized turn fields. Stable ordered commit records
+the request and invokes normal response/commitment creation only after the
+realization barrier. Same-wave workers never observe a newly accepted commitment.
+
+**The goal system may depend on a commitment outcome, but it cannot fulfill,
+rewrite, or fabricate that commitment.** Relationship and reputation consequences
+remain exclusively in the V3 terminal transition path; consuming the result for
+goal progress adds no second social effect.
+
 ## Evidence and authority boundaries
 
 V4 evidence keys include the owner, source goal, stable goal-plan ID, plan
@@ -369,16 +443,19 @@ Phase 4 purchase, ownership, execution, persistence, replay, conservation,
 provenance, privacy, and V3-priority funnel. Run
 `python scripts/evaluate_goal_composite_dependencies.py` for Phase 5 staged
 conjunction, migration, replay, cross-credit, persistence, and priority coverage.
+Run `python scripts/evaluate_goal_delegation.py` for Phase 6 request, acceptance,
+V3 execution, terminal outcome, persistence, stale-revision, replay, privacy,
+concurrency, and arbitration coverage.
 All use `FakeLLMClient`, isolate global random state, report named
 scenarios and invariants, and exit non-zero on failure.
 
 ## Known limitations
 
-The implementation still has one selected strategy and at most two ordered
-prerequisites per revision. It has no arbitrary dependency DAGs, longer
-prerequisite lists, recursive or free-form decomposition, model-authored tasks,
-arbitrary resource selection, negotiation, dynamic prices, loans/debt,
-generalized shopping, navigation or pathfinding, multi-party goal plans,
-plan-to-plan dependencies, or generalized hierarchical planning. The only
-resource preparation is the fixed `reference_book` purchase for the two fixed
-study strategies.
+The implementation still has one selected strategy, one delegated helper per
+strategy, and at most two ordinary ordered prerequisites per revision. It lacks
+general multi-agent planning, multi-party commitments, recursive delegation,
+delegation chains, teams, coalitions, organizations, free-form task generation,
+arbitrary plan-to-plan dependencies or dependency DAGs, general hierarchical
+planning, negotiation, bargaining, generalized markets, pathfinding, and
+model-authored authoritative actions. The only resource preparation is the fixed
+`reference_book` purchase for the two fixed study strategies.
