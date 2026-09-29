@@ -840,6 +840,8 @@ class PlanSystem:
             or details.get("source_goal_plan_id") != plan.id
             or details.get("source_goal_plan_revision") != plan.revision
             or details.get("agent_id") != plan.agent_id
+            or authoritative.get("source_goal_dependencies", [])
+            != details.get("source_goal_dependencies", [])
         ):
             return False
         plan.processed_evidence_keys.append(evidence_key)

@@ -1,14 +1,15 @@
-# V4 Phases 1–4: bounded goal planning and authoritative preparation
+# V4 Phases 1–5: bounded goal planning and staged authoritative preparation
 
 ## Contract
 
 Phase 1 makes one deterministic strategy for an active durable goal persist
 across short-lived intents and save/resume. Phase 2 makes each strategy denote a
-distinct, authoritatively provable behavior. Phase 3 gives strategies one optional
-finite prerequisite checked against authoritative world state. These phases are
-not a general planner; Phase 4 activates bounded preparation for exactly one
-fixed resource-dependent knowledge strategy. They do not create free-form steps, facts, resources,
-places, actions, dependencies, or goals.
+distinct, authoritatively provable behavior. Phase 3 proves one optional finite
+opportunity prerequisite, and Phase 4 adds one fixed authoritative resource
+preparation path. Phase 5 permits an ordered conjunction of at most two closed-
+registry prerequisites and stages at most one preparation mutation per tick.
+These phases are not a general planner. They do not create free-form steps,
+facts, resources, places, actions, dependencies, or goals.
 
 ```text
 Goal (authoritative desired outcome)
@@ -69,11 +70,13 @@ creates a second one. Strategy adaptation retains that ID and increments a
 revision. Each generated intent records the plan ID and revision; an intent from
 a superseded revision is terminalized before it can continue.
 
-Plan schema version 5 supports Phase 4 resource dependency diagnostics. Versions
+Plan schema version 6 stores the bounded ordered dependency collection. Versions
 1 and 2 load with empty goal-plan fields; version 3 goal plans load without
-fabricating dependencies, and version 4 retains its Phase 3 semantics. No
-migration fabricates ownership, a seller route, or a resource dependency.
-Version-2 commitment plans retain
+fabricating dependencies, and version 4 retains its Phase 3 semantics. A
+version-5 singular dependency migrates deterministically to a zero/one-element
+collection. No migration fabricates ownership, an event, a seller route, or
+preparation success; persisted status remains diagnostic and every authority is
+rechecked at runtime. Version-2 commitment plans retain
 their exact template, step, proof, and lifecycle behavior. Unknown future schema
 versions and unknown goal strategy names fail closed.
 
@@ -81,7 +84,8 @@ A goal plan stores only bounded diagnostic state: source and owner IDs, strategy
 intent type, target agent/location, required action, feasibility and score at
 selection, selected/review day, revision, lifecycle, at most 50 transitions, at
 most 50 mirrored evidence records, at most 50 plan evidence keys, and at most 20
-dependency transitions. Dependency state stores only kind, deterministic subject,
+transitions per dependency. A plan has at most two dependencies in stable contract
+order. Each dependency state stores only kind, deterministic subject,
 revision, status, last check, optional preparation activity, and authority
 reference. It never
 stores prompts, model output, whole memories, or context snapshots. Goals retain
@@ -129,6 +133,7 @@ and location requirement. Unknown strategies and malformed plans fail closed.
 | `ask_reliable_partner` | social | registered `ask_for_help` | selected relationship target required |
 | `seek_information_at_location` | activity | `goal_seek_information` | selected location required |
 | `study_reference_material` | activity | `goal_study_reference_material` | selected knowledge location plus owned `reference_book` |
+| `study_reference_material_at_active_location` | activity | `goal_study_reference_material_at_active_location` | selected knowledge location plus owned `reference_book` and a current event there |
 | `observe_relevant_activity` | activity | `goal_observe_relevant_activity` | selected location plus current event there |
 | `direct_participation` | activity | `goal_direct_participation` | selected location plus current event there |
 
@@ -140,7 +145,7 @@ future candidate without an explicit mapping are not safely executable and fail
 closed. Existing legacy intent behavior remains available only outside a safely
 bound goal-plan path.
 
-The three location activities carry internal `source_goal_id`,
+The location activities carry internal `source_goal_id`,
 `source_goal_plan_id`, `source_goal_plan_revision`, `source_goal_strategy`, and
 `source_intent_id` provenance. Activity records persist those optional fields.
 They are diagnostic proof inputs only: they do not mutate a plan or goal and are
@@ -149,13 +154,14 @@ not exposed in unrelated residents' prompt context. Reaching the location throug
 
 ## Phase 3 dependency contract
 
-Phase 3 extends the same immutable strategy registry. A contract may specify zero
-or one dependency from a closed vocabulary. The currently supported kind is:
+Phase 3 extended the same immutable strategy registry with zero or one dependency
+from a closed vocabulary. Phase 5 retains these kinds and raises the collection
+bound to two; it does not introduce a generic predicate system.
 
 | Kind | Meaning | Authority | Preparation | Failure behavior | Strategies |
 | --- | --- | --- | --- | --- | --- |
 | `daily_event_at_target_location` | A real current daily event exists at the plan's selected location | `SimulationEngine.current_daily_event` (`DailyEvent.id` and `location_id`) | none; the plan waits | absence or a different location remains `waiting`; unknown kinds fail closed | `observe_relevant_activity`, `direct_participation` |
-| `owned_good` | The plan owner has the fixed configured good | `MaterialSystem` agent inventory | exact registered configured purchase | no route makes only this strategy unavailable | `study_reference_material` |
+| `owned_good` | The plan owner has the fixed configured good | `MaterialSystem` agent inventory | exact registered configured purchase | no route makes only this strategy unavailable | `study_reference_material`, `study_reference_material_at_active_location` |
 
 ```text
 Goal
@@ -257,6 +263,67 @@ before selection and again before proof acceptance, so stale serialized status o
 a book lost before study cannot authorize progress. Existing owner/goal/plan/
 revision/intent/strategy evidence keys reject replay and cross-credit.
 
+## Phase 5 bounded composite prerequisites
+
+The five phases have deliberately separate responsibilities:
+
+- Phase 1 — persist one selected finite strategy.
+- Phase 2 — require its exact authoritative execution contract.
+- Phase 3 — recheck one authoritative opportunity prerequisite.
+- Phase 4 — prepare one fixed authoritative resource when a legal route exists.
+- Phase 5 — require a bounded conjunction and stage preparation deterministically.
+
+`study_reference_material_at_active_location` is the one composite strategy. It
+applies only to the existing investigation/knowledge domain. It means that the
+owner intends to study its configured `reference_book` at the selected knowledge
+location while a current `DailyEvent` is present there. `DailyEvent` proves only
+event identity and location presence; the strategy does not infer an event topic,
+purpose, or semantic relevance that the event authority does not contain.
+
+```text
+Goal
+ ↓
+GoalPlan revision
+ ↓
+finite strategy
+ ↓
+bounded prerequisite set (maximum two, stable contract order)
+ ├── owned reference_book ── prepare once if a legal route exists
+ └── current event at target location ── wait if absent
+ ↓
+ALL satisfied
+ ↓
+goal_study_reference_material_at_active_location
+ ↓
+authoritative evidence
+ ↓
+Goal progress
+```
+
+Each dependency is refreshed independently from its existing authority. Owned
+goods are `satisfied`, `preparable`, or `blocked`; current-event dependencies are
+`satisfied` or `waiting`. Waiting is not hard failure. If any dependency is
+blocked, the strategy is infeasible and the existing bounded adaptation path may
+choose another registered strategy. If dependencies are preparable, the planner
+chooses the first one in immutable contract order and may emit at most one
+preparation activity for that agent/plan in the tick. The current composite has
+only one preparable kind, but the arbitration rule is explicit and stable.
+
+Preparation never chains into final execution in the same planner decision. A
+later opportunity refreshes every dependency again. Thus a purchased book plus a
+vanished event waits; an earlier ownership observation plus a subsequently lost
+book cannot execute; and ownership acquired through another legitimate material
+transfer is accepted without requiring planner credit.
+
+Final activity provenance contains the bounded ordered triples of dependency
+kind, subject, and current authority reference in addition to owner, goal, plan,
+revision, intent, strategy, activity, location, and required tags. Acceptance
+requires an exact ordered match against freshly refreshed states. Whole inventory
+or event snapshots are never copied. Preparation provenance remains scoped to the
+one dependency it mutates. Cross-owner, cross-goal, cross-plan, cross-revision,
+cross-intent, cross-strategy, wrong-resource, wrong-event, and wrong-location
+records fail closed.
+
 ## Evidence and authority boundaries
 
 V4 evidence keys include the owner, source goal, stable goal-plan ID, plan
@@ -299,15 +366,19 @@ fidelity, and `python scripts/evaluate_goal_strategy_dependencies.py` for Phase 
 dependency lifecycle, persistence, revision, arbitration, privacy, and authority
 coverage. Run `python scripts/evaluate_goal_resource_dependencies.py` for the
 Phase 4 purchase, ownership, execution, persistence, replay, conservation,
-provenance, privacy, and V3-priority funnel. All use `FakeLLMClient`, isolate global random state, report named
+provenance, privacy, and V3-priority funnel. Run
+`python scripts/evaluate_goal_composite_dependencies.py` for Phase 5 staged
+conjunction, migration, replay, cross-credit, persistence, and priority coverage.
+All use `FakeLLMClient`, isolate global random state, report named
 scenarios and invariants, and exit non-zero on failure.
 
 ## Known limitations
 
-The implementation still has one selected strategy and at most one prerequisite
-per revision. It has no arbitrary dependency graphs, multiple prerequisites,
-general hierarchical planning, LLM-authored tasks, arbitrary resource selection,
-bargaining, dynamic prices, loans/debt, generalized shopping, navigation or
-pathfinding, multi-party goal plans, or model-authored authoritative actions. The
-only resource preparation is the fixed `reference_book` purchase for the fixed
-study strategy.
+The implementation still has one selected strategy and at most two ordered
+prerequisites per revision. It has no arbitrary dependency DAGs, longer
+prerequisite lists, recursive or free-form decomposition, model-authored tasks,
+arbitrary resource selection, negotiation, dynamic prices, loans/debt,
+generalized shopping, navigation or pathfinding, multi-party goal plans,
+plan-to-plan dependencies, or generalized hierarchical planning. The only
+resource preparation is the fixed `reference_book` purchase for the two fixed
+study strategies.

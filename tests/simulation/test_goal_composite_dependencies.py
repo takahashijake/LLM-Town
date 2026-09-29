@@ -154,6 +154,10 @@ def test_later_event_and_retained_ownership_allow_exactly_once_final_execution(t
     accept(engine, actor, record, day=2)
     assert goal.progress == intent.progress == 1
     assert len(plan.evidence_records) == 1
+    assert len(goal.evidence[-1]["source_goal_dependencies"]) == 2
+    assert plan.evidence_records[0]["source_goal_dependencies"] == (
+        goal.evidence[-1]["source_goal_dependencies"]
+    )
 
 
 def test_event_disappearing_or_resource_loss_rejects_stale_final_proof(tmp_path):

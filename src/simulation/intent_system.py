@@ -382,6 +382,10 @@ class IntentSystem:
         evidence = f"{marker} at {location_id} during '{activity_name}'."
         intent.add_progress(1, evidence)
         if goal:
+            dependency_observations = (
+                [dict(item) for item in record.get("source_goal_dependencies", [])]
+                if bound and contract and len(contract.dependencies) > 1 else []
+            )
             if bound:
                 execution_id = (
                     f"{record.get('day', day)}:{record.get('hour', 'unknown')}:"
@@ -399,6 +403,7 @@ class IntentSystem:
                 "source_goal_plan_id": getattr(plan, "id", None),
                 "source_goal_plan_revision": getattr(plan, "revision", None),
                 "agent_id": agent.id,
+                "source_goal_dependencies": dependency_observations,
             })
             plan_system = getattr(self._engine_for_goal_check, "plan_system", None)
             if advanced and plan_system:
@@ -411,6 +416,7 @@ class IntentSystem:
                         "source_goal_plan_id": getattr(plan, "id", None),
                         "source_goal_plan_revision": getattr(plan, "revision", None),
                         "agent_id": agent.id,
+                        "source_goal_dependencies": dependency_observations,
                     },
                 )
             if advanced and goal.adaptation_count:

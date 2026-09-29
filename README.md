@@ -183,12 +183,21 @@ If it is missing, the bound plan may select `goal_acquire_reference_book` only
 when existing material/economy authority finds an active configured seller,
 stock, location, price, and sufficient funds. That activity performs a real
 atomic purchase; a later `goal_study_reference_material` activity at the goal's
-knowledge location remains required for progress.
+knowledge location remains required for progress. V4 Phase 5 generalizes the
+contract to an ordered collection of at most two prerequisites and adds exactly
+one composite strategy: `study_reference_material_at_active_location`. It
+requires both current ownership of that same configured book and a current
+`DailyEvent` at the selected knowledge location. The event proves presence only,
+not topic or meaning.
 
 ```text
 GoalPlan -> reference_book dependency
               | owned -> study -> goal evidence
               ` missing -> authorized seller -> real purchase -> owned -> study
+
+Goal -> GoalPlan revision -> finite composite strategy
+  -> [owned reference_book, current event at target location]
+  -> ALL satisfied -> exact composite study activity -> goal evidence
 ```
 
 **Acquisition satisfies only the prerequisite. Goal progress requires the exact
@@ -202,6 +211,8 @@ Run `python scripts/evaluate_goal_strategy_dependencies.py` for the model-free
 Phase 3 acceptance evaluation.
 Run `python scripts/evaluate_goal_resource_dependencies.py` for the model-free
 Phase 4 authoritative resource-preparation evaluation.
+Run `python scripts/evaluate_goal_composite_dependencies.py` for the model-free
+Phase 5 bounded conjunction and staged-preparation evaluation.
 
 ## V2 economic foundation
 
@@ -645,7 +656,7 @@ three templates, proof/source isolation, lifecycle synchronization, private caus
 knowledge, explicit dialogue-to-help planning, pending/preparing/repair-successor
 grounding, save compatibility, and the existing batched
 snapshot/barrier/ordered-commit architecture. Plan persistence is schema version
-2; unversioned legacy plan documents load with deterministic defaults, while
+6; versions 1–5 remain supported with deterministic migration, while
 unknown versions, templates, template/action mismatches, and action types fail
 closed.
 
@@ -763,6 +774,11 @@ special cases.
   calendar, plan-to-plan dependency, or LLM-authored authoritative step. Blocked
   acquisition rediscovery can find a newly valid configured seller route, but the
   planner does not negotiate or synthesize alternate strategies.
+- Goal strategies have at most two ordered closed-registry prerequisites. There
+  are no arbitrary dependency DAGs, longer lists, recursive decomposition,
+  model-authored tasks or resources, negotiation, dynamic prices, pathfinding,
+  multi-party goal plans, plan-to-plan dependencies, or generalized hierarchical
+  planning.
 - A local 3B model's instruction following and naturalness constrain dialogue quality.
 - Same-action deduplication and rate suppression trade some behavioral fidelity for
   stable relationship, reputation, need, goal, intent, and town-arc progression.
