@@ -11,9 +11,11 @@ from src.agents.goal import Goal
 from src.behavior.goal_planner import StrategyCandidate
 from src.behavior.goal_strategy_contracts import (
     ACTIVITY_EXECUTION,
+    DELEGATION_EXECUTION,
     GOAL_STRATEGY_EXECUTION_CONTRACTS,
     SOCIAL_EXECUTION,
     strategy_contract,
+    strategy_vocabulary,
 )
 from src.llm.client import FakeLLMClient
 from src.simulation.conversation_runner import ConversationRunner
@@ -362,7 +364,10 @@ def evaluate_goal_strategy_execution() -> dict:
             ],
             "finite_contract_covers_all_strategies": len(
                 GOAL_STRATEGY_EXECUTION_CONTRACTS
-            ) == 12,
+            ) == len(strategy_vocabulary()) and sum(
+                contract.execution_mode == DELEGATION_EXECUTION
+                for contract in GOAL_STRATEGY_EXECUTION_CONTRACTS.values()
+            ) == 1,
             "plan_invariants_hold": all(all(checks.values()) for checks in invariant_sets),
         }
 

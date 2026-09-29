@@ -3,9 +3,11 @@ from src.agents.intent import AgentIntent
 from src.behavior.goal_planner import StrategyCandidate
 from src.behavior.goal_strategy_contracts import (
     ACTIVITY_EXECUTION,
+    DELEGATION_EXECUTION,
     SOCIAL_EXECUTION,
     strategy_contract,
 )
+from src.systems.plans import TERMINAL_DELEGATION_FAILURES
 from src.behavior.intent_planner import IntentPlanner
 
 
@@ -140,9 +142,20 @@ class IntentSystem:
                     goal.current_intent_id = None
                     current_intent = None
                 else:
-                    replacement, trigger = self.goal_planner.should_adapt(
-                        goal, current_intent, agent, engine, current_day
+                    delegation_status = (
+                        plan_system.refresh_goal_delegation(
+                            plan, day=current_day, tick=None,
+                        ) if plan and plan.delegation else None
                     )
+                    if delegation_status in TERMINAL_DELEGATION_FAILURES:
+                        replacement = self.goal_planner.delegation_failure_replacement(
+                            goal, plan, agent, engine,
+                        )
+                        trigger = f"delegation_{delegation_status}"
+                    else:
+                        replacement, trigger = self.goal_planner.should_adapt(
+                            goal, current_intent, agent, engine, current_day
+                        )
                     if replacement:
                         adapted = plan is not None and plan_system.adapt_goal_plan(
                             plan, replacement, day=current_day, trigger=trigger,
@@ -454,6 +467,49 @@ class IntentSystem:
             "status": intent.status, "progress": intent.progress,
         }
 
+    def observe_delegation_outcomes(self, *, day: int,
+                                    outcomes: list[dict]) -> None:
+        """Close only the requester's matching short-lived tactic."""
+        engine = getattr(self, "_engine_for_goal_check", None)
+        if engine is None:
+            return
+        agents = {agent.id: agent for agent in engine.agents}
+        for outcome in outcomes:
+            owner = agents.get(outcome.get("agent_id"))
+            if owner is None:
+                continue
+            goal = owner.get_goal(outcome.get("source_goal_id"))
+            if goal is None:
+                # source_goal_id is intentionally not duplicated in goal evidence;
+                # recover it from the current plan reference.
+                plan = next((item for item in engine.plan_system.goal_plans
+                             if item.id == outcome.get("source_goal_plan_id")), None)
+                goal = owner.get_goal(plan.source_goal_id) if plan else None
+            intent = self.agent_intents.get(owner.name)
+            if (
+                intent is not None and goal is not None
+                and intent.parent_goal_id == goal.id
+                and intent.source_goal_plan_id == outcome.get("source_goal_plan_id")
+                and intent.source_goal_plan_revision
+                == outcome.get("source_goal_plan_revision")
+                and intent.strategy == outcome.get("strategy")
+            ):
+                intent.add_progress(1, (
+                    f"Day {day}: delegated research commitment "
+                    f"{outcome['linked_commitment_id']} was fulfilled."
+                ))
+                intent.mark_succeeded(day, "Bound delegated commitment was fulfilled.")
+                self.archive_intent(intent)
+                self.agent_intents.pop(owner.name, None)
+                goal.current_intent_id = None
+            if goal is not None and self.goal_planner:
+                achieved, reason = self.goal_planner.goal_is_complete(
+                    goal, owner, engine,
+                )
+                if achieved and goal.status != "achieved":
+                    goal.mark_achieved(day, reason)
+                    engine.plan_system.synchronize_goal_plan(goal, day=day)
+
     def _matching_active_goal_plan(self, agent, goal, intent):
         engine = getattr(self, "_engine_for_goal_check", None)
         plan_system = getattr(engine, "plan_system", None)
@@ -551,7 +607,7 @@ class IntentSystem:
         contract = strategy_contract(intent.strategy)
         if (
             contract is not None
-            and contract.execution_mode == SOCIAL_EXECUTION
+            and contract.execution_mode in {SOCIAL_EXECUTION, DELEGATION_EXECUTION}
             and contract.required_social_action in adjusted
         ):
             adjusted[contract.required_social_action] += 4

@@ -511,8 +511,13 @@ class CommitmentSystem:
         session_id: str, proposal_turn: int, response_turn: int,
         known_goods: dict[str, str] | None = None,
         repair_of_commitment_id: str | None = None,
+        bounded_goal_delegation: dict | None = None,
     ) -> SocialCommitment | None:
-        proposal = self.recognize_proposal(proposal_text, day=day, known_goods=known_goods)
+        proposal = self._bounded_goal_proposal(
+            bounded_goal_delegation, proposer_id, counterpart_id, day,
+        ) if bounded_goal_delegation else self.recognize_proposal(
+            proposal_text, day=day, known_goods=known_goods,
+        )
         if proposal is None or outcome not in {"accepted", "declined"}:
             return None
         if proposal.get("proposal_speaker_is_obligated"):
@@ -532,7 +537,11 @@ class CommitmentSystem:
                     "invalid_repair_type",
                     "repair successor must preserve the bounded commitment type",
                 )
-        evidence_key = f"{session_id}:{proposal_turn}:{response_turn}"
+        evidence_key = (
+            f"goal-delegation-response:{bounded_goal_delegation['request_id']}"
+            if bounded_goal_delegation
+            else f"{session_id}:{proposal_turn}:{response_turn}"
+        )
         item = self.create(
             proposer_id=proposer_id, counterpart_id=counterpart_id, day=day, tick=tick,
             due_day=proposal["due_day"], source_session_id=session_id,
@@ -546,6 +555,42 @@ class CommitmentSystem:
             self.transition(item.id, outcome, day=day, tick=tick,
                             reason=f"counterpart_{outcome}")
         return item
+
+    def _bounded_goal_proposal(self, provenance: dict, proposer_id: str,
+                               counterpart_id: str, day: int) -> dict:
+        """Validate engine-owned fixed semantics; model text supplies no IDs."""
+        from src.behavior.goal_strategy_contracts import strategy_contract
+
+        required = {
+            "owner_id", "source_goal_id", "plan_id", "revision", "strategy",
+            "helper_id", "task_code", "target_location", "request_id",
+        }
+        contract = strategy_contract(str(provenance.get("strategy", "")))
+        if (
+            set(provenance) != required
+            or contract is None
+            or contract.delegated_commitment_type != "help"
+            or contract.delegated_task_code != provenance.get("task_code")
+            or provenance.get("owner_id") != proposer_id
+            or provenance.get("helper_id") != counterpart_id
+            or proposer_id == counterpart_id
+            or not str(provenance.get("target_location", "")).strip()
+            or self.plan_system is None
+            or not self.plan_system.validates_delegation_provenance(provenance)
+        ):
+            raise CommitmentError(
+                "invalid_goal_delegation", "bounded goal delegation provenance mismatch",
+            )
+        return {
+            "commitment_type": "help",
+            "due_day": int(day) + 1,
+            "metadata": {
+                "task": contract.delegated_task,
+                "task_code": contract.delegated_task_code,
+                "location": provenance["target_location"],
+                "goal_delegation": dict(provenance),
+            },
+        }
 
     def repair_opportunities(self, agent_id: str, counterpart_id: str, *, day: int) -> list[dict]:
         """Derive pair-private, short-lived accountability pressure."""

@@ -533,6 +533,34 @@ class SimulationEngine:
             relationship_events=self.relationship_events,
             session_transcript=session_transcript,
         )
+        requests = getattr(self, "goal_delegation_requests", None)
+        if requests is None and getattr(self, "plan_system", None) is not None:
+            requests = self.plan_system.delegation_requests()
+        prior_speakers = {
+            row.get("speaker") for row in (session_transcript or [])
+        }
+        delegation = next((item for item in (requests or [])
+                           if item["owner_id"] == speaker.id
+                           and item["helper_id"] == listener.id
+                           and speaker.name not in prior_speakers
+                           and "ask_for_help" in result["allowed_actions"]), None)
+        if delegation:
+            provenance_keys = (
+                "owner_id", "source_goal_id", "plan_id", "revision", "strategy",
+                "helper_id", "task_code", "target_location", "request_id",
+            )
+            result["goal_delegation_provenance"] = {
+                key: delegation[key] for key in provenance_keys
+            }
+            # Only fixed human-readable semantics enter the model-visible context.
+            result["context"]["bounded_goal_request"] = {
+                "task": delegation["task"],
+                "location": delegation["target_location"],
+                "utterance": (
+                    f"Could you help me with research at the "
+                    f"{delegation['target_location'].replace('_', ' ')} tomorrow?"
+                ),
+            }
         result["context"]["active_commitments"] = (
             self.commitment_system.relevant_context(speaker.id, listener.id, current_day)
             if self.commitment_grounding_enabled else []
@@ -892,6 +920,12 @@ class SimulationEngine:
                 agent=agent,
                 activity_record=activity_record,
             )
+        delegation_outcomes = self.plan_system.consume_delegation_outcomes(
+            day=day, tick=hour,
+        )
+        self.intent_system.observe_delegation_outcomes(
+            day=day, outcomes=delegation_outcomes,
+        )
         self.agent_intents = self.intent_system.agent_intents
         self.intent_history = self.intent_system.intent_history
         

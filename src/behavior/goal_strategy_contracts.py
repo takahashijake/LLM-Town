@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 SOCIAL_EXECUTION = "validated_social_action"
 ACTIVITY_EXECUTION = "strategy_activity"
+DELEGATION_EXECUTION = "authoritative_commitment_outcome"
 DAILY_EVENT_AT_TARGET = "daily_event_at_target_location"
 OWNED_GOOD = "owned_good"
 DEPENDENCY_KINDS = frozenset({DAILY_EVENT_AT_TARGET, OWNED_GOOD})
@@ -49,6 +50,9 @@ class GoalStrategyExecutionContract:
     required_activity_tags: tuple[str, ...] = ()
     requires_target_location: bool = False
     dependencies: tuple[GoalStrategyDependencyContract, ...] = ()
+    delegated_commitment_type: str | None = None
+    delegated_task_code: str | None = None
+    delegated_task: str | None = None
 
     @property
     def dependency(self) -> GoalStrategyDependencyContract | None:
@@ -71,6 +75,19 @@ class GoalStrategyExecutionContract:
                 raise ValueError(f"malformed activity strategy contract: {self.strategy}")
             if not self.requires_target_location or not self.required_activity_tags:
                 raise ValueError(f"malformed activity location contract: {self.strategy}")
+        elif self.execution_mode == DELEGATION_EXECUTION:
+            if (
+                self.required_social_action != "ask_for_help"
+                or self.target_agent_policy != "selected_required"
+                or not self.requires_target_location
+                or self.activity_id
+                or self.dependencies
+                or self.delegated_commitment_type != "help"
+                or self.delegated_task_code != "goal_research_help"
+                or self.delegated_task != "help with research"
+                or self.evidence_type != "commitment_fulfilled"
+            ):
+                raise ValueError(f"malformed delegation strategy contract: {self.strategy}")
         else:
             raise ValueError(f"unknown strategy execution mode: {self.execution_mode}")
 
@@ -105,6 +122,14 @@ GOAL_STRATEGY_EXECUTION_CONTRACTS = {
         GoalStrategyExecutionContract(
             "ask_reliable_partner", SOCIAL_EXECUTION, "social_action",
             required_social_action="ask_for_help", target_agent_policy="selected_required",
+        ),
+        GoalStrategyExecutionContract(
+            "request_research_help", DELEGATION_EXECUTION,
+            "commitment_fulfilled", required_social_action="ask_for_help",
+            target_agent_policy="selected_required", requires_target_location=True,
+            delegated_commitment_type="help",
+            delegated_task_code="goal_research_help",
+            delegated_task="help with research",
         ),
         GoalStrategyExecutionContract(
             "seek_information_at_location", ACTIVITY_EXECUTION, "strategy_activity",

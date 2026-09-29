@@ -200,9 +200,14 @@ class ActivityPlanner:
                 and goal_dependency.strategy == current_intent.strategy
             )
         )
+        activity_executes_intent = (
+            intent_contract is None
+            or intent_contract.execution_mode == ACTIVITY_EXECUTION
+        )
 
         if (
             current_intent
+            and activity_executes_intent
             and dependency_allows_intent
             and current_intent.target_location
             and current_intent.target_location in location_ids
@@ -224,7 +229,10 @@ class ActivityPlanner:
             activity.commitment_decision = deferred_commitment_decision
             return activity
 
-        if current_intent and dependency_allows_intent and current_intent.target_location:
+        if (
+            current_intent and activity_executes_intent
+            and dependency_allows_intent and current_intent.target_location
+        ):
             follow_probability = self.get_intent_activity_probability(current_intent)
 
             if (

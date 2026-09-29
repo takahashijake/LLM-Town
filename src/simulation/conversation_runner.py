@@ -194,6 +194,10 @@ class ConversationRunner:
         goods catalog used by proposal recognition.
         """
         shell = copy.copy(engine)
+        shell.goal_delegation_requests = (
+            engine.plan_system.delegation_requests()
+            if getattr(engine, "plan_system", None) else []
+        )
         for name in (
             "economy", "crime", "justice", "plan_system", "state", "persistence",
             "activity_system", "simulation_loop", "journal_system", "reporter",
@@ -793,6 +797,7 @@ class ConversationRunner:
         )
         turn._speaker_intent = setup.get("speaker_intent")
         turn._listener_intent = setup.get("listener_intent")
+        turn._goal_delegation = setup.get("goal_delegation_provenance")
         session.turns.append(turn)
         state.transcript.append({
             "turn_index": item.turn_index,
@@ -833,11 +838,23 @@ class ConversationRunner:
                 if response.response_to_turn is None:
                     continue
                 proposal = session.turns[response.response_to_turn]
+                delegation = (
+                    getattr(proposal, "_goal_delegation", None)
+                    if proposal.final_action == "ask_for_help" else None
+                )
+                request_recorded = True
+                if delegation:
+                    request_recorded = engine.plan_system.record_delegation_request(
+                        delegation, day=session.day, tick=session.hour,
+                        session_id=session.session_id,
+                    )
+                    if not request_recorded:
+                        delegation = None
                 repair_parent = self._repair_parent_for_turn(
                     commitment_system, agents[proposal.speaker].id,
                     agents[response.speaker].id, proposal.dialogue, session.day,
                 )
-                commitment_system.process_response(
+                commitment = commitment_system.process_response(
                     proposer_id=agents[proposal.speaker].id,
                     counterpart_id=agents[response.speaker].id,
                     proposal_text=proposal.dialogue,
@@ -850,6 +867,35 @@ class ConversationRunner:
                     response_turn=response.turn_index,
                     known_goods=goods,
                     repair_of_commitment_id=repair_parent,
+                    bounded_goal_delegation=delegation,
+                )
+                if delegation:
+                    if commitment is None:
+                        engine.plan_system.mark_delegation_waiting(
+                            delegation, day=session.day, tick=session.hour,
+                        )
+                    else:
+                        engine.plan_system.link_delegation_commitment(
+                            delegation, commitment, day=session.day,
+                            tick=session.hour,
+                        )
+            responded = {
+                turn.response_to_turn for turn in session.turns
+                if turn.response_to_turn is not None
+            }
+            for proposal in session.turns:
+                delegation = (
+                    getattr(proposal, "_goal_delegation", None)
+                    if proposal.final_action == "ask_for_help" else None
+                )
+                if not delegation or proposal.turn_index in responded:
+                    continue
+                engine.plan_system.record_delegation_request(
+                    delegation, day=session.day, tick=session.hour,
+                    session_id=session.session_id,
+                )
+                engine.plan_system.mark_delegation_waiting(
+                    delegation, day=session.day, tick=session.hour,
                 )
             for turn in session.turns:
                 speaker_id = agents[turn.speaker].id

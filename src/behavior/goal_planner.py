@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from src.agents.goal import Goal
 from src.behavior.goal_strategy_contracts import (
     ACTIVITY_EXECUTION,
+    DELEGATION_EXECUTION,
     SOCIAL_EXECUTION,
     registered_social_actions,
     required_social_action,
@@ -65,9 +66,18 @@ class GoalPlanner:
                 and not candidate.target_agent
             ):
                 return False, "strategy_target_required"
+        if contract.execution_mode == DELEGATION_EXECUTION:
+            if candidate.required_action != contract.required_social_action:
+                return False, "strategy_contract_action_mismatch"
+            if not candidate.target_agent:
+                return False, "strategy_target_required"
+            if not candidate.target_location:
+                return False, "target_location_unavailable"
         if contract.requires_target_location and not candidate.target_location:
             return False, "target_location_unavailable"
-        if contract.execution_mode not in {SOCIAL_EXECUTION, ACTIVITY_EXECUTION}:
+        if contract.execution_mode not in {
+            SOCIAL_EXECUTION, ACTIVITY_EXECUTION, DELEGATION_EXECUTION,
+        }:
             return False, "unsupported_required_action"
         return True, ""
 
@@ -268,6 +278,7 @@ class GoalPlanner:
             alternate = self._best_social_target(
                 agent, engine, [name for name in available_agents if name != target]
             )
+            reliable = self._best_social_target(agent, engine, available_agents)
             raw = [
                 StrategyCandidate("ask_target_directly", intent_type, 5.5, target,
                                   required_action=required_social_action("ask_target_directly"),
@@ -279,6 +290,17 @@ class GoalPlanner:
                                   required_action=required_social_action("ask_informed_agent"),
                                   social_risk_factor=0.2,
                                   reputation_risk_factor=0.1, opportunity_relevance=0.4),
+                StrategyCandidate(
+                    "request_research_help", intent_type, 4.45, reliable,
+                    target_location=location,
+                    required_action=required_social_action("request_research_help"),
+                    social_risk_factor=0.3, reputation_risk_factor=0.5,
+                    opportunity_relevance=0.25,
+                    feasible=bool(reliable),
+                    infeasible_reason=(
+                        "no reliable helper is available" if not reliable else ""
+                    ),
+                ),
                 StrategyCandidate("seek_information_at_location", intent_type, 4.6,
                                   target_location=location, opportunity_relevance=0.7),
                 StrategyCandidate(
@@ -466,6 +488,15 @@ class GoalPlanner:
             ):
                 return best, "relationship"
         return None, "stable"
+
+    def delegation_failure_replacement(self, goal: Goal, plan, agent, engine):
+        """Choose one bounded alternative, never retry the same failed binding."""
+        return next((candidate for candidate in self.generate_strategies(
+            goal, agent, engine,
+        ) if candidate.feasible and not (
+            candidate.name == plan.strategy_name
+            and candidate.target_agent == plan.target_agent
+        )), None)
 
     def goal_is_complete(self, goal: Goal, agent, engine) -> tuple[bool, str]:
         target = goal.target_agents[0] if goal.target_agents else None

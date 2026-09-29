@@ -45,6 +45,15 @@ class ConversationOutputProcessor:
         parsed_action = parsed_output["action"]
         dialogue_source = "llm"
 
+        bounded_request = (conversation_context or {}).get("bounded_goal_request")
+        if bounded_request:
+            conversation = str(bounded_request["utterance"])
+            parsed_action = "ask_for_help"
+            parsed_output["dialogue"] = conversation
+            parsed_output["action"] = parsed_action
+            parsed_output["tags"] = ["ask_for_help"]
+            dialogue_source = "engine_bounded_goal_request"
+
         if conversation.strip().lower() in {
             "spoken line",
             "short line of dialogue",
@@ -117,9 +126,11 @@ class ConversationOutputProcessor:
             )
             dialogue_source = "policy_fallback_structured_reputation_rumor"
 
-        if self.conversation_policy.is_repeated_dialogue(conversation) or (
+        if not bounded_request and (
+            self.conversation_policy.is_repeated_dialogue(conversation) or (
             enforce_information_boundaries
             and self.conversation_policy.is_near_repeated_dialogue(conversation)
+            )
         ):
             fallback_action = (
                 "chat"

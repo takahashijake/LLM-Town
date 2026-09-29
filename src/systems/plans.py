@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from src.systems.outcome_memory import KnowledgeRecipient
 
 
-PLAN_SCHEMA_VERSION = 6
+PLAN_SCHEMA_VERSION = 7
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
 STEP_STATUSES = {"pending", "completed", "skipped", "failed"}
 KNOWN_ACTION_TYPES = {
@@ -24,6 +24,57 @@ KNOWN_PLAN_TYPES = {f"commitment_{name}" for name in TEMPLATE_ACTIONS}
 GOAL_PLAN_STATUSES = {"active", "paused", "completed", "blocked", "abandoned"}
 TERMINAL_GOAL_PLAN_STATUSES = {"completed", "blocked", "abandoned"}
 GOAL_DEPENDENCY_STATUSES = {"waiting", "preparable", "satisfied", "blocked"}
+GOAL_DELEGATION_STATUSES = {
+    "not_requested", "request_issued", "waiting_response",
+    "accepted", "fulfilled", "declined", "failed", "cancelled", "expired",
+}
+TERMINAL_DELEGATION_FAILURES = {"declined", "failed", "cancelled", "expired"}
+
+
+@dataclass
+class GoalDelegationBinding:
+    """Minimal private reference from one goal-plan revision to V3 authority."""
+
+    owner_id: str
+    source_goal_id: str
+    plan_id: str
+    revision: int
+    strategy: str
+    helper_id: str
+    task_code: str
+    target_location: str
+    request_id: str
+    status: str = "not_requested"
+    linked_commitment_id: str | None = None
+    requested_day: int | None = None
+    requested_tick: int | None = None
+    source_session_id: str | None = None
+    last_reason: str = ""
+    transitions: list[dict] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.status not in GOAL_DELEGATION_STATUSES:
+            raise ValueError(f"invalid goal delegation status: {self.status}")
+        if self.revision < 0 or not all((
+            self.owner_id, self.source_goal_id, self.plan_id, self.strategy,
+            self.helper_id, self.task_code, self.target_location, self.request_id,
+        )):
+            raise ValueError("goal delegation binding requires complete provenance")
+        if self.owner_id == self.helper_id:
+            raise ValueError("goal owner cannot delegate to self")
+        if self.status in {
+            "accepted", "fulfilled", "declined", "failed", "cancelled", "expired",
+        } and not self.linked_commitment_id:
+            raise ValueError("delegation commitment state requires a linked commitment")
+        if len(self.transitions) > 20:
+            raise ValueError("goal delegation history exceeds bounded storage")
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "GoalDelegationBinding":
+        return cls(**{
+            key: value for key, value in data.items()
+            if key in cls.__dataclass_fields__
+        })
 
 
 @dataclass
@@ -226,11 +277,13 @@ class GoalPlan:
     evidence_records: list[dict] = field(default_factory=list)
     processed_evidence_keys: list[str] = field(default_factory=list)
     dependencies: list[GoalDependencyState] = field(default_factory=list)
+    delegation: GoalDelegationBinding | None = None
     legacy_dependency_omitted: bool = False
 
     def __post_init__(self) -> None:
         from src.behavior.goal_strategy_contracts import (
             ACTIVITY_EXECUTION,
+            DELEGATION_EXECUTION,
             SOCIAL_EXECUTION,
             strategy_contract,
             strategy_vocabulary,
@@ -245,7 +298,7 @@ class GoalPlan:
             raise ValueError(f"unknown goal plan strategy: {self.strategy_name}")
         if (
             self.status in {"active", "paused"}
-            and contract.execution_mode == SOCIAL_EXECUTION
+            and contract.execution_mode in {SOCIAL_EXECUTION, DELEGATION_EXECUTION}
             and self.required_action != contract.required_social_action
         ):
             raise ValueError(f"goal plan action violates strategy contract: {self.strategy_name}")
@@ -257,7 +310,7 @@ class GoalPlan:
             raise ValueError(f"goal plan target required: {self.strategy_name}")
         if (
             self.status in {"active", "paused"}
-            and contract.execution_mode == ACTIVITY_EXECUTION
+            and contract.execution_mode in {ACTIVITY_EXECUTION, DELEGATION_EXECUTION}
             and not self.target_location
         ):
             raise ValueError(f"goal plan location required: {self.strategy_name}")
@@ -294,6 +347,23 @@ class GoalPlan:
                 != dependency_contract.preparation_activity_id
             ):
                 raise ValueError("malformed goal dependency state")
+        if isinstance(self.delegation, dict):
+            self.delegation = GoalDelegationBinding.from_dict(self.delegation)
+        if contract.execution_mode == DELEGATION_EXECUTION:
+            binding = self.delegation
+            if (
+                binding is None
+                or binding.owner_id != self.agent_id
+                or binding.source_goal_id != self.source_goal_id
+                or binding.plan_id != self.id
+                or binding.revision != self.revision
+                or binding.strategy != self.strategy_name
+                or binding.task_code != contract.delegated_task_code
+                or binding.target_location != self.target_location
+            ):
+                raise ValueError("goal delegation binding violates strategy contract")
+        elif self.delegation is not None:
+            raise ValueError("non-delegation strategy cannot retain a delegation binding")
 
     @property
     def dependency(self) -> GoalDependencyState | None:
@@ -321,6 +391,10 @@ class GoalPlan:
             values["dependencies"] = [
                 GoalDependencyState.from_dict(item) for item in values["dependencies"]
             ]
+        if values.get("delegation") is not None:
+            values["delegation"] = GoalDelegationBinding.from_dict(
+                values["delegation"]
+            )
         return cls(**values)
 
 
@@ -379,7 +453,7 @@ class PlanSystem:
                   outcome_memory=None, materials=None) -> "PlanSystem":
         data = data or {}
         version = int(data.get("schema_version", 1))
-        if version not in {1, 2, 3, 4, 5, PLAN_SCHEMA_VERSION}:
+        if version not in {1, 2, 3, 4, 5, 6, PLAN_SCHEMA_VERSION}:
             raise ValueError(f"unsupported plan schema version: {version}")
         goal_documents = []
         for item in data.get("goal_plans", []):
@@ -389,6 +463,8 @@ class PlanSystem:
                 migrated["dependencies"] = [] if dependency is None else [dependency]
                 if version <= 4 and dependency is None:
                     migrated["legacy_dependency_omitted"] = True
+            if version <= 6:
+                migrated["delegation"] = None
             goal_documents.append(migrated)
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
                      goal_plans=[GoalPlan.from_dict(item) for item in goal_documents],
@@ -613,6 +689,10 @@ class PlanSystem:
                 "revision": 0,
             }],
             dependencies=self._dependencies_for_candidate(candidate, revision=0),
+            delegation=self._delegation_for_candidate(
+                candidate, plan_id=plan_id, owner_id=agent.id,
+                source_goal_id=goal.id, revision=0, engine=engine,
+            ),
         )
         self.goal_plans.append(plan)
         self.refresh_goal_dependency(
@@ -681,6 +761,11 @@ class PlanSystem:
         plan.dependencies = self._dependencies_for_candidate(
             candidate, revision=plan.revision,
         )
+        plan.delegation = self._delegation_for_candidate(
+            candidate, plan_id=plan.id, owner_id=plan.agent_id,
+            source_goal_id=plan.source_goal_id, revision=plan.revision,
+            agents=self.agents,
+        )
         self._append_goal_transition(plan, {
             "day": day, "type": "adapted", "trigger": trigger,
             "old_strategy": old["strategy"],
@@ -712,6 +797,33 @@ class PlanSystem:
                 preparation_activity_id=dependency.preparation_activity_id,
             ))
         return result
+
+    @staticmethod
+    def _delegation_for_candidate(candidate, *, plan_id: str, owner_id: str,
+                                  source_goal_id: str, revision: int,
+                                  engine=None, agents=None):
+        from src.behavior.goal_strategy_contracts import (
+            DELEGATION_EXECUTION, strategy_contract,
+        )
+
+        contract = strategy_contract(candidate.name)
+        if contract is None or contract.execution_mode != DELEGATION_EXECUTION:
+            return None
+        residents = list(agents or getattr(engine, "agents", []))
+        helper = next((item for item in residents
+                       if item.name == candidate.target_agent), None)
+        if helper is None or helper.id == owner_id or not candidate.target_location:
+            raise ValueError("delegation strategy has no valid deterministic helper")
+        request_id = (
+            f"goal-delegation:{plan_id}:r{revision}:{helper.id}:"
+            f"{contract.delegated_task_code}"
+        )
+        return GoalDelegationBinding(
+            owner_id=owner_id, source_goal_id=source_goal_id, plan_id=plan_id,
+            revision=revision, strategy=candidate.name, helper_id=helper.id,
+            task_code=contract.delegated_task_code,
+            target_location=candidate.target_location, request_id=request_id,
+        )
 
     def refresh_goal_dependency(self, plan: GoalPlan, *, day: int,
                                 tick: int | None, current_daily_event=None):
@@ -809,11 +921,276 @@ class PlanSystem:
             plan.strategy_name, tuple(opportunities),
         )
 
+    def delegation_requests(self) -> list[dict]:
+        """Capture immutable request contexts for one conversation wave."""
+        from src.behavior.goal_strategy_contracts import strategy_contract
+
+        names = {agent.id: agent.name for agent in self.agents}
+        requests = []
+        for plan in self.goal_plans:
+            binding = plan.delegation
+            contract = strategy_contract(plan.strategy_name)
+            if (
+                not plan.active or binding is None
+                or binding.status != "not_requested"
+                or contract is None
+                or binding.revision != plan.revision
+                or names.get(binding.owner_id) is None
+                or names.get(binding.helper_id) is None
+            ):
+                continue
+            requests.append({
+                "owner_id": binding.owner_id,
+                "owner_name": names[binding.owner_id],
+                "helper_id": binding.helper_id,
+                "helper_name": names[binding.helper_id],
+                "source_goal_id": binding.source_goal_id,
+                "plan_id": binding.plan_id,
+                "revision": binding.revision,
+                "strategy": binding.strategy,
+                "task_code": binding.task_code,
+                "task": contract.delegated_task,
+                "target_location": binding.target_location,
+                "request_id": binding.request_id,
+            })
+        return requests
+
+    def record_delegation_request(self, provenance: dict, *, day: int,
+                                  tick: int | None, session_id: str) -> bool:
+        plan = next((item for item in self.goal_plans
+                     if item.id == provenance.get("plan_id")), None)
+        binding = plan.delegation if plan else None
+        if not self._provenance_matches_binding(plan, binding, provenance):
+            return False
+        if binding.status != "not_requested":
+            return binding.request_id == provenance.get("request_id")
+        binding.status = "request_issued"
+        binding.requested_day = int(day)
+        binding.requested_tick = tick
+        binding.source_session_id = session_id
+        binding.last_reason = "bounded_request_committed"
+        binding.transitions.append({
+            "day": int(day), "tick": tick, "status": "request_issued",
+            "reason": binding.last_reason,
+        })
+        binding.transitions = binding.transitions[-20:]
+        return True
+
+    def validates_delegation_provenance(self, provenance: dict) -> bool:
+        plan = next((item for item in self.goal_plans
+                     if item.id == provenance.get("plan_id")), None)
+        return self._provenance_matches_binding(
+            plan, plan.delegation if plan else None, provenance,
+        )
+
+    def mark_delegation_waiting(self, provenance: dict, *, day: int,
+                                tick: int | None) -> None:
+        plan = next((item for item in self.goal_plans
+                     if item.id == provenance.get("plan_id")), None)
+        binding = plan.delegation if plan else None
+        if not self._provenance_matches_binding(plan, binding, provenance):
+            return
+        if binding.status == "request_issued":
+            self._set_delegation_status(
+                binding, "waiting_response", day, tick, "response_unresolved",
+            )
+
+    def link_delegation_commitment(self, provenance: dict, commitment, *,
+                                   day: int, tick: int | None) -> bool:
+        plan = next((item for item in self.goal_plans
+                     if item.id == provenance.get("plan_id")), None)
+        binding = plan.delegation if plan else None
+        if (
+            not self._provenance_matches_binding(plan, binding, provenance)
+            or commitment.proposer_id != binding.owner_id
+            or commitment.counterpart_id != binding.helper_id
+            or commitment.commitment_type != "help"
+            or commitment.metadata.get("task_code") != binding.task_code
+            or commitment.metadata.get("location") != binding.target_location
+            or commitment.metadata.get("goal_delegation") != provenance
+        ):
+            return False
+        if binding.linked_commitment_id not in {None, commitment.id}:
+            return False
+        binding.linked_commitment_id = commitment.id
+        self._set_delegation_status(
+            binding, commitment.status, day, tick,
+            f"commitment_{commitment.status}",
+        )
+        return True
+
+    @staticmethod
+    def _provenance_matches_binding(plan, binding, provenance: dict) -> bool:
+        return bool(
+            plan is not None and plan.active and binding is not None
+            and binding.revision == plan.revision
+            and provenance == {
+                "owner_id": binding.owner_id,
+                "source_goal_id": binding.source_goal_id,
+                "plan_id": binding.plan_id,
+                "revision": binding.revision,
+                "strategy": binding.strategy,
+                "helper_id": binding.helper_id,
+                "task_code": binding.task_code,
+                "target_location": binding.target_location,
+                "request_id": binding.request_id,
+            }
+        )
+
+    @staticmethod
+    def _set_delegation_status(binding, status: str, day: int,
+                               tick: int | None, reason: str) -> None:
+        if status not in GOAL_DELEGATION_STATUSES or binding.status == status:
+            return
+        binding.status = status
+        binding.last_reason = reason
+        binding.transitions.append({
+            "day": int(day), "tick": tick, "status": status, "reason": reason,
+        })
+        binding.transitions = binding.transitions[-20:]
+
+    def refresh_goal_delegation(self, plan: GoalPlan, *, day: int,
+                                tick: int | None) -> str | None:
+        """Recheck the linked V3 record; persisted labels are never authority."""
+        binding = plan.delegation
+        if binding is None:
+            return None
+        if binding.revision != plan.revision or binding.plan_id != plan.id:
+            return None
+        agent_ids = {agent.id for agent in self.agents}
+        if (
+            binding.helper_id not in agent_ids
+            or binding.owner_id not in agent_ids
+            or binding.target_location not in set(
+                getattr(self.commitment_system, "location_ids", [])
+            )
+        ):
+            self._set_delegation_status(
+                binding, "failed", day, tick, "delegation_subject_unavailable",
+            )
+            return binding.status
+        if binding.linked_commitment_id is None:
+            return binding.status
+        try:
+            commitment = self.commitment_system.get(binding.linked_commitment_id)
+        except (ValueError, AttributeError):
+            self._set_delegation_status(
+                binding, "failed", day, tick, "linked_commitment_missing",
+            )
+            return binding.status
+        provenance = commitment.metadata.get("goal_delegation")
+        if (
+            not isinstance(provenance, dict)
+            or not self._provenance_matches_binding(plan, binding, provenance)
+            or commitment.proposer_id != binding.owner_id
+            or commitment.counterpart_id != binding.helper_id
+            or commitment.commitment_type != "help"
+            or commitment.metadata.get("task_code") != binding.task_code
+            or commitment.metadata.get("location") != binding.target_location
+        ):
+            self._set_delegation_status(
+                binding, "failed", day, tick, "commitment_binding_mismatch",
+            )
+            return binding.status
+        self._set_delegation_status(
+            binding, commitment.status, day, tick,
+            f"authoritative_commitment_{commitment.status}",
+        )
+        return binding.status
+
+    def consume_delegation_outcomes(self, *, day: int,
+                                    tick: int | None) -> list[dict]:
+        """Advance goals only from exact current-revision V3 fulfillment proof."""
+        results = []
+        goal_sources = self._goal_sources()
+        for plan in self.goal_plans:
+            binding = plan.delegation
+            if not plan.active or binding is None:
+                continue
+            if self.refresh_goal_delegation(plan, day=day, tick=tick) != "fulfilled":
+                continue
+            proof = self._delegation_fulfillment_proof(plan)
+            if proof is None:
+                continue
+            commitment, execution = proof
+            source = goal_sources.get(binding.source_goal_id)
+            if execution is None or source is None or source[0].id != binding.owner_id:
+                continue
+            _owner, goal = source
+            evidence_key = (
+                f"goal-delegation-outcome:{commitment.id}:{plan.id}:r{plan.revision}"
+            )
+            details = {
+                "evidence_key": evidence_key,
+                "intent_id": goal.current_intent_id or "delegation-outcome",
+                "strategy": plan.strategy_name,
+                "agent_id": plan.agent_id,
+                "source_goal_plan_id": plan.id,
+                "source_goal_plan_revision": plan.revision,
+                "source_goal_id": plan.source_goal_id,
+                "helper_id": binding.helper_id,
+                "task_code": binding.task_code,
+                "target_location": binding.target_location,
+                "linked_commitment_id": commitment.id,
+                "commitment_type": commitment.commitment_type,
+                "commitment_status": commitment.status,
+                "commitment_execution_key": execution.get("event_key"),
+                "source_goal_dependencies": [],
+            }
+            advanced = goal.add_progress(1, day, details)
+            if not advanced:
+                continue
+            self.observe_goal_evidence(
+                goal, evidence_key=evidence_key, day=day,
+                intent_id=details["intent_id"],
+                evidence_type="commitment_fulfilled", details=details,
+            )
+            results.append(details)
+        return results
+
+    def _delegation_fulfillment_proof(self, plan: GoalPlan):
+        binding = plan.delegation
+        if binding is None or not binding.linked_commitment_id:
+            return None
+        try:
+            commitment = self.commitment_system.get(binding.linked_commitment_id)
+        except (ValueError, AttributeError):
+            return None
+        provenance = commitment.metadata.get("goal_delegation")
+        execution = next((record for record in self.commitment_system.execution_records
+                          if record.get("commitment_id") == commitment.id
+                          and record.get("source_commitment_id") == commitment.id
+                          and record.get("agent_id") == binding.helper_id
+                          and record.get("counterpart_id") == binding.owner_id
+                          and record.get("commitment_type") == "help"
+                          and record.get("activity_id") == "commitment_help"
+                          and record.get("status") == "executed"), None)
+        transition_proved = execution is not None and any(
+            evidence.get("activity_event_key") == execution.get("event_key")
+            for evidence in commitment.evidence
+        )
+        if (
+            commitment.status != "fulfilled"
+            or commitment.created_day < plan.created_day
+            or commitment.proposer_id != binding.owner_id
+            or commitment.counterpart_id != binding.helper_id
+            or commitment.commitment_type != "help"
+            or commitment.metadata.get("task_code") != binding.task_code
+            or commitment.metadata.get("location") != binding.target_location
+            or not isinstance(provenance, dict)
+            or not self._provenance_matches_binding(plan, binding, provenance)
+            or not transition_proved
+        ):
+            return None
+        return commitment, execution
+
     def observe_goal_evidence(self, goal, *, evidence_key: str, day: int,
                               intent_id: str, evidence_type: str,
                               details: dict) -> bool:
         """Mirror already-authoritative goal evidence exactly once."""
-        from src.behavior.goal_strategy_contracts import strategy_contract
+        from src.behavior.goal_strategy_contracts import (
+            DELEGATION_EXECUTION, strategy_contract,
+        )
 
         plan = self.get_goal_plan(goal.id)
         if (
@@ -844,6 +1221,21 @@ class PlanSystem:
             != details.get("source_goal_dependencies", [])
         ):
             return False
+        if contract.execution_mode == DELEGATION_EXECUTION:
+            proof = self._delegation_fulfillment_proof(plan)
+            if proof is None:
+                return False
+            commitment, execution = proof
+            if any((
+                details.get("helper_id") != plan.delegation.helper_id,
+                details.get("task_code") != plan.delegation.task_code,
+                details.get("target_location") != plan.delegation.target_location,
+                details.get("linked_commitment_id") != commitment.id,
+                details.get("commitment_type") != "help",
+                details.get("commitment_status") != "fulfilled",
+                details.get("commitment_execution_key") != execution.get("event_key"),
+            )):
+                return False
         plan.processed_evidence_keys.append(evidence_key)
         plan.processed_evidence_keys = plan.processed_evidence_keys[-50:]
         plan.evidence_records.append({
@@ -1125,6 +1517,8 @@ class PlanSystem:
                 and len(plan.evidence_records) <= 50
                 and len(plan.processed_evidence_keys) <= 50
                 and all(len(state.transitions) <= 20 for state in plan.dependencies)
+                and (plan.delegation is None
+                     or len(plan.delegation.transitions) <= 20)
                 for plan in self.goal_plans
             ),
             "goal_dependency_revision_bound": all(
@@ -1149,6 +1543,46 @@ class PlanSystem:
             not plan.active or goal_sources[plan.source_goal_id][1].status == "active"
             for plan in self.goal_plans if plan.source_goal_id in goal_sources
         )
+        agent_ids = {agent.id for agent in self.agents}
+        agent_names = {agent.id: agent.name for agent in self.agents}
+        commitment_ids = source_ids
+        checks["valid_goal_delegation_bindings"] = all(
+            plan.delegation is None or (
+                plan.delegation.owner_id == plan.agent_id
+                and plan.delegation.helper_id in agent_ids
+                and plan.delegation.helper_id != plan.agent_id
+                and plan.delegation.plan_id == plan.id
+                and plan.delegation.source_goal_id == plan.source_goal_id
+                and plan.delegation.revision == plan.revision
+                and agent_names.get(plan.delegation.helper_id) == plan.target_agent
+                and plan.delegation.target_location == plan.target_location
+                and (
+                    not self.commitment_system
+                    or plan.delegation.target_location
+                    in self.commitment_system.location_ids
+                )
+                and (
+                    plan.delegation.linked_commitment_id is None
+                    or plan.delegation.linked_commitment_id in commitment_ids
+                )
+            ) for plan in self.goal_plans
+        )
+        if self.commitment_system:
+            checks["linked_goal_commitments_match_bindings"] = all(
+                plan.delegation is None
+                or plan.delegation.linked_commitment_id is None
+                or self._linked_commitment_matches_binding(plan)
+                for plan in self.goal_plans
+            )
+            request_ids = [
+                item.metadata["goal_delegation"]["request_id"]
+                for item in self.commitment_system.commitments
+                if isinstance(item.metadata.get("goal_delegation"), dict)
+                and item.metadata["goal_delegation"].get("request_id")
+            ]
+            checks["one_goal_commitment_per_request"] = (
+                len(request_ids) == len(set(request_ids))
+            )
         checks["valid_goal_planning_sources"] = all(
             record["source_goal_id"] in goal_sources
             and goal_sources[record["source_goal_id"]][0].id == record["agent_id"]
@@ -1162,3 +1596,29 @@ class PlanSystem:
         if not all(checks.values()):
             raise ValueError(f"plan invariant violation: {[key for key, value in checks.items() if not value]}")
         return checks
+
+    def _linked_commitment_matches_binding(self, plan: GoalPlan) -> bool:
+        binding = plan.delegation
+        try:
+            item = self.commitment_system.get(binding.linked_commitment_id)
+        except (ValueError, AttributeError):
+            return False
+        expected = {
+            "owner_id": binding.owner_id,
+            "source_goal_id": binding.source_goal_id,
+            "plan_id": binding.plan_id,
+            "revision": binding.revision,
+            "strategy": binding.strategy,
+            "helper_id": binding.helper_id,
+            "task_code": binding.task_code,
+            "target_location": binding.target_location,
+            "request_id": binding.request_id,
+        }
+        return (
+            item.proposer_id == binding.owner_id
+            and item.counterpart_id == binding.helper_id
+            and item.commitment_type == "help"
+            and item.metadata.get("task_code") == binding.task_code
+            and item.metadata.get("location") == binding.target_location
+            and item.metadata.get("goal_delegation") == expected
+        )
