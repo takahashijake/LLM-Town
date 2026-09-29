@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from src.systems.outcome_memory import KnowledgeRecipient
 
 
-PLAN_SCHEMA_VERSION = 5
+PLAN_SCHEMA_VERSION = 6
 PLAN_STATUSES = {"active", "completed", "abandoned", "failed", "expired"}
 STEP_STATUSES = {"pending", "completed", "skipped", "failed"}
 KNOWN_ACTION_TYPES = {
@@ -71,6 +71,58 @@ class GoalDependencyOpportunity:
     preparation_activity_id: str | None
     authority_reference: str | None
     preparation_location: str | None = None
+
+
+@dataclass(frozen=True)
+class GoalDependencyCollectionOpportunity:
+    """Bounded ordered authoritative prerequisite observations for one plan."""
+
+    plan_id: str
+    goal_id: str
+    agent_id: str
+    revision: int
+    strategy: str
+    dependencies: tuple[GoalDependencyOpportunity, ...]
+
+    @property
+    def status(self) -> str:
+        statuses = {item.status for item in self.dependencies}
+        if "blocked" in statuses:
+            return "blocked"
+        if "preparable" in statuses:
+            return "preparable"
+        if "waiting" in statuses:
+            return "waiting"
+        return "satisfied"
+
+    @property
+    def preparation(self) -> GoalDependencyOpportunity | None:
+        return next((item for item in self.dependencies
+                     if item.status == "preparable"), None)
+
+    # Compatibility views keep Phase 3/4 zero/one callers unchanged.
+    @property
+    def kind(self):
+        return self.dependencies[0].kind if len(self.dependencies) == 1 else None
+
+    @property
+    def subject_id(self):
+        return self.dependencies[0].subject_id if len(self.dependencies) == 1 else None
+
+    @property
+    def authority_reference(self):
+        return (self.dependencies[0].authority_reference
+                if len(self.dependencies) == 1 else None)
+
+    @property
+    def preparation_activity_id(self):
+        item = self.preparation
+        return item.preparation_activity_id if item else None
+
+    @property
+    def preparation_location(self):
+        item = self.preparation
+        return item.preparation_location if item else None
 
 
 @dataclass
@@ -173,7 +225,8 @@ class GoalPlan:
     transitions: list[dict] = field(default_factory=list)
     evidence_records: list[dict] = field(default_factory=list)
     processed_evidence_keys: list[str] = field(default_factory=list)
-    dependency: GoalDependencyState | None = None
+    dependencies: list[GoalDependencyState] = field(default_factory=list)
+    legacy_dependency_omitted: bool = False
 
     def __post_init__(self) -> None:
         from src.behavior.goal_strategy_contracts import (
@@ -212,22 +265,44 @@ class GoalPlan:
             raise ValueError("goal plan revision must be non-negative")
         if len(self.transitions) > 50 or len(self.evidence_records) > 50:
             raise ValueError("goal plan audit history exceeds bounded storage")
-        if self.dependency is not None:
-            if isinstance(self.dependency, dict):
-                self.dependency = GoalDependencyState.from_dict(self.dependency)
-            if self.dependency.revision != self.revision:
+        if len(self.dependencies) > 2:
+            raise ValueError("goal dependencies exceed bounded maximum")
+        if any(isinstance(item, dict) for item in self.dependencies):
+            self.dependencies = [
+                GoalDependencyState.from_dict(item) if isinstance(item, dict) else item
+                for item in self.dependencies
+            ]
+        if (
+            len(self.dependencies) != len(contract.dependencies)
+            and not (self.legacy_dependency_omitted and not self.dependencies)
+        ):
+            raise ValueError("goal dependency collection violates strategy contract")
+        identities = [(item.kind, item.subject_id) for item in self.dependencies]
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate goal dependencies")
+        for state, dependency_contract in zip(self.dependencies, contract.dependencies):
+            if state.revision != self.revision:
                 raise ValueError("goal dependency revision does not match plan")
-            if contract.dependency is None or self.dependency.kind != contract.dependency.kind:
+            if state.kind != dependency_contract.kind:
                 raise ValueError("goal dependency violates strategy contract")
             expected_subject = (
-                contract.dependency.subject_id or self.target_location or self.target_agent
+                dependency_contract.subject_id or self.target_location or self.target_agent
             )
             if (
-                self.dependency.subject_id != expected_subject
-                or self.dependency.preparation_activity_id
-                != contract.dependency.preparation_activity_id
+                state.subject_id != expected_subject
+                or state.preparation_activity_id
+                != dependency_contract.preparation_activity_id
             ):
                 raise ValueError("malformed goal dependency state")
+
+    @property
+    def dependency(self) -> GoalDependencyState | None:
+        """Compatibility view for existing singular dependency consumers."""
+        return self.dependencies[0] if len(self.dependencies) == 1 else None
+
+    @dependency.setter
+    def dependency(self, value: GoalDependencyState | None) -> None:
+        self.dependencies = [] if value is None else [value]
 
     @property
     def active(self) -> bool:
@@ -242,8 +317,10 @@ class GoalPlan:
             key: value for key, value in data.items()
             if key in cls.__dataclass_fields__
         }
-        if values.get("dependency") is not None:
-            values["dependency"] = GoalDependencyState.from_dict(values["dependency"])
+        if "dependencies" in values:
+            values["dependencies"] = [
+                GoalDependencyState.from_dict(item) for item in values["dependencies"]
+            ]
         return cls(**values)
 
 
@@ -302,11 +379,19 @@ class PlanSystem:
                   outcome_memory=None, materials=None) -> "PlanSystem":
         data = data or {}
         version = int(data.get("schema_version", 1))
-        if version not in {1, 2, 3, 4, PLAN_SCHEMA_VERSION}:
+        if version not in {1, 2, 3, 4, 5, PLAN_SCHEMA_VERSION}:
             raise ValueError(f"unsupported plan schema version: {version}")
+        goal_documents = []
+        for item in data.get("goal_plans", []):
+            migrated = dict(item)
+            if version <= 5:
+                dependency = migrated.pop("dependency", None)
+                migrated["dependencies"] = [] if dependency is None else [dependency]
+                if version <= 4 and dependency is None:
+                    migrated["legacy_dependency_omitted"] = True
+            goal_documents.append(migrated)
         system = cls([AgentPlan.from_dict(item) for item in data.get("plans", [])],
-                     goal_plans=[GoalPlan.from_dict(item)
-                                 for item in data.get("goal_plans", [])],
+                     goal_plans=[GoalPlan.from_dict(item) for item in goal_documents],
                      next_number=data.get("next_number", 1),
                      commitment_system=commitment_system, agents=agents,
                      outcome_memory=outcome_memory, materials=materials)
@@ -527,7 +612,7 @@ class PlanSystem:
                 "reason": reason,
                 "revision": 0,
             }],
-            dependency=self._dependency_for_candidate(candidate, revision=0),
+            dependencies=self._dependencies_for_candidate(candidate, revision=0),
         )
         self.goal_plans.append(plan)
         self.refresh_goal_dependency(
@@ -593,7 +678,7 @@ class PlanSystem:
         plan.score_at_selection = candidate.score
         plan.feasibility_at_selection = candidate.feasible
         plan.review_day = day
-        plan.dependency = self._dependency_for_candidate(
+        plan.dependencies = self._dependencies_for_candidate(
             candidate, revision=plan.revision,
         )
         self._append_goal_transition(plan, {
@@ -610,31 +695,41 @@ class PlanSystem:
         return True
 
     @staticmethod
-    def _dependency_for_candidate(candidate, *, revision: int):
+    def _dependencies_for_candidate(candidate, *, revision: int):
         from src.behavior.goal_strategy_contracts import strategy_contract
 
         contract = strategy_contract(candidate.name)
-        dependency = contract.dependency if contract else None
-        if dependency is None:
-            return None
-        subject_id = dependency.subject_id or candidate.target_location or candidate.target_agent
-        if not subject_id:
-            raise ValueError("goal strategy dependency has no deterministic subject")
-        return GoalDependencyState(
-            kind=dependency.kind,
-            subject_id=subject_id,
-            revision=revision,
-            preparation_activity_id=dependency.preparation_activity_id,
-        )
+        dependencies = contract.dependencies if contract else ()
+        result = []
+        for dependency in dependencies:
+            subject_id = (
+                dependency.subject_id or candidate.target_location or candidate.target_agent
+            )
+            if not subject_id:
+                raise ValueError("goal strategy dependency has no deterministic subject")
+            result.append(GoalDependencyState(
+                kind=dependency.kind, subject_id=subject_id, revision=revision,
+                preparation_activity_id=dependency.preparation_activity_id,
+            ))
+        return result
 
     def refresh_goal_dependency(self, plan: GoalPlan, *, day: int,
                                 tick: int | None, current_daily_event=None):
         """Recompute diagnostic dependency state from current authority."""
+        states = plan.dependencies
+        if not states:
+            return []
+        for state in states:
+            self._refresh_goal_dependency_state(
+                plan, state, day=day, tick=tick,
+                current_daily_event=current_daily_event,
+            )
+        return states[0] if len(states) == 1 else states
+
+    def _refresh_goal_dependency_state(self, plan, state, *, day, tick,
+                                       current_daily_event=None):
         from src.behavior.goal_strategy_contracts import DAILY_EVENT_AT_TARGET, OWNED_GOOD
 
-        state = plan.dependency
-        if state is None:
-            return None
         if state.revision != plan.revision:
             state.status = "blocked"
             authority_reference = None
@@ -689,23 +784,29 @@ class PlanSystem:
                                   tick: int | None, current_daily_event=None,
                                   goal_plan_id: str | None = None):
         plans = [plan for plan in self.goal_plans
-                 if plan.active and plan.agent_id == agent_id and plan.dependency
+                 if plan.active and plan.agent_id == agent_id and plan.dependencies
                  and (goal_plan_id is None or plan.id == goal_plan_id)]
         if not plans:
             return None
         plan = max(plans, key=lambda item: (item.selected_day, item.id))
-        state = self.refresh_goal_dependency(
+        self.refresh_goal_dependency(
             plan, day=day, tick=tick, current_daily_event=current_daily_event,
         )
-        preparation_location = None
-        if state.status == "preparable" and self.materials and state.authority_reference:
-            seller = self.materials.sellers.get(state.authority_reference)
-            preparation_location = seller.location_id if seller else None
-        return GoalDependencyOpportunity(
+        opportunities = []
+        for state in plan.dependencies:
+            preparation_location = None
+            if state.status == "preparable" and self.materials and state.authority_reference:
+                seller = self.materials.sellers.get(state.authority_reference)
+                preparation_location = seller.location_id if seller else None
+            opportunities.append(GoalDependencyOpportunity(
+                plan.id, plan.source_goal_id, plan.agent_id, plan.revision,
+                plan.strategy_name, state.kind, state.subject_id, state.status,
+                state.preparation_activity_id, state.authority_reference,
+                preparation_location,
+            ))
+        return GoalDependencyCollectionOpportunity(
             plan.id, plan.source_goal_id, plan.agent_id, plan.revision,
-            plan.strategy_name, state.kind, state.subject_id, state.status,
-            state.preparation_activity_id, state.authority_reference,
-            preparation_location,
+            plan.strategy_name, tuple(opportunities),
         )
 
     def observe_goal_evidence(self, goal, *, evidence_key: str, day: int,
@@ -1021,13 +1122,11 @@ class PlanSystem:
                 len(plan.transitions) <= 50
                 and len(plan.evidence_records) <= 50
                 and len(plan.processed_evidence_keys) <= 50
-                and (plan.dependency is None
-                     or len(plan.dependency.transitions) <= 20)
+                and all(len(state.transitions) <= 20 for state in plan.dependencies)
                 for plan in self.goal_plans
             ),
             "goal_dependency_revision_bound": all(
-                plan.dependency is None
-                or plan.dependency.revision == plan.revision
+                all(state.revision == plan.revision for state in plan.dependencies)
                 for plan in self.goal_plans
             ),
             "goal_evidence_unique": all(

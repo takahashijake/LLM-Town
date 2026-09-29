@@ -293,6 +293,22 @@ class GoalPlanner:
                         if not reference_feasible else ""
                     ),
                 ),
+                StrategyCandidate(
+                    "study_reference_material_at_active_location",
+                    intent_type, 4.95, target_location=location,
+                    opportunity_relevance=(
+                        1.1 if (
+                            owns_reference
+                            and getattr(engine, "current_daily_event", None) is not None
+                            and engine.current_daily_event.location_id == location
+                        ) else 0.2
+                    ),
+                    feasible=reference_feasible,
+                    infeasible_reason=(
+                        "reference_book is neither owned nor legally purchasable"
+                        if not reference_feasible else ""
+                    ),
+                ),
                 StrategyCandidate("observe_relevant_activity", intent_type, 3.8,
                                   target_location=location, opportunity_relevance=0.5),
             ]

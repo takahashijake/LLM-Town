@@ -361,7 +361,7 @@ class IntentSystem:
         bound = bool(intent.source_goal_plan_id)
         plan = self._matching_active_goal_plan(agent, goal, intent) if bound else None
         contract = strategy_contract(intent.strategy) if bound else None
-        if bound and plan and contract and contract.dependency:
+        if bound and plan and contract and contract.dependencies:
             engine = getattr(self, "_engine_for_goal_check", None)
             plan_system = getattr(engine, "plan_system", None)
             if plan_system:
@@ -471,17 +471,38 @@ class IntentSystem:
         if contract.execution_mode != ACTIVITY_EXECUTION:
             return False
         dependency_matches = True
-        if contract.dependency is not None:
-            state = plan.dependency
+        if contract.dependencies:
+            states = plan.dependencies
+            observations = record.get("source_goal_dependencies")
+            if observations:
+                observed = tuple(
+                    (item.get("kind"), item.get("subject_id"),
+                     item.get("authority_reference"))
+                    for item in observations if isinstance(item, dict)
+                )
+            elif len(states) == 1:
+                observed = ((
+                    record.get("source_goal_dependency_kind"),
+                    record.get("source_goal_dependency_subject"),
+                    record.get("source_goal_dependency_authority_ref"),
+                ),)
+            else:
+                observed = ()
+            expected = tuple(
+                (state.kind, state.subject_id, state.authority_reference)
+                for state in states
+            )
             dependency_matches = (
-                state is not None
-                and state.revision == plan.revision
-                and state.kind == contract.dependency.kind
-                and state.status == "satisfied"
-                and record.get("source_goal_dependency_kind") == state.kind
-                and record.get("source_goal_dependency_subject") == state.subject_id
-                and record.get("source_goal_dependency_authority_ref")
-                == state.authority_reference
+                len(states) == len(contract.dependencies)
+                and all(
+                    state.revision == plan.revision
+                    and state.status == "satisfied"
+                    and state.kind == dependency_contract.kind
+                    for state, dependency_contract in zip(
+                        states, contract.dependencies, strict=True,
+                    )
+                )
+                and observed == expected
             )
         return dependency_matches and (
             record.get("agent") == goal.agent_name

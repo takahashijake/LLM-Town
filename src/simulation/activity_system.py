@@ -85,6 +85,11 @@ class ActivitySystem:
             "source_goal_dependency_authority_ref": getattr(
                 activity, "source_goal_dependency_authority_ref", None
             ),
+            "source_goal_dependencies": [
+                dict(item) for item in getattr(
+                    activity, "source_goal_dependencies", (),
+                )
+            ],
         }
 
         self.activity_records.append(activity_record)

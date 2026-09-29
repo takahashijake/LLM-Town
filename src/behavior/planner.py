@@ -55,6 +55,9 @@ class ActivityPlanner:
                     "observe_relevant_activity": "Observe goal-relevant activity",
                     "direct_participation": "Participate directly in goal-relevant activity",
                     "study_reference_material": "Study owned reference material",
+                    "study_reference_material_at_active_location": (
+                        "Study owned reference material at an active location"
+                    ),
                 }[strategy],
                 location_id=current_intent.target_location,
                 reason=current_intent.description,
@@ -70,6 +73,12 @@ class ActivityPlanner:
                 source_goal_dependency_authority_ref=getattr(
                     goal_dependency, "authority_reference", None
                 ),
+                source_goal_dependencies=(tuple({
+                    "kind": item.kind,
+                    "subject_id": item.subject_id,
+                    "authority_reference": item.authority_reference,
+                } for item in getattr(goal_dependency, "dependencies", ()))
+                if len(getattr(goal_dependency, "dependencies", ())) > 1 else ()),
             )
         return Activity(
             id=f"intent_{current_intent.intent_type}",
@@ -170,7 +179,7 @@ class ActivityPlanner:
             and goal_dependency.preparation_location in location_ids
         ):
             return self.create_goal_preparation_activity(
-                agent, current_intent, goal_dependency,
+                agent, current_intent, goal_dependency.preparation,
             )
 
         intent_contract = (
@@ -178,7 +187,7 @@ class ActivityPlanner:
             if current_intent else None
         )
         dependency_required = bool(
-            intent_contract is not None and intent_contract.dependency is not None
+            intent_contract is not None and bool(intent_contract.dependencies)
         )
         dependency_allows_intent = (
             not dependency_required

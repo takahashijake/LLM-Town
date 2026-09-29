@@ -10,6 +10,7 @@ ACTIVITY_EXECUTION = "strategy_activity"
 DAILY_EVENT_AT_TARGET = "daily_event_at_target_location"
 OWNED_GOOD = "owned_good"
 DEPENDENCY_KINDS = frozenset({DAILY_EVENT_AT_TARGET, OWNED_GOOD})
+MAX_STRATEGY_DEPENDENCIES = 2
 
 
 @dataclass(frozen=True)
@@ -47,9 +48,19 @@ class GoalStrategyExecutionContract:
     activity_id: str | None = None
     required_activity_tags: tuple[str, ...] = ()
     requires_target_location: bool = False
-    dependency: GoalStrategyDependencyContract | None = None
+    dependencies: tuple[GoalStrategyDependencyContract, ...] = ()
+
+    @property
+    def dependency(self) -> GoalStrategyDependencyContract | None:
+        """Compatibility view for the existing zero/one-dependency contracts."""
+        return self.dependencies[0] if len(self.dependencies) == 1 else None
 
     def __post_init__(self) -> None:
+        if len(self.dependencies) > MAX_STRATEGY_DEPENDENCIES:
+            raise ValueError("goal strategy dependencies exceed bounded maximum")
+        identities = [(item.kind, item.subject_id) for item in self.dependencies]
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate goal strategy dependencies")
         if self.execution_mode == SOCIAL_EXECUTION:
             if not self.required_social_action or self.activity_id:
                 raise ValueError(f"malformed social strategy contract: {self.strategy}")
@@ -106,10 +117,29 @@ GOAL_STRATEGY_EXECUTION_CONTRACTS = {
             activity_id="goal_study_reference_material",
             required_activity_tags=("goal_strategy", "study_reference_material"),
             requires_target_location=True,
-            dependency=GoalStrategyDependencyContract(
+            dependencies=(GoalStrategyDependencyContract(
                 OWNED_GOOD, "material_inventory",
                 preparation_activity_id="goal_acquire_reference_book",
                 subject_id="reference_book",
+            ),),
+        ),
+        GoalStrategyExecutionContract(
+            "study_reference_material_at_active_location",
+            ACTIVITY_EXECUTION, "strategy_activity",
+            activity_id="goal_study_reference_material_at_active_location",
+            required_activity_tags=(
+                "goal_strategy", "study_reference_material_at_active_location",
+            ),
+            requires_target_location=True,
+            dependencies=(
+                GoalStrategyDependencyContract(
+                    OWNED_GOOD, "material_inventory",
+                    preparation_activity_id="goal_acquire_reference_book",
+                    subject_id="reference_book",
+                ),
+                GoalStrategyDependencyContract(
+                    DAILY_EVENT_AT_TARGET, "current_daily_event",
+                ),
             ),
         ),
         GoalStrategyExecutionContract(
@@ -117,18 +147,18 @@ GOAL_STRATEGY_EXECUTION_CONTRACTS = {
             activity_id="goal_observe_relevant_activity",
             required_activity_tags=("goal_strategy", "observe_relevant_activity"),
             requires_target_location=True,
-            dependency=GoalStrategyDependencyContract(
+            dependencies=(GoalStrategyDependencyContract(
                 DAILY_EVENT_AT_TARGET, "current_daily_event",
-            ),
+            ),),
         ),
         GoalStrategyExecutionContract(
             "direct_participation", ACTIVITY_EXECUTION, "strategy_activity",
             activity_id="goal_direct_participation",
             required_activity_tags=("goal_strategy", "direct_participation"),
             requires_target_location=True,
-            dependency=GoalStrategyDependencyContract(
+            dependencies=(GoalStrategyDependencyContract(
                 DAILY_EVENT_AT_TARGET, "current_daily_event",
-            ),
+            ),),
         ),
     )
 }
