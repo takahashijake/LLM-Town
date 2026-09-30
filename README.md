@@ -216,9 +216,13 @@ Likewise, asking or acceptance does not prove delegated work. **The goal system
 may depend on a commitment outcome, but it cannot fulfill, rewrite, or fabricate
 that commitment.**
 See
-[`docs/v4_goal_planning.md`](docs/v4_goal_planning.md). Deterministic effect guards
+[`docs/v4_goal_planning.md`](docs/v4_goal_planning.md) for the phase contract and
+[`docs/v4_freeze_candidate.md`](docs/v4_freeze_candidate.md) for the integrated
+freeze contract, coverage, and explicit limitations. Deterministic effect guards
 prevent repeated dialogue actions from double-advancing goals or relationship
-state. Run `python scripts/evaluate_goal_strategy_execution.py` for the model-free
+state. Run `python scripts/evaluate_v4_freeze.py` for the model-free whole-V4
+freeze evaluation. Run `python scripts/evaluate_goal_planning.py` for Phase 1,
+and `python scripts/evaluate_goal_strategy_execution.py` for the model-free
 Phase 2 acceptance evaluation.
 Run `python scripts/evaluate_goal_strategy_dependencies.py` for the model-free
 Phase 3 acceptance evaluation.

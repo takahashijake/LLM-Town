@@ -449,6 +449,12 @@ concurrency, and arbitration coverage.
 All use `FakeLLMClient`, isolate global random state, report named
 scenarios and invariants, and exit non-zero on failure.
 
+Run `python scripts/evaluate_v4_freeze.py` for the whole-V4 integrated acceptance
+layer. It composes the phase contracts in shared multi-day worlds rather than
+calling the six phase evaluators. See
+[`v4_freeze_candidate.md`](v4_freeze_candidate.md) for its lifecycle,
+adversarial, persistence, concurrency, long-horizon, and invariant coverage.
+
 ## Known limitations
 
 The implementation still has one selected strategy, one delegated helper per
