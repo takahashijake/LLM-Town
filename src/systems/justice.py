@@ -177,6 +177,17 @@ class JusticeSystem:
         self._validate_config()
         self._validate_history()
 
+    def can_register_agent(self, agent) -> bool:
+        return bool(agent.id and agent.name) and agent.id not in self.agents
+
+    def register_agent(self, agent) -> None:
+        existing = self.agents.get(agent.id)
+        if existing is agent:
+            return
+        if not self.can_register_agent(agent):
+            raise ValueError("justice resident identity is not unique")
+        self.agents[agent.id] = agent
+
     def _validate_config(self):
         if self.rule_version != "theft-direct-eyewitness-v1" or not self.investigator_agent_ids:
             raise ValueError("justice rule version and investigators are required")

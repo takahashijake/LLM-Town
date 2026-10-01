@@ -11,6 +11,21 @@ from src.systems.materials import (
 )
 
 
+def test_register_empty_agent_inventory_preserves_material_baselines():
+    _economy, system = build_materials()
+    system.economy.register_agent_account("agent_2")
+    before = system.total_quantities()
+    inventory = system.register_agent_inventory(
+        "agent_2", "account:agent:agent_2"
+    )
+    assert inventory.quantities == ()
+    assert system.initial_quantities[inventory.id] == {}
+    assert system.lot_holdings[inventory.id] == {}
+    assert system.total_quantities() == before
+    assert system.material_conservation_holds()
+    assert system.provenance_reconciles()
+
+
 def build_agent():
     return Agent(
         id="buyer_agent",

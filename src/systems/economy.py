@@ -171,6 +171,47 @@ class EconomySystem:
     def employment_for_agent(self, agent_id: str) -> Employment | None:
         return self._employment_by_agent.get(agent_id)
 
+    def can_register_agent_account(
+        self,
+        agent_id: str,
+        account_id: str | None = None,
+    ) -> bool:
+        """Return whether a new zero-balance resident account can be registered."""
+        account_id = account_id or f"account:agent:{agent_id}"
+        if not agent_id or not account_id or account_id in self._accounts:
+            return False
+        return not any(
+            account.owner_type == "agent" and account.owner_id == agent_id
+            for account in self._accounts.values()
+        )
+
+    def register_agent_account(
+        self,
+        agent_id: str,
+        account_id: str | None = None,
+    ) -> EconomicAccount:
+        """Register exactly one zero-balance account without changing currency."""
+        account_id = account_id or f"account:agent:{agent_id}"
+        existing = self._accounts.get(account_id)
+        if existing is not None:
+            if existing.owner_type == "agent" and existing.owner_id == agent_id:
+                return existing
+            raise EconomyError("duplicate_account", f"account id already exists: {account_id}")
+        if not self.can_register_agent_account(agent_id, account_id):
+            raise EconomyError(
+                "duplicate_agent_account",
+                f"agent already has an economic account: {agent_id}",
+            )
+        account = EconomicAccount(
+            id=account_id,
+            owner_type="agent",
+            owner_id=agent_id,
+            balance=0,
+        )
+        self._accounts[account.id] = account
+        self.initial_balances[account.id] = 0
+        return account
+
     def _validate_references(self) -> None:
         for job in self.employments.values():
             if job.employer_account_id not in self._accounts:

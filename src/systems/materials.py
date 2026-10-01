@@ -398,6 +398,64 @@ class MaterialSystem:
             )
         return matches[0]
 
+    def can_register_agent_inventory(
+        self,
+        agent_id: str,
+        account_id: str,
+        inventory_id: str | None = None,
+        *,
+        allow_pending_account: bool = False,
+    ) -> bool:
+        """Return whether an empty resident inventory can be added safely."""
+        inventory_id = inventory_id or f"inventory:agent:{agent_id}"
+        if not agent_id or not account_id or inventory_id in self._inventories:
+            return False
+        if any(
+            item.owner_type == "agent" and item.owner_id == agent_id
+            for item in self._inventories.values()
+        ):
+            return False
+        try:
+            account = self.economy.get_account(account_id)
+        except EconomyError:
+            return allow_pending_account and account_id == f"account:agent:{agent_id}"
+        return account.owner_type == "agent" and account.owner_id == agent_id
+
+    def register_agent_inventory(
+        self,
+        agent_id: str,
+        account_id: str,
+        inventory_id: str | None = None,
+    ) -> Inventory:
+        """Register an empty inventory and its empty reconstruction baseline."""
+        inventory_id = inventory_id or f"inventory:agent:{agent_id}"
+        existing = self._inventories.get(inventory_id)
+        if existing is not None:
+            if (
+                existing.owner_type == "agent"
+                and existing.owner_id == agent_id
+                and existing.account_id == account_id
+            ):
+                return existing
+            raise MaterialError(
+                "duplicate_inventory", f"inventory id already exists: {inventory_id}"
+            )
+        if not self.can_register_agent_inventory(agent_id, account_id, inventory_id):
+            raise MaterialError(
+                "invalid_agent_inventory",
+                f"cannot register inventory for agent: {agent_id}",
+            )
+        inventory = Inventory(
+            id=inventory_id,
+            owner_type="agent",
+            owner_id=agent_id,
+            account_id=account_id,
+        )
+        self._inventories[inventory.id] = inventory
+        self.initial_quantities[inventory.id] = {}
+        self.lot_holdings[inventory.id] = {}
+        return inventory
+
     def quantity(self, inventory_id: str, good_id: str) -> int:
         self.get_good(good_id)
         return self.get_inventory(inventory_id).quantity(good_id)

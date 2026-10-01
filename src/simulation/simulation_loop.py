@@ -25,6 +25,11 @@ class SimulationLoop:
                 raw_memory_retention_days=7,
             )
 
+        # Growth sees only the completed day's authoritative records. A newly
+        # activated resident is therefore first scheduled on the next day.
+        if getattr(engine, "town_growth", None) is not None:
+            engine.review_town_growth(day)
+
         # Positional arguments preserve compatibility with older test fakes.
         engine.state.save(
             engine,

@@ -77,6 +77,19 @@ def test_successful_transfer_is_atomic_audited_and_conserved():
     assert economy.ledger_reconstructs_balances()
 
 
+def test_register_agent_account_starts_at_zero_and_extends_baseline():
+    economy = build_economy()
+    before = economy.total_currency()
+    account = economy.register_agent_account("agent_2")
+    assert account.id == "account:agent:agent_2"
+    assert account.balance == 0
+    assert economy.initial_balances[account.id] == 0
+    assert economy.total_currency() == before
+    assert economy.register_agent_account("agent_2") == account
+    assert economy.conservation_holds()
+    assert economy.ledger_reconstructs_balances()
+
+
 @pytest.mark.parametrize(
     ("source", "destination", "amount", "code"),
     [

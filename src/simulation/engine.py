@@ -45,7 +45,8 @@ from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
 from src.systems.commitments import CommitmentSystem
 from src.systems.plans import PlanSystem
-from src.systems.outcome_memory import OutcomeMemorySystem
+from src.systems.outcome_memory import KnowledgeRecipient, OutcomeMemorySystem
+from src.systems.town_growth import MigrationRecord, TownGrowthSystem
 
 class SimulationEngine:
     def __init__(
@@ -65,6 +66,7 @@ class SimulationEngine:
         conversation_workers: int = 4,
         conversation_batch_size: int = 4,
         simulation_seed: int = 0,
+        town_growth_path: str | Path = "data/town_growth.json",
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
@@ -88,6 +90,14 @@ class SimulationEngine:
             sibling_config = Path(agents_path).resolve().parent / "justice.json"
             if sibling_config.is_file():
                 self.justice_path = sibling_config
+        self.town_growth_path = Path(town_growth_path)
+        if (
+            not self.town_growth_path.is_absolute()
+            and not self.town_growth_path.is_file()
+        ):
+            sibling_config = Path(agents_path).resolve().parent / "town_growth.json"
+            if sibling_config.is_file():
+                self.town_growth_path = sibling_config
         self.locations = self.load_locations(locations_path)
         self.logger = TownLogger(logs_dir=self.logs_dir)
         self.conversation_recorder = ConversationRecorder(
@@ -328,9 +338,15 @@ class SimulationEngine:
             materials=self.materials,
         )
         self.commitment_system.plan_system = self.plan_system
+        self.town_growth = TownGrowthSystem.from_config(
+            self.town_growth_path,
+            self.agents,
+            saved_state.get("town_growth") if saved_state else None,
+        )
         self.outcome_memory.bind_authorities(
             commitments=self.commitment_system, plans=self.plan_system,
             crime=self.crime, justice=self.justice, materials=self.materials,
+            town_growth=self.town_growth,
         )
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
@@ -891,6 +907,206 @@ class SimulationEngine:
             hours=hours,
         )
 
+    def preflight_resident_registration(self, record: MigrationRecord) -> Agent:
+        """Validate every authority before exposing a proposed resident."""
+        if record.status != "proposed":
+            raise ValueError("migration is not pending activation")
+        template = self.town_growth.template(record.template_id)
+        if record.arrival_location_id not in {item.id for item in self.locations}:
+            raise ValueError("arrival location is unavailable")
+        if any(item.id == record.agent_id for item in self.agents):
+            raise ValueError("resident id is already registered")
+        if any(item.name == template.name for item in self.agents):
+            raise ValueError("resident name is already registered")
+        account_id = f"account:agent:{record.agent_id}"
+        inventory_id = f"inventory:agent:{record.agent_id}"
+        if not self.economy.can_register_agent_account(record.agent_id, account_id):
+            raise ValueError("resident account cannot be registered")
+        if not self.materials.can_register_agent_inventory(
+            record.agent_id,
+            account_id,
+            inventory_id,
+            allow_pending_account=True,
+        ):
+            raise ValueError("resident inventory cannot be registered")
+        source = self.economy.get_account(
+            self.town_growth.policy.settlement_source_account_id
+        )
+        if source.balance < self.town_growth.policy.settlement_grant:
+            raise ValueError("settlement source has insufficient funds")
+        resident = Agent(
+            id=record.agent_id,
+            name=template.name,
+            personality=template.personality,
+            occupation="unemployed",
+            location_id=record.arrival_location_id,
+            goals=list(template.goals),
+            needs=dict(template.initial_needs),
+        )
+        checks = (
+            self.commitment_system.can_register_agent(resident),
+            self.plan_system.can_register_agent(resident),
+            self.crime.can_register_agent(resident),
+            self.justice.can_register_agent(resident),
+            self.outcome_memory.can_register_agent(resident),
+        )
+        if not all(checks):
+            raise ValueError("resident is incompatible with a cached authority")
+        return resident
+
+    def _restore_population_authorities(
+        self,
+        *,
+        agents: list[Agent],
+        economy_state: dict,
+        materials_state: dict,
+        crime_state: dict,
+        justice_state: dict,
+        commitments_state: dict,
+        plans_state: dict,
+        growth_state: dict,
+    ) -> None:
+        """Restore the small authority set used by one activation transaction."""
+        self.agents = agents
+        self.economy = EconomySystem.from_dict(economy_state)
+        self.materials = MaterialSystem.from_dict(
+            materials_state, economy=self.economy
+        )
+        self.crime = CrimeSystem.from_dict(
+            crime_state, materials=self.materials, agents=self.agents,
+            reputation_system=self.reputation_system,
+        )
+        self.justice = JusticeSystem.from_dict(
+            justice_state, crime=self.crime, materials=self.materials,
+            agents=self.agents, reputation_system=self.reputation_system,
+        )
+        self.outcome_memory = OutcomeMemorySystem(self.agents)
+        self.commitment_system = CommitmentSystem.from_dict(
+            commitments_state,
+            relationships=self.relationships,
+            reputation_system=self.reputation_system,
+            agents=self.agents,
+            materials=self.materials,
+            location_ids=[location.id for location in self.locations],
+            outcome_memory=self.outcome_memory,
+        )
+        self.plan_system = PlanSystem.from_dict(
+            plans_state,
+            commitment_system=self.commitment_system,
+            agents=self.agents,
+            outcome_memory=self.outcome_memory,
+            materials=self.materials,
+        )
+        self.commitment_system.plan_system = self.plan_system
+        self.town_growth = TownGrowthSystem.from_config(
+            self.town_growth_path, self.agents, growth_state
+        )
+        self.outcome_memory.bind_authorities(
+            commitments=self.commitment_system,
+            plans=self.plan_system,
+            crime=self.crime,
+            justice=self.justice,
+            materials=self.materials,
+            town_growth=self.town_growth,
+        )
+        self.crime.outcome_memory = self.outcome_memory
+        self.justice.outcome_memory = self.outcome_memory
+        self.sync_activity_system_refs()
+
+    def activate_pending_migration(self, day: int) -> MigrationRecord | None:
+        """Atomically register and fund the one pending resident proposal."""
+        record = self.town_growth.pending_migration()
+        if record is None:
+            return None
+        try:
+            resident = self.preflight_resident_registration(record)
+        except (KeyError, TypeError, ValueError) as error:
+            self.town_growth.reject(record.id, str(error))
+            return None
+
+        snapshot = {
+            "agents": list(self.agents),
+            "economy_state": self.economy.to_dict(),
+            "materials_state": self.materials.to_dict(),
+            "crime_state": self.crime.to_dict(),
+            "justice_state": self.justice.to_dict(),
+            "commitments_state": self.commitment_system.to_dict(),
+            "plans_state": self.plan_system.to_dict(),
+            "growth_state": self.town_growth.to_dict(),
+        }
+        try:
+            account = self.economy.register_agent_account(resident.id)
+            self.materials.register_agent_inventory(resident.id, account.id)
+            self.agents.append(resident)
+            self.commitment_system.register_agent(resident)
+            self.plan_system.register_agent(resident)
+            self.crime.register_agent(resident)
+            self.justice.register_agent(resident)
+            self.outcome_memory.register_agent(resident)
+            transfer = self.economy.transfer(
+                self.town_growth.policy.settlement_source_account_id,
+                account.id,
+                self.town_growth.policy.settlement_grant,
+                day=day,
+                hour=None,
+                transaction_type="migration_settlement",
+                reason=f"Settlement grant for {record.id}",
+                event_key=f"migration-settlement:{record.id}",
+                metadata={"migration_id": record.id, "agent_id": resident.id},
+            )
+            activated = self.town_growth.activate(
+                record.id,
+                day=day,
+                settlement_transaction_id=transfer.id,
+            )
+            recipients = [KnowledgeRecipient(
+                owner_id=item.id,
+                knowledge_basis=(
+                    "participant" if item.id == resident.id else "public_event"
+                ),
+                description=(
+                    f"I arrived in town at {record.arrival_location_id}."
+                    if item.id == resident.id
+                    else f"{resident.name} arrived in town at "
+                    f"{record.arrival_location_id}."
+                ),
+                counterpart_ids=(resident.id,) if item.id != resident.id else (),
+                sentiment=1,
+                importance=5 if item.id == resident.id else 4,
+                location=record.arrival_location_id,
+            ) for item in self.agents]
+            self.outcome_memory.project(
+                source_system="town_growth",
+                source_id=record.id,
+                event_type="resident_arrival",
+                day=day,
+                hour=None,
+                recipients=recipients,
+            )
+            self.sync_agent_relationships_from_manager()
+            return activated
+        except Exception as error:
+            self._restore_population_authorities(**snapshot)
+            restored = self.town_growth.pending_migration()
+            if restored is not None:
+                self.town_growth.reject(
+                    restored.id, f"activation_failed:{error}"
+                )
+            return None
+
+    def review_town_growth(self, day: int):
+        """Run the bounded review and orchestrate at most one activation."""
+        review = self.town_growth.review(
+            day=day,
+            agents=self.agents,
+            locations=self.locations,
+            activity_records=self.activity_records,
+            economy=self.economy,
+        )
+        if review.status == "proposed":
+            self.activate_pending_migration(day)
+        return review
+
     def run_agent_activities(self, day: int, hour: int) -> None:
         self.sync_activity_system_refs()
         location_ids = [location.id for location in self.locations]
@@ -913,7 +1129,13 @@ class SimulationEngine:
                 if record.get("type") == "activity"
                 and record.get("day") == day
                 and record.get("hour") == hour
-                and record.get("agent") == agent.name
+                and (
+                    record.get("agent_id") == agent.id
+                    or (
+                        record.get("agent_id") is None
+                        and record.get("agent") == agent.name
+                    )
+                )
             ), None)
             self.intent_system.update_intent_after_activity(
                 day=day,

@@ -1,0 +1,45 @@
+{
+  "policy": {
+    "resident_capacity": 5,
+    "earliest_migration_day": 14,
+    "review_interval_days": 7,
+    "migration_cooldown_days": 30,
+    "arrival_location_id": "town_square",
+    "settlement_source_account_id": "account:employer:town_services",
+    "settlement_grant": 75,
+    "recent_activity_window_days": 7,
+    "minimum_active_residents_per_day": 4
+  },
+  "templates": [
+    {
+      "id": "resident_template_001",
+      "name": "Nora",
+      "personality": "thoughtful",
+      "initial_location_policy": "arrival_location",
+      "goals": [
+        "build close friendships",
+        "learn about the town community"
+      ],
+      "initial_needs": {
+        "social": 50,
+        "wealth": 50,
+        "knowledge": 50
+      }
+    },
+    {
+      "id": "resident_template_002",
+      "name": "Priya",
+      "personality": "patient",
+      "initial_location_policy": "arrival_location",
+      "goals": [
+        "find reliable allies",
+        "increase local knowledge"
+      ],
+      "initial_needs": {
+        "social": 50,
+        "wealth": 50,
+        "knowledge": 50
+      }
+    }
+  ]
+}

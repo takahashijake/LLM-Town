@@ -58,6 +58,7 @@ class ActivitySystem:
             "type": "activity",
             "day": day,
             "hour": hour,
+            "agent_id": agent.id,
             "agent": agent.name,
             "activity_id": activity.id,
             "activity_name": activity.name,

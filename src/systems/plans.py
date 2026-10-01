@@ -439,6 +439,20 @@ class PlanSystem:
         self.planning_records: list[dict] = []
         self.goal_planning_records: list[dict] = []
 
+    def can_register_agent(self, agent) -> bool:
+        return bool(agent.id and agent.name) and all(
+            existing.id != agent.id and existing.name != agent.name
+            for existing in self.agents
+        )
+
+    def register_agent(self, agent) -> None:
+        existing = next((item for item in self.agents if item.id == agent.id), None)
+        if existing is agent:
+            return
+        if not self.can_register_agent(agent):
+            raise ValueError("plan resident identity is not unique")
+        self.agents.append(agent)
+
     def to_dict(self) -> dict:
         return {"schema_version": PLAN_SCHEMA_VERSION,
                 "plans": [plan.to_dict() for plan in self.plans],

@@ -137,6 +137,11 @@ class SimulationState:
                 if getattr(engine, "plan_system", None) is not None
                 else None
             ),
+            "town_growth": (
+                engine.town_growth.to_dict()
+                if getattr(engine, "town_growth", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

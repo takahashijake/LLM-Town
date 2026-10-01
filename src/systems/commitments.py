@@ -129,7 +129,7 @@ class CommitmentSystem:
         self.next_number = max(1, int(next_number))
         self.relationships = relationships
         self.reputation_system = reputation_system
-        self.agents = agents if agents is not None else []
+        self.agents = list(agents or [])
         self.materials = materials
         self.location_ids = list(location_ids or [])
         self.outcome_memory = outcome_memory
@@ -139,6 +139,20 @@ class CommitmentSystem:
         self.duplicate_attempts = 0
         self.illegal_transition_attempts = 0
         self.processed_evidence_keys: set[str] = set()
+
+    def can_register_agent(self, agent) -> bool:
+        return bool(agent.id and agent.name) and all(
+            existing.id != agent.id and existing.name != agent.name
+            for existing in self.agents
+        )
+
+    def register_agent(self, agent) -> None:
+        existing = next((item for item in self.agents if item.id == agent.id), None)
+        if existing is agent:
+            return
+        if not self.can_register_agent(agent):
+            raise ValueError("commitment resident identity is not unique")
+        self.agents.append(agent)
 
     def to_dict(self) -> dict:
         return {

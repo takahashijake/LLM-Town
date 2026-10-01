@@ -191,6 +191,17 @@ class CrimeSystem:
         self._validate_model()
         self._validate_history()
 
+    def can_register_agent(self, agent) -> bool:
+        return bool(agent.id and agent.name) and agent.id not in self.agents
+
+    def register_agent(self, agent) -> None:
+        existing = self.agents.get(agent.id)
+        if existing is agent:
+            return
+        if not self.can_register_agent(agent):
+            raise ValueError("crime resident identity is not unique")
+        self.agents[agent.id] = agent
+
     def _validate_model(self) -> None:
         for rule in self.theft_activity_rules.values():
             if not rule.eligible_actor_ids:

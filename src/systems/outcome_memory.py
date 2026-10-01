@@ -37,6 +37,17 @@ class OutcomeMemorySystem:
         """Attach read-only source registries after engine construction."""
         self.authorities = authorities
 
+    def can_register_agent(self, agent) -> bool:
+        return bool(agent.id and agent.name) and agent.id not in self.agents
+
+    def register_agent(self, agent) -> None:
+        existing = self.agents.get(agent.id)
+        if existing is agent:
+            return
+        if not self.can_register_agent(agent):
+            raise ValueError("outcome-memory resident identity is not unique")
+        self.agents[agent.id] = agent
+
     def source_exists(self, memory: Memory) -> bool:
         authority = self.authorities.get(memory.source_system)
         if authority is None:
@@ -51,6 +62,8 @@ class OutcomeMemorySystem:
             records = [*authority.adjudications, *authority.restitutions]
         elif memory.source_system == "materials":
             records = authority.exchanges
+        elif memory.source_system == "town_growth":
+            records = authority.migration_records
         else:
             return False
         return any(record.id == memory.source_id for record in records)

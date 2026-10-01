@@ -332,11 +332,22 @@ def test_twenty_day_fake_run_has_unique_journals_and_bounded_memory():
         assert saved_state["current_day"] == 20
         assert saved_state["current_hour"] == 22
 
+        activation_days = {
+            record["agent_id"]: record["activation_day"]
+            for record in saved_state.get("town_growth", {}).get(
+                "migration_records", []
+            )
+            if record.get("status") == "activated"
+        }
+
         for agent_data in saved_state["agents"]:
+            first_participation_day = activation_days.get(
+                agent_data["id"], 0
+            ) + 1
             assert_journals_are_valid(
                 agent_data,
                 expected_days=list(
-                    range(1, 21)
+                    range(first_participation_day, 21)
                 ),
             )
 
@@ -355,9 +366,10 @@ def test_twenty_day_fake_run_has_unique_journals_and_bounded_memory():
             # every simulated day indefinitely.
             assert len(active_memories) < 250
 
-            assert len(
-                archived_memories
-            ) > 0
+            if agent_data["id"] not in activation_days:
+                assert len(
+                    archived_memories
+                ) > 0
 
             oldest_active_day = min(
                 memory["day"]
@@ -393,15 +405,25 @@ def test_twenty_day_run_can_reload_all_journals():
             )
         )
 
+        activation_days = {
+            record["agent_id"]: record["activation_day"]
+            for record in saved_state.get("town_growth", {}).get(
+                "migration_records", []
+            )
+            if record.get("status") == "activated"
+        }
+
         for agent in agents:
+            expected_days = list(range(
+                activation_days.get(agent.id, 0) + 1,
+                21,
+            ))
             assert len(
                 agent.daily_journals
-            ) == 20
+            ) == len(expected_days)
 
             assert [
                 journal.day
                 for journal
                 in agent.daily_journals
-            ] == list(
-                range(1, 21)
-            )
+            ] == expected_days

@@ -233,6 +233,28 @@ Phase 5 bounded conjunction and staged-preparation evaluation.
 Run `python scripts/evaluate_goal_delegation.py` for the model-free Phase 6
 delegation-through-V3-commitments evaluation.
 
+## V5 bounded resident migration
+
+V4 is frozen. V5 Phase 1 begins dynamic town evolution with one deliberately
+bounded world-level lifecycle. After a completed day, `TownGrowthSystem` may admit
+one resident from `data/town_growth.json` only when fixed capacity, schedule,
+cooldown, static-location, settlement-funding, sustained-activity, finite-template,
+and replay gates all pass. This is not a goal strategy and dialogue has no
+authority over identity, money, employment, inventory, or activation.
+
+Activation registers a stable resident identity across every cached authority,
+adds a zero-balance account and empty provenance-safe inventory, and then pays the
+configured grant through a conserved ledger transfer. The authoritative migration
+record supports idempotent private/public arrival memories. Save/resume preserves
+proposal and activation identity; the newcomer enters normal planning, activity,
+and social scheduling on the following day.
+
+Run `python scripts/evaluate_population_growth.py` for the model-free acceptance
+suite and its seeded 90-day save/resume stabilization scenario. See
+[`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md) for the
+authority contract, population audit, replay behavior, and explicit Phase 1
+limits.
+
 ## V2 economic foundation
 
 `data/economy.json` maps the four existing stable agent IDs to starting employment,
