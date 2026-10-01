@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
@@ -12,6 +12,20 @@ from src.systems.economy import EconomyError, EconomySystem
 
 MIGRATION_STATUSES = {"proposed", "activated", "rejected"}
 REVIEW_STATUSES = {"waiting", "proposed", "activated", "rejected"}
+MIGRATION_ID_PATTERN = re.compile(r"migration:(\d{4,})")
+AGENT_ID_PATTERN = re.compile(r"agent_(\d{3,})")
+
+
+def _positive_int(value: object, field_name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{field_name} must be a positive integer")
+    return value
+
+
+def _optional_positive_int(value: object, field_name: str) -> int | None:
+    if value is None:
+        return None
+    return _positive_int(value, field_name)
 
 
 @dataclass(frozen=True)
@@ -39,7 +53,12 @@ class TownGrowthPolicy:
             for name in integer_fields
         ):
             raise ValueError("town growth policy values must be bounded integers")
-        if not self.arrival_location_id or not self.settlement_source_account_id:
+        if (
+            not isinstance(self.arrival_location_id, str)
+            or not self.arrival_location_id
+            or not isinstance(self.settlement_source_account_id, str)
+            or not self.settlement_source_account_id
+        ):
             raise ValueError("town growth location and settlement account are required")
 
 
@@ -53,14 +72,21 @@ class ResidentTemplate:
     initial_location_policy: str = "arrival_location"
 
     def __post_init__(self) -> None:
-        if not self.id or not self.name or not self.personality:
+        if any(
+            not isinstance(value, str) or not value.strip()
+            for value in (self.id, self.name, self.personality)
+        ):
             raise ValueError("resident template identity and personality are required")
         if self.initial_location_policy != "arrival_location":
             raise ValueError("unsupported resident initial location policy")
-        if not self.goals or any(not isinstance(item, str) or not item.strip() for item in self.goals):
+        if not self.goals or any(
+            not isinstance(item, str) or not item.strip() for item in self.goals
+        ):
             raise ValueError("resident template goals must be non-empty strings")
         needs = dict(self.initial_needs)
-        if set(needs) != {"social", "wealth", "knowledge"} or any(
+        if len(self.initial_needs) != 3 or set(needs) != {
+            "social", "wealth", "knowledge"
+        } or any(
             isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100
             for value in needs.values()
         ):
@@ -103,8 +129,24 @@ class MigrationReview:
     agent_id: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.event_key or self.status not in REVIEW_STATUSES:
+        if (
+            not isinstance(self.event_key, str)
+            or not self.event_key
+            or self.status not in REVIEW_STATUSES
+            or not isinstance(self.reason, str)
+            or not self.reason
+        ):
             raise ValueError("invalid migration review")
+        _positive_int(self.day, "migration review day")
+        if self.event_key != f"migration-review:day:{self.day}":
+            raise ValueError("migration review event key and day disagree")
+        proposal_fields = (self.migration_id, self.template_id, self.agent_id)
+        if self.status == "waiting" and any(item is not None for item in proposal_fields):
+            raise ValueError("waiting migration review cannot claim a proposal")
+        if self.status != "waiting" and any(
+            not isinstance(item, str) or not item for item in proposal_fields
+        ):
+            raise ValueError("migration proposal review requires stable identities")
 
 
 @dataclass
@@ -122,13 +164,30 @@ class MigrationRecord:
 
     def __post_init__(self) -> None:
         if (
-            not self.id or not self.event_key or not self.template_id
-            or not self.agent_id or not self.arrival_location_id
+            not isinstance(self.id, str)
+            or MIGRATION_ID_PATTERN.fullmatch(self.id) is None
+            or not isinstance(self.event_key, str) or not self.event_key
+            or not isinstance(self.template_id, str) or not self.template_id
+            or not isinstance(self.agent_id, str)
+            or AGENT_ID_PATTERN.fullmatch(self.agent_id) is None
+            or not isinstance(self.arrival_location_id, str)
+            or not self.arrival_location_id
             or self.status not in MIGRATION_STATUSES
+            or not isinstance(self.reason, str) or not self.reason
         ):
             raise ValueError("invalid migration record")
+        self.review_day = _positive_int(self.review_day, "migration review day")
+        self.activation_day = _optional_positive_int(
+            self.activation_day, "migration activation day"
+        )
+        if self.event_key != f"migration-review:day:{self.review_day}":
+            raise ValueError("migration event key and review day disagree")
+        if self.activation_day is not None and self.activation_day < self.review_day:
+            raise ValueError("migration cannot activate before review")
         if self.status == "activated" and (
-            self.activation_day is None or not self.settlement_transaction_id
+            self.activation_day is None
+            or not isinstance(self.settlement_transaction_id, str)
+            or not self.settlement_transaction_id
         ):
             raise ValueError("activated migration requires activation proof")
         if self.status != "activated" and (
@@ -164,8 +223,12 @@ class TownGrowthSystem:
             raise ValueError("resident template names must be unique")
         self.policy = policy
         self.templates = {item.id: item for item in templates}
-        self.next_migration_sequence = max(1, int(next_migration_sequence))
-        self.next_resident_sequence = max(1, int(next_resident_sequence))
+        self.next_migration_sequence = _positive_int(
+            next_migration_sequence, "next migration sequence"
+        )
+        self.next_resident_sequence = _positive_int(
+            next_resident_sequence, "next resident sequence"
+        )
         self.review_history = list(review_history or [])[-self.REVIEW_HISTORY_LIMIT:]
         self.migration_records = list(migration_records or [])
         self.last_successful_activation_day = last_successful_activation_day
@@ -177,10 +240,13 @@ class TownGrowthSystem:
     def _validate_state(self) -> None:
         migration_ids = [item.id for item in self.migration_records]
         agent_ids = [item.agent_id for item in self.migration_records]
+        event_keys = [item.event_key for item in self.migration_records]
         if len(migration_ids) != len(set(migration_ids)):
             raise ValueError("migration ids must be unique")
         if len(agent_ids) != len(set(agent_ids)):
             raise ValueError("migration resident ids must be unique")
+        if len(event_keys) != len(set(event_keys)):
+            raise ValueError("migration event keys must be unique")
         if any(item.template_id not in self.templates for item in self.migration_records):
             raise ValueError("migration record references unknown template")
         if not self.consumed_template_ids.issubset(self.templates):
@@ -189,24 +255,86 @@ class TownGrowthSystem:
             item.template_id for item in self.migration_records
             if item.status == "activated"
         }
+        activated_template_ids = [
+            item.template_id for item in self.migration_records
+            if item.status == "activated"
+        ]
+        if len(activated_template_ids) != len(set(activated_template_ids)):
+            raise ValueError("resident template may activate only once")
         if not activated_templates.issubset(self.consumed_template_ids):
             raise ValueError("activated templates must be consumed")
+        if sum(item.status == "proposed" for item in self.migration_records) > 1:
+            raise ValueError("only one migration proposal may be pending")
+        if any(
+            item.status == "proposed" and item.template_id in self.consumed_template_ids
+            for item in self.migration_records
+        ):
+            raise ValueError("consumed resident template cannot remain proposed")
+        if any(
+            not isinstance(item, str) or not item
+            for item in self.processed_event_keys | self.consumed_template_ids
+        ):
+            raise ValueError("town growth replay identities must be strings")
         if any(item.event_key not in self.processed_event_keys for item in self.review_history):
             raise ValueError("migration review is missing replay guard")
+        if any(item.event_key not in self.processed_event_keys for item in self.migration_records):
+            raise ValueError("migration record is missing replay guard")
         if len({item.event_key for item in self.review_history}) != len(self.review_history):
             raise ValueError("migration review event keys must be unique")
+        records_by_id = {item.id: item for item in self.migration_records}
+        for review in self.review_history:
+            if review.status == "waiting":
+                continue
+            record = records_by_id.get(review.migration_id)
+            if record is None or (
+                review.event_key != record.event_key
+                or review.template_id != record.template_id
+                or review.agent_id != record.agent_id
+                or review.day != record.review_day
+                or review.status != record.status
+            ):
+                raise ValueError("migration review and record disagree")
         if any(
-            entry.get("migration_id") not in migration_ids
-            or not entry.get("event_key")
+            not isinstance(entry, dict)
+            or entry.get("migration_id") not in records_by_id
+            or records_by_id[entry.get("migration_id")].status != "activated"
+            or entry.get("event_key")
+            != f"migration-arrival:{entry.get('migration_id')}"
+            or entry.get("agent_id")
+            != records_by_id[entry.get("migration_id")].agent_id
+            or entry.get("template_id")
+            != records_by_id[entry.get("migration_id")].template_id
+            or entry.get("day")
+            != records_by_id[entry.get("migration_id")].activation_day
+            or entry.get("location_id")
+            != records_by_id[entry.get("migration_id")].arrival_location_id
             for entry in self.public_history
         ):
             raise ValueError("public migration history is invalid")
+        expected_public_ids = [
+            item.id for item in self.migration_records if item.status == "activated"
+        ][-self.PUBLIC_HISTORY_LIMIT:]
+        if [entry["migration_id"] for entry in self.public_history] != expected_public_ids:
+            raise ValueError("activated migrations require bounded public history")
+        if len(self.public_history) != len({
+            entry["migration_id"] for entry in self.public_history
+        }):
+            raise ValueError("public migration history must be unique")
+        activation_days = [
+            item.activation_day for item in self.migration_records
+            if item.status == "activated"
+        ]
+        if activation_days:
+            if self.last_successful_activation_day != max(activation_days):
+                raise ValueError("last migration activation day is inconsistent")
+        elif self.last_successful_activation_day is not None:
+            raise ValueError("last migration activation day lacks an activated record")
 
     @staticmethod
     def _safe_next_resident_sequence(agents: list) -> int:
         numeric_ids = []
         for agent in agents:
-            match = re.fullmatch(r"agent_(\d+)", str(agent.id))
+            match = AGENT_ID_PATTERN.fullmatch(str(agent.id))
             if match:
                 numeric_ids.append(int(match.group(1)))
         return max(numeric_ids, default=0) + 1
@@ -219,6 +347,10 @@ class TownGrowthSystem:
         state: dict | None = None,
     ) -> "TownGrowthSystem":
         config = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(config, dict) or set(config) != {"policy", "templates"}:
+            raise ValueError("town growth config must contain only policy and templates")
+        if not isinstance(config["policy"], dict) or not isinstance(config["templates"], list):
+            raise ValueError("town growth policy and templates have invalid shapes")
         policy = TownGrowthPolicy(**config["policy"])
         templates = [ResidentTemplate.from_dict(item) for item in config["templates"]]
         if state is None:
@@ -231,9 +363,20 @@ class TownGrowthSystem:
                     item.id for item in templates if item.name in existing_names
                 },
             )
-        version = state.get("schema_version", 1)
+        if not isinstance(state, dict):
+            raise ValueError("town growth state must be an object")
+        version = state.get("schema_version")
         if version != cls.SCHEMA_VERSION:
             raise ValueError("unsupported town growth schema version")
+        collection_fields = (
+            "review_history", "migration_records", "processed_event_keys",
+            "consumed_template_ids", "public_history",
+        )
+        if any(
+            key in state and not isinstance(state[key], list)
+            for key in collection_fields
+        ):
+            raise ValueError("town growth state collections must be lists")
         system = cls(
             policy,
             templates,
@@ -255,9 +398,22 @@ class TownGrowthSystem:
             public_history=state.get("public_history", []),
         )
         existing_ids = {agent.id for agent in agents}
+        migration_sequences = [
+            int(MIGRATION_ID_PATTERN.fullmatch(item.id).group(1))
+            for item in system.migration_records
+        ]
+        resident_sequences = [
+            int(AGENT_ID_PATTERN.fullmatch(item.agent_id).group(1))
+            for item in system.migration_records
+        ]
+        system.next_migration_sequence = max(
+            system.next_migration_sequence,
+            max(migration_sequences, default=0) + 1,
+        )
         system.next_resident_sequence = max(
             system.next_resident_sequence,
             cls._safe_next_resident_sequence(agents),
+            max(resident_sequences, default=0) + 1,
         )
         while f"agent_{system.next_resident_sequence:03d}" in existing_ids:
             system.next_resident_sequence += 1
@@ -328,6 +484,7 @@ class TownGrowthSystem:
         economy: EconomySystem,
     ) -> MigrationReview:
         """Perform one scheduled, replay-safe readiness review."""
+        day = _positive_int(day, "migration review day")
         pending = self.pending_migration()
         if pending is not None:
             return MigrationReview(
@@ -341,6 +498,10 @@ class TownGrowthSystem:
         )
         if existing is not None:
             return existing
+        if event_key in self.processed_event_keys:
+            return MigrationReview(
+                event_key, int(day), "waiting", "review_already_processed"
+            )
         if len(agents) >= self.policy.resident_capacity:
             return self._waiting(event_key, day, "resident_capacity_reached")
         if day < self.policy.earliest_migration_day:
@@ -372,7 +533,6 @@ class TownGrowthSystem:
             (
                 item for item in self.templates.values()
                 if item.id not in self.consumed_template_ids
-                and all(record.template_id != item.id for record in self.migration_records)
             ),
             None,
         )
@@ -381,8 +541,12 @@ class TownGrowthSystem:
         if candidate.name in {agent.name for agent in agents}:
             return self._waiting(event_key, day, "duplicate_resident_name")
 
-        migration_id = f"migration:{self.next_migration_sequence:04d}"
-        self.next_migration_sequence += 1
+        registered_migration_ids = {item.id for item in self.migration_records}
+        while True:
+            migration_id = f"migration:{self.next_migration_sequence:04d}"
+            self.next_migration_sequence += 1
+            if migration_id not in registered_migration_ids:
+                break
         while True:
             agent_id = f"agent_{self.next_resident_sequence:03d}"
             self.next_resident_sequence += 1
@@ -447,4 +611,3 @@ class TownGrowthSystem:
         })
         self.public_history = self.public_history[-self.PUBLIC_HISTORY_LIMIT:]
         return record
-

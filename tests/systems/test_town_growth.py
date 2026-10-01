@@ -123,3 +123,104 @@ def test_malformed_template_and_future_state_fail_closed(tmp_path):
         TownGrowthSystem.from_config(
             config, [], {"schema_version": 999}
         )
+    with pytest.raises(ValueError, match="unsupported town growth"):
+        TownGrowthSystem.from_config(config, [], {})
+
+
+def test_processed_review_key_survives_bounded_review_history():
+    agents, locations, economy, activity = authorities()
+    system = TownGrowthSystem(
+        policy(resident_capacity=2, earliest_migration_day=1,
+               review_interval_days=1),
+        [template()],
+    )
+    for day in range(1, system.REVIEW_HISTORY_LIMIT + 3):
+        system.review(
+            day=day, agents=agents, locations=locations,
+            activity_records=activity, economy=economy,
+        )
+
+    assert all(item.day != 1 for item in system.review_history)
+    history_size = len(system.review_history)
+    replay = system.review(
+        day=1, agents=agents, locations=locations,
+        activity_records=activity, economy=economy,
+    )
+    assert replay.reason == "review_already_processed"
+    assert len(system.review_history) == history_size
+
+
+def test_stale_sequences_are_advanced_past_persisted_records():
+    agents, _locations, _economy, _activity = authorities()
+    event_key = "migration-review:day:14"
+    state = {
+        "schema_version": 1,
+        "next_migration_sequence": 1,
+        "next_resident_sequence": 1,
+        "review_history": [{
+            "event_key": event_key,
+            "day": 14,
+            "status": "rejected",
+            "reason": "activation_failed",
+            "migration_id": "migration:0007",
+            "template_id": "resident_template_001",
+            "agent_id": "agent_099",
+        }],
+        "migration_records": [{
+            "id": "migration:0007",
+            "event_key": event_key,
+            "template_id": "resident_template_001",
+            "agent_id": "agent_099",
+            "review_day": 14,
+            "arrival_location_id": "town_square",
+            "status": "rejected",
+            "reason": "activation_failed",
+            "activation_day": None,
+            "settlement_transaction_id": None,
+        }],
+        "last_successful_activation_day": None,
+        "processed_event_keys": [event_key],
+        "consumed_template_ids": [],
+        "public_history": [],
+    }
+
+    system = TownGrowthSystem.from_config(
+        "data/town_growth.json", agents, state
+    )
+    assert system.next_migration_sequence == 8
+    assert system.next_resident_sequence == 100
+
+
+def test_malformed_activated_history_fails_closed():
+    agents, _locations, _economy, _activity = authorities()
+    event_key = "migration-review:day:14"
+    state = {
+        "schema_version": 1,
+        "review_history": [{
+            "event_key": event_key,
+            "day": 14,
+            "status": "activated",
+            "reason": "activated",
+            "migration_id": "migration:0001",
+            "template_id": "resident_template_001",
+            "agent_id": "agent_005",
+        }],
+        "migration_records": [{
+            "id": "migration:0001",
+            "event_key": event_key,
+            "template_id": "resident_template_001",
+            "agent_id": "agent_005",
+            "review_day": 14,
+            "arrival_location_id": "town_square",
+            "status": "activated",
+            "reason": "activated",
+            "activation_day": 14,
+            "settlement_transaction_id": "txn-00000001",
+        }],
+        "last_successful_activation_day": 14,
+        "processed_event_keys": [event_key],
+        "consumed_template_ids": ["resident_template_001"],
+        "public_history": [],
+    }
+    with pytest.raises(ValueError, match="public history"):
+        TownGrowthSystem.from_config("data/town_growth.json", agents, state)

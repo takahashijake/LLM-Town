@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 from src.simulation.journal_system import JournalSystem
 from src.actions.action_system import ActionSystem
@@ -348,6 +349,7 @@ class SimulationEngine:
             crime=self.crime, justice=self.justice, materials=self.materials,
             town_growth=self.town_growth,
         )
+        self.validate_population_authorities()
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -911,6 +913,7 @@ class SimulationEngine:
         """Validate every authority before exposing a proposed resident."""
         if record.status != "proposed":
             raise ValueError("migration is not pending activation")
+        self.validate_population_authorities()
         template = self.town_growth.template(record.template_id)
         if record.arrival_location_id not in {item.id for item in self.locations}:
             raise ValueError("arrival location is unavailable")
@@ -934,6 +937,9 @@ class SimulationEngine:
         )
         if source.balance < self.town_growth.policy.settlement_grant:
             raise ValueError("settlement source has insufficient funds")
+        settlement_event_key = f"migration-settlement:{record.id}"
+        if settlement_event_key in self.economy.applied_event_keys:
+            raise ValueError("settlement event was already applied")
         resident = Agent(
             id=record.agent_id,
             name=template.name,
@@ -953,6 +959,100 @@ class SimulationEngine:
         if not all(checks):
             raise ValueError("resident is incompatible with a cached authority")
         return resident
+
+    def validate_population_authorities(self) -> None:
+        """Fail closed when population, migration, money, or goods disagree."""
+        agent_ids = [agent.id for agent in self.agents]
+        agent_names = [agent.name for agent in self.agents]
+        if len(agent_ids) != len(set(agent_ids)):
+            raise ValueError("resident ids must be unique")
+        if len(agent_names) != len(set(agent_names)):
+            raise ValueError("resident names must be unique")
+        registered_ids = set(agent_ids)
+        account_owner_ids = [
+            account.owner_id for account in self.economy.accounts.values()
+            if account.owner_type == "agent"
+        ]
+        inventory_owner_ids = [
+            inventory.owner_id for inventory in self.materials.inventories.values()
+            if inventory.owner_type == "agent"
+        ]
+        if (
+            set(account_owner_ids) != registered_ids
+            or len(account_owner_ids) != len(agent_ids)
+        ):
+            raise ValueError("resident account registry does not match population")
+        if (
+            set(inventory_owner_ids) != registered_ids
+            or len(inventory_owner_ids) != len(agent_ids)
+        ):
+            raise ValueError("resident inventory registry does not match population")
+        for agent in self.agents:
+            account = self.economy.account_for_agent(agent.id)
+            inventory = self.materials.inventory_for_agent(agent.id)
+            if (
+                account.id != f"account:agent:{agent.id}"
+                or inventory.id != f"inventory:agent:{agent.id}"
+                or inventory.account_id != account.id
+            ):
+                raise ValueError("resident inventory and account linkage disagree")
+
+        agents_by_id = {agent.id: agent for agent in self.agents}
+        cached_agents = (
+            self.crime.agents,
+            self.justice.agents,
+            self.outcome_memory.agents,
+        )
+        if any(
+            set(registry) != registered_ids
+            or any(registry[agent_id] is not agents_by_id[agent_id]
+                   for agent_id in registered_ids)
+            for registry in cached_agents
+        ):
+            raise ValueError("id-indexed resident registry does not match population")
+        for registry in (self.plan_system.agents, self.commitment_system.agents):
+            if (
+                {agent.id for agent in registry} != registered_ids
+                or len(registry) != len(agent_ids)
+                or any(agents_by_id[agent.id] is not agent for agent in registry)
+            ):
+                raise ValueError("resident list registry does not match population")
+        transactions_by_id = {
+            transaction.id: transaction for transaction in self.economy.ledger
+        }
+        for record in self.town_growth.migration_records:
+            if record.status != "activated":
+                if record.agent_id in agents_by_id:
+                    raise ValueError("inactive migration cannot expose a resident")
+                continue
+            resident = agents_by_id.get(record.agent_id)
+            if resident is None:
+                raise ValueError("activated migration resident is missing")
+            template = self.town_growth.template(record.template_id)
+            if (
+                resident.name != template.name
+                or resident.occupation != "unemployed"
+                or self.economy.employment_for_agent(record.agent_id) is not None
+                or record.agent_id in self.justice.investigator_agent_ids
+                or any(
+                    record.agent_id in rule.eligible_actor_ids
+                    for rule in self.crime.theft_activity_rules.values()
+                )
+            ):
+                raise ValueError("activated migration resident identity disagrees")
+            transaction = transactions_by_id.get(record.settlement_transaction_id)
+            account = self.economy.account_for_agent(record.agent_id)
+            if transaction is None or (
+                transaction.event_key != f"migration-settlement:{record.id}"
+                or transaction.transaction_type != "migration_settlement"
+                or transaction.source_account_id
+                != self.town_growth.policy.settlement_source_account_id
+                or transaction.destination_account_id != account.id
+                or transaction.amount != self.town_growth.policy.settlement_grant
+                or dict(transaction.metadata).get("migration_id") != record.id
+                or dict(transaction.metadata).get("agent_id") != record.agent_id
+            ):
+                raise ValueError("activated migration settlement proof is invalid")
 
     def _restore_population_authorities(
         self,
@@ -1024,8 +1124,8 @@ class SimulationEngine:
             self.town_growth.reject(record.id, str(error))
             return None
 
-        snapshot = {
-            "agents": list(self.agents),
+        snapshot = deepcopy({
+            "agents": self.agents,
             "economy_state": self.economy.to_dict(),
             "materials_state": self.materials.to_dict(),
             "crime_state": self.crime.to_dict(),
@@ -1033,7 +1133,7 @@ class SimulationEngine:
             "commitments_state": self.commitment_system.to_dict(),
             "plans_state": self.plan_system.to_dict(),
             "growth_state": self.town_growth.to_dict(),
-        }
+        })
         try:
             account = self.economy.register_agent_account(resident.id)
             self.materials.register_agent_inventory(resident.id, account.id)
@@ -1084,6 +1184,7 @@ class SimulationEngine:
                 recipients=recipients,
             )
             self.sync_agent_relationships_from_manager()
+            self.validate_population_authorities()
             return activated
         except Exception as error:
             self._restore_population_authorities(**snapshot)
@@ -1105,6 +1206,13 @@ class SimulationEngine:
         )
         if review.status == "proposed":
             self.activate_pending_migration(day)
+            return next(
+                (
+                    current for current in self.town_growth.review_history
+                    if current.event_key == review.event_key
+                ),
+                review,
+            )
         return review
 
     def run_agent_activities(self, day: int, hour: int) -> None:

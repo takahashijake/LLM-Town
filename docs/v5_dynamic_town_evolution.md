@@ -99,6 +99,11 @@ arrival knowledge. A narrow authority snapshot restores the whole activation set
 if any commit operation unexpectedly fails. No general transaction framework was
 introduced.
 
+The snapshot is a deep value snapshot, including agent memory and the nested
+economy/material reconstruction baselines. A failed activation retains a rejected
+audit record but does not consume its template; a later scheduled review may retry
+that template with new migration and resident IDs. Allocated IDs are never reused.
+
 The settlement event key is `migration-settlement:<migration-id>`. Its source is
 debited and the resident account is credited; the grant is never minted. The new
 inventory contains no quantities or lots, so material totals and provenance are
@@ -118,6 +123,9 @@ and bounded public history. Unknown schemas and malformed records fail closed. A
 old save without this section creates empty growth history and reconstructs the
 next collision-free resident sequence. A post-activation reload cannot re-add the
 resident, repay the grant, recreate the inventory, or duplicate arrival memory.
+Loading also cross-checks the resident population against account, inventory,
+plan, commitment, crime, justice, outcome-memory, and settlement-ledger authority;
+partial or contradictory activation state is rejected.
 
 Review runs after journals and memory maintenance for the completed day and before
 the completed-day save. The newcomer first participates on the next day through
@@ -147,4 +155,3 @@ demographics, resident departure, construction, dynamic places, businesses,
 production redesign, negotiation, or model-generated residents. Dynamic places
 should be considered only after this slice has had a stabilization and observation
 period.
-

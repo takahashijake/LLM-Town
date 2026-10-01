@@ -103,3 +103,51 @@ def test_old_save_without_growth_state_loads_without_fabricating_history(tmp_pat
     resumed = engine(tmp_path, load=True)
     assert resumed.town_growth.migration_records == []
     assert resumed.town_growth.next_resident_sequence == 5
+
+
+def test_activation_rollback_removes_partial_arrival_memory(tmp_path, monkeypatch):
+    subject = engine(tmp_path)
+    make_eligible(subject)
+    source_balance = subject.economy.get_account(
+        "account:employer:town_services"
+    ).balance
+    original_project = subject.outcome_memory.project
+
+    def partially_project_then_fail(**kwargs):
+        partial = dict(kwargs)
+        partial["recipients"] = kwargs["recipients"][:1]
+        original_project(**partial)
+        raise RuntimeError("injected projection failure")
+
+    monkeypatch.setattr(subject.outcome_memory, "project", partially_project_then_fail)
+    review = subject.review_town_growth(14)
+
+    assert review.status == "rejected"
+    assert len(subject.agents) == 4
+    assert subject.economy.get_account(
+        "account:employer:town_services"
+    ).balance == source_balance
+    assert "account:agent:agent_005" not in subject.economy.accounts
+    assert "inventory:agent:agent_005" not in subject.materials.inventories
+    assert not [
+        memory for agent in subject.agents
+        for memory in agent.memory + agent.memory_archive
+        if memory.event_type == "resident_arrival"
+    ]
+    assert subject.town_growth.migration_records[0].status == "rejected"
+    assert subject.town_growth.consumed_template_ids == set()
+    subject.validate_population_authorities()
+
+    for day in range(15, 22):
+        for agent in subject.agents:
+            subject.activity_records.append({
+                "type": "activity", "day": day, "hour": 8,
+                "agent_id": agent.id, "agent": agent.name,
+            })
+    retry = subject.review_town_growth(21)
+    assert retry.status == "activated"
+    assert retry.template_id == "resident_template_001"
+    assert retry.agent_id == "agent_006"
+    assert [record.status for record in subject.town_growth.migration_records] == [
+        "rejected", "activated",
+    ]
