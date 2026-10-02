@@ -30,6 +30,8 @@ class SimulationLoop:
             engine.review_town_growth(day)
         if getattr(engine, "location_growth", None) is not None:
             engine.review_location_growth(day)
+        if getattr(engine, "institution_growth", None) is not None:
+            engine.review_institution_growth(day)
 
         # Positional arguments preserve compatibility with older test fakes.
         engine.state.save(

@@ -115,6 +115,16 @@ class ActivitySystem:
         for agent in agents:
             agent.decay_needs()
 
+            employment = (
+                self.economy_system.employment_for_agent(agent.id)
+                if self.economy_system else None
+            )
+            agent.authoritative_employment_title = (
+                employment.title
+                if employment and employment.active and day >= employment.start_day
+                else ""
+            )
+
             plan_opportunities = (
                 self.plan_system.opportunities_for_agent(agent.id, day=day, tick=hour)
                 if self.plan_system else []
@@ -141,9 +151,12 @@ class ActivitySystem:
                     current_intent=agent_intents.get(agent.name),
                     commitment_opportunities=opportunities,
                     goal_dependency=goal_dependency,
+                    employment=employment,
                 )
             except TypeError as error:
-                if "commitment_opportunities" not in str(error):
+                if not any(name in str(error) for name in (
+                    "commitment_opportunities", "employment",
+                )):
                     raise
                 activity = self.activity_planner.choose_activity(
                     agent=agent, location_ids=location_ids, current_day=day, hour=hour,

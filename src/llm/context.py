@@ -575,7 +575,14 @@ def build_conversation_context(
             location_id=location_id,
             memories=formatted_memories,
         ),
-        "occupation": _bounded_text(speaker.occupation, 100),
+        "occupation": _bounded_text(
+            getattr(speaker, "authoritative_employment_title", None)
+            or speaker.occupation, 100
+        ),
+        "legacy_occupation": _bounded_text(speaker.occupation, 100),
+        "authoritative_employment": _bounded_text(
+            getattr(speaker, "authoritative_employment_title", ""), 100
+        ),
         "speaker_activity": _bounded_text(speaker.current_activity, 180),
         "speaker_activity_display": _bounded_text(activity_text, 180),
         "speaker_activity_reason": _bounded_text(speaker.current_activity_reason, 220),

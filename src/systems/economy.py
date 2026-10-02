@@ -31,6 +31,10 @@ class EconomicAccount:
             raise TypeError("account balance must be an integer")
         if self.balance < 0:
             raise ValueError("account balance cannot be negative")
+        if self.owner_type not in {"agent", "employer", "institution", "system"}:
+            raise ValueError("account owner type is not supported")
+        if not self.owner_id:
+            raise ValueError("account owner id is required")
 
 
 @dataclass(frozen=True)
@@ -68,14 +72,44 @@ class Employment:
     qualifying_activity_ids: tuple[str, ...]
     active: bool = True
     start_day: int = 1
+    activity_locations: tuple[tuple[str, str], ...] = ()
+    activity_names: tuple[tuple[str, str], ...] = ()
+    institution_id: str | None = None
+    formation_id: str | None = None
+    role_template_id: str | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.wage, bool) or not isinstance(self.wage, int) or self.wage <= 0:
             raise ValueError("employment wage must be a positive integer")
+        if not all((self.id, self.agent_id, self.title, self.employer_account_id)):
+            raise ValueError("employment identity is incomplete")
+        if (isinstance(self.start_day, bool) or not isinstance(self.start_day, int)
+                or self.start_day < 1):
+            raise ValueError("employment start day must be positive")
+        if not self.qualifying_activity_ids or len(self.qualifying_activity_ids) != len(
+            set(self.qualifying_activity_ids)
+        ):
+            raise ValueError("employment activities must be nonempty and unique")
+        locations = dict(self.activity_locations)
+        names = dict(self.activity_names)
+        if len(locations) != len(self.activity_locations) or len(names) != len(
+            self.activity_names
+        ):
+            raise ValueError("employment activity contracts must be unique")
+        if (set(locations) - set(self.qualifying_activity_ids)
+                or set(names) - set(self.qualifying_activity_ids)
+                or any(not key or not value for key, value in self.activity_locations)
+                or any(not key or not value for key, value in self.activity_names)):
+            raise ValueError("employment activity contract is invalid")
+        provenance = (self.institution_id, self.formation_id, self.role_template_id)
+        if any(provenance) and not all(provenance):
+            raise ValueError("institution employment provenance is incomplete")
 
     def to_dict(self) -> dict:
         data = asdict(self)
         data["qualifying_activity_ids"] = list(self.qualifying_activity_ids)
+        data["activity_locations"] = dict(self.activity_locations)
+        data["activity_names"] = dict(self.activity_names)
         return data
 
     @classmethod
@@ -84,6 +118,12 @@ class Employment:
         values["qualifying_activity_ids"] = tuple(
             values.get("qualifying_activity_ids", ())
         )
+        values["activity_locations"] = tuple(sorted(
+            values.get("activity_locations", {}).items()
+        ))
+        values["activity_names"] = tuple(sorted(
+            values.get("activity_names", {}).items()
+        ))
         return cls(**values)
 
 
@@ -212,6 +252,68 @@ class EconomySystem:
         self.initial_balances[account.id] = 0
         return account
 
+    def can_register_employer_account(
+        self, institution_id: str, account_id: str,
+    ) -> bool:
+        """Check a new zero-baseline institution employer identity."""
+        return bool(institution_id and account_id) and (
+            account_id not in self._accounts
+            and not any(
+                account.owner_type == "institution"
+                and account.owner_id == institution_id
+                for account in self._accounts.values()
+            )
+        )
+
+    def register_employer_account(
+        self, institution_id: str, account_id: str,
+    ) -> EconomicAccount:
+        """Register one institution-owned account without minting currency."""
+        if not self.can_register_employer_account(institution_id, account_id):
+            raise EconomyError(
+                "duplicate_employer_account",
+                "institution employer account identity is already registered",
+            )
+        account = EconomicAccount(
+            account_id, "institution", institution_id, 0,
+        )
+        self._accounts[account.id] = account
+        self.initial_balances[account.id] = 0
+        return account
+
+    def can_register_employment(self, employment: Employment) -> bool:
+        """Check one authoritative job against current account authority."""
+        if (
+            employment.id in self.employments
+            or employment.agent_id in self._employment_by_agent
+        ):
+            return False
+        try:
+            self.account_for_agent(employment.agent_id)
+            employer = self.get_account(employment.employer_account_id)
+        except EconomyError:
+            return False
+        return (
+            employer.owner_type == "institution"
+            and employment.institution_id == employer.owner_id
+            and bool(employment.activity_locations)
+            and set(dict(employment.activity_locations))
+            == set(employment.qualifying_activity_ids)
+            and set(dict(employment.activity_names))
+            == set(employment.qualifying_activity_ids)
+        )
+
+    def register_employment(self, employment: Employment) -> Employment:
+        """Register one validated institution job without changing balances."""
+        if not self.can_register_employment(employment):
+            raise EconomyError(
+                "invalid_employment_registration",
+                "employment conflicts with current account or job authority",
+            )
+        self.employments[employment.id] = employment
+        self._employment_by_agent[employment.agent_id] = employment
+        return employment
+
     def _validate_references(self) -> None:
         for job in self.employments.values():
             if job.employer_account_id not in self._accounts:
@@ -318,12 +420,19 @@ class EconomySystem:
     def process_activity(self, agent, activity, *, day: int, hour: int) -> TransactionRecord | None:
         """Pay one daily wage for exact, explicitly work-tagged job activity."""
         employment = self.employment_for_agent(agent.id)
+        required_location = dict(
+            employment.activity_locations
+        ).get(activity.id) if employment is not None else None
         if (
             employment is None
             or not employment.active
             or day < employment.start_day
             or "work" not in activity.tags
             or activity.id not in employment.qualifying_activity_ids
+            or (
+                required_location is not None
+                and activity.location_id != required_location
+            )
         ):
             return None
 
@@ -336,6 +445,11 @@ class EconomySystem:
             "agent_id": agent.id,
             "employment_id": employment.id,
             "activity_id": activity.id,
+            "location_id": activity.location_id,
+            "required_location_id": required_location,
+            "institution_id": employment.institution_id,
+            "formation_id": employment.formation_id,
+            "role_template_id": employment.role_template_id,
             "eligible": True,
             "wage_event_key": wage_event_key,
             "payment_status": "pending",
@@ -359,6 +473,8 @@ class EconomySystem:
                     "employment_id": employment.id,
                     "work_event_id": work_event_id,
                     "activity_id": activity.id,
+                    "location_id": activity.location_id,
+                    "institution_id": employment.institution_id,
                 },
             )
         except EconomyError as error:

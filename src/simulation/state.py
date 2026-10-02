@@ -146,6 +146,11 @@ class SimulationState:
                 if getattr(engine, "event_ecology", None) is not None
                 else None
             ),
+            "institution_growth": (
+                engine.institution_growth.to_dict()
+                if getattr(engine, "institution_growth", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

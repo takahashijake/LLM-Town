@@ -128,5 +128,41 @@
         "cooldown_days": 21
       }
     ]
+  },
+  "institution_growth": {
+    "policy": {
+      "institution_capacity": 1,
+      "earliest_formation_day": 70,
+      "review_interval_days": 7,
+      "formation_cooldown_days": 60,
+      "recent_activity_window_days": 21,
+      "minimum_distinct_residents": 3,
+      "minimum_activity_days": 7,
+      "minimum_dynamic_event_occurrences": 2,
+      "candidate_activity_window_days": 42,
+      "minimum_candidate_activities": 3,
+      "history_limit": 128
+    },
+    "templates": [
+      {
+        "id": "institution_template_001",
+        "institution_key": "community_garden_stewardship",
+        "name": "Community Garden Stewardship",
+        "location_template_id": "location_template_001",
+        "startup_funding_source_account_id": "account:employer:town_services",
+        "startup_grant": 300,
+        "relevant_dynamic_event_template_ids": [
+          "garden_learning_circle",
+          "garden_harvest_gathering"
+        ],
+        "role": {
+          "role_template_id": "community_garden_steward",
+          "title": "community garden steward",
+          "wage": 18,
+          "work_activity_id": "steward_community_garden",
+          "work_activity_name": "Steward the Community Garden"
+        }
+      }
+    ]
   }
 }

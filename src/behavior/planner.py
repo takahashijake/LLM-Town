@@ -150,6 +150,7 @@ class ActivityPlanner:
         current_intent=None,
         commitment_opportunities=None,
         goal_dependency=None,
+        employment=None,
     ) -> Activity:
         agent.initialize_needs()
         deferred_commitment_decision = None
@@ -276,6 +277,30 @@ class ActivityPlanner:
             return activity
 
         activity = random.choice(candidates)
+        # Authoritative institution work is an ordinary bounded opportunity.
+        # The legacy choice above deliberately preserves the existing seeded
+        # arbitration stream; biography text is not consulted for job authority.
+        if (
+            employment is not None
+            and employment.active
+            and current_day >= employment.start_day
+            and employment.institution_id is not None
+        ):
+            activity_id = employment.qualifying_activity_ids[0]
+            work_location = dict(employment.activity_locations).get(activity_id)
+            if work_location in location_ids:
+                activity = Activity(
+                    id=activity_id,
+                    name=dict(employment.activity_names).get(
+                        activity_id, employment.title
+                    ),
+                    location_id=work_location,
+                    reason=(
+                        f"{agent.name} is performing authoritative work as "
+                        f"{employment.title}."
+                    ),
+                    tags=["work", "institution", "community"],
+                )
         activity.commitment_decision = deferred_commitment_decision
         return activity
 

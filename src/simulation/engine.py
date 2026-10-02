@@ -40,7 +40,7 @@ from src.town.location import Location
 from src.town.town_arc import TownArc
 from src.utils.logger import TownLogger
 from src.systems.reputation import ReputationSystem
-from src.systems.economy import EconomySystem
+from src.systems.economy import EconomySystem, Employment
 from src.systems.materials import MaterialSystem
 from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
@@ -53,6 +53,7 @@ from src.systems.location_growth import (
     LocationGrowthSystem,
 )
 from src.systems.event_ecology import EventEcologySystem
+from src.systems.institution_growth import InstitutionGrowthSystem
 
 class SimulationEngine:
     def __init__(
@@ -361,6 +362,10 @@ class SimulationEngine:
             simulation_seed=self.simulation_seed,
             state=saved_state.get("event_ecology") if saved_state else None,
         )
+        self.institution_growth = InstitutionGrowthSystem.from_config(
+            self.town_growth_path,
+            saved_state.get("institution_growth") if saved_state else None,
+        )
         self.activity_planner.set_location_affinities([
             location for location in self.locations
             if location.id not in self.location_growth.base_location_ids
@@ -369,10 +374,12 @@ class SimulationEngine:
             commitments=self.commitment_system, plans=self.plan_system,
             crime=self.crime, justice=self.justice, materials=self.materials,
             town_growth=self.town_growth, location_growth=self.location_growth,
+            institution_growth=self.institution_growth,
         )
         self.validate_population_authorities()
         self.validate_location_authorities()
         self.validate_event_authorities()
+        self.validate_institution_authorities()
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -563,6 +570,15 @@ class SimulationEngine:
         self.sync_town_arc_system_refs()
         self.sync_conversation_policy_refs()
         self.sync_conversation_context_preparer_refs()
+
+        economy = getattr(self, "economy", None)
+        if economy is not None:
+            employment = economy.employment_for_agent(speaker.id)
+            speaker.authoritative_employment_title = (
+                employment.title
+                if employment and employment.active
+                and current_day >= employment.start_day else ""
+            )
 
         result = self.conversation_context_preparer.prepare_conversation_context(
             location_id=location_id,
@@ -1052,10 +1068,22 @@ class SimulationEngine:
             if resident is None:
                 raise ValueError("activated migration resident is missing")
             template = self.town_growth.template(record.template_id)
+            employment = self.economy.employment_for_agent(record.agent_id)
+            institution_employment_valid = employment is None or any(
+                formation.status == "activated"
+                and formation.employee_agent_id == record.agent_id
+                and formation.employment_id == employment.id
+                and employment.institution_id == formation.institution_id
+                and employment.formation_id == formation.id
+                for formation in getattr(
+                    getattr(self, "institution_growth", None),
+                    "formation_records", (),
+                )
+            )
             if (
                 resident.name != template.name
                 or resident.occupation != "unemployed"
-                or self.economy.employment_for_agent(record.agent_id) is not None
+                or not institution_employment_valid
                 or record.agent_id in self.justice.investigator_agent_ids
                 or any(
                     record.agent_id in rule.eligible_actor_ids
@@ -1132,6 +1160,7 @@ class SimulationEngine:
             materials=self.materials,
             town_growth=self.town_growth,
             location_growth=self.location_growth,
+            institution_growth=self.institution_growth,
         )
         self.crime.outcome_memory = self.outcome_memory
         self.justice.outcome_memory = self.outcome_memory
@@ -1353,6 +1382,7 @@ class SimulationEngine:
                 commitments=self.commitment_system, plans=self.plan_system,
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
             )
             self.outcome_memory.project(
                 source_system="location_growth", source_id=activated.id,
@@ -1383,6 +1413,7 @@ class SimulationEngine:
                 commitments=self.commitment_system, plans=self.plan_system,
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
             )
             restored = self.location_growth.pending_activation()
             if restored is not None:
@@ -1400,6 +1431,224 @@ class SimulationEngine:
                 (item for item in self.location_growth.review_history
                  if item.event_key == review.event_key), review
             )
+        return review
+
+    def validate_institution_authorities(self) -> None:
+        """Cross-check every activated institution against live authorities."""
+        for template in self.institution_growth.templates.values():
+            if template.location_template_id not in self.location_growth.templates:
+                raise ValueError("institution template has unknown location binding")
+            for event_template_id in template.relevant_dynamic_event_template_ids:
+                event_template = self.event_ecology.templates.get(event_template_id)
+                if (event_template is None
+                        or event_template.location_template_id
+                        != template.location_template_id):
+                    raise ValueError("institution template has invalid event authority")
+        checks = self.institution_growth.validate(
+            agents=self.agents, locations=self.locations,
+            location_growth=self.location_growth,
+            event_ecology=self.event_ecology, economy=self.economy,
+        )
+        if not all(checks.values()):
+            failed = sorted(name for name, passed in checks.items() if not passed)
+            raise ValueError(f"institution authority invariants failed: {failed}")
+        if not self.economy.conservation_holds():
+            raise ValueError("institution economy does not conserve currency")
+        if not self.economy.ledger_reconstructs_balances():
+            raise ValueError("institution economy ledger does not reconstruct")
+        memory_checks = self.outcome_memory.validate()
+        if not all(memory_checks.values()):
+            raise ValueError("institution outcome-memory provenance is invalid")
+
+    def preflight_institution_formation(self, record):
+        """Recompute a pending proposal's authority before any mutation."""
+        if record.status != "proposed":
+            raise ValueError("institution formation is not pending")
+        template = self.institution_growth.template(record.template_id)
+        review = next((item for item in self.institution_growth.review_history
+                       if item.event_key == record.event_key), None)
+        if (review is None or review.status != "proposed"
+                or review.formation_id != record.id
+                or review.candidate_agent_id != record.employee_agent_id
+                or record.review_day != review.day):
+            raise ValueError("institution proposal lacks its exact review")
+        if template.id in self.institution_growth.consumed_template_ids:
+            raise ValueError("institution template was already consumed")
+        if any(item.status == "activated" and (
+            item.institution_id == record.institution_id
+            or item.institution_key == record.institution_key
+            or item.name == record.name
+        ) for item in self.institution_growth.formation_records):
+            raise ValueError("institution identity is already active")
+        binding = self.location_growth.templates.get(template.location_template_id)
+        activation = next((item for item in self.location_growth.activation_records
+                           if item.id == record.location_activation_id
+                           and item.status == "activated"), None)
+        if (binding is None or activation is None
+                or binding.location_id != record.location_id
+                or activation.template_id != template.location_template_id
+                or activation.location_id != record.location_id
+                or record.location_id not in {item.id for item in self.locations}):
+            raise ValueError("institution location authority is invalid")
+        candidate = next((item for item in self.agents
+                          if item.id == record.employee_agent_id), None)
+        if candidate is None or self.economy.employment_for_agent(candidate.id):
+            raise ValueError("institution employee is absent or already employed")
+        self.economy.account_for_agent(candidate.id)
+        if not self.economy.can_register_employer_account(
+            record.institution_id, record.employer_account_id
+        ):
+            raise ValueError("institution employer account conflicts")
+        source = self.economy.get_account(
+            template.startup_funding_source_account_id
+        )
+        if source.balance < template.startup_grant:
+            raise ValueError("institution startup funds are insufficient")
+        if f"institution-startup:{record.id}" in self.economy.applied_event_keys:
+            raise ValueError("institution startup transfer was already applied")
+        first_day = record.review_day - self.institution_growth.policy.recent_activity_window_days
+        recent = [item for item in self.activity_records
+                  if item.get("type") == "activity"
+                  and item.get("location") == record.location_id
+                  and first_day <= item.get("day", -1) <= record.review_day]
+        if (len({item.get("agent_id") for item in recent
+                 if item.get("agent_id") in {agent.id for agent in self.agents}})
+                < self.institution_growth.policy.minimum_distinct_residents
+                or len({item.get("day") for item in recent})
+                < self.institution_growth.policy.minimum_activity_days):
+            raise ValueError("institution sustained activity is no longer valid")
+        allowed_events = set(template.relevant_dynamic_event_template_ids)
+        occurrence_ids = {
+            item.occurrence_id for item in self.event_ecology.occurrence_history
+            if item.location_id == record.location_id
+            and item.template_id in allowed_events
+            and item.day < record.review_day
+        }
+        if (len(occurrence_ids)
+                < self.institution_growth.policy.minimum_dynamic_event_occurrences):
+            raise ValueError("institution dynamic event history is insufficient")
+        candidate_first_day = (
+            record.review_day
+            - self.institution_growth.policy.candidate_activity_window_days
+        )
+        candidate_evidence = [item for item in self.activity_records
+                              if item.get("type") == "activity"
+                              and item.get("agent_id") == candidate.id
+                              and item.get("location") == record.location_id
+                              and candidate_first_day
+                              <= item.get("day", -1) <= record.review_day]
+        if len(candidate_evidence) < self.institution_growth.policy.minimum_candidate_activities:
+            raise ValueError("institution employee evidence is stale")
+        return template, candidate
+
+    def activate_pending_institution(self, day: int):
+        """Atomically register an institution, its one job, and startup grant."""
+        record = self.institution_growth.pending_formation()
+        if record is None:
+            return None
+        try:
+            template, candidate = self.preflight_institution_formation(record)
+        except (KeyError, TypeError, ValueError) as error:
+            self.institution_growth.reject(record.id, str(error))
+            return None
+        economy_before = deepcopy(self.economy.to_dict())
+        growth_before = deepcopy(self.institution_growth.to_dict())
+        memories_before = [
+            (deepcopy(agent.memory), deepcopy(agent.memory_archive))
+            for agent in self.agents
+        ]
+        try:
+            account = self.economy.register_employer_account(
+                record.institution_id, record.employer_account_id
+            )
+            role = template.role
+            employment = Employment(
+                id=record.employment_id, agent_id=candidate.id,
+                title=role.title, employer_account_id=account.id,
+                wage=role.wage,
+                qualifying_activity_ids=(role.work_activity_id,),
+                start_day=day + 1,
+                activity_locations=((role.work_activity_id, record.location_id),),
+                activity_names=((role.work_activity_id, role.work_activity_name),),
+                institution_id=record.institution_id, formation_id=record.id,
+                role_template_id=role.role_template_id,
+            )
+            self.economy.register_employment(employment)
+            startup = self.economy.transfer(
+                template.startup_funding_source_account_id, account.id,
+                template.startup_grant, day=day, hour=None,
+                transaction_type="institution_startup",
+                reason=f"Startup grant for {record.name}",
+                event_key=f"institution-startup:{record.id}",
+                metadata={
+                    "formation_id": record.id,
+                    "institution_id": record.institution_id,
+                    "template_id": template.id,
+                },
+            )
+            activated = self.institution_growth.activate(
+                record.id, day=day, startup_transaction_id=startup.id
+            )
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
+            )
+            self.outcome_memory.project(
+                source_system="institution_growth", source_id=activated.id,
+                event_type="institution_established", day=day, hour=None,
+                recipients=[KnowledgeRecipient(
+                    owner_id=agent.id, knowledge_basis="public_event",
+                    description=f"{activated.name} was established.",
+                    sentiment=1, importance=4, location=activated.location_id,
+                ) for agent in self.agents],
+            )
+            self.outcome_memory.project(
+                source_system="institution_growth", source_id=activated.id,
+                event_type="employment_started", day=day, hour=None,
+                recipients=[KnowledgeRecipient(
+                    owner_id=candidate.id, knowledge_basis="participant",
+                    description=f"You began working as the {role.title}.",
+                    sentiment=1, importance=5, location=activated.location_id,
+                )],
+            )
+            self.validate_institution_authorities()
+            return activated
+        except Exception as error:
+            self.economy = EconomySystem.from_dict(economy_before)
+            self.materials.economy = self.economy
+            self.institution_growth = InstitutionGrowthSystem.from_config(
+                self.town_growth_path, growth_before
+            )
+            for agent, (memory, archive) in zip(self.agents, memories_before):
+                agent.memory = memory
+                agent.memory_archive = archive
+            self.sync_activity_system_refs()
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
+            )
+            restored = self.institution_growth.pending_formation()
+            if restored is not None:
+                self.institution_growth.reject(
+                    restored.id, f"activation_failed:{error}"
+                )
+            return None
+
+    def review_institution_growth(self, day: int):
+        review = self.institution_growth.review(
+            day=day, agents=self.agents, locations=self.locations,
+            location_growth=self.location_growth,
+            event_ecology=self.event_ecology,
+            activity_records=self.activity_records, economy=self.economy,
+        )
+        if review.status == "proposed":
+            self.activate_pending_institution(day)
+            return next((item for item in self.institution_growth.review_history
+                         if item.event_key == review.event_key), review)
         return review
 
     def run_agent_activities(self, day: int, hour: int) -> None:

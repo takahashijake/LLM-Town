@@ -28,7 +28,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
 - Needs, occupations, activity planning, daily events, and town arcs
-- Bounded resident migration and finite authoritative public-place activation
+- Bounded migration, public-place activation, dynamic events, and civic formation
 - Authoritative integer accounts, employment, wages, and an auditable ledger
 - Closed-system currency conservation and idempotent daily wage events
 - Persistent goods, inventory ownership, atomic purchases, and consumption records
@@ -287,6 +287,27 @@ goal-strategy, or location authority. Run
 `python scripts/evaluate_event_ecology.py` for the seeded 180-day integrated and
 adversarial gate; the detailed contract and limitations are in
 [`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md).
+
+V5 Phase 4 adds one bounded civic institution and one endogenous job. A scheduled
+review can form Community Garden Stewardship only from the exact activated garden,
+sustained authoritative place use, exact configured dynamic garden occurrences,
+an evidence-qualified unemployed resident, available finite capacity, and an
+affordable configured grant. Activation atomically registers a stable institution
+identity, a zero-baseline institution employer account, one exact role contract,
+and a conserved startup transfer. The migrated resident is selected by evidence
+under the default history rather than by hardcoded identity.
+
+The new employee begins ordinary work no earlier than the following day. Their
+employment—not legacy occupation text—offers `steward_community_garden` at the
+exact garden, and the normal economic work path requires that activity, location,
+start day, and work tag before paying at most one wage per day. Formation and
+hiring receive provenance-backed memories, while dialogue and memory remain
+non-authoritative. No seller, business inventory, good, price, production recipe,
+profit, ownership, crime, justice, commitment, V4 strategy, place, or event
+authority is created. Run `python scripts/evaluate_institution_growth.py` for the
+seeded 240-day save/resume and adversarial gate; see
+[`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md) for the
+complete authority, replay, conservation, and limitation contract.
 
 ## V2 economic foundation
 

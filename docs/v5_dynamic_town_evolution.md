@@ -1,4 +1,4 @@
-# V5 dynamic town evolution: migration, places, and event ecology
+# V5 dynamic town evolution: migration, places, events, and institutions
 
 ## Scope and authority
 
@@ -309,9 +309,76 @@ exact V4 dependency and stale recurrence rejection, attacks malformed persisted
 authority, and composes the existing economy, materials, crime, justice,
 commitment, plan, migration, location, and outcome-memory validators.
 
+## Phase 4: bounded institutions and endogenous employment
+
+Phase 4 closes one static-economy gap without adding general organization or
+commerce simulation. `data/town_growth.json` contains one finite
+`Community Garden Stewardship` template, bound to the exact Community Garden
+location template and an allowlist of the two exact garden event templates. It
+declares one civic role, `community garden steward`, whose sole work route is
+`steward_community_garden` at `community_garden` for 18 credits.
+
+```text
+migration → activated garden → repeated authoritative use
+          → exact dynamic garden occurrences
+          → scheduled formation review
+          → institution:0001 + zero-baseline employer account
+          → conserved startup grant + one authoritative employment
+          → next-day ordinary steward activity → ordinary wage transfer
+```
+
+`InstitutionGrowthSystem` recomputes readiness from live authority. The default
+review requires day 70 and the seven-day schedule, unused capacity and template,
+an exactly activated bound location, sustained recent use by multiple distinct
+residents, at least two exact allowlisted dynamic occurrences, an evidence-backed
+unemployed resident with an existing personal account, and sufficient startup
+funds. Tags, dialogue, journals, memory text, and serialized readiness do not
+count. Candidate ordering is deterministic: most bound-location activities,
+then most exact dynamic-event attendances, then stable agent ID.
+
+Formation is a narrow atomic operation. Complete preflight precedes registration
+of an institution-owned account with balance and reconstruction baseline both
+zero, one provenance-bearing `Employment`, and an ordinary startup transfer with
+event key `institution-startup:<formation-id>`. Only after those succeed is the
+template consumed and formation activated. An unexpected failure restores the
+economy, institution state, and memories together. The employee keeps their one
+resident account and their legacy `Agent.occupation`; the latter remains
+biography, not job authority.
+
+The authoritative employment contract specifies the exact activity and exact
+location. `steward_community_garden` at `market` is not work and cannot earn a
+wage. On following days the ordinary activity planner may consume the active job
+opportunity independently of occupation text. `ActivitySystem` records it, and
+the existing `EconomySystem.process_activity` path checks employment, start day,
+work tag, activity, location, and once-per-job/day wage key before transferring
+money. Current authoritative title is exposed to dialogue context, but model text
+cannot create, alter, or prove employment.
+
+One public formation fact per resident and one private employment fact for the
+employee are projected from the activated formation using stable causal IDs.
+They describe authority but cannot create it. Save state persists schema-versioned
+bounded reviews, formation records, replay keys, consumed templates, assignment
+provenance, and public history; executable templates remain checked-in config.
+Load cross-checks location activation, institution account owner and zero
+baseline, exact startup ledger entry, employee/account, job/role/wage/activity/
+location contract, and absence of orphan institution economic state. Old saves
+without Phase 4 state load with no dynamic institution.
+
+No seller, business inventory, good, price, purchase route, stock, production
+recipe, profit, or owner equity is created. The existing configured market seller
+and production route are untouched. Institution activation likewise grants no
+crime, justice, commitment, V4 strategy, place, or event authority. Run the
+240-day repeated-seed, save/resume, adversarial gate with:
+
+```bash
+python scripts/evaluate_institution_growth.py
+```
+
 V5 remains deliberately bounded. It does not provide arbitrary LLM-generated
-events, simultaneous event calendars, festivals with arbitrary time windows,
-dynamic businesses, arbitrary jobs, institution formation, construction supply
-chains, resident departure, demographics, organizations, land ownership, zoning,
-roads, pathfinding, generalized markets, or unrestricted procedural world
-generation.
+events, simultaneous event calendars, arbitrary festivals, dynamic sellers,
+business inventories, dynamic production recipes, new goods, market pricing,
+entrepreneurship, profits, firm ownership, business competition, general hiring
+markets, firing, job switching, multi-role institutions, organization politics,
+taxation, dynamic construction supply chains, resident departure, demographics,
+land ownership, zoning, roads, pathfinding, or unrestricted procedural
+civilization generation.
