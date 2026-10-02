@@ -52,6 +52,7 @@ from src.systems.location_growth import (
     LocationActivationRecord,
     LocationGrowthSystem,
 )
+from src.systems.event_ecology import EventEcologySystem
 
 class SimulationEngine:
     def __init__(
@@ -96,6 +97,7 @@ class SimulationEngine:
             if sibling_config.is_file():
                 self.justice_path = sibling_config
         self.town_growth_path = Path(town_growth_path)
+        self.simulation_seed = int(simulation_seed)
         if (
             not self.town_growth_path.is_absolute()
             and not self.town_growth_path.is_file()
@@ -354,6 +356,11 @@ class SimulationEngine:
             saved_state.get("location_growth") if saved_state else None,
         )
         self.locations.extend(self.location_growth.activated_locations())
+        self.event_ecology = EventEcologySystem.from_config(
+            self.town_growth_path,
+            simulation_seed=self.simulation_seed,
+            state=saved_state.get("event_ecology") if saved_state else None,
+        )
         self.activity_planner.set_location_affinities([
             location for location in self.locations
             if location.id not in self.location_growth.base_location_ids
@@ -365,6 +372,7 @@ class SimulationEngine:
         )
         self.validate_population_authorities()
         self.validate_location_authorities()
+        self.validate_event_authorities()
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -1257,6 +1265,31 @@ class SimulationEngine:
                 or tuple(location.affinities or ()) != template.affinities
             ):
                 raise ValueError("active location contradicts its finite template")
+
+    def validate_event_authorities(self) -> None:
+        """Fail closed when dynamic event authority lacks exact provenance."""
+        checks = self.event_ecology.validate(
+            locations=self.locations,
+            location_growth=self.location_growth,
+            activity_records=self.activity_records,
+        )
+        if not all(checks.values()):
+            failed = sorted(name for name, passed in checks.items() if not passed)
+            raise ValueError(f"event ecology invariants failed: {failed}")
+        if self.current_daily_event is not None:
+            current_day = int(
+                self.current_daily_event.day
+                if self.current_daily_event.day is not None
+                else self.start_day
+            )
+            self.event_ecology.validate_occurrence(
+                self.current_daily_event,
+                current_day=current_day,
+                locations=self.locations,
+                location_growth=self.location_growth,
+                activity_records=self.activity_records,
+                require_current_day=self.current_daily_event.source_kind != "legacy",
+            )
 
     def preflight_location_activation(
         self, record: LocationActivationRecord

@@ -68,5 +68,65 @@
         "affinities": ["social", "community"]
       }
     ]
+  },
+  "event_ecology": {
+    "policy": {
+      "minimum_location_age_days": 3,
+      "recent_activity_window_days": 7,
+      "minimum_distinct_residents": 2,
+      "minimum_activity_days": 3,
+      "dynamic_selection_interval_days": 4,
+      "history_limit": 64
+    },
+    "templates": [
+      {
+        "id": "garden_learning_circle",
+        "name": "Garden Learning Circle",
+        "description": "Residents share practical gardening knowledge beside the common plots.",
+        "tags": ["community", "learning", "social"],
+        "required_affinities": ["community", "knowledge", "social"],
+        "location_template_id": "location_template_001",
+        "minimum_location_age_days": 3,
+        "minimum_distinct_residents": 2,
+        "minimum_activity_days": 3,
+        "cooldown_days": 14
+      },
+      {
+        "id": "garden_harvest_gathering",
+        "name": "Garden Harvest Gathering",
+        "description": "Residents gather to celebrate and discuss the shared garden's seasonal work.",
+        "tags": ["community", "food", "social"],
+        "required_affinities": ["community", "social"],
+        "location_template_id": "location_template_001",
+        "minimum_location_age_days": 5,
+        "minimum_distinct_residents": 2,
+        "minimum_activity_days": 3,
+        "cooldown_days": 21
+      },
+      {
+        "id": "pavilion_civic_discussion",
+        "name": "Pavilion Civic Discussion",
+        "description": "Residents exchange bounded civic ideas in the public pavilion.",
+        "tags": ["community", "planning", "social"],
+        "required_affinities": ["community", "social"],
+        "location_template_id": "location_template_002",
+        "minimum_location_age_days": 3,
+        "minimum_distinct_residents": 2,
+        "minimum_activity_days": 3,
+        "cooldown_days": 14
+      },
+      {
+        "id": "pavilion_community_performance",
+        "name": "Pavilion Community Performance",
+        "description": "Residents present a small community performance in the public pavilion.",
+        "tags": ["art", "community", "music", "social"],
+        "required_affinities": ["community", "social"],
+        "location_template_id": "location_template_002",
+        "minimum_location_age_days": 5,
+        "minimum_distinct_residents": 2,
+        "minimum_activity_days": 3,
+        "cooldown_days": 21
+      }
+    ]
   }
 }

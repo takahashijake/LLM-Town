@@ -9,6 +9,35 @@ class DailyEvent:
     description: str
     location_id: str
     tags: list[str]
+    template_id: str | None = None
+    occurrence_id: str | None = None
+    day: int | None = None
+    source_kind: str = "legacy"
+    schema_version: int = 1
+
+    def __post_init__(self) -> None:
+        # Five-field construction is retained for old saves and V4 fixtures.
+        self.template_id = self.template_id or self.id
+        self.occurrence_id = self.occurrence_id or self.id
+
+    @property
+    def authority_id(self) -> str:
+        """Identity used by authoritative consumers such as V4 dependencies."""
+        return self.occurrence_id or self.id
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "location_id": self.location_id,
+            "tags": list(self.tags),
+            "template_id": self.template_id,
+            "occurrence_id": self.occurrence_id,
+            "day": self.day,
+            "source_kind": self.source_kind,
+            "schema_version": self.schema_version,
+        }
 
 
 EVENT_POOL = [
@@ -155,5 +184,22 @@ EVENT_POOL = [
 ]
 
 
-def choose_daily_event() -> DailyEvent:
-    return random.choice(EVENT_POOL)
+def instantiate_base_event(template: DailyEvent, day: int) -> DailyEvent:
+    """Turn one legacy pool entry into a concrete, day-scoped occurrence."""
+    return DailyEvent(
+        id=template.id,
+        name=template.name,
+        description=template.description,
+        location_id=template.location_id,
+        tags=list(template.tags),
+        template_id=template.id,
+        occurrence_id=f"daily-event:{day}:{template.id}:{template.location_id}",
+        day=day,
+        source_kind="base",
+    )
+
+
+def choose_daily_event(*, day: int | None = None, rng=None) -> DailyEvent:
+    """Choose a legacy event, optionally materializing a concrete occurrence."""
+    template = (rng or random).choice(EVENT_POOL)
+    return instantiate_base_event(template, day) if day is not None else template

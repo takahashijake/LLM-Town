@@ -54,6 +54,9 @@ class ConversationTagger:
         if mentions_event or "event" in updated_tags:
             updated_tags.append("event")
             updated_tags.append(current_daily_event.id)
+            updated_tags.append(getattr(
+                current_daily_event, "authority_id", current_daily_event.id
+            ))
 
         return updated_tags
 

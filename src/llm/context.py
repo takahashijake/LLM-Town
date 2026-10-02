@@ -536,6 +536,10 @@ def build_conversation_context(
             "description": _bounded_text(daily_event.description, 300),
             "location_id": daily_event.location_id,
             "tags": daily_event.tags,
+            **({
+                "template_id": daily_event.template_id,
+                "occurrence_id": daily_event.authority_id,
+            } if getattr(daily_event, "source_kind", "legacy") != "legacy" else {}),
         }
         if daily_event and daily_event_relevant
         else None

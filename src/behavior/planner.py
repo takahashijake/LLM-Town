@@ -228,12 +228,20 @@ class ActivityPlanner:
 
         # Sometimes attend the daily event if it is relevant.
         if daily_event and self.should_attend_daily_event(agent, daily_event):
+            event_template_id = getattr(daily_event, "template_id", None) or daily_event.id
+            event_authority_id = getattr(
+                daily_event, "authority_id", event_template_id
+            )
             activity = Activity(
                 id="attend_event",
                 name=f"Attend {daily_event.name}",
                 location_id=daily_event.location_id,
                 reason=f"{agent.name} is interested in today's event: {daily_event.name}.",
-                tags=["event", daily_event.id] + daily_event.tags,
+                tags=[
+                    "event", event_template_id, event_authority_id,
+                ] + daily_event.tags,
+                source_event_template_id=event_template_id,
+                source_event_occurrence_id=event_authority_id,
             )
             activity.commitment_decision = deferred_commitment_decision
             return activity

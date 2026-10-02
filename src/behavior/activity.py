@@ -22,3 +22,5 @@ class Activity:
     source_goal_dependency_subject: str | None = None
     source_goal_dependency_authority_ref: str | None = None
     source_goal_dependencies: tuple[dict, ...] = ()
+    source_event_template_id: str | None = None
+    source_event_occurrence_id: str | None = None

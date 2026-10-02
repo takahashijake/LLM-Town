@@ -1,5 +1,4 @@
 from src.agents.memory import Memory
-from src.town.daily_event import choose_daily_event
 
 
 class SimulationLoop:
@@ -50,7 +49,7 @@ class SimulationLoop:
             location=event.location_id,
             importance=3,
             sentiment=0,
-            tags=["event", event.id] + event.tags,
+            tags=["event", event.template_id, event.authority_id] + event.tags,
         )
 
     def get_active_hours(self, engine, day: int, hours: list[int]) -> list[int]:
@@ -105,11 +104,31 @@ class SimulationLoop:
         return engine.start_day
         
     def start_new_day(self, engine, day: int) -> None:
-        engine.current_daily_event = choose_daily_event()
+        existing = [row for row in engine.daily_event_history
+                    if row.get("day") == day]
+        if existing:
+            current = engine.current_daily_event
+            if (
+                len(existing) == 1 and current is not None
+                and current.day == day
+                and existing[0].get("occurrence_id") == current.authority_id
+            ):
+                return
+            raise ValueError("daily event already exists for simulated day")
+        engine.current_daily_event = engine.event_ecology.select_daily_event(
+            day=day,
+            locations=engine.locations,
+            location_growth=engine.location_growth,
+            activity_records=engine.activity_records,
+        )
 
         engine.daily_event_history.append({
             "day": day,
             "id": engine.current_daily_event.id,
+            "template_id": engine.current_daily_event.template_id,
+            "occurrence_id": engine.current_daily_event.occurrence_id,
+            "location_id": engine.current_daily_event.location_id,
+            "source_kind": engine.current_daily_event.source_kind,
             "name": engine.current_daily_event.name,
         })
 

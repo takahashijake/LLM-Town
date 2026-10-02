@@ -270,6 +270,24 @@ consumption. Run `python scripts/evaluate_location_growth.py` for the model-free
 120-day integrated and adversarial acceptance gate. V5 remains bounded town
 evolution, not procedural civilization generation or unrestricted world creation.
 
+V5 Phase 3 adds a finite place-local event roster without replacing the one-event-
+per-day architecture. Dynamic templates become eligible only after an exactly
+activated place has aged and accumulated repeated authoritative use by distinct
+residents. Eligible events compete with the legacy base pool under a fixed seeded
+policy. Each selection creates a day/template/location-scoped occurrence ID;
+partial-day resume retains it exactly, and malformed persisted dynamic authority
+fails closed.
+
+Dynamic events reuse ordinary `attend_event`, location grouping, conversation,
+and public event-memory paths. V4 event dependencies now reference the exact
+occurrence, so a current garden event can satisfy only a plan already targeting
+that garden; stale recurrences and wrong targets cannot cross-credit. Tags remain
+descriptive and grant no money, goods, seller, job, crime, justice, commitment,
+goal-strategy, or location authority. Run
+`python scripts/evaluate_event_ecology.py` for the seeded 180-day integrated and
+adversarial gate; the detailed contract and limitations are in
+[`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md).
+
 ## V2 economic foundation
 
 `data/economy.json` maps the four existing stable agent IDs to starting employment,

@@ -865,7 +865,9 @@ class PlanSystem:
                 and current_daily_event.location_id == state.subject_id
             )
             state.status = "satisfied" if matches else "waiting"
-            authority_reference = current_daily_event.id if matches else None
+            authority_reference = (
+                current_daily_event.authority_id if matches else None
+            )
         elif state.kind == OWNED_GOOD:
             try:
                 inventory = self.materials.inventory_for_agent(plan.agent_id)

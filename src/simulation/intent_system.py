@@ -374,6 +374,8 @@ class IntentSystem:
         bound = bool(intent.source_goal_plan_id)
         plan = self._matching_active_goal_plan(agent, goal, intent) if bound else None
         contract = strategy_contract(intent.strategy) if bound else None
+        if bound and record.get("day") != day:
+            return None
         if bound and plan and contract and contract.dependencies:
             engine = getattr(self, "_engine_for_goal_check", None)
             plan_system = getattr(engine, "plan_system", None)

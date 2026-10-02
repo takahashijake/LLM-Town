@@ -22,13 +22,7 @@ class SimulationState:
             "current_hour": current_hour,
             "day_complete": day_complete,
             "current_daily_event": (
-                {
-                    "id": current_daily_event.id,
-                    "name": current_daily_event.name,
-                    "description": current_daily_event.description,
-                    "location_id": current_daily_event.location_id,
-                    "tags": current_daily_event.tags,
-                }
+                current_daily_event.to_dict()
                 if current_daily_event
                 else None
             ),
@@ -145,6 +139,11 @@ class SimulationState:
             "location_growth": (
                 engine.location_growth.to_dict()
                 if getattr(engine, "location_growth", None) is not None
+                else None
+            ),
+            "event_ecology": (
+                engine.event_ecology.to_dict()
+                if getattr(engine, "event_ecology", None) is not None
                 else None
             ),
         }

@@ -91,6 +91,12 @@ class ActivitySystem:
                     activity, "source_goal_dependencies", (),
                 )
             ],
+            "source_event_template_id": getattr(
+                activity, "source_event_template_id", None
+            ),
+            "source_event_occurrence_id": getattr(
+                activity, "source_event_occurrence_id", None
+            ),
         }
 
         self.activity_records.append(activity_record)

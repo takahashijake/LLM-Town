@@ -1,4 +1,4 @@
-# V5 dynamic town evolution: bounded migration and public-place growth
+# V5 dynamic town evolution: migration, places, and event ecology
 
 ## Scope and authority
 
@@ -222,8 +222,96 @@ and provenance boundaries. Review and public histories are bounded. Once the
 configured capacity is reached, the system stops allocating proposals or growing
 audit state.
 
-V5 is still not general procedural civilization generation. It does not provide
-dynamic housing, construction supply chains, arbitrary businesses, arbitrary
-jobs, resident departure, land ownership, zoning, roads, pathfinding,
-organizations, generalized markets, model-created locations, dynamic event
-ecology, or unrestricted world generation.
+## Phase 3: bounded authoritative dynamic event ecology
+
+Phase 3 keeps the existing single `engine.current_daily_event` architecture. The
+legacy `EVENT_POOL` remains the finite base-event roster for the four original
+places. A second finite roster in `data/town_growth.json` describes compatible
+place-local events for configured dynamic places. Generated text cannot add a
+template, choose a place, declare eligibility, or create an occurrence.
+
+The old pool entries were reusable template identities even though their Python
+type was `DailyEvent`. A selected event is now a concrete occurrence with both a
+`template_id` and an `occurrence_id`:
+
+```text
+daily-event:<day>:<template-id>:<location-id>
+```
+
+The legacy `id` remains the template ID for compatibility. Authoritative
+consumers use `occurrence_id`, so two recurrences of the same template cannot be
+confused. Old five-field saves still load as legacy events; newly persisted base
+and dynamic occurrences carry schema, source kind, day, location, template, and
+occurrence identity.
+
+### Eligibility and daily selection
+
+`EventEcologySystem` recomputes eligibility from current authority. A dynamic
+candidate requires an activated location with exact Phase 2 provenance, a known
+template/location binding, closed tags and affinity requirements, sufficient
+location age, multiple distinct residents, activity on multiple recent days, and
+an elapsed per-template/location cooldown. Dialogue, memories, descriptions, and
+serialized eligibility flags are ignored. Inactive, rejected, forged, future,
+or affinity-incompatible places cannot host an event.
+
+Eligible dynamic events augment rather than replace base events. The default
+inspectable policy gives dynamic candidates one fixed day in every four while
+eligible; all other days use a base event. A SHA-256-derived local choice keyed by
+the configured simulation seed and day selects within each finite source class.
+This avoids Python's randomized `hash()` and ambient global-random replay
+dependence. There is still at most one authoritative event per simulated day.
+
+```text
+migration → place activation → repeated ordinary use
+          → dynamic eligibility → one concrete occurrence
+          → ordinary attend_event → normal co-location/conversation
+```
+
+The ordinary planner continues to emit `attend_event`; it records the exact
+source occurrence and targets the event's exact active location. The existing
+immutable social snapshot and serial/concurrent/batched schedulers need no event
+special case. Public daily-event memory means only that the event was known to
+exist. Attendance remains an activity record, and conversation or memory text
+cannot fabricate it.
+
+### Persistence, V4, and authority boundaries
+
+Dynamic occurrence history and replay guards are exact mirrors capped by the
+configured history limit. Save/resume retains the current occurrence, including
+across a partial day, without drawing again. Load validates schema, source kind,
+template fields, closed tags, exact occurrence identity/day/location, active
+location and activation provenance, historical use eligibility, cooldown, and
+the matching bounded occurrence record. Contradictory or invented serialized
+events fail closed.
+
+V4's `daily_event_at_target_location` contract is unchanged: the current event
+must be at the plan's already-bound target. Its authority reference is now the
+concrete occurrence ID, and activity proof must come from the same simulated day.
+A garden event can therefore satisfy a plan already targeting
+`community_garden`, but cannot retarget a library plan, create a strategy, or
+advance a goal without the normal strategy activity and provenance checks.
+
+Event tags are descriptive context only. Dynamic templates cannot use authority-
+suggesting tags such as `market`, `business`, `seller`, `employment`, `crime`, or
+`justice`; event selection itself does not move money or goods, add stock or
+production, create jobs or commitments, mutate relationships, produce legal
+evidence, advance goals, or alter location activation.
+
+Run the Phase 3 acceptance gate with:
+
+```bash
+python scripts/evaluate_event_ecology.py
+```
+
+It uses real engines and `FakeLLMClient`, compares two seeded 180-day runs across
+a save/resume boundary, exercises organic attendance and conversation, checks an
+exact V4 dependency and stale recurrence rejection, attacks malformed persisted
+authority, and composes the existing economy, materials, crime, justice,
+commitment, plan, migration, location, and outcome-memory validators.
+
+V5 remains deliberately bounded. It does not provide arbitrary LLM-generated
+events, simultaneous event calendars, festivals with arbitrary time windows,
+dynamic businesses, arbitrary jobs, institution formation, construction supply
+chains, resident departure, demographics, organizations, land ownership, zoning,
+roads, pathfinding, generalized markets, or unrestricted procedural world
+generation.

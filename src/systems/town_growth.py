@@ -349,7 +349,9 @@ class TownGrowthSystem:
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         if (
             not isinstance(config, dict)
-            or set(config) - {"policy", "templates", "location_growth"}
+            or set(config) - {
+                "policy", "templates", "location_growth", "event_ecology",
+            }
             or not {"policy", "templates"}.issubset(config)
         ):
             raise ValueError("town growth config has an invalid schema")
