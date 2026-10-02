@@ -347,8 +347,12 @@ class TownGrowthSystem:
         state: dict | None = None,
     ) -> "TownGrowthSystem":
         config = json.loads(Path(path).read_text(encoding="utf-8"))
-        if not isinstance(config, dict) or set(config) != {"policy", "templates"}:
-            raise ValueError("town growth config must contain only policy and templates")
+        if (
+            not isinstance(config, dict)
+            or set(config) - {"policy", "templates", "location_growth"}
+            or not {"policy", "templates"}.issubset(config)
+        ):
+            raise ValueError("town growth config has an invalid schema")
         if not isinstance(config["policy"], dict) or not isinstance(config["templates"], list):
             raise ValueError("town growth policy and templates have invalid shapes")
         policy = TownGrowthPolicy(**config["policy"])

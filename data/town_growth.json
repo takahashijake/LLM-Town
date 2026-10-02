@@ -41,5 +41,32 @@
         "knowledge": 50
       }
     }
-  ]
+  ],
+  "location_growth": {
+    "policy": {
+      "location_capacity": 5,
+      "minimum_resident_population": 5,
+      "earliest_development_day": 28,
+      "review_interval_days": 7,
+      "development_cooldown_days": 30,
+      "recent_activity_window_days": 7,
+      "minimum_active_residents_per_day": 5
+    },
+    "templates": [
+      {
+        "id": "location_template_001",
+        "location_id": "community_garden",
+        "name": "Community Garden",
+        "description": "A shared public garden where residents gather, learn, and tend common plots.",
+        "affinities": ["social", "knowledge", "community"]
+      },
+      {
+        "id": "location_template_002",
+        "location_id": "civic_pavilion",
+        "name": "Civic Pavilion",
+        "description": "A modest public pavilion for informal community gatherings.",
+        "affinities": ["social", "community"]
+      }
+    ]
+  }
 }

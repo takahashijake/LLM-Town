@@ -64,6 +64,11 @@ class OutcomeMemorySystem:
             records = authority.exchanges
         elif memory.source_system == "town_growth":
             records = authority.migration_records
+        elif memory.source_system == "location_growth":
+            records = [
+                record for record in authority.activation_records
+                if record.status == "activated"
+            ]
         else:
             return False
         return any(record.id == memory.source_id for record in records)

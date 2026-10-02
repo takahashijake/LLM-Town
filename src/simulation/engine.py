@@ -48,6 +48,10 @@ from src.systems.commitments import CommitmentSystem
 from src.systems.plans import PlanSystem
 from src.systems.outcome_memory import KnowledgeRecipient, OutcomeMemorySystem
 from src.systems.town_growth import MigrationRecord, TownGrowthSystem
+from src.systems.location_growth import (
+    LocationActivationRecord,
+    LocationGrowthSystem,
+)
 
 class SimulationEngine:
     def __init__(
@@ -344,12 +348,23 @@ class SimulationEngine:
             self.agents,
             saved_state.get("town_growth") if saved_state else None,
         )
+        self.location_growth = LocationGrowthSystem.from_config(
+            self.town_growth_path,
+            self.locations,
+            saved_state.get("location_growth") if saved_state else None,
+        )
+        self.locations.extend(self.location_growth.activated_locations())
+        self.activity_planner.set_location_affinities([
+            location for location in self.locations
+            if location.id not in self.location_growth.base_location_ids
+        ])
         self.outcome_memory.bind_authorities(
             commitments=self.commitment_system, plans=self.plan_system,
             crime=self.crime, justice=self.justice, materials=self.materials,
-            town_growth=self.town_growth,
+            town_growth=self.town_growth, location_growth=self.location_growth,
         )
         self.validate_population_authorities()
+        self.validate_location_authorities()
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -1108,6 +1123,7 @@ class SimulationEngine:
             justice=self.justice,
             materials=self.materials,
             town_growth=self.town_growth,
+            location_growth=self.location_growth,
         )
         self.crime.outcome_memory = self.outcome_memory
         self.justice.outcome_memory = self.outcome_memory
@@ -1212,6 +1228,144 @@ class SimulationEngine:
                     if current.event_key == review.event_key
                 ),
                 review,
+            )
+        return review
+
+    def validate_location_authorities(self) -> None:
+        """Fail closed when the live registry and activation evidence disagree."""
+        checks = self.location_growth.validate(self.locations, self.agents)
+        if not all(checks.values()):
+            failed = sorted(name for name, passed in checks.items() if not passed)
+            raise ValueError(f"location authority invariants failed: {failed}")
+        memory_checks = self.outcome_memory.validate()
+        if not all(memory_checks.values()):
+            raise ValueError("location outcome-memory provenance is invalid")
+        dynamic_ids = {
+            record.location_id for record in self.location_growth.activation_records
+            if record.status == "activated"
+        }
+        for location in self.locations:
+            if location.id not in dynamic_ids:
+                continue
+            template = next(
+                item for item in self.location_growth.templates.values()
+                if item.location_id == location.id
+            )
+            if (
+                location.name != template.name
+                or location.description != template.description
+                or tuple(location.affinities or ()) != template.affinities
+            ):
+                raise ValueError("active location contradicts its finite template")
+
+    def preflight_location_activation(
+        self, record: LocationActivationRecord
+    ) -> Location:
+        if record.status != "proposed":
+            raise ValueError("location activation is not pending")
+        self.validate_location_authorities()
+        template = self.location_growth.template(record.template_id)
+        if record.location_id != template.location_id:
+            raise ValueError("location proposal contradicts its template")
+        if record.template_id in self.location_growth.consumed_template_ids:
+            raise ValueError("location template was already consumed")
+        if len(self.locations) >= self.location_growth.policy.location_capacity:
+            raise ValueError("location capacity reached")
+        if any(item.id == template.location_id for item in self.locations):
+            raise ValueError("location id is already active")
+        if any(item.name == template.name for item in self.locations):
+            raise ValueError("location name is already active")
+        review = next(
+            (item for item in self.location_growth.review_history
+             if item.activation_id == record.id), None
+        )
+        if review is None or review.status != "proposed" or review.event_key != record.event_key:
+            raise ValueError("location proposal lacks authoritative review")
+        if len(self.agents) < self.location_growth.policy.minimum_resident_population:
+            raise ValueError("location proposal no longer has sufficient population")
+        if not self.location_growth.activity_gate_passes(
+            record.review_day, self.agents, self.activity_records
+        ):
+            raise ValueError("location proposal lacks authoritative sustained activity")
+        return Location(
+            template.location_id, template.name, template.description,
+            list(template.affinities),
+        )
+
+    def activate_pending_location(self, day: int) -> LocationActivationRecord | None:
+        """Atomically expose one preflighted configured public location."""
+        record = self.location_growth.pending_activation()
+        if record is None:
+            return None
+        try:
+            location = self.preflight_location_activation(record)
+        except (KeyError, TypeError, ValueError) as error:
+            self.location_growth.reject(record.id, str(error))
+            return None
+        locations_before = list(self.locations)
+        growth_before = self.location_growth.to_dict()
+        base_ids_before = set(self.location_growth.base_location_ids)
+        memories_before = [
+            (deepcopy(agent.memory), deepcopy(agent.memory_archive))
+            for agent in self.agents
+        ]
+        try:
+            self.locations.append(location)
+            activated = self.location_growth.activate(record.id, day=day)
+            self.activity_planner.set_location_affinities([
+                item for item in self.locations
+                if item.id not in self.location_growth.base_location_ids
+            ])
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+            )
+            self.outcome_memory.project(
+                source_system="location_growth", source_id=activated.id,
+                event_type="location_opened", day=day, hour=None,
+                recipients=[KnowledgeRecipient(
+                    owner_id=agent.id, knowledge_basis="public_event",
+                    description=f"The {location.name} opened as a public town place.",
+                    sentiment=1, importance=4, location=location.id,
+                ) for agent in self.agents],
+            )
+            self.validate_location_authorities()
+            return activated
+        except Exception as error:
+            self.locations = locations_before
+            for agent, (memory, archive) in zip(self.agents, memories_before):
+                agent.memory = memory
+                agent.memory_archive = archive
+            self.location_growth = LocationGrowthSystem.from_config(
+                self.town_growth_path,
+                [item for item in self.locations if item.id in base_ids_before],
+                growth_before,
+            )
+            self.activity_planner.set_location_affinities([
+                item for item in self.locations
+                if item.id not in self.location_growth.base_location_ids
+            ])
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+            )
+            restored = self.location_growth.pending_activation()
+            if restored is not None:
+                self.location_growth.reject(restored.id, f"activation_failed:{error}")
+            return None
+
+    def review_location_growth(self, day: int):
+        review = self.location_growth.review(
+            day=day, agents=self.agents, locations=self.locations,
+            activity_records=self.activity_records,
+        )
+        if review.status == "proposed":
+            self.activate_pending_location(day)
+            return next(
+                (item for item in self.location_growth.review_history
+                 if item.event_key == review.event_key), review
             )
         return review
 

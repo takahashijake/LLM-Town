@@ -21,7 +21,16 @@ class CommitmentDecision:
 
 
 class ActivityPlanner:
-    """Compare inspectable bounded priorities; randomness only breaks close calls."""
+    """Compare bounded priorities; randomness only breaks close calls."""
+
+    def __init__(self) -> None:
+        self.location_affinities: dict[str, tuple[str, ...]] = {}
+
+    def set_location_affinities(self, locations: list) -> None:
+        """Expose closed descriptive metadata to ordinary activity selection."""
+        self.location_affinities = {
+            item.id: tuple(item.affinities or ()) for item in locations
+        }
 
     COMMITMENT_PRESSURE_BASE = 0.20
     COMMITMENT_URGENCY_WEIGHT = 0.60
@@ -426,6 +435,24 @@ class ActivityPlanner:
 
         # Need-based activities
         primary_need = agent.get_primary_need()
+
+        # Configured public places participate only in ordinary need behavior.
+        # Their closed affinities do not grant commerce, event, crime, plan, or
+        # employment authority.
+        for location_id, affinities in self.location_affinities.items():
+            if primary_need not in affinities:
+                continue
+            add_activity(
+                f"ordinary_{primary_need}_{location_id}",
+                {
+                    "social": "Spend time with other residents",
+                    "knowledge": "Explore and learn in a public place",
+                    "community": "Take part in ordinary community life",
+                }.get(primary_need, "Spend time in a public place"),
+                location_id,
+                f"{agent.name} chose an active public place for {primary_need} needs.",
+                ["ordinary_public_activity", primary_need],
+            )
 
         if primary_need == "social":
             add_activity(

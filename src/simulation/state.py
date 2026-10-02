@@ -142,6 +142,11 @@ class SimulationState:
                 if getattr(engine, "town_growth", None) is not None
                 else None
             ),
+            "location_growth": (
+                engine.location_growth.to_dict()
+                if getattr(engine, "location_growth", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

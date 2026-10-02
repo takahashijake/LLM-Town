@@ -6,3 +6,4 @@ class Location:
     id: str
     name: str
     description: str
+    affinities: list[str] | None = None
