@@ -1,4 +1,4 @@
-# V5 dynamic town evolution: bounded resident migration
+# V5 dynamic town evolution: bounded migration and public-place growth
 
 ## Scope and authority
 
@@ -155,3 +155,75 @@ demographics, resident departure, construction, dynamic places, businesses,
 production redesign, negotiation, or model-generated residents. Dynamic places
 should be considered only after this slice has had a stabilization and observation
 period.
+
+## Phase 2: authoritative public-place expansion
+
+Phase 2 composes with the stabilized migration lifecycle without changing it. The
+four locations in `data/locations.json` are base configured locations. A separate
+finite roster in the `location_growth` section of `data/town_growth.json` contains
+inactive public-place templates. A template is descriptive data only: stable
+template and location IDs, a unique name and description, and a closed subset of
+`social`, `knowledge`, and `community` affinities.
+
+After each completed day, `LocationGrowthSystem` may perform a replay-safe
+development review. The default policy requires five active residents, day 28,
+the fixed seven-day review schedule, seven completed days in which all five
+residents have authoritative activity, cooldown availability, unused capacity,
+and an unused finite template. Readiness is recomputed from live population and
+activity records. Serialized readiness, dialogue, memory, and model text have no
+authority.
+
+```text
+four base residents / four base places
+        ↓ day 14 migration authority
+five residents participate normally
+        ↓ seven completed active days
+location-review:day:28
+        ↓ finite template + complete preflight
+location-activation:0001
+        ↓ atomic registry append + activation evidence
+public opening memory + ordinary use + conversations
+```
+
+Activation preflights the template, unused ID and name, review binding, capacity,
+closed affinities, and current location authority. Commit exposes one `Location`,
+marks exactly one activation record, consumes exactly one template, updates the
+ordinary affinity view, and projects provenance-bearing `location_opened`
+knowledge. An unexpected commit exception restores the previous registry and
+growth authority before retaining a rejected attempt. Allocated review and
+activation identities are not reused.
+
+Affinities affect only ordinary need-based public activity selection. They do not
+grant employment, seller status, stock, inventories, production, crime permission,
+justice roles, commitment types, goal strategies, V4 dependencies, town arcs, or
+daily events. Market commerce, Library knowledge strategies, and the fixed
+`EVENT_POOL` remain deliberate legacy domain rules. Once two residents arrive at
+the new place through normal planning, the existing location-grouped conversation
+scheduler can pair them without a special visit script.
+
+Save state persists the bounded review, activation, replay, consumption, and
+public-history records. The live dynamic registry is reconstructed from activated
+records plus current finite config; an arbitrary serialized location list is never
+trusted. Missing templates, changed identities, partial records, duplicate
+consumption, unknown schemas, forged provenance, and residents at unknown places
+fail closed. Old saves lacking Phase 2 state load the original four-place town.
+Because Phase 2 has no removal, historical location references remain resolvable.
+
+Run the Phase 2 acceptance gate with:
+
+```bash
+python scripts/evaluate_location_growth.py
+```
+
+The evaluator uses real engines and `FakeLLMClient`, repeats a seeded 120-day
+save/resume lifecycle, verifies ordinary activity and conversation at the new
+place, and attacks identity, metadata, persistence, replay, capacity, readiness,
+and provenance boundaries. Review and public histories are bounded. Once the
+configured capacity is reached, the system stops allocating proposals or growing
+audit state.
+
+V5 is still not general procedural civilization generation. It does not provide
+dynamic housing, construction supply chains, arbitrary businesses, arbitrary
+jobs, resident departure, land ownership, zoning, roads, pathfinding,
+organizations, generalized markets, model-created locations, dynamic event
+ecology, or unrestricted world generation.

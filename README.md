@@ -28,6 +28,7 @@ provenance, crime/evidence, and justice without changing that boundary.
 - Directional relationship state plus a compatible shared relationship score
 - Direct reputation observations and provenance-preserving hearsay
 - Needs, occupations, activity planning, daily events, and town arcs
+- Bounded resident migration and finite authoritative public-place activation
 - Authoritative integer accounts, employment, wages, and an auditable ledger
 - Closed-system currency conservation and idempotent daily wage events
 - Persistent goods, inventory ownership, atomic purchases, and consumption records
@@ -233,7 +234,7 @@ Phase 5 bounded conjunction and staged-preparation evaluation.
 Run `python scripts/evaluate_goal_delegation.py` for the model-free Phase 6
 delegation-through-V3-commitments evaluation.
 
-## V5 bounded resident migration
+## V5 bounded town evolution
 
 V4 is frozen. V5 Phase 1 begins dynamic town evolution with one deliberately
 bounded world-level lifecycle. After a completed day, `TownGrowthSystem` may admit
@@ -254,6 +255,20 @@ suite and its seeded 90-day save/resume stabilization scenario. See
 [`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md) for the
 authority contract, population audit, replay behavior, and explicit Phase 1
 limits.
+
+V5 Phase 2 adds one finite public-place lifecycle. After migration has produced
+five residents and all five have completed seven days of genuine activity, a
+scheduled deterministic review may consume one configured place template and
+atomically append its stable location to the live registry. The Community Garden
+can then receive ordinary need-based activities and ordinary location-grouped
+conversations. Activation creates no seller, stock, inventory, job, production,
+crime, justice, commitment, goal-strategy, or daily-event authority.
+
+Dynamic locations are reconstructed from activation records and finite config on
+resume; replay cannot duplicate the place, public opening memories, or template
+consumption. Run `python scripts/evaluate_location_growth.py` for the model-free
+120-day integrated and adversarial acceptance gate. V5 remains bounded town
+evolution, not procedural civilization generation or unrestricted world creation.
 
 ## V2 economic foundation
 
