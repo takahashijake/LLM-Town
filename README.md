@@ -302,12 +302,37 @@ employment—not legacy occupation text—offers `steward_community_garden` at t
 exact garden, and the normal economic work path requires that activity, location,
 start day, and work tag before paying at most one wage per day. Formation and
 hiring receive provenance-backed memories, while dialogue and memory remain
-non-authoritative. No seller, business inventory, good, price, production recipe,
-profit, ownership, crime, justice, commitment, V4 strategy, place, or event
-authority is created. Run `python scripts/evaluate_institution_growth.py` for the
+non-authoritative. Phase 4 formation alone creates no seller, inventory, good,
+price, production recipe, crime, justice, commitment, V4 strategy, place, or event
+authority. Run `python scripts/evaluate_institution_growth.py` for the
 seeded 240-day save/resume and adversarial gate; see
 [`docs/v5_dynamic_town_evolution.md`](docs/v5_dynamic_town_evolution.md) for the
 complete authority, replay, conservation, and limitation contract.
+
+V5 Phase 5 adds one finite Community Garden Stewardship commerce template. A
+scheduled review requires the exact activated institution and garden, its live
+steward employment and multiple days of authoritative work, sustained multi-
+resident garden use, recent real `prepared_meal` purchases, an active configured
+upstream seller with `meal_ingredients`, sufficient institution funds, unused
+template capacity, and the fixed schedule. Readiness is always recomputed; text,
+tags, memories, and serialized claims cannot create commerce authority.
+
+Activation registers one empty, zero-reconstruction-baseline institution
+inventory, one garden seller, one `buy_garden_meal` route, and one exact recipe
+bound to the Phase 4 steward. Steward work first procures existing
+`meal_ingredients` through the ordinary atomic purchase path, preserving their
+lots and transferring credits to the market cooperative. Later steward work
+transforms those lots into traceable `prepared_meal` lots. Ordinary residents can
+then buy that stock at the existing configured price; goods move to their normal
+inventories and revenue enters the same institution account that pays ordinary
+wages. Run `python scripts/evaluate_commerce_growth.py` for the seeded 240-day
+uninterrupted, save/resume, repeatability, circulation, provenance, replay, and
+adversarial gate.
+
+This remains a single bounded template, not generalized entrepreneurship. There
+is no arbitrary business or new-good creation, floating pricing, competition,
+ownership shares, loans, taxation, bankruptcy, general labor market, arbitrary
+supply chain, or model-authored economic authority.
 
 ## V2 economic foundation
 

@@ -1,4 +1,4 @@
-# V5 dynamic town evolution: migration, places, events, and institutions
+# V5 dynamic town evolution: migration, places, events, institutions, and commerce
 
 ## Scope and authority
 
@@ -364,9 +364,9 @@ baseline, exact startup ledger entry, employee/account, job/role/wage/activity/
 location contract, and absence of orphan institution economic state. Old saves
 without Phase 4 state load with no dynamic institution.
 
-No seller, business inventory, good, price, purchase route, stock, production
-recipe, profit, or owner equity is created. The existing configured market seller
-and production route are untouched. Institution activation likewise grants no
+Phase 4 formation itself creates no seller, inventory, purchase route, stock, or
+production recipe. The existing configured market seller and production route
+are untouched. Institution activation likewise grants no
 crime, justice, commitment, V4 strategy, place, or event authority. Run the
 240-day repeated-seed, save/resume, adversarial gate with:
 
@@ -382,3 +382,119 @@ markets, firing, job switching, multi-role institutions, organization politics,
 taxation, dynamic construction supply chains, resident departure, demographics,
 land ownership, zoning, roads, pathfinding, or unrestricted procedural
 civilization generation.
+
+## Phase 5: bounded authoritative institutional commerce
+
+Phase 5 composes the exact Phase 4 institution with the existing V2 economy and
+material authorities. `CommerceGrowthSystem` owns only finite templates,
+scheduled readiness reviews, stable activation identity, capacity, replay keys,
+template consumption, activation records, and bounded audit history. It never
+changes balances, quantities, lots, sellers, or recipes itself.
+
+```text
+activated Community Garden Stewardship + repeated steward work
+        + sustained multi-resident garden use + real meal demand
+        + live upstream seller, stock, and institution funds
+        ↓ scheduled commerce review (day 84 by default)
+commerce-activation:0001
+        ↓ atomic runtime registration
+empty inventory:institution:0001 + seller:institution:0001
+        + buy_garden_meal + recipe:institution:0001:garden_meals
+        ↓ exact steward work
+institution credits → market cooperative; existing ingredient lots → institution
+        ↓ later exact steward work
+ingredient lots consumed → traceable prepared-meal production lots
+        ↓ ordinary resident purchase at community_garden
+meal lot → resident; resident credits → institution account
+        ↓ ordinary Phase 4 wage path
+circulated sale revenue can fund a later steward wage
+```
+
+### Readiness and activation authority
+
+The checked-in policy requires the exact activated Phase 4 formation and exact
+activated Community Garden, its live institution-owned account, the exact active
+steward employment, work events on multiple prior days, recent use of the garden
+by multiple registered residents across multiple days, recent authoritative
+purchases of the existing target good, an active configured upstream seller,
+available input stock, sufficient institution credits for one procurement, an
+unused template, capacity, earliest-day, interval, and cooldown gates. No
+`ready` field is persisted or trusted.
+
+The proposal allocates stable `commerce-activation:0001` identity and derives
+`inventory:institution:0001`, `seller:institution:0001`, and
+`recipe:institution:0001:garden_meals`. Complete preflight runs against a cloned
+material authority before commit. Commit uses narrow `MaterialSystem`
+registration APIs for the empty institution inventory, exact seller, exact
+purchase activity, and exact production recipe. The inventory baseline and lot
+holdings begin empty, so activation changes neither total materials nor lot
+origins. If any registration, projection, or validation fails, the complete
+material state, growth state, planner exposure, and memories are restored; the
+attempt may remain rejected, but no partial route or stock survives.
+
+### Procurement, production, purchasing, and circulation
+
+The recipe reuses the Phase 4 `steward_community_garden` work activity instead of
+changing the employment or legacy `Agent.occupation`. Once Phase 5 is active, the
+planner marks that exact registered work opportunity as production-capable.
+When its institution inventory lacks the required two `meal_ingredients`, the
+first exact steward operation calls ordinary `MaterialSystem.purchase()` against
+`seller:market_stall`. The institution account is debited, the market account is
+credited, the market inventory loses stock, the empty-baseline institution
+inventory gains it, and the existing input lot IDs move with the transfer. The
+event key is stable and replay protected.
+
+A later exact steward operation invokes the ordinary production machinery. It
+requires the registered recipe, exact actor, exact employment, exact activity,
+exact garden, sufficient input quantity and lot provenance, target-stock room,
+and a fresh event key. Production consumes the moved input lots and creates the
+existing `prepared_meal` good in new lots whose parent IDs identify those inputs.
+No quantity dictionary is directly credited and no initial lot is fabricated.
+
+Residents receive `buy_garden_meal` only from the registered active dynamic
+route. The existing activity processor rejects wrong location, inactive or
+unknown seller, insufficient stock, insufficient funds, and duplicate events.
+Success uses the same atomic money/material purchase path as the static market:
+the resident receives the meal lot and the exact institution account receives
+the existing eight-credit unit price. The unchanged Phase 4 wage system can then
+spend that revenue. The deterministic acceptance horizon demonstrates a later
+wage for which the account would have been short without accumulated commerce
+revenue.
+
+### Persistence, replay, memory, and boundaries
+
+Phase 5 state has an explicit schema and persists only reviews, activation
+records, sequence/replay state, consumed templates, cooldown state, and bounded
+public history. Executable templates remain checked-in configuration. Dynamic
+material registries are persisted by `MaterialSystem` and cross-checked on load
+against each activated record, exact institution/location/employment/account,
+empty reconstruction baseline, checked-in goods, and complete material/ledger/
+lot reconstruction. Unknown schema, missing or orphan registry entries, wrong
+owners or links, fabricated baseline stock, forged recipes/rules/sellers/goods,
+duplicate identity, malformed replay state, pre-activation operations, and forged
+causal memories fail closed. Old saves without Phase 5 state load with no dynamic
+commerce authority.
+
+One public food-stand fact and one private operator fact use stable
+`commerce_growth` causal-memory IDs. They describe completed authority but cannot
+create a seller, inventory, stock, production, purchase, employment, money, or
+goods. Commerce formation grants no commitment, goal, V4 strategy, event,
+location, crime, justice, relationship, or reputation authority.
+
+Run the Phase 5 gate with:
+
+```bash
+python scripts/evaluate_commerce_growth.py
+```
+
+The 240-day gate uses real `SimulationEngine` instances and `FakeLLMClient` for
+fresh, save/resume, and repeated-seed runs; it verifies the full causal chain,
+currency and material reconstruction, lot lineage, revenue-funded later wages,
+static-market regression, bounded stabilization, authority/replay/location/
+operator/stock attacks, and adversarial persisted states.
+
+V5 is still deliberately bounded. It does not implement generalized
+entrepreneurship, arbitrary businesses, new-good invention, floating or
+supply/demand pricing, firm ownership, profit distribution, business competition,
+loans, taxation, bankruptcy, firing, job switching, general hiring markets,
+arbitrary supply chains, or unrestricted procedural civilization generation.
