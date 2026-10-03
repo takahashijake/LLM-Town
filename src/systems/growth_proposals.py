@@ -399,7 +399,12 @@ class GrowthProposalSystem:
         ):
             return None
         proposal_id = f"growth-proposal:{self.next_proposal_sequence:04d}"
-        provider_kind = str(getattr(self.provider, "provider_kind", type(self.provider).__name__))[:80]
+        provider_metadata = getattr(self.provider, "provider_kind", None)
+        provider_kind = (
+            provider_metadata.strip()[:80]
+            if isinstance(provider_metadata, str) and provider_metadata.strip()
+            else type(self.provider).__name__[:80]
+        )
         try:
             candidate = (
                 self.provider.propose_resident(dict(context))

@@ -305,6 +305,15 @@ def evaluate_growth_proposals() -> dict:
             "tampered_template_rejected": lambda x: x["growth_proposals"]["resident_templates"][0].__setitem__("personality", "forged"),
             "rewound_sequence_rejected": lambda x: x["growth_proposals"].__setitem__("next_proposal_sequence", 1),
             "missing_admitted_template_rejected": lambda x: x["growth_proposals"]["resident_templates"].clear(),
+            "duplicate_generated_template_id_rejected": lambda x: x["growth_proposals"]["resident_templates"].append(deepcopy(x["growth_proposals"]["resident_templates"][0])),
+            "resident_proposal_to_location_template_rejected": lambda x: x["growth_proposals"]["records"][0].__setitem__("generated_template_id", "generated_location_template_0001"),
+            "location_proposal_to_resident_template_rejected": lambda x: x["growth_proposals"]["records"][1].__setitem__("generated_template_id", "generated_resident_template_0001"),
+            "checked_in_template_collision_rejected": lambda x: (
+                x["growth_proposals"]["records"][0].__setitem__("generated_template_id", "resident_template_001"),
+                x["growth_proposals"]["resident_templates"][0].__setitem__("id", "resident_template_001"),
+            ),
+            "rewound_resident_template_sequence_rejected": lambda x: x["growth_proposals"].__setitem__("next_resident_template_sequence", 1),
+            "rewound_location_template_sequence_rejected": lambda x: x["growth_proposals"].__setitem__("next_location_template_sequence", 1),
             "unknown_generated_migration_rejected": lambda x: x["town_growth"]["migration_records"][0].__setitem__("template_id", "generated_resident_template_9999"),
             "unknown_generated_activation_rejected": lambda x: x["location_growth"]["activation_records"][0].__setitem__("template_id", "generated_location_template_9999"),
         }
