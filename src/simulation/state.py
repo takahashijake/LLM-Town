@@ -151,6 +151,11 @@ class SimulationState:
                 if getattr(engine, "institution_growth", None) is not None
                 else None
             ),
+            "commerce_growth": (
+                engine.commerce_growth.to_dict()
+                if getattr(engine, "commerce_growth", None) is not None
+                else None
+            ),
         }
 
         self.path.write_text(json.dumps(state, indent=2))

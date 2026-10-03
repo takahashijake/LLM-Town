@@ -41,7 +41,9 @@ from src.town.town_arc import TownArc
 from src.utils.logger import TownLogger
 from src.systems.reputation import ReputationSystem
 from src.systems.economy import EconomySystem, Employment
-from src.systems.materials import MaterialSystem
+from src.systems.materials import (
+    MaterialSystem, ProductionRecipe, PurchaseActivityRule, Seller,
+)
 from src.systems.crime import CrimeSystem
 from src.systems.justice import JusticeSystem
 from src.systems.commitments import CommitmentSystem
@@ -54,6 +56,7 @@ from src.systems.location_growth import (
 )
 from src.systems.event_ecology import EventEcologySystem
 from src.systems.institution_growth import InstitutionGrowthSystem
+from src.systems.commerce_growth import CommerceGrowthSystem
 
 class SimulationEngine:
     def __init__(
@@ -366,6 +369,10 @@ class SimulationEngine:
             self.town_growth_path,
             saved_state.get("institution_growth") if saved_state else None,
         )
+        self.commerce_growth = CommerceGrowthSystem.from_config(
+            self.town_growth_path,
+            saved_state.get("commerce_growth") if saved_state else None,
+        )
         self.activity_planner.set_location_affinities([
             location for location in self.locations
             if location.id not in self.location_growth.base_location_ids
@@ -375,11 +382,14 @@ class SimulationEngine:
             crime=self.crime, justice=self.justice, materials=self.materials,
             town_growth=self.town_growth, location_growth=self.location_growth,
             institution_growth=self.institution_growth,
+            commerce_growth=self.commerce_growth,
         )
         self.validate_population_authorities()
         self.validate_location_authorities()
         self.validate_event_authorities()
         self.validate_institution_authorities()
+        self.validate_commerce_authorities()
+        self.activity_planner.set_commerce_authority(self.materials)
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -523,6 +533,8 @@ class SimulationEngine:
         self.activity_system.crime_system = getattr(self, "crime", None)
         self.activity_system.commitment_system = getattr(self, "commitment_system", None)
         self.activity_system.plan_system = getattr(self, "plan_system", None)
+        if getattr(self, "materials", None) is not None:
+            self.activity_planner.set_commerce_authority(self.materials)
         
     def sync_intent_system_refs(self) -> None:
         self.intent_system.agent_intents = self.agent_intents
@@ -1161,6 +1173,7 @@ class SimulationEngine:
             town_growth=self.town_growth,
             location_growth=self.location_growth,
             institution_growth=self.institution_growth,
+            commerce_growth=self.commerce_growth,
         )
         self.crime.outcome_memory = self.outcome_memory
         self.justice.outcome_memory = self.outcome_memory
@@ -1383,6 +1396,7 @@ class SimulationEngine:
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
                 institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
             )
             self.outcome_memory.project(
                 source_system="location_growth", source_id=activated.id,
@@ -1414,6 +1428,7 @@ class SimulationEngine:
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
                 institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
             )
             restored = self.location_growth.pending_activation()
             if restored is not None:
@@ -1594,6 +1609,7 @@ class SimulationEngine:
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
                 institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
             )
             self.outcome_memory.project(
                 source_system="institution_growth", source_id=activated.id,
@@ -1630,6 +1646,7 @@ class SimulationEngine:
                 crime=self.crime, justice=self.justice, materials=self.materials,
                 town_growth=self.town_growth, location_growth=self.location_growth,
                 institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
             )
             restored = self.institution_growth.pending_formation()
             if restored is not None:
@@ -1650,6 +1667,305 @@ class SimulationEngine:
             return next((item for item in self.institution_growth.review_history
                          if item.event_key == review.event_key), review)
         return review
+
+    def _commerce_material_contract(self, record, template):
+        seller = Seller(
+            id=record.seller_id, inventory_id=record.inventory_id,
+            account_id=record.institution_account_id,
+            location_id=record.location_id,
+            operator_employment_id=record.operator_employment_id,
+            institution_id=record.institution_id,
+            commerce_activation_id=record.id,
+        )
+        purchase_rule = PurchaseActivityRule(
+            activity_id=record.purchase_activity_id,
+            seller_id=record.seller_id, good_id=template.output_good_id,
+            quantity=1, commerce_activation_id=record.id,
+        )
+        recipe = ProductionRecipe(
+            id=record.recipe_id,
+            inputs=((template.input_good_id, template.input_quantity),),
+            outputs=((template.output_good_id, template.output_quantity),),
+            output_inventory_id=record.inventory_id,
+            activity_id=template.production_activity_id,
+            required_location_id=record.location_id,
+            eligible_actor_ids=(record.operator_agent_id,),
+            eligible_employment_ids=(record.operator_employment_id,),
+            target_stock_good_id=template.output_good_id,
+            target_stock_quantity=template.target_stock_quantity,
+            commerce_activation_id=record.id,
+            procurement_seller_id=record.upstream_seller_id,
+            procurement_quantity=template.input_quantity,
+        )
+        return seller, purchase_rule, recipe
+
+    def preflight_commerce_activation(self, record):
+        """Recompute readiness and validate every prospective material mutation."""
+        if record.status != "proposed":
+            raise ValueError("commerce activation is not pending")
+        template = self.commerce_growth.template(record.template_id)
+        review = next((item for item in self.commerce_growth.review_history
+                       if item.event_key == record.event_key), None)
+        if (review is None or review.status != "proposed"
+                or review.activation_id != record.id
+                or review.template_id != record.template_id
+                or review.day != record.review_day):
+            raise ValueError("commerce proposal lacks its exact review")
+        reason, formation = self.commerce_growth.readiness_reason(
+            template, day=record.review_day, agents=self.agents,
+            locations=self.locations, institution_growth=self.institution_growth,
+            location_growth=self.location_growth, economy=self.economy,
+            materials=self.materials, activity_records=self.activity_records,
+        )
+        if reason != "eligible" or formation is None:
+            raise ValueError(f"commerce readiness no longer holds:{reason}")
+        expected = (
+            formation.id, formation.institution_id, formation.location_id,
+            formation.location_activation_id, formation.employee_agent_id,
+            formation.employment_id, formation.employer_account_id,
+            template.purchase_activity_id, template.upstream_seller_id,
+        )
+        actual = (
+            record.institution_formation_id, record.institution_id,
+            record.location_id, record.location_activation_id,
+            record.operator_agent_id, record.operator_employment_id,
+            record.institution_account_id, record.purchase_activity_id,
+            record.upstream_seller_id,
+        )
+        if actual != expected:
+            raise ValueError("commerce proposal contradicts live institution authority")
+        preview = MaterialSystem.from_dict(
+            deepcopy(self.materials.to_dict()), economy=self.economy,
+        )
+        preview.register_institution_inventory(
+            inventory_id=record.inventory_id, institution_id=record.institution_id,
+            account_id=record.institution_account_id,
+            commerce_activation_id=record.id,
+        )
+        seller, purchase_rule, recipe = self._commerce_material_contract(record, template)
+        preview.register_seller(seller, location_ids={item.id for item in self.locations})
+        preview.register_purchase_activity_rule(purchase_rule)
+        preview.register_production_recipe(recipe)
+        return template, seller, purchase_rule, recipe
+
+    def activate_pending_commerce(self, day: int):
+        """Atomically register an empty inventory, seller, route, and recipe."""
+        record = self.commerce_growth.pending_activation()
+        if record is None:
+            return None
+        try:
+            template, seller, purchase_rule, recipe = (
+                self.preflight_commerce_activation(record)
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            self.commerce_growth.reject(record.id, str(error))
+            return None
+        materials_before = deepcopy(self.materials.to_dict())
+        growth_before = deepcopy(self.commerce_growth.to_dict())
+        memories_before = [
+            (deepcopy(agent.memory), deepcopy(agent.memory_archive))
+            for agent in self.agents
+        ]
+        try:
+            self.materials.register_institution_inventory(
+                inventory_id=record.inventory_id,
+                institution_id=record.institution_id,
+                account_id=record.institution_account_id,
+                commerce_activation_id=record.id,
+            )
+            self.materials.register_seller(
+                seller, location_ids={item.id for item in self.locations},
+            )
+            self.materials.register_purchase_activity_rule(purchase_rule)
+            self.materials.register_production_recipe(recipe)
+            activated = self.commerce_growth.activate(record.id, day=day)
+            formation_name = next(
+                item.name for item in self.institution_growth.formation_records
+                if item.id == activated.institution_formation_id
+            )
+            self.activity_planner.set_commerce_authority(self.materials)
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
+            )
+            self.outcome_memory.project(
+                source_system="commerce_growth", source_id=activated.id,
+                event_type="institution_commerce_opened", day=day, hour=None,
+                recipients=[KnowledgeRecipient(
+                    owner_id=agent.id, knowledge_basis="public_event",
+                    description=(
+                        f"{formation_name} began operating a garden food stand."
+                    ),
+                    sentiment=1, importance=4, location=activated.location_id,
+                ) for agent in self.agents],
+            )
+            self.outcome_memory.project(
+                source_system="commerce_growth", source_id=activated.id,
+                event_type="commerce_operator_authorized", day=day, hour=None,
+                recipients=[KnowledgeRecipient(
+                    owner_id=activated.operator_agent_id,
+                    knowledge_basis="participant",
+                    description="You began producing and selling garden meals there.",
+                    sentiment=1, importance=5, location=activated.location_id,
+                )],
+            )
+            self.validate_commerce_authorities()
+            return activated
+        except Exception as error:
+            self.materials = MaterialSystem.from_dict(
+                materials_before, economy=self.economy,
+            )
+            self.crime.materials = self.materials
+            self.justice.materials = self.materials
+            self.commitment_system.materials = self.materials
+            self.plan_system.materials = self.materials
+            self.commerce_growth = CommerceGrowthSystem.from_config(
+                self.town_growth_path, growth_before,
+            )
+            for agent, (memory, archive) in zip(self.agents, memories_before):
+                agent.memory = memory
+                agent.memory_archive = archive
+            self.sync_activity_system_refs()
+            self.outcome_memory.bind_authorities(
+                commitments=self.commitment_system, plans=self.plan_system,
+                crime=self.crime, justice=self.justice, materials=self.materials,
+                town_growth=self.town_growth, location_growth=self.location_growth,
+                institution_growth=self.institution_growth,
+                commerce_growth=self.commerce_growth,
+            )
+            restored = self.commerce_growth.pending_activation()
+            if restored is not None:
+                self.commerce_growth.reject(
+                    restored.id, f"activation_failed:{error}",
+                )
+            return None
+
+    def review_commerce_growth(self, day: int):
+        review = self.commerce_growth.review(
+            day=day, agents=self.agents, locations=self.locations,
+            institution_growth=self.institution_growth,
+            location_growth=self.location_growth, economy=self.economy,
+            materials=self.materials, activity_records=self.activity_records,
+        )
+        if review.status == "proposed":
+            self.activate_pending_commerce(day)
+            return next((item for item in self.commerce_growth.review_history
+                         if item.event_key == review.event_key), review)
+        return review
+
+    def validate_commerce_authorities(self) -> None:
+        """Reject orphan or contradictory dynamic material authority."""
+        self.commerce_growth._validate_state()
+        configured_goods = json.loads(
+            self.materials_path.read_text(encoding="utf-8")
+        ).get("goods", [])
+        live_goods = [{
+            "id": item.id, "name": item.name, "category": item.category,
+            "unit_price": item.unit_price, "consumable": item.consumable,
+            **({"need_effect": item.need_effect}
+               if item.need_effect is not None else {}),
+            **({"need_effect_amount": item.need_effect_amount}
+               if item.need_effect_amount else {}),
+        } for item in self.materials.goods.values()]
+        normalized_configured = [{
+            **item,
+            **({"consumable": False} if "consumable" not in item else {}),
+        } for item in configured_goods]
+        if live_goods != normalized_configured:
+            raise ValueError("runtime goods contradict checked-in material definitions")
+        for template in self.commerce_growth.templates.values():
+            institution = self.institution_growth.templates.get(
+                template.institution_template_id
+            )
+            location = self.location_growth.templates.get(template.location_template_id)
+            upstream = self.materials.sellers.get(template.upstream_seller_id)
+            if (institution is None or location is None
+                    or institution.location_template_id != template.location_template_id
+                    or upstream is None or upstream.commerce_activation_id is not None
+                    or template.input_good_id not in self.materials.goods
+                    or template.output_good_id not in self.materials.goods
+                    or template.production_activity_id
+                    != institution.role.work_activity_id):
+                raise ValueError("commerce template references invalid finite authority")
+        active = [item for item in self.commerce_growth.activation_records
+                  if item.status == "activated"]
+        active_ids = {item.id for item in active}
+        dynamic_inventories = {item.commerce_activation_id: item
+                               for item in self.materials.inventories.values()
+                               if item.commerce_activation_id is not None}
+        dynamic_sellers = {item.commerce_activation_id: item
+                           for item in self.materials.sellers.values()
+                           if item.commerce_activation_id is not None}
+        dynamic_rules = {item.commerce_activation_id: item
+                         for item in self.materials.purchase_activity_rules.values()
+                         if item.commerce_activation_id is not None}
+        dynamic_recipes = {item.commerce_activation_id: item
+                           for item in self.materials.production_recipes.values()
+                           if item.commerce_activation_id is not None}
+        registries = (dynamic_inventories, dynamic_sellers, dynamic_rules, dynamic_recipes)
+        dynamic_counts = (
+            sum(item.commerce_activation_id is not None
+                for item in self.materials.inventories.values()),
+            sum(item.commerce_activation_id is not None
+                for item in self.materials.sellers.values()),
+            sum(item.commerce_activation_id is not None
+                for item in self.materials.purchase_activity_rules.values()),
+            sum(item.commerce_activation_id is not None
+                for item in self.materials.production_recipes.values()),
+        )
+        if any(set(registry) != active_ids or len(registry) != len(active)
+               for registry in registries):
+            raise ValueError("orphan or missing dynamic commerce material authority")
+        if any(count != len(active) for count in dynamic_counts):
+            raise ValueError("duplicate dynamic commerce material authority")
+        for record in active:
+            template = self.commerce_growth.template(record.template_id)
+            formation = next((item for item in self.institution_growth.formation_records
+                              if item.id == record.institution_formation_id
+                              and item.status == "activated"), None)
+            inventory = dynamic_inventories[record.id]
+            seller = dynamic_sellers[record.id]
+            rule = dynamic_rules[record.id]
+            recipe = dynamic_recipes[record.id]
+            expected_seller, expected_rule, expected_recipe = (
+                self._commerce_material_contract(record, template)
+            )
+            if (formation is None
+                    or formation.institution_id != record.institution_id
+                    or formation.location_id != record.location_id
+                    or formation.employment_id != record.operator_employment_id
+                    or formation.employee_agent_id != record.operator_agent_id
+                    or formation.employer_account_id != record.institution_account_id
+                    or inventory.id != record.inventory_id
+                    or inventory.owner_type != "institution"
+                    or inventory.owner_id != record.institution_id
+                    or inventory.account_id != record.institution_account_id
+                    or self.materials.initial_quantities.get(record.inventory_id) != {}
+                    or seller != expected_seller or rule != expected_rule
+                    or recipe != expected_recipe):
+                raise ValueError("dynamic commerce authority contradicts activation")
+            if any(item.day < record.activation_day for item in self.materials.exchanges
+                   if item.seller_id == record.seller_id
+                   or item.buyer_inventory_id == record.inventory_id):
+                raise ValueError("commerce exchange predates activation")
+            if any(item.day < record.activation_day for item in self.materials.production_records
+                   if item.recipe_id == record.recipe_id):
+                raise ValueError("commerce production predates activation")
+        if not (
+            self.materials.material_history_reconstructs_inventories()
+            and self.materials.exchanges_reconcile_with_ledger()
+            and self.materials.provenance_reconciles()
+            and self.materials.production_records_are_valid()
+            and self.economy.conservation_holds()
+            and self.economy.ledger_reconstructs_balances()
+        ):
+            raise ValueError("commerce economic or material reconstruction failed")
+        memory_checks = self.outcome_memory.validate()
+        if not all(memory_checks.values()):
+            raise ValueError("commerce outcome-memory provenance is invalid")
 
     def run_agent_activities(self, day: int, hour: int) -> None:
         self.sync_activity_system_refs()

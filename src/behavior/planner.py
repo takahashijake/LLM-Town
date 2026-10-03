@@ -25,11 +25,30 @@ class ActivityPlanner:
 
     def __init__(self) -> None:
         self.location_affinities: dict[str, tuple[str, ...]] = {}
+        self.commerce_purchase_activities: dict[str, tuple[str, str]] = {}
+        self.commerce_production_activities: set[str] = set()
 
     def set_location_affinities(self, locations: list) -> None:
         """Expose closed descriptive metadata to ordinary activity selection."""
         self.location_affinities = {
             item.id: tuple(item.affinities or ()) for item in locations
+        }
+
+    def set_commerce_authority(self, materials) -> None:
+        """Expose only registered dynamic routes to ordinary planning."""
+        dynamic_sellers = {
+            item.id: item for item in materials.sellers.values()
+            if item.active and item.commerce_activation_id is not None
+        }
+        self.commerce_purchase_activities = {
+            rule.activity_id: (dynamic_sellers[rule.seller_id].location_id, rule.good_id)
+            for rule in materials.purchase_activity_rules.values()
+            if rule.commerce_activation_id is not None
+            and rule.seller_id in dynamic_sellers
+        }
+        self.commerce_production_activities = {
+            recipe.activity_id for recipe in materials.production_recipes.values()
+            if recipe.commerce_activation_id is not None
         }
 
     COMMITMENT_PRESSURE_BASE = 0.20
@@ -299,7 +318,10 @@ class ActivityPlanner:
                         f"{agent.name} is performing authoritative work as "
                         f"{employment.title}."
                     ),
-                    tags=["work", "institution", "community"],
+                    tags=["work", "institution", "community"] + (
+                        ["production"]
+                        if activity_id in self.commerce_production_activities else []
+                    ),
                 )
         activity.commitment_decision = deferred_commitment_decision
         return activity
@@ -516,6 +538,16 @@ class ActivityPlanner:
                 f"{agent.name} wants to use a meal they already own.",
                 ["consume"],
             )
+            for activity_id, (location_id, good_id) in sorted(
+                self.commerce_purchase_activities.items()
+            ):
+                add_activity(
+                    activity_id,
+                    "Buy a garden-prepared meal",
+                    location_id,
+                    f"{agent.name} wants a meal from the institution food stand.",
+                    ["purchase", "institution_commerce", good_id],
+                )
 
         if primary_need == "wealth":
             add_activity(

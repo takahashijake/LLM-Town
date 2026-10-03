@@ -175,13 +175,20 @@ def evaluate_institution_growth() -> dict:
                 and private_memories[0].owner_id == formation.employee_agent_id,
                 "seeded_save_resume_runs_match": signature == repeat,
                 "finite_capacity_settles": len(first.institution_growth.formation_records) == 1,
-                "institution_creates_no_seller_or_business_inventory": (
-                    formation.institution_id not in {
-                        item.owner_id for item in first.materials.inventories.values()
+                "institution_material_authority_requires_phase5": all(
+                    item.commerce_activation_id in {
+                        record.id for record in first.commerce_growth.activation_records
+                        if record.status == "activated"
                     }
-                    and formation.institution_id not in {
-                        item.id for item in first.materials.sellers.values()
+                    for item in first.materials.inventories.values()
+                    if item.owner_id == formation.institution_id
+                ) and all(
+                    item.commerce_activation_id in {
+                        record.id for record in first.commerce_growth.activation_records
+                        if record.status == "activated"
                     }
+                    for item in first.materials.sellers.values()
+                    if item.institution_id == formation.institution_id
                 ),
             })
 
@@ -325,8 +332,11 @@ def evaluate_institution_growth() -> dict:
                 "outcome_memory_provenance_valid": all(
                     first.outcome_memory.validate().values()
                 ),
-                "no_material_actor_for_institution": formation.institution_id not in
-                first.materials.inventories,
+                "institution_material_authority_is_phase5_provenanced": all(
+                    item.commerce_activation_id is not None
+                    for item in first.materials.inventories.values()
+                    if item.owner_id == formation.institution_id
+                ),
             }
     finally:
         random.setstate(caller_state)
