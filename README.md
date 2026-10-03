@@ -877,6 +877,27 @@ example `--grounded-dialogue-tier safe_degraded_support`. Use `unverified` for a
 untested model/configuration; tiers are configuration capabilities, not model-name
 special cases.
 
+## V6 bounded procedural growth proposals
+
+V6 Phase 1 can admit strictly bounded, untrusted proposals for resident and
+public-location templates. Admission creates only a persisted possibility:
+ordinary V5 migration or location review must later propose and activate the
+authoritative entity. Canonical payloads are SHA-256 bound to deterministic
+generated IDs, survive restart without another model call, and are rejected on
+schema, identity, provenance, or sequence contradictions.
+
+Procedural growth is disabled in the default V5 world. The deterministic gate
+uses a static provider and a dedicated higher-capacity configuration:
+
+```bash
+python scripts/evaluate_growth_proposals.py
+```
+
+See [V6 Phase 1 procedural growth](docs/v6_procedural_growth.md) for the schemas,
+provider boundary, persistence/replay contract, branch isolation, optional
+existing-client model path, and explicit limitations. V6 does not yet generate
+events, institutions, jobs, commerce, economies, governments, or civilizations.
+
 ## Current limitations
 
 - Response outcome inference is deliberately conservative and lexical.

@@ -333,6 +333,36 @@ class TransformersLLMClient:
         }]
         return self._generate_messages(messages)
 
+    def generate_growth_proposal(self, kind: str, context: dict) -> str:
+        """Generate one untrusted V6 candidate through the existing model stack."""
+        if kind == "resident":
+            shape = '{"name":"...","personality":"...","goals":["..."]}'
+            boundary = (
+                "Propose one fictional resident. Do not assign IDs, money, property, "
+                "employment, legal status, relationships, or authority."
+            )
+        elif kind == "location":
+            shape = (
+                '{"name":"...","description":"...",'
+                '"affinities":["social"]}'
+            )
+            boundary = (
+                "Propose one public place. Affinities may use only social, knowledge, "
+                "and community. Do not assign IDs, events, institutions, sellers, "
+                "inventory, commerce, jobs, legal status, or authority."
+            )
+        else:
+            raise ValueError("unsupported growth proposal kind")
+        messages = [{
+            "role": "user",
+            "content": (
+                f"{boundary}\nYou propose a possibility; you do not create anything.\n"
+                f"Authoritative bounded context: {json.dumps(context, sort_keys=True)}\n"
+                f"Return exactly one JSON object with this shape and no prose: {shape}"
+            ),
+        }]
+        return self._generate_messages(messages, seed=self.seed)
+
     def repair_grounded_realization(
         self, context: dict, invalid_output: str, validation_error: str
     ) -> str:
