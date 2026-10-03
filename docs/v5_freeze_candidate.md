@@ -71,6 +71,12 @@ after its start day, once per employment/day. The Pavilion coordinator cannot
 operate the Garden recipe. Only the Garden formation named by the commerce
 template receives inventory, seller, purchase-rule, and recipe authority.
 
+The Garden retains the Phase 5 global evidence floor of seven recent activity
+days and three candidate activities. A checked-in Pavilion-only override uses
+five days and one candidate activity while retaining the shared three-resident
+and two-event requirements; this makes the sparse second site reachable without
+weakening the established Garden chain.
+
 Settlement and startup grants are ordinary conserved transfers. Wages and
 purchases use the ordinary economy ledger. Procurement and sales use atomic
 material exchanges, and production preserves lot ancestry. Institution accounts

@@ -71,6 +71,8 @@ class InstitutionTemplate:
     startup_grant: int
     relevant_dynamic_event_template_ids: tuple[str, ...]
     role: InstitutionRoleTemplate
+    minimum_activity_days: int | None = None
+    minimum_candidate_activities: int | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "InstitutionTemplate":
@@ -78,8 +80,13 @@ class InstitutionTemplate:
             "id", "institution_key", "name", "location_template_id",
             "startup_funding_source_account_id", "startup_grant",
             "relevant_dynamic_event_template_ids", "role",
+            "minimum_activity_days", "minimum_candidate_activities",
         }
-        if not isinstance(data, dict) or set(data) != allowed:
+        required = allowed - {
+            "minimum_activity_days", "minimum_candidate_activities",
+        }
+        if (not isinstance(data, dict) or not required.issubset(data)
+                or not set(data).issubset(allowed)):
             raise ValueError("institution template has an invalid schema")
         for key in (
             "id", "institution_key", "name", "location_template_id",
@@ -93,6 +100,9 @@ class InstitutionTemplate:
                 or not all(isinstance(item, str) and item for item in events)
                 or len(events) != len(set(events))):
             raise ValueError("institution event allowlist is invalid")
+        for key in ("minimum_activity_days", "minimum_candidate_activities"):
+            if key in data:
+                _positive(data[key], f"institution template {key}")
         return cls(
             id=data["id"], institution_key=data["institution_key"],
             name=data["name"], location_template_id=data["location_template_id"],
@@ -102,6 +112,10 @@ class InstitutionTemplate:
             startup_grant=data["startup_grant"],
             relevant_dynamic_event_template_ids=tuple(events),
             role=InstitutionRoleTemplate.from_dict(data["role"]),
+            minimum_activity_days=data.get("minimum_activity_days"),
+            minimum_candidate_activities=data.get(
+                "minimum_candidate_activities"
+            ),
         )
 
 
@@ -400,8 +414,12 @@ class InstitutionGrowthSystem:
             residents = {item.get("agent_id") for item in recent
                          if item.get("agent_id") in active_agents}
             activity_days = {item.get("day") for item in recent}
+            minimum_activity_days = (
+                template.minimum_activity_days
+                or self.policy.minimum_activity_days
+            )
             if (len(residents) < self.policy.minimum_distinct_residents
-                    or len(activity_days) < self.policy.minimum_activity_days):
+                    or len(activity_days) < minimum_activity_days):
                 continue
             occurrences = [item for item in event_ecology.occurrence_history
                            if item.location_id == binding.location_id
@@ -423,7 +441,11 @@ class InstitutionGrowthSystem:
                             and item.get("agent_id") == agent.id
                             and item.get("location") == binding.location_id
                             and candidate_first_day <= item.get("day", -1) <= day]
-                if len(evidence) < self.policy.minimum_candidate_activities:
+                minimum_candidate_activities = (
+                    template.minimum_candidate_activities
+                    or self.policy.minimum_candidate_activities
+                )
+                if len(evidence) < minimum_candidate_activities:
                     continue
                 attendance = sum(
                     item.get("activity_id") == "attend_event"

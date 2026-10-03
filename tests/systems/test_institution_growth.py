@@ -68,6 +68,19 @@ def test_readiness_uses_exact_place_event_and_unemployment_authority():
     ) is review
 
 
+def test_branch_thresholds_preserve_garden_policy_and_bound_pavilion_override():
+    system = InstitutionGrowthSystem.from_config("data/town_growth.json")
+    garden = system.template("institution_template_001")
+    pavilion = system.template("institution_template_002")
+
+    assert system.policy.minimum_activity_days == 7
+    assert system.policy.minimum_candidate_activities == 3
+    assert garden.minimum_activity_days is None
+    assert garden.minimum_candidate_activities is None
+    assert pavilion.minimum_activity_days == 5
+    assert pavilion.minimum_candidate_activities == 1
+
+
 def test_readiness_fails_without_events_activity_or_unemployed_candidate():
     agents, locations, growth, ecology, economy, activity, _system = _fixture()
     no_events = EventEcologySystem.from_config("data/town_growth.json")

@@ -79,6 +79,8 @@ def evaluate_v5_freeze() -> dict:
                 "pavilion_institution_on_garden_rejected",
                 "garden_institution_on_pavilion_rejected",
                 "garden_commerce_on_pavilion_rejected",
+                "cross_branch_roles_cannot_claim_wages",
+                "pavilion_employee_cannot_operate_garden_commerce",
                 "forged_second_employment_memory_rejected",
             )
         ),

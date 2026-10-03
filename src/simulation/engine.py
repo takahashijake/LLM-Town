@@ -1526,11 +1526,15 @@ class SimulationEngine:
                   if item.get("type") == "activity"
                   and item.get("location") == record.location_id
                   and first_day <= item.get("day", -1) <= record.review_day]
+        minimum_activity_days = (
+            template.minimum_activity_days
+            or self.institution_growth.policy.minimum_activity_days
+        )
         if (len({item.get("agent_id") for item in recent
                  if item.get("agent_id") in {agent.id for agent in self.agents}})
                 < self.institution_growth.policy.minimum_distinct_residents
                 or len({item.get("day") for item in recent})
-                < self.institution_growth.policy.minimum_activity_days):
+                < minimum_activity_days):
             raise ValueError("institution sustained activity is no longer valid")
         allowed_events = set(template.relevant_dynamic_event_template_ids)
         occurrence_ids = {
@@ -1552,7 +1556,11 @@ class SimulationEngine:
                               and item.get("location") == record.location_id
                               and candidate_first_day
                               <= item.get("day", -1) <= record.review_day]
-        if len(candidate_evidence) < self.institution_growth.policy.minimum_candidate_activities:
+        minimum_candidate_activities = (
+            template.minimum_candidate_activities
+            or self.institution_growth.policy.minimum_candidate_activities
+        )
+        if len(candidate_evidence) < minimum_candidate_activities:
             raise ValueError("institution employee evidence is stale")
         return template, candidate
 

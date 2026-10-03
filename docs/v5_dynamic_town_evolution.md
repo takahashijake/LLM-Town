@@ -539,6 +539,13 @@ startup-transfer, and memory identity. The planner consumes each resident's live
 `Employment` contract; biography text and agent IDs are not job authority. The
 ordinary economy path remains the sole wage authority.
 
+The original Garden evidence policy remains seven recent activity days and three
+candidate activities. The finite Pavilion template explicitly uses five recent
+activity days and one candidate activity because normal Pavilion use is sparser;
+it still requires three distinct residents and two exact Pavilion event
+occurrences. Template-local values may only tighten or specialize these two
+evidence counts and do not alter the category-wide review schedule or cooldown.
+
 Commerce remains scoped to `commerce_template_001`. Recipe child identity is now
 template-driven through `recipe_id_suffix`; the checked-in Garden suffix remains
 `garden_meals`, preserving existing save and event identities. A valid Pavilion

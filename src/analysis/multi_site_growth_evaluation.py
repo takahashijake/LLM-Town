@@ -10,6 +10,7 @@ from pathlib import Path
 import random
 from tempfile import TemporaryDirectory
 
+from src.behavior.activity import Activity
 from src.llm.client import FakeLLMClient
 from src.simulation.engine import SimulationEngine
 
@@ -303,6 +304,66 @@ def evaluate_multi_site_growth() -> dict:
             ),
         })
 
+        garden_formation = next(
+            item for item in formations
+            if item.template_id == "institution_template_001"
+        )
+        pavilion_formation = next(
+            item for item in formations
+            if item.template_id == "institution_template_002"
+        )
+        garden_template = fresh.institution_growth.template(
+            garden_formation.template_id
+        )
+        pavilion_template = fresh.institution_growth.template(
+            pavilion_formation.template_id
+        )
+        garden_employee = next(
+            item for item in fresh.agents
+            if item.id == garden_formation.employee_agent_id
+        )
+        pavilion_employee = next(
+            item for item in fresh.agents
+            if item.id == pavilion_formation.employee_agent_id
+        )
+        attack_day = HORIZON_DAYS + 1
+        ledger_size = len(fresh.economy.ledger)
+        garden_work_by_pavilion_employee = Activity(
+            garden_template.role.work_activity_id,
+            garden_template.role.work_activity_name,
+            garden_formation.location_id,
+            "cross-branch role attack",
+            ["work", "production"],
+        )
+        pavilion_work_by_garden_employee = Activity(
+            pavilion_template.role.work_activity_id,
+            pavilion_template.role.work_activity_name,
+            pavilion_formation.location_id,
+            "cross-branch role attack",
+            ["work"],
+        )
+        scenarios["cross_branch_roles_cannot_claim_wages"] = all((
+            fresh.economy.process_activity(
+                pavilion_employee, garden_work_by_pavilion_employee,
+                day=attack_day, hour=8,
+            ) is None,
+            fresh.economy.process_activity(
+                garden_employee, pavilion_work_by_garden_employee,
+                day=attack_day, hour=8,
+            ) is None,
+            len(fresh.economy.ledger) == ledger_size,
+        ))
+        production_size = len(fresh.materials.production_records)
+        exchange_size = len(fresh.materials.exchanges)
+        scenarios["pavilion_employee_cannot_operate_garden_commerce"] = all((
+            fresh.materials.process_activity(
+                pavilion_employee, garden_work_by_pavilion_employee,
+                day=attack_day, hour=8,
+            ) is None,
+            len(fresh.materials.production_records) == production_size,
+            len(fresh.materials.exchanges) == exchange_size,
+        ))
+
         invariants.update(fresh.location_growth.validate(
             fresh.locations, fresh.agents
         ))
@@ -411,6 +472,13 @@ def evaluate_multi_site_growth() -> dict:
                         if item.get("event_key")
                         != "institution-startup:institution-formation:0002"]
             ),
+            "duplicate_second_startup_rejected": lambda data: data["economy"][
+                "ledger"
+            ].append(deepcopy(next(
+                item for item in data["economy"]["ledger"]
+                if item.get("event_key")
+                == "institution-startup:institution-formation:0002"
+            ))),
             "marked_unused_migration_template_rejected": lambda data: data[
                 "town_growth"
             ]["consumed_template_ids"].append("forged-template"),
@@ -435,6 +503,18 @@ def evaluate_multi_site_growth() -> dict:
                 item for item in data["economy"]["employments"]
                 if item["id"] == "employment:institution:0002"
             ).update(role_template_id="community_garden_steward"),
+            "wrong_second_work_activity_rejected": lambda data: next(
+                item for item in data["economy"]["employments"]
+                if item["id"] == "employment:institution:0002"
+            ).update(
+                qualifying_activity_ids=["steward_community_garden"],
+                activity_locations={
+                    "steward_community_garden": "civic_pavilion"
+                },
+                activity_names={
+                    "steward_community_garden": "Steward the Community Garden"
+                },
+            ),
             "wrong_second_work_location_rejected": lambda data: next(
                 item for item in data["economy"]["employments"]
                 if item["id"] == "employment:institution:0002"
