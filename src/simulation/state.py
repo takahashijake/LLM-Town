@@ -136,6 +136,15 @@ class SimulationState:
                 if getattr(engine, "town_growth", None) is not None
                 else None
             ),
+            "growth_proposals": (
+                engine.growth_proposals.to_dict()
+                if getattr(engine, "growth_proposals", None) is not None
+                and (
+                    engine.growth_proposals.policy.enabled
+                    or engine.growth_proposals.records
+                )
+                else None
+            ),
             "location_growth": (
                 engine.location_growth.to_dict()
                 if getattr(engine, "location_growth", None) is not None

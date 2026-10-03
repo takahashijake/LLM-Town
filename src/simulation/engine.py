@@ -57,6 +57,7 @@ from src.systems.location_growth import (
 from src.systems.event_ecology import EventEcologySystem
 from src.systems.institution_growth import InstitutionGrowthSystem
 from src.systems.commerce_growth import CommerceGrowthSystem
+from src.systems.growth_proposals import GrowthProposalSystem
 
 class SimulationEngine:
     def __init__(
@@ -77,6 +78,7 @@ class SimulationEngine:
         conversation_batch_size: int = 4,
         simulation_seed: int = 0,
         town_growth_path: str | Path = "data/town_growth.json",
+        growth_proposal_provider=None,
     ):
         self.state_path = Path(state_path)
         self.logs_dir = Path(logs_dir)
@@ -101,6 +103,7 @@ class SimulationEngine:
             if sibling_config.is_file():
                 self.justice_path = sibling_config
         self.town_growth_path = Path(town_growth_path)
+        self.growth_proposal_provider = growth_proposal_provider
         self.simulation_seed = int(simulation_seed)
         if (
             not self.town_growth_path.is_absolute()
@@ -349,17 +352,34 @@ class SimulationEngine:
             materials=self.materials,
         )
         self.commitment_system.plan_system = self.plan_system
+        growth_config = json.loads(self.town_growth_path.read_text(encoding="utf-8"))
+        self.growth_proposals = GrowthProposalSystem.from_config(
+            growth_config,
+            agents=self.agents,
+            locations=self.locations,
+            state=saved_state.get("growth_proposals") if saved_state else None,
+            provider=self.growth_proposal_provider,
+        )
         self.town_growth = TownGrowthSystem.from_config(
             self.town_growth_path,
             self.agents,
             saved_state.get("town_growth") if saved_state else None,
+            supplemental_templates=list(
+                self.growth_proposals.resident_templates.values()
+            ),
         )
         self.location_growth = LocationGrowthSystem.from_config(
             self.town_growth_path,
             self.locations,
             saved_state.get("location_growth") if saved_state else None,
+            supplemental_templates=list(
+                self.growth_proposals.location_templates.values()
+            ),
         )
         self.locations.extend(self.location_growth.activated_locations())
+        self.growth_proposals.validate_bindings(
+            self.town_growth, self.location_growth
+        )
         self.event_ecology = EventEcologySystem.from_config(
             self.town_growth_path,
             simulation_seed=self.simulation_seed,
@@ -1162,7 +1182,10 @@ class SimulationEngine:
         )
         self.commitment_system.plan_system = self.plan_system
         self.town_growth = TownGrowthSystem.from_config(
-            self.town_growth_path, self.agents, growth_state
+            self.town_growth_path, self.agents, growth_state,
+            supplemental_templates=list(
+                self.growth_proposals.resident_templates.values()
+            ),
         )
         self.outcome_memory.bind_authorities(
             commitments=self.commitment_system,
@@ -1418,6 +1441,9 @@ class SimulationEngine:
                 self.town_growth_path,
                 [item for item in self.locations if item.id in base_ids_before],
                 growth_before,
+                supplemental_templates=list(
+                    self.growth_proposals.location_templates.values()
+                ),
             )
             self.activity_planner.set_location_affinities([
                 item for item in self.locations
@@ -1447,6 +1473,36 @@ class SimulationEngine:
                  if item.event_key == review.event_key), review
             )
         return review
+
+    def review_growth_proposals(self, day: int):
+        """Ask an untrusted provider, then register only admitted templates."""
+        context = self.growth_proposals.build_context(
+            completed_day=day,
+            agents=self.agents,
+            locations=self.locations,
+            activity_records=self.activity_records,
+            town_history=self.town_growth.public_history,
+            location_history=self.location_growth.public_history,
+        )
+        record = self.growth_proposals.review(day=day, context=context)
+        if record is None or record.status != "admitted":
+            return record
+        if record.kind == "resident":
+            self.town_growth.register_generated_template(
+                self.growth_proposals.resident_templates[
+                    record.generated_template_id
+                ]
+            )
+        else:
+            self.location_growth.register_generated_template(
+                self.growth_proposals.location_templates[
+                    record.generated_template_id
+                ]
+            )
+        self.growth_proposals.validate_bindings(
+            self.town_growth, self.location_growth
+        )
+        return record
 
     def validate_institution_authorities(self) -> None:
         """Cross-check every activated institution against live authorities."""

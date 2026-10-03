@@ -357,6 +357,7 @@ class TownGrowthSystem:
         path: str | Path,
         agents: list,
         state: dict | None = None,
+        supplemental_templates: list[ResidentTemplate] | None = None,
     ) -> "TownGrowthSystem":
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         if (
@@ -364,6 +365,7 @@ class TownGrowthSystem:
             or set(config) - {
                 "policy", "templates", "location_growth", "event_ecology",
                 "institution_growth", "commerce_growth",
+                "procedural_growth",
             }
             or not {"policy", "templates"}.issubset(config)
         ):
@@ -372,6 +374,7 @@ class TownGrowthSystem:
             raise ValueError("town growth policy and templates have invalid shapes")
         policy = TownGrowthPolicy(**config["policy"])
         templates = [ResidentTemplate.from_dict(item) for item in config["templates"]]
+        templates.extend(supplemental_templates or ())
         if state is None:
             existing_names = {agent.name for agent in agents}
             return cls(
@@ -455,6 +458,17 @@ class TownGrowthSystem:
             return self.templates[template_id]
         except KeyError as error:
             raise ValueError("migration record references unknown template") from error
+
+    def register_generated_template(self, template: ResidentTemplate) -> None:
+        """Admit an already-validated procedural template into the V5 roster."""
+        if not template.id.startswith("generated_resident_template_"):
+            raise ValueError("generated resident template uses a reserved namespace")
+        if template.id in self.templates or any(
+            item.name.casefold() == template.name.casefold()
+            for item in self.templates.values()
+        ):
+            raise ValueError("generated resident template conflicts with the roster")
+        self.templates[template.id] = template
 
     def pending_migration(self) -> MigrationRecord | None:
         return next(

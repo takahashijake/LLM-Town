@@ -35,6 +35,11 @@ class SimulationLoop:
         if getattr(engine, "commerce_growth", None) is not None:
             engine.review_commerce_growth(day)
 
+        # Admission expands only the finite template rosters. Running this after
+        # V5 reviews guarantees that entities cannot appear on the admission day.
+        if getattr(engine, "growth_proposals", None) is not None:
+            engine.review_growth_proposals(day)
+
         # Positional arguments preserve compatibility with older test fakes.
         engine.state.save(
             engine,

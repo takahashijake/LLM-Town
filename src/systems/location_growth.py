@@ -176,7 +176,10 @@ class LocationGrowthSystem:
         self._validate_state()
 
     @classmethod
-    def from_config(cls, path: str | Path, base_locations: list[Location], state=None):
+    def from_config(
+        cls, path: str | Path, base_locations: list[Location], state=None,
+        supplemental_templates: list[LocationTemplate] | None = None,
+    ):
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         section = config.get("location_growth") if isinstance(config, dict) else None
         if not isinstance(section, dict) or set(section) != {"policy", "templates"}:
@@ -185,6 +188,7 @@ class LocationGrowthSystem:
             raise ValueError("location growth policy and templates have invalid shapes")
         policy = LocationGrowthPolicy(**section["policy"])
         templates = [LocationTemplate.from_dict(item) for item in section["templates"]]
+        templates.extend(supplemental_templates or ())
         if state is None:
             return cls(policy, templates, base_locations)
         if not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION:
@@ -238,6 +242,22 @@ class LocationGrowthSystem:
             return self.templates[template_id]
         except KeyError as error:
             raise ValueError("location activation references unknown template") from error
+
+    def register_generated_template(self, template: LocationTemplate) -> None:
+        """Admit an already-validated procedural template into the V5 roster."""
+        if not template.id.startswith("generated_location_template_"):
+            raise ValueError("generated location template uses a reserved namespace")
+        if (
+            template.id in self.templates
+            or template.location_id in self.base_location_ids
+            or any(
+                item.location_id == template.location_id
+                or item.name.casefold() == template.name.casefold()
+                for item in self.templates.values()
+            )
+        ):
+            raise ValueError("generated location template conflicts with the roster")
+        self.templates[template.id] = template
 
     def activated_locations(self) -> list[Location]:
         return [
