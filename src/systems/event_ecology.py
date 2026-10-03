@@ -250,8 +250,28 @@ class EventEcologySystem:
             day % self.policy.dynamic_selection_interval_days == 0
         )
         if choose_dynamic:
-            index = self._bounded_hash("dynamic", day) % len(candidates)
-            template, location, _activation = candidates[index]
+            # Prefer the least-served location, then its least-used template.
+            # Stable seeded hashing is only a final tie-break, so deterministic
+            # selection cannot indefinitely starve a later configured branch.
+            def fairness_key(candidate):
+                template, location, _activation = candidate
+                at_location = [
+                    item for item in self.occurrence_history
+                    if item.location_id == location.id
+                ]
+                for_template = [
+                    item for item in at_location if item.template_id == template.id
+                ]
+                last_day = max((item.day for item in for_template), default=0)
+                return (
+                    len(at_location), len(for_template), last_day,
+                    self._bounded_hash(
+                        "dynamic-tie", template.id, location.id
+                    ),
+                    template.id, location.id,
+                )
+
+            template, location, _activation = min(candidates, key=fairness_key)
             occurrence_id = f"daily-event:{day}:{template.id}:{location.id}"
             if occurrence_id in self.processed_occurrence_ids:
                 raise ValueError("dynamic event occurrence was already processed")

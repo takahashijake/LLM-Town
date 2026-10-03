@@ -364,14 +364,19 @@ def evaluate_population_growth() -> dict:
         horizon, first_signature = _long_horizon(root, "horizon-one")
         second_horizon, second_signature = _long_horizon(root, "horizon-two")
         horizon_record = horizon.town_growth.migration_records[0]
-        scenarios["ninety_day_horizon_reaches_five_persistent_residents"] = (
-            len(horizon.agents) == 5
-            and horizon_record.status == "activated"
+        scenarios["ninety_day_horizon_reaches_configured_population"] = (
+            len(horizon.agents) == horizon.town_growth.policy.resident_capacity
+            and all(item.status == "activated"
+                    for item in horizon.town_growth.migration_records)
             and horizon_record.activation_day == 14
         )
-        scenarios["ninety_day_horizon_has_no_duplicate_migration"] = (
-            len(horizon.town_growth.migration_records) == 1
-            and len(first_signature["settlements"]) == 1
+        scenarios["ninety_day_horizon_has_no_duplicate_migrations"] = (
+            len(horizon.town_growth.migration_records)
+            == len(horizon.town_growth.templates)
+            and len(first_signature["settlements"])
+            == len(horizon.town_growth.templates)
+            and len({item.id for item in horizon.town_growth.migration_records})
+            == len(horizon.town_growth.migration_records)
         )
         scenarios["ninety_day_newcomer_participates_ordinary_runtime"] = (
             first_signature["newcomer_activity_count"] > 0
@@ -437,4 +442,3 @@ def evaluate_population_growth() -> dict:
         "invariants": invariants,
         "diagnostics": diagnostics,
     }
-

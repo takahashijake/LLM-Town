@@ -273,9 +273,21 @@ class InstitutionGrowthSystem:
         if any(item.template_id not in self.templates for item in self.formation_records):
             raise ValueError("institution record references unknown template")
         activated = [item for item in self.formation_records if item.status == "activated"]
+        activated_template_ids = [item.template_id for item in activated]
+        if len(activated_template_ids) != len(set(activated_template_ids)):
+            raise ValueError("institution template may activate only once")
         if {item.template_id for item in activated} != self.consumed_template_ids:
             raise ValueError("institution consumed templates contradict activations")
+        employee_ids = [item.employee_agent_id for item in live]
+        employer_account_ids = [item.employer_account_id for item in live]
+        employment_ids = [item.employment_id for item in live]
+        if any(len(values) != len(set(values)) for values in (
+            employee_ids, employer_account_ids, employment_ids,
+        )):
+            raise ValueError("institution employment identities must be independent")
         review_keys = {item.event_key for item in self.review_history}
+        if len(review_keys) != len(self.review_history):
+            raise ValueError("institution review keys must be unique")
         if review_keys != self.processed_event_keys:
             raise ValueError("institution review replay guards contradict history")
         reviews = {item.event_key: item for item in self.review_history}
@@ -368,7 +380,8 @@ class InstitutionGrowthSystem:
         active_agents = {item.id for item in agents}
         first_day = day - self.policy.recent_activity_window_days
         candidate_first_day = day - self.policy.candidate_activity_window_days
-        for template in self.templates.values():
+        for template_id in sorted(self.templates):
+            template = self.templates[template_id]
             if template.id in self.consumed_template_ids:
                 continue
             binding = location_growth.templates.get(template.location_template_id)

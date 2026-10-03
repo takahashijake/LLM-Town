@@ -307,11 +307,13 @@ def evaluate_location_growth() -> dict:
         second, second_signature = _long_horizon(root, "long-b")
         diagnostics["long_horizon_signature"] = first_signature
         scenarios.update({
-            "integrated_horizon_has_one_migration": (
-                first_signature["migration_ids"] == ["migration:0001"]
+            "integrated_horizon_has_configured_migrations": (
+                first_signature["migration_ids"]
+                == ["migration:0001", "migration:0002"]
             ),
-            "integrated_horizon_has_one_location_activation": (
-                first_signature["activation_ids"] == ["location-activation:0001"]
+            "integrated_horizon_has_configured_location_activations": (
+                first_signature["activation_ids"]
+                == ["location-activation:0001", "location-activation:0002"]
             ),
             "save_resume_reconstructs_location_once": (
                 first_signature["location_ids"].count("community_garden") == 1
@@ -323,12 +325,13 @@ def evaluate_location_growth() -> dict:
                 first_signature["garden_conversation_memory_count"] > 0
             ),
             "public_opening_memory_remains_exactly_once": (
-                len(first_signature["opening_memory_ids"]) == 5
-                and len(set(first_signature["opening_memory_ids"])) == 5
+                len(first_signature["opening_memory_ids"])
+                == len(set(first_signature["opening_memory_ids"])) == 11
             ),
             "seeded_runs_have_equivalent_authority": first_signature == second_signature,
             "finite_capacity_settles_without_repeated_attempts": (
-                len(first.location_growth.activation_records) == 1
+                len(first.location_growth.activation_records)
+                == len(first.location_growth.templates)
                 and first_signature["review_count"] <= 28
             ),
         })
@@ -360,12 +363,24 @@ def evaluate_location_growth() -> dict:
             "justice_history_valid": first.justice.history_is_valid(),
             "outcome_memory_provenance_valid": all(first.outcome_memory.validate().values()),
             "activation_memory_count_matches_population": (
-                len(first_signature["opening_memory_ids"]) == len(first.agents)
+                len(first_signature["opening_memory_ids"]) == sum(
+                    (len(first.agents) - len(first.town_growth.migration_records))
+                    + sum(
+                        migration.activation_day <= activation.activation_day
+                        for migration in first.town_growth.migration_records
+                        if migration.status == "activated"
+                    )
+                    for activation in first.location_growth.activation_records
+                    if activation.status == "activated"
+                )
             ),
             "migration_identity_unchanged_by_location_growth": (
-                first.town_growth.migration_records[0].template_id
-                == "resident_template_001"
-                and first.town_growth.migration_records[0].agent_id == "agent_005"
+                [(item.template_id, item.agent_id)
+                 for item in first.town_growth.migration_records]
+                == [
+                    ("resident_template_001", "agent_005"),
+                    ("resident_template_002", "agent_006"),
+                ]
             ),
         }
 

@@ -63,22 +63,55 @@ class OutcomeMemorySystem:
         elif memory.source_system == "materials":
             records = authority.exchanges
         elif memory.source_system == "town_growth":
-            records = authority.migration_records
+            record = next((item for item in authority.migration_records
+                           if item.id == memory.source_id
+                           and item.status == "activated"), None)
+            return bool(
+                record and memory.event_type == "resident_arrival"
+                and memory.knowledge_basis in {"participant", "public_event"}
+                and (
+                    memory.owner_id == record.agent_id
+                    if memory.knowledge_basis == "participant" else True
+                )
+            )
         elif memory.source_system == "location_growth":
-            records = [
-                record for record in authority.activation_records
-                if record.status == "activated"
-            ]
+            record = next((item for item in authority.activation_records
+                           if item.id == memory.source_id
+                           and item.status == "activated"), None)
+            return bool(
+                record and memory.event_type == "location_opened"
+                and memory.knowledge_basis == "public_event"
+            )
         elif memory.source_system == "institution_growth":
-            records = [
-                record for record in authority.formation_records
-                if record.status == "activated"
-            ]
+            record = next((item for item in authority.formation_records
+                           if item.id == memory.source_id
+                           and item.status == "activated"), None)
+            return bool(record and (
+                (
+                    memory.event_type == "institution_established"
+                    and memory.knowledge_basis == "public_event"
+                )
+                or (
+                    memory.event_type == "employment_started"
+                    and memory.knowledge_basis == "participant"
+                    and memory.owner_id == record.employee_agent_id
+                )
+            ))
         elif memory.source_system == "commerce_growth":
-            records = [
-                record for record in authority.activation_records
-                if record.status == "activated"
-            ]
+            record = next((item for item in authority.activation_records
+                           if item.id == memory.source_id
+                           and item.status == "activated"), None)
+            return bool(record and (
+                (
+                    memory.event_type == "institution_commerce_opened"
+                    and memory.knowledge_basis == "public_event"
+                )
+                or (
+                    memory.event_type == "commerce_operator_authorized"
+                    and memory.knowledge_basis == "participant"
+                    and memory.owner_id == record.operator_agent_id
+                )
+            ))
         else:
             return False
         return any(record.id == memory.source_id for record in records)

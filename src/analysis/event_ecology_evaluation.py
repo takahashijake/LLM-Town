@@ -155,12 +155,13 @@ def evaluate_event_ecology() -> dict:
             occurrence_days = [item.day for item in occurrences]
             history_days = [row["day"] for row in first.daily_event_history]
             scenarios.update({
-                "integrated_horizon_has_one_migration": (
-                    first_signature["migration_ids"] == ["migration:0001"]
+                "integrated_horizon_has_configured_migrations": (
+                    first_signature["migration_ids"]
+                    == ["migration:0001", "migration:0002"]
                 ),
-                "integrated_horizon_has_one_location_activation": (
+                "integrated_horizon_has_configured_location_activations": (
                     first_signature["location_activation_ids"]
-                    == ["location-activation:0001"]
+                    == ["location-activation:0001", "location-activation:0002"]
                 ),
                 "dynamic_event_occurs_after_place_use": (
                     bool(occurrences) and min(occurrence_days) > 31

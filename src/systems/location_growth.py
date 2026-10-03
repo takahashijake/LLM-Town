@@ -314,6 +314,14 @@ class LocationGrowthSystem:
         days = [x.activation_day for x in activated]
         if (max(days) if days else None) != self.last_activation_day:
             raise ValueError("last location activation day is inconsistent")
+        sequences = [
+            int(ACTIVATION_ID_PATTERN.fullmatch(item.id).group(1))
+            for item in self.activation_records
+        ]
+        if self.next_activation_sequence <= max(sequences, default=0):
+            raise ValueError("next location activation sequence would reuse identity")
+        if len(self.base_location_ids) + len(activated) > self.policy.location_capacity:
+            raise ValueError("location capacity exceeded")
 
     def _record(self, review: DevelopmentReview) -> DevelopmentReview:
         self.review_history.append(review)
@@ -375,7 +383,10 @@ class LocationGrowthSystem:
             return self._waiting(day, "development_cooldown")
         if not self.activity_gate_passes(day, agents, activity_records):
             return self._waiting(day, "insufficient_sustained_activity")
-        candidate = next(x for x in self.templates.values() if x.id not in self.consumed_template_ids)
+        candidate = next(
+            self.templates[template_id] for template_id in sorted(self.templates)
+            if template_id not in self.consumed_template_ids
+        )
         active_location_ids = {x.id for x in locations}
         active_names = {x.name for x in locations}
         if candidate.location_id in active_location_ids or candidate.name in active_names:

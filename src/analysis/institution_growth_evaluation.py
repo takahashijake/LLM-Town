@@ -135,17 +135,18 @@ def evaluate_institution_growth() -> dict:
                                 if memory.source_id == formation.id
                                 and memory.event_type == "employment_started"]
             scenarios.update({
-                "integrated_migration_exactly_once": signature["migration_ids"]
-                == ["migration:0001"],
-                "integrated_location_activation_exactly_once":
-                signature["location_activation_ids"] == ["location-activation:0001"],
+                "integrated_migrations_are_exact": signature["migration_ids"]
+                == ["migration:0001", "migration:0002"],
+                "integrated_location_activations_are_exact":
+                signature["location_activation_ids"]
+                == ["location-activation:0001", "location-activation:0002"],
                 "dynamic_events_precede_formation": bool(
                     first.event_ecology.occurrence_history
                     and max(item.day for item in first.event_ecology.occurrence_history
                             if item.day < formation.review_day) < formation.review_day
                 ),
-                "one_configured_institution_forms": signature["formation_ids"]
-                == ["institution-formation:0001"],
+                "configured_institutions_form": signature["formation_ids"]
+                == ["institution-formation:0001", "institution-formation:0002"],
                 "evidence_selects_unemployed_migrant": formation.employee_agent_id
                 == "agent_005",
                 "employment_starts_following_day": employment.start_day
@@ -174,7 +175,9 @@ def evaluate_institution_growth() -> dict:
                 "private_employment_memory_created_once": len(private_memories) == 1
                 and private_memories[0].owner_id == formation.employee_agent_id,
                 "seeded_save_resume_runs_match": signature == repeat,
-                "finite_capacity_settles": len(first.institution_growth.formation_records) == 1,
+                "finite_capacity_settles": len(
+                    first.institution_growth.formation_records
+                ) == len(first.institution_growth.templates),
                 "institution_material_authority_requires_phase5": all(
                     item.commerce_activation_id in {
                         record.id for record in first.commerce_growth.activation_records

@@ -498,3 +498,67 @@ entrepreneurship, arbitrary businesses, new-good invention, floating or
 supply/demand pricing, firm ownership, profit distribution, business competition,
 loans, taxation, bankruptcy, firing, job switching, general hiring markets,
 arbitrary supply chains, or unrestricted procedural civilization generation.
+
+## Phase 6: repeated multi-node growth
+
+Phase 6 changes no authority category. It raises the finite capacities to two
+residents, two dynamic places, and two institutions, then exercises the same
+pipelines a second time. The second configured branch is Civic Pavilion
+Coordination at `civic_pavilion`, with one `civic_pavilion_coordinator` role and
+the exact `coordinate_civic_pavilion` work activity. It is intentionally not a
+commerce template.
+
+```text
+resident_template_001 -> community_garden -> garden events
+                      -> Community Garden Stewardship -> steward job
+                      -> the existing Garden commerce lifecycle
+
+resident_template_002 -> civic_pavilion -> pavilion events
+                      -> Civic Pavilion Coordination -> coordinator job
+```
+
+Population, location, and institution growth retain their category-wide
+cooldowns, so each category grows sequentially. Eligible templates are selected
+by stable template ID, not set order, process hash state, model output, or an
+incidental dictionary traversal. This ordering is the explicit checked-in
+contract for finite growth.
+
+Dynamic events still permit at most one authoritative occurrence per day. When
+several template/location pairs are eligible, selection orders them by fewest
+occurrences at the location, fewest occurrences for the exact template, oldest
+exact occurrence, and finally a seed/template/location SHA-derived tie-break.
+This is deterministic from seed and authority state while preventing an older
+location from indefinitely starving a newer one.
+
+Institution readiness remains branch-local. A template resolves its exact
+location-template binding, counts ordinary activity only at that location,
+counts only its allowlisted dynamic-event templates at that location, and ranks
+only unemployed residents with their own location evidence. Each formation
+allocates a distinct formation, institution, employer-account, employment,
+startup-transfer, and memory identity. The planner consumes each resident's live
+`Employment` contract; biography text and agent IDs are not job authority. The
+ordinary economy path remains the sole wage authority.
+
+Commerce remains scoped to `commerce_template_001`. Recipe child identity is now
+template-driven through `recipe_id_suffix`; the checked-in Garden suffix remains
+`garden_meals`, preserving existing save and event identities. A valid Pavilion
+institution has no dynamic inventory, seller, purchase rule, or recipe.
+
+Multi-record load validation rejects duplicate or reused identities, template
+consumption mismatches, rewound counters, wrong resident/place/institution/job
+links, orphan institution accounts or employments, missing startup transfers,
+wrong role/activity/location contracts, orphan commerce registrations, and
+private employment or operator memories projected to the wrong owner. Stable
+owner/source/event memory IDs isolate both branches.
+
+Run the 260-day fresh/save-resume/repeated acceptance gate with:
+
+```bash
+python scripts/evaluate_multi_site_growth.py
+```
+
+Once both finite rosters and the single commerce roster are exhausted, no new
+proposal or sequence identity is allocated. Reviews remain bounded and ordinary
+events, work, wages, commerce, planning, memory, social, crime, and justice
+systems continue operating. This proves repeatable bounded composition, not
+unrestricted procedural settlement generation.

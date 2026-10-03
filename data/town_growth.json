@@ -1,6 +1,6 @@
 {
   "policy": {
-    "resident_capacity": 5,
+    "resident_capacity": 6,
     "earliest_migration_day": 14,
     "review_interval_days": 7,
     "migration_cooldown_days": 30,
@@ -44,7 +44,7 @@
   ],
   "location_growth": {
     "policy": {
-      "location_capacity": 5,
+      "location_capacity": 6,
       "minimum_resident_population": 5,
       "earliest_development_day": 28,
       "review_interval_days": 7,
@@ -131,16 +131,16 @@
   },
   "institution_growth": {
     "policy": {
-      "institution_capacity": 1,
+      "institution_capacity": 2,
       "earliest_formation_day": 70,
       "review_interval_days": 7,
       "formation_cooldown_days": 60,
       "recent_activity_window_days": 21,
       "minimum_distinct_residents": 3,
-      "minimum_activity_days": 7,
+      "minimum_activity_days": 5,
       "minimum_dynamic_event_occurrences": 2,
       "candidate_activity_window_days": 42,
-      "minimum_candidate_activities": 3,
+      "minimum_candidate_activities": 1,
       "history_limit": 128
     },
     "templates": [
@@ -161,6 +161,25 @@
           "wage": 18,
           "work_activity_id": "steward_community_garden",
           "work_activity_name": "Steward the Community Garden"
+        }
+      },
+      {
+        "id": "institution_template_002",
+        "institution_key": "civic_pavilion_coordination",
+        "name": "Civic Pavilion Coordination",
+        "location_template_id": "location_template_002",
+        "startup_funding_source_account_id": "account:employer:town_services",
+        "startup_grant": 300,
+        "relevant_dynamic_event_template_ids": [
+          "pavilion_civic_discussion",
+          "pavilion_community_performance"
+        ],
+        "role": {
+          "role_template_id": "civic_pavilion_coordinator",
+          "title": "civic pavilion coordinator",
+          "wage": 18,
+          "work_activity_id": "coordinate_civic_pavilion",
+          "work_activity_name": "Coordinate the Civic Pavilion"
         }
       }
     ]
@@ -192,6 +211,7 @@
         "output_quantity": 4,
         "purchase_activity_id": "buy_garden_meal",
         "production_activity_id": "steward_community_garden",
+        "recipe_id_suffix": "garden_meals",
         "target_stock_quantity": 8
       }
     ]

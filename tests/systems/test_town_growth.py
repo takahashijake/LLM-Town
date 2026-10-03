@@ -74,6 +74,18 @@ def test_eligible_review_allocates_stable_noncolliding_identity_once():
     assert len(system.migration_records) == 1
 
 
+def test_candidate_order_uses_stable_template_id_not_input_order():
+    agents, locations, economy, activity = authorities()
+    later = replace(template("Later"), id="template-2")
+    earlier = replace(template("Earlier"), id="template-1")
+    system = TownGrowthSystem(policy(), [later, earlier])
+    review = system.review(
+        day=7, agents=agents, locations=locations,
+        activity_records=activity, economy=economy,
+    )
+    assert review.template_id == "template-1"
+
+
 @pytest.mark.parametrize(
     ("change", "reason"),
     [
@@ -130,8 +142,8 @@ def test_malformed_template_and_future_state_fail_closed(tmp_path):
 def test_processed_review_key_survives_bounded_review_history():
     agents, locations, economy, activity = authorities()
     system = TownGrowthSystem(
-        policy(resident_capacity=2, earliest_migration_day=1,
-               review_interval_days=1),
+        policy(earliest_migration_day=1, review_interval_days=1,
+               arrival_location_id="missing"),
         [template()],
     )
     for day in range(1, system.REVIEW_HISTORY_LIMIT + 3):
@@ -150,7 +162,7 @@ def test_processed_review_key_survives_bounded_review_history():
     assert len(system.review_history) == history_size
 
 
-def test_stale_sequences_are_advanced_past_persisted_records():
+def test_stale_sequences_fail_closed_instead_of_reusing_persisted_identity():
     agents, _locations, _economy, _activity = authorities()
     event_key = "migration-review:day:14"
     state = {
@@ -184,11 +196,8 @@ def test_stale_sequences_are_advanced_past_persisted_records():
         "public_history": [],
     }
 
-    system = TownGrowthSystem.from_config(
-        "data/town_growth.json", agents, state
-    )
-    assert system.next_migration_sequence == 8
-    assert system.next_resident_sequence == 100
+    with pytest.raises(ValueError, match="next migration sequence"):
+        TownGrowthSystem.from_config("data/town_growth.json", agents, state)
 
 
 def test_malformed_activated_history_fails_closed():

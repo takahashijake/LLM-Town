@@ -50,6 +50,7 @@ class CommerceTemplate:
     output_quantity: int
     purchase_activity_id: str
     production_activity_id: str
+    recipe_id_suffix: str
     target_stock_quantity: int
 
     @classmethod
@@ -58,7 +59,7 @@ class CommerceTemplate:
             "id", "institution_template_id", "location_template_id",
             "upstream_seller_id", "input_good_id", "input_quantity",
             "output_good_id", "output_quantity", "purchase_activity_id",
-            "production_activity_id", "target_stock_quantity",
+            "production_activity_id", "recipe_id_suffix", "target_stock_quantity",
         }
         if not isinstance(data, dict) or set(data) != allowed:
             raise ValueError("commerce template has an invalid schema")
@@ -72,6 +73,8 @@ class CommerceTemplate:
             _positive(data[name], name)
         if data["input_good_id"] == data["output_good_id"]:
             raise ValueError("commerce production must transform a distinct input")
+        if re.fullmatch(r"[a-z0-9_]+", data["recipe_id_suffix"]) is None:
+            raise ValueError("commerce recipe identity suffix is invalid")
         return cls(**data)
 
 
@@ -135,8 +138,7 @@ class CommerceActivationRecord:
             raise ValueError("invalid commerce activation record")
         sequence = ACTIVATION_PATTERN.fullmatch(self.id).group(1)
         if (self.inventory_id != f"inventory:institution:{sequence}"
-                or self.seller_id != f"seller:institution:{sequence}"
-                or self.recipe_id != f"recipe:institution:{sequence}:garden_meals"):
+                or self.seller_id != f"seller:institution:{sequence}"):
             raise ValueError("commerce child identities contradict activation identity")
         if self.status == "activated":
             _positive(self.activation_day, "commerce activation day")
@@ -254,9 +256,14 @@ class CommerceGrowthSystem:
             raise ValueError("commerce replay guards contradict review history")
         for record in self.activation_records:
             review = reviews.get(record.event_key)
+            template = self.templates[record.template_id]
+            sequence = ACTIVATION_PATTERN.fullmatch(record.id).group(1)
             if (review is None or review.activation_id != record.id
                     or review.template_id != record.template_id
-                    or review.status != record.status):
+                    or review.status != record.status
+                    or record.recipe_id != (
+                        f"recipe:institution:{sequence}:{template.recipe_id_suffix}"
+                    )):
                 raise ValueError("commerce activation lacks its exact review")
         sequences = [int(ACTIVATION_PATTERN.fullmatch(item.id).group(1))
                      for item in self.activation_records]
@@ -385,7 +392,8 @@ class CommerceGrowthSystem:
                 and day - self.last_activation_day < self.policy.activation_cooldown_days):
             return self._wait(day, "cooldown")
         last_reason = "not_ready"
-        for template in self.templates.values():
+        for template_id in sorted(self.templates):
+            template = self.templates[template_id]
             if template.id in self.consumed_template_ids:
                 continue
             reason, formation = self.readiness_reason(
@@ -408,7 +416,10 @@ class CommerceGrowthSystem:
                 institution_account_id=formation.employer_account_id,
                 inventory_id=f"inventory:institution:{sequence:04d}",
                 seller_id=f"seller:institution:{sequence:04d}",
-                recipe_id=f"recipe:institution:{sequence:04d}:garden_meals",
+                recipe_id=(
+                    f"recipe:institution:{sequence:04d}:"
+                    f"{template.recipe_id_suffix}"
+                ),
                 purchase_activity_id=template.purchase_activity_id,
                 upstream_seller_id=template.upstream_seller_id,
                 review_day=day,
@@ -458,4 +469,3 @@ class CommerceGrowthSystem:
                       if item.event_key == record.event_key)
         review.status = "rejected"
         review.reason = record.reason
-

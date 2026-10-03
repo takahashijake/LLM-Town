@@ -168,3 +168,53 @@ def test_occurrence_record_identity_includes_day_template_and_location():
             "daily-event:31:event:community_garden", "event",
             "community_garden", 32,
         )
+
+
+def test_least_served_dynamic_location_is_selected_deterministically():
+    base = [
+        Location("town_square", "Town Square", "Square", ["social", "community"]),
+        Location("cafe", "Cafe", "Cafe", ["social"]),
+        Location("library", "Library", "Library", ["knowledge"]),
+        Location("market", "Market", "Market", []),
+    ]
+    agents = [SimpleNamespace(id=f"agent_{index}") for index in range(1, 7)]
+    growth = LocationGrowthSystem.from_config("data/town_growth.json", base)
+    broad = [
+        {"type": "activity", "day": day, "agent_id": agent.id,
+         "location": "town_square"}
+        for day in range(22, 64) for agent in agents
+    ]
+    first = growth.review(
+        day=28, agents=agents, locations=base, activity_records=broad,
+    )
+    growth.activate(first.activation_id, day=28)
+    locations = base + growth.activated_locations()
+    second = growth.review(
+        day=63, agents=agents, locations=locations, activity_records=broad,
+    )
+    growth.activate(second.activation_id, day=63)
+    locations = base + growth.activated_locations()
+    local_use = [
+        {"type": "activity", "day": day, "agent_id": agent.id,
+         "location": location_id}
+        for day in range(64, 68)
+        for location_id in ("community_garden", "civic_pavilion")
+        for agent in agents[:2]
+    ]
+    prior = DynamicEventOccurrenceRecord(
+        "daily-event:40:garden_learning_circle:community_garden",
+        "garden_learning_circle", "community_garden", 40,
+    )
+    ecology = EventEcologySystem.from_config(
+        "data/town_growth.json", simulation_seed=11,
+    )
+    ecology.occurrence_history.append(prior)
+    ecology.processed_occurrence_ids.add(prior.occurrence_id)
+
+    event = ecology.select_daily_event(
+        day=68, locations=locations, location_growth=growth,
+        activity_records=broad + local_use,
+    )
+    assert event.source_kind == "dynamic"
+    assert event.location_id == "civic_pavilion"
+    assert event.template_id.startswith("pavilion_")

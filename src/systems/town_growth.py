@@ -261,8 +261,8 @@ class TownGrowthSystem:
         ]
         if len(activated_template_ids) != len(set(activated_template_ids)):
             raise ValueError("resident template may activate only once")
-        if not activated_templates.issubset(self.consumed_template_ids):
-            raise ValueError("activated templates must be consumed")
+        if activated_templates != self.consumed_template_ids:
+            raise ValueError("consumed migration templates must exactly match activations")
         if sum(item.status == "proposed" for item in self.migration_records) > 1:
             raise ValueError("only one migration proposal may be pending")
         if any(
@@ -329,6 +329,18 @@ class TownGrowthSystem:
                 raise ValueError("last migration activation day is inconsistent")
         elif self.last_successful_activation_day is not None:
             raise ValueError("last migration activation day lacks an activated record")
+        migration_sequences = [
+            int(MIGRATION_ID_PATTERN.fullmatch(item.id).group(1))
+            for item in self.migration_records
+        ]
+        resident_sequences = [
+            int(AGENT_ID_PATTERN.fullmatch(item.agent_id).group(1))
+            for item in self.migration_records
+        ]
+        if self.next_migration_sequence <= max(migration_sequences, default=0):
+            raise ValueError("next migration sequence would reuse identity")
+        if self.next_resident_sequence <= max(resident_sequences, default=0):
+            raise ValueError("next resident sequence would reuse identity")
 
     @staticmethod
     def _safe_next_resident_sequence(agents: list) -> int:
@@ -413,15 +425,14 @@ class TownGrowthSystem:
             int(AGENT_ID_PATTERN.fullmatch(item.agent_id).group(1))
             for item in system.migration_records
         ]
-        system.next_migration_sequence = max(
-            system.next_migration_sequence,
-            max(migration_sequences, default=0) + 1,
-        )
-        system.next_resident_sequence = max(
-            system.next_resident_sequence,
+        if system.next_migration_sequence <= max(migration_sequences, default=0):
+            raise ValueError("next migration sequence would reuse identity")
+        minimum_resident_sequence = max(
             cls._safe_next_resident_sequence(agents),
             max(resident_sequences, default=0) + 1,
         )
+        if system.next_resident_sequence < minimum_resident_sequence:
+            raise ValueError("next resident sequence would reuse identity")
         while f"agent_{system.next_resident_sequence:03d}" in existing_ids:
             system.next_resident_sequence += 1
         return system
@@ -510,7 +521,13 @@ class TownGrowthSystem:
                 event_key, int(day), "waiting", "review_already_processed"
             )
         if len(agents) >= self.policy.resident_capacity:
-            return self._waiting(event_key, day, "resident_capacity_reached")
+            return MigrationReview(
+                event_key, day, "waiting", "resident_capacity_reached"
+            )
+        if not (set(self.templates) - self.consumed_template_ids):
+            return MigrationReview(
+                event_key, day, "waiting", "resident_templates_exhausted"
+            )
         if day < self.policy.earliest_migration_day:
             return self._waiting(event_key, day, "before_earliest_migration_day")
         if (
@@ -538,8 +555,9 @@ class TownGrowthSystem:
             return self._waiting(event_key, day, "insufficient_sustained_activity")
         candidate = next(
             (
-                item for item in self.templates.values()
-                if item.id not in self.consumed_template_ids
+                self.templates[template_id]
+                for template_id in sorted(self.templates)
+                if template_id not in self.consumed_template_ids
             ),
             None,
         )
