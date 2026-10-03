@@ -164,5 +164,36 @@
         }
       }
     ]
+  },
+  "commerce_growth": {
+    "policy": {
+      "commerce_capacity": 1,
+      "earliest_activation_day": 84,
+      "review_interval_days": 7,
+      "activation_cooldown_days": 60,
+      "recent_use_window_days": 21,
+      "minimum_distinct_residents": 3,
+      "minimum_use_days": 7,
+      "operator_work_window_days": 21,
+      "minimum_operator_work_days": 5,
+      "demand_window_days": 42,
+      "minimum_target_good_purchases": 2,
+      "history_limit": 128
+    },
+    "templates": [
+      {
+        "id": "commerce_template_001",
+        "institution_template_id": "institution_template_001",
+        "location_template_id": "location_template_001",
+        "upstream_seller_id": "seller:market_stall",
+        "input_good_id": "meal_ingredients",
+        "input_quantity": 2,
+        "output_good_id": "prepared_meal",
+        "output_quantity": 4,
+        "purchase_activity_id": "buy_garden_meal",
+        "production_activity_id": "steward_community_garden",
+        "target_stock_quantity": 8
+      }
+    ]
   }
 }

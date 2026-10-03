@@ -351,7 +351,7 @@ class TownGrowthSystem:
             not isinstance(config, dict)
             or set(config) - {
                 "policy", "templates", "location_growth", "event_ecology",
-                "institution_growth",
+                "institution_growth", "commerce_growth",
             }
             or not {"policy", "templates"}.issubset(config)
         ):

@@ -52,10 +52,15 @@ class Inventory:
     owner_id: str
     account_id: str | None
     quantities: tuple[tuple[str, int], ...] = ()
+    institution_id: str | None = None
+    commerce_activation_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id or not self.owner_type or not self.owner_id:
             raise ValueError("inventory id and owner identity are required")
+        provenance = (self.institution_id, self.commerce_activation_id)
+        if any(provenance) and not all(provenance):
+            raise ValueError("dynamic inventory provenance is incomplete")
         keys = [good_id for good_id, _quantity in self.quantities]
         if len(keys) != len(set(keys)):
             raise ValueError("inventory good ids must be unique")
@@ -107,6 +112,8 @@ class Seller:
     location_id: str
     operator_employment_id: str
     active: bool = True
+    institution_id: str | None = None
+    commerce_activation_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -115,6 +122,7 @@ class PurchaseActivityRule:
     seller_id: str
     good_id: str
     quantity: int = 1
+    commerce_activation_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -195,6 +203,9 @@ class ProductionRecipe:
     eligible_employment_ids: tuple[str, ...] = ()
     target_stock_good_id: str | None = None
     target_stock_quantity: int | None = None
+    commerce_activation_id: str | None = None
+    procurement_seller_id: str | None = None
+    procurement_quantity: int | None = None
 
     def to_dict(self) -> dict:
         data = asdict(self)
@@ -456,6 +467,141 @@ class MaterialSystem:
         self.lot_holdings[inventory.id] = {}
         return inventory
 
+    def can_register_institution_inventory(
+        self, *, inventory_id: str, institution_id: str, account_id: str,
+        commerce_activation_id: str,
+    ) -> bool:
+        """Check one empty institution inventory against live account authority."""
+        if (not all((inventory_id, institution_id, account_id, commerce_activation_id))
+                or inventory_id in self._inventories):
+            return False
+        if any(item.commerce_activation_id == commerce_activation_id
+               for item in self._inventories.values()):
+            return False
+        try:
+            account = self.economy.get_account(account_id)
+        except EconomyError:
+            return False
+        return account.owner_type == "institution" and account.owner_id == institution_id
+
+    def register_institution_inventory(
+        self, *, inventory_id: str, institution_id: str, account_id: str,
+        commerce_activation_id: str,
+    ) -> Inventory:
+        """Register an empty, zero-baseline inventory; never create stock or lots."""
+        if not self.can_register_institution_inventory(
+            inventory_id=inventory_id, institution_id=institution_id,
+            account_id=account_id, commerce_activation_id=commerce_activation_id,
+        ):
+            raise MaterialError(
+                "invalid_institution_inventory",
+                "institution inventory conflicts with account or commerce authority",
+            )
+        inventory = Inventory(
+            id=inventory_id, owner_type="institution", owner_id=institution_id,
+            account_id=account_id, institution_id=institution_id,
+            commerce_activation_id=commerce_activation_id,
+        )
+        self._inventories[inventory.id] = inventory
+        self.initial_quantities[inventory.id] = {}
+        self.lot_holdings[inventory.id] = {}
+        return inventory
+
+    def can_register_seller(self, seller: Seller, *, location_ids: set[str]) -> bool:
+        if (not seller.id or seller.id in self.sellers or not seller.active
+                or not seller.commerce_activation_id or not seller.institution_id
+                or seller.location_id not in location_ids):
+            return False
+        inventory = self._inventories.get(seller.inventory_id)
+        employment = self.economy.employments.get(seller.operator_employment_id)
+        return bool(
+            inventory and inventory.owner_type == "institution"
+            and inventory.owner_id == seller.institution_id
+            and inventory.account_id == seller.account_id
+            and inventory.institution_id == seller.institution_id
+            and inventory.commerce_activation_id == seller.commerce_activation_id
+            and employment and employment.active
+            and employment.institution_id == seller.institution_id
+            and employment.employer_account_id == seller.account_id
+        )
+
+    def register_seller(self, seller: Seller, *, location_ids: set[str]) -> Seller:
+        if not self.can_register_seller(seller, location_ids=location_ids):
+            raise MaterialError(
+                "invalid_seller_registration",
+                "seller conflicts with inventory, location, account, or employment authority",
+            )
+        self.sellers[seller.id] = seller
+        return seller
+
+    def can_register_purchase_activity_rule(self, rule: PurchaseActivityRule) -> bool:
+        seller = self.sellers.get(rule.seller_id)
+        return bool(
+            rule.activity_id and rule.activity_id not in self.purchase_activity_rules
+            and rule.good_id in self.goods
+            and isinstance(rule.quantity, int) and not isinstance(rule.quantity, bool)
+            and rule.quantity > 0 and rule.commerce_activation_id
+            and seller and seller.active
+            and seller.commerce_activation_id == rule.commerce_activation_id
+        )
+
+    def register_purchase_activity_rule(
+        self, rule: PurchaseActivityRule,
+    ) -> PurchaseActivityRule:
+        if not self.can_register_purchase_activity_rule(rule):
+            raise MaterialError(
+                "invalid_purchase_rule_registration",
+                "purchase rule conflicts with seller, good, or commerce authority",
+            )
+        self.purchase_activity_rules[rule.activity_id] = rule
+        return rule
+
+    def can_register_production_recipe(self, recipe: ProductionRecipe) -> bool:
+        if (not recipe.id or recipe.id in self.production_recipes
+                or not recipe.commerce_activation_id
+                or not recipe.inputs or not recipe.outputs
+                or recipe.procurement_seller_id not in self.sellers
+                or not isinstance(recipe.procurement_quantity, int)
+                or isinstance(recipe.procurement_quantity, bool)
+                or recipe.procurement_quantity <= 0):
+            return False
+        inventory = self._inventories.get(recipe.output_inventory_id)
+        upstream = self.sellers.get(recipe.procurement_seller_id)
+        if (inventory is None
+                or inventory.commerce_activation_id != recipe.commerce_activation_id
+                or upstream.commerce_activation_id is not None
+                or len(recipe.eligible_actor_ids) != 1
+                or len(recipe.eligible_employment_ids) != 1):
+            return False
+        employment = self.economy.employments.get(recipe.eligible_employment_ids[0])
+        return bool(
+            employment and employment.active
+            and employment.agent_id == recipe.eligible_actor_ids[0]
+            and employment.institution_id == inventory.institution_id
+            and employment.employer_account_id == inventory.account_id
+            and recipe.required_location_id
+            and recipe.activity_id in employment.qualifying_activity_ids
+            and dict(employment.activity_locations).get(recipe.activity_id)
+            == recipe.required_location_id
+            and all(good_id in self.goods and isinstance(quantity, int)
+                    and not isinstance(quantity, bool) and quantity > 0
+                    for good_id, quantity in (*recipe.inputs, *recipe.outputs))
+            and recipe.target_stock_good_id in dict(recipe.outputs)
+            and isinstance(recipe.target_stock_quantity, int)
+            and not isinstance(recipe.target_stock_quantity, bool)
+            and recipe.target_stock_quantity > 0
+            and recipe.procurement_quantity >= max(dict(recipe.inputs).values())
+        )
+
+    def register_production_recipe(self, recipe: ProductionRecipe) -> ProductionRecipe:
+        if not self.can_register_production_recipe(recipe):
+            raise MaterialError(
+                "invalid_recipe_registration",
+                "recipe conflicts with goods, operator, inventory, or commerce authority",
+            )
+        self.production_recipes[recipe.id] = recipe
+        return recipe
+
     def quantity(self, inventory_id: str, good_id: str) -> int:
         self.get_good(good_id)
         return self.get_inventory(inventory_id).quantity(good_id)
@@ -579,6 +725,16 @@ class MaterialSystem:
                     raise ValueError(
                         f"agent inventory {inventory.id} does not control its account"
                     )
+            if inventory.commerce_activation_id is not None:
+                account = account_ids.get(inventory.account_id)
+                if not (
+                    inventory.owner_type == "institution"
+                    and inventory.owner_id == inventory.institution_id
+                    and account is not None
+                    and account.owner_type == "institution"
+                    and account.owner_id == inventory.institution_id
+                ):
+                    raise ValueError("dynamic inventory ownership is invalid")
             for good_id, quantity in inventory.quantities:
                 if good_id not in self.goods:
                     raise ValueError(f"inventory {inventory.id} references unknown good")
@@ -588,9 +744,23 @@ class MaterialSystem:
             for good_id, quantity in values.items():
                 if good_id not in self.goods or quantity < 0:
                     raise ValueError(f"invalid initial quantity in {inventory_id}")
+            inventory = self._inventories[inventory_id]
+            if inventory.commerce_activation_id is not None and values:
+                raise ValueError("dynamic institution inventory baseline must be empty")
         for seller in self.sellers.values():
             inventory = self.get_inventory(seller.inventory_id)
-            if inventory.owner_type != "business" or inventory.owner_id != seller.id:
+            dynamic = seller.commerce_activation_id is not None
+            if dynamic:
+                if not (
+                    seller.institution_id
+                    and inventory.owner_type == "institution"
+                    and inventory.owner_id == seller.institution_id
+                    and inventory.institution_id == seller.institution_id
+                    and inventory.commerce_activation_id == seller.commerce_activation_id
+                ):
+                    raise ValueError(f"seller {seller.id} has invalid institution ownership")
+            elif (seller.institution_id is not None
+                  or inventory.owner_type != "business" or inventory.owner_id != seller.id):
                 raise ValueError(f"seller {seller.id} does not own its inventory")
             if seller.account_id not in account_ids:
                 raise ValueError(f"seller {seller.id} references unknown account")
@@ -598,10 +768,18 @@ class MaterialSystem:
                 raise ValueError(f"seller {seller.id} account linkage is inconsistent")
             if seller.operator_employment_id not in self.economy.employments:
                 raise ValueError(f"seller {seller.id} has no valid operator employment")
+            if dynamic:
+                employment = self.economy.employments[seller.operator_employment_id]
+                if (employment.institution_id != seller.institution_id
+                        or employment.employer_account_id != seller.account_id):
+                    raise ValueError("dynamic seller operator authority is invalid")
         for rule in self.purchase_activity_rules.values():
             if rule.seller_id not in self.sellers or rule.good_id not in self.goods:
                 raise ValueError("purchase activity references unknown seller or good")
             self._validate_quantity(rule.quantity)
+            seller = self.sellers[rule.seller_id]
+            if rule.commerce_activation_id != seller.commerce_activation_id:
+                raise ValueError("purchase rule commerce provenance is invalid")
         for rule in self.consumption_activity_rules.values():
             good = self.goods.get(rule.good_id)
             if good is None or not good.consumable:
@@ -636,6 +814,21 @@ class MaterialSystem:
             }
             if any(actor_id not in known_agents for actor_id in recipe.eligible_actor_ids):
                 raise ValueError("production recipe references unknown actor")
+            if recipe.commerce_activation_id is not None:
+                inventory = self._inventories[recipe.output_inventory_id]
+                if not (
+                    inventory.commerce_activation_id == recipe.commerce_activation_id
+                    and recipe.procurement_seller_id in self.sellers
+                    and self.sellers[recipe.procurement_seller_id].commerce_activation_id is None
+                    and isinstance(recipe.procurement_quantity, int)
+                    and not isinstance(recipe.procurement_quantity, bool)
+                    and recipe.procurement_quantity > 0
+                    and len(recipe.eligible_actor_ids) == 1
+                    and len(recipe.eligible_employment_ids) == 1
+                ):
+                    raise ValueError("dynamic recipe commerce provenance is invalid")
+            elif recipe.procurement_seller_id is not None or recipe.procurement_quantity is not None:
+                raise ValueError("static recipe cannot claim dynamic procurement")
 
     def _validate_history(self) -> None:
         record_groups = (
@@ -775,6 +968,16 @@ class MaterialSystem:
         if recipe.eligible_employment_ids and employment_id not in recipe.eligible_employment_ids:
             self._reject("ineligible_employment", "employment is not eligible for this recipe", attempt)
         inventory = self._inventories[inventory_id]
+        if recipe.commerce_activation_id is not None:
+            employment = self.economy.employments.get(employment_id)
+            if (employment is None or not employment.active
+                    or employment.agent_id != actor_id
+                    or employment.employer_account_id != inventory.account_id):
+                self._reject(
+                    "ineligible_employment",
+                    "dynamic production requires the live bound employment",
+                    attempt,
+                )
         if recipe.target_stock_good_id and inventory.quantity(recipe.target_stock_good_id) >= recipe.target_stock_quantity:
             self._reject("target_stock_met", "restocking target is already met", attempt)
         allocations_by_good = {}
@@ -903,6 +1106,18 @@ class MaterialSystem:
             self._reject("buyer_account_mismatch", "buyer does not control that account", attempt)
         if not seller.active:
             self._reject("inactive_seller", "seller is not active", attempt)
+        if seller.commerce_activation_id is not None and not any(
+            rule.seller_id == seller.id
+            and rule.good_id == good_id
+            and rule.quantity == quantity
+            and rule.commerce_activation_id == seller.commerce_activation_id
+            for rule in self.purchase_activity_rules.values()
+        ):
+            self._reject(
+                "unauthorized_dynamic_sale",
+                "dynamic seller may sell only its exact registered route",
+                attempt,
+            )
         source, destination, good = self._validate_transfer(
             seller.inventory_id,
             buyer_inventory_id,
@@ -1144,6 +1359,37 @@ class MaterialSystem:
                 continue
             employment = self.economy.employment_for_agent(agent.id)
             try:
+                if recipe.commerce_activation_id is not None:
+                    if (
+                        employment is None
+                        or employment.id not in recipe.eligible_employment_ids
+                        or agent.id not in recipe.eligible_actor_ids
+                        or activity.location_id != recipe.required_location_id
+                    ):
+                        return None
+                    inventory = self.get_inventory(recipe.output_inventory_id)
+                    if (recipe.target_stock_good_id
+                            and inventory.quantity(recipe.target_stock_good_id)
+                            >= recipe.target_stock_quantity):
+                        return None
+                    missing_inputs = [
+                        (good_id, quantity)
+                        for good_id, quantity in recipe.inputs
+                        if inventory.quantity(good_id) < quantity
+                    ]
+                    if missing_inputs:
+                        if len(missing_inputs) != 1:
+                            return None
+                        good_id, _required = missing_inputs[0]
+                        return self.purchase(
+                            inventory.id, inventory.account_id,
+                            recipe.procurement_seller_id, good_id,
+                            recipe.procurement_quantity, day=day, hour=hour,
+                            event_key=(
+                                f"commerce-procurement:{recipe.commerce_activation_id}:"
+                                f"{agent.id}:{day}"
+                            ),
+                        )
                 return self.produce(
                     recipe.id, actor_id=agent.id,
                     employment_id=employment.id if employment else None,
