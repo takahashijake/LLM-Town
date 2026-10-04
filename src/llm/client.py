@@ -351,6 +351,18 @@ class TransformersLLMClient:
                 "and community. Do not assign IDs, events, institutions, sellers, "
                 "inventory, commerce, jobs, legal status, or authority."
             )
+        elif kind == "event":
+            shape = (
+                '{"name":"...","description":"...",'
+                '"tags":["community"],'
+                '"required_affinities":["community"]}'
+            )
+            boundary = (
+                "Propose semantic content for one possible local event at the exact "
+                "target in context. Use only the permitted tag and affinity values. "
+                "Do not assign IDs, occurrence or timing, thresholds, institutions, "
+                "roles, jobs, money, inventory, commerce, law, memories, or authority."
+            )
         else:
             raise ValueError("unsupported growth proposal kind")
         messages = [{

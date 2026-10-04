@@ -877,7 +877,7 @@ example `--grounded-dialogue-tier safe_degraded_support`. Use `unverified` for a
 untested model/configuration; tiers are configuration capabilities, not model-name
 special cases.
 
-## V6 bounded procedural growth proposals
+## V6 bounded procedural growth and event ecology
 
 V6 Phase 1 can admit strictly bounded, untrusted proposals for resident and
 public-location templates. Admission creates only a persisted possibility:
@@ -886,17 +886,26 @@ authoritative entity. Canonical payloads are SHA-256 bound to deterministic
 generated IDs, survive restart without another model call, and are rejected on
 schema, identity, provenance, or sequence contradictions.
 
+V6 Phase 2 may also admit a semantic `DynamicEventTemplate` for an already
+activated generated public location after sustained authoritative use. Target
+selection, identity, policy floors, cooldown, persistence, replay, eligibility,
+and occurrence remain deterministic. Admission never means an event happened;
+only the ordinary `EventEcologySystem` can later create an occurrence.
+
 Procedural growth is disabled in the default V5 world. The deterministic gate
 uses a static provider and a dedicated higher-capacity configuration:
 
 ```bash
 python scripts/evaluate_growth_proposals.py
+python scripts/evaluate_procedural_events.py
 ```
 
-See [V6 Phase 1 procedural growth](docs/v6_procedural_growth.md) for the schemas,
+See [V6 procedural growth](docs/v6_procedural_growth.md) for the schemas,
 provider boundary, persistence/replay contract, branch isolation, optional
-existing-client model path, and explicit limitations. V6 does not yet generate
-events, institutions, jobs, commerce, economies, governments, or civilizations.
+existing-client model path, and explicit limitations. V6 does not generate
+institutions, organizations, roles, jobs, commerce, recipes, sellers, goods,
+pricing, supply chains, housing, roads, zoning, land, demographics, births or
+deaths, departures, taxation, finance, government, politics, or law.
 
 ## Current limitations
 

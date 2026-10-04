@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
 
 from src.town.daily_event import DailyEvent, EVENT_POOL, instantiate_base_event
 
@@ -16,6 +17,8 @@ KNOWN_DYNAMIC_EVENT_TAGS = {
 }
 KNOWN_LOCATION_AFFINITIES = {"social", "knowledge", "community"}
 KNOWN_EVENT_SOURCES = {"base", "dynamic", "legacy"}
+GENERATED_EVENT_TEMPLATE_PREFIX = "generated_event_template_"
+GENERATED_EVENT_TEMPLATE_PATTERN = re.compile(r"generated_event_template_(\d{4,})")
 
 
 def _positive_int(value: object, name: str, *, allow_zero: bool = False) -> int:
@@ -117,6 +120,8 @@ class EventEcologySystem:
     def __init__(
         self, policy: EventEcologyPolicy, templates: list[DynamicEventTemplate],
         *, simulation_seed: int = 0,
+        configured_template_ids: set[str] | None = None,
+        generated_location_templates: dict[str, object] | None = None,
         occurrence_history: list[DynamicEventOccurrenceRecord] | None = None,
         processed_occurrence_ids: set[str] | None = None,
     ) -> None:
@@ -124,13 +129,19 @@ class EventEcologySystem:
             raise ValueError("dynamic event template ids must be unique")
         self.policy = policy
         self.templates = {item.id: item for item in templates}
+        self.configured_template_ids = set(configured_template_ids or self.templates)
+        self.generated_location_templates = dict(generated_location_templates or {})
         self.simulation_seed = int(simulation_seed)
         self.occurrence_history = list(occurrence_history or [])
         self.processed_occurrence_ids = set(processed_occurrence_ids or ())
         self._validate_state()
 
     @classmethod
-    def from_config(cls, path: str | Path, *, simulation_seed: int = 0, state=None):
+    def from_config(
+        cls, path: str | Path, *, simulation_seed: int = 0, state=None,
+        supplemental_templates: list[DynamicEventTemplate] | None = None,
+        generated_location_templates: dict[str, object] | None = None,
+    ):
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         section = config.get("event_ecology") if isinstance(config, dict) else None
         if not isinstance(section, dict) or set(section) != {"policy", "templates"}:
@@ -139,8 +150,18 @@ class EventEcologySystem:
             raise ValueError("event ecology policy and templates have invalid shapes")
         policy = EventEcologyPolicy(**section["policy"])
         templates = [DynamicEventTemplate.from_dict(item) for item in section["templates"]]
+        configured_ids = {item.id for item in templates}
+        if any(item.id.startswith(GENERATED_EVENT_TEMPLATE_PREFIX) for item in templates):
+            raise ValueError("checked-in event configuration uses a generated namespace")
+        instance = cls(
+            policy, templates, simulation_seed=simulation_seed,
+            configured_template_ids=configured_ids,
+            generated_location_templates=generated_location_templates,
+        )
+        for template in supplemental_templates or ():
+            instance.register_generated_template(template)
         if state is None:
-            return cls(policy, templates, simulation_seed=simulation_seed)
+            return instance
         if not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION:
             raise ValueError("unsupported event ecology schema version")
         if set(state) != {"schema_version", "occurrence_history", "processed_occurrence_ids"}:
@@ -150,11 +171,49 @@ class EventEcologySystem:
         ):
             raise ValueError("event ecology state collections must be lists")
         return cls(
-            policy, templates, simulation_seed=simulation_seed,
+            policy, list(instance.templates.values()), simulation_seed=simulation_seed,
+            configured_template_ids=configured_ids,
+            generated_location_templates=generated_location_templates,
             occurrence_history=[DynamicEventOccurrenceRecord(**item)
                                 for item in state["occurrence_history"]],
             processed_occurrence_ids=set(state["processed_occurrence_ids"]),
         )
+
+    def register_generated_template(self, template: DynamicEventTemplate) -> None:
+        """Register admitted procedural possibility without creating an occurrence."""
+        if not isinstance(template, DynamicEventTemplate):
+            raise ValueError("generated event template has an invalid type")
+        if GENERATED_EVENT_TEMPLATE_PATTERN.fullmatch(template.id) is None:
+            raise ValueError("generated event template uses a reserved namespace")
+        if template.id in self.templates or template.id in self.configured_template_ids:
+            raise ValueError("generated event template identity collides")
+        location_template = self.generated_location_templates.get(
+            template.location_template_id
+        )
+        if location_template is None:
+            raise ValueError("generated event lacks generated-location authority")
+        location_affinities = set(getattr(location_template, "affinities", ()))
+        if not set(template.required_affinities).issubset(location_affinities):
+            raise ValueError("generated event has impossible affinity requirements")
+        if (
+            template.minimum_location_age_days < self.policy.minimum_location_age_days
+            or template.minimum_distinct_residents < self.policy.minimum_distinct_residents
+            or template.minimum_activity_days < self.policy.minimum_activity_days
+        ):
+            raise ValueError("generated event weakens event-ecology eligibility")
+        self.templates[template.id] = template
+
+    def register_generated_location_authority(self, template_id: str, template) -> None:
+        if (
+            not isinstance(template_id, str)
+            or not template_id.startswith("generated_location_template_")
+            or getattr(template, "id", None) != template_id
+        ):
+            raise ValueError("invalid generated-location authority")
+        existing = self.generated_location_templates.get(template_id)
+        if existing is not None and existing != template:
+            raise ValueError("generated-location authority contradicts registry")
+        self.generated_location_templates[template_id] = template
 
     def to_dict(self) -> dict:
         return {

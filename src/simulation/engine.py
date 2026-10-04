@@ -384,6 +384,14 @@ class SimulationEngine:
             self.town_growth_path,
             simulation_seed=self.simulation_seed,
             state=saved_state.get("event_ecology") if saved_state else None,
+            supplemental_templates=list(
+                self.growth_proposals.event_templates.values()
+            ),
+            generated_location_templates=self.growth_proposals.location_templates,
+        )
+        self.growth_proposals.validate_bindings(
+            self.town_growth, self.location_growth, self.event_ecology,
+            locations=self.locations, activity_records=self.activity_records,
         )
         self.institution_growth = InstitutionGrowthSystem.from_config(
             self.town_growth_path,
@@ -1483,6 +1491,7 @@ class SimulationEngine:
             activity_records=self.activity_records,
             town_history=self.town_growth.public_history,
             location_history=self.location_growth.public_history,
+            location_growth=self.location_growth,
         )
         record = self.growth_proposals.review(day=day, context=context)
         if record is None or record.status != "admitted":
@@ -1493,14 +1502,23 @@ class SimulationEngine:
                     record.generated_template_id
                 ]
             )
+        elif record.kind == "location":
+            template = self.growth_proposals.location_templates[
+                record.generated_template_id
+            ]
+            self.location_growth.register_generated_template(template)
+            self.event_ecology.register_generated_location_authority(
+                template.id, template
+            )
         else:
-            self.location_growth.register_generated_template(
-                self.growth_proposals.location_templates[
+            self.event_ecology.register_generated_template(
+                self.growth_proposals.event_templates[
                     record.generated_template_id
                 ]
             )
         self.growth_proposals.validate_bindings(
-            self.town_growth, self.location_growth
+            self.town_growth, self.location_growth, self.event_ecology,
+            locations=self.locations, activity_records=self.activity_records,
         )
         return record
 

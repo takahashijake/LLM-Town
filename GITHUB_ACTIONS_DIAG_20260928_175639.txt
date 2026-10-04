@@ -1,0 +1,46 @@
+===== REPO STATE =====
+## main...origin/main [ahead 1]
+?? GITHUB_ACTIONS_DIAG_20260928_175639.txt
+
+d9a774b399df96c7272bb81dd09cb6a9f57fb7ed
+d9a774b Add bounded goal strategy dependencies
+53e9e67 Evaluate V4 strategy execution fidelity
+170e1ff Add strategy-specific goal execution contracts
+0cc3f8b Block unsafe goal strategies at runtime
+5a86811 Evaluate and document bounded goal planning
+0279570 Harden goal plan evidence and adaptation
+0029ba1 Add persistent bounded goal plans
+dd1975a Isolate deterministic evaluator randomness
+16a8e75 Extend the V3 freeze lifecycle coverage
+e0b2155 Close social planning lifecycle gaps
+
+===== WORKFLOW FILES =====
+.github/workflows/tests.yml
+----- .github/workflows/tests.yml -----
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install deterministic test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run test suite
+        run: python -m pytest
+
+
+===== RECENT ACTION RUNS =====
+bash: gh: command not found
+
+===== FAILED RUN DETAILS =====
+bash: gh: command not found
