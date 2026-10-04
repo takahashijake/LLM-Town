@@ -216,8 +216,12 @@ def evaluate_procedural_institutions() -> dict:
             root, "repeat", config, (HORIZON_DAYS,),
             StaticProceduralInstitutionProvider(),
         )
+        resumed_provider = StaticProceduralInstitutionProvider()
         resumed = _horizon(
-            root, "resumed", config, (54, 46),
+            root, "resumed", config, (52, 48), resumed_provider,
+        )
+        resumed_after_formation = _horizon(
+            root, "resumed-after-formation", config, (60, 40),
             StaticProceduralInstitutionProvider(),
         )
         institution_record = next(
@@ -311,6 +315,13 @@ def evaluate_procedural_institutions() -> dict:
             ),
             "resume_and_repeat_match": (
                 _signature(fresh) == _signature(repeat) == _signature(resumed)
+                == _signature(resumed_after_formation)
+            ),
+            "resume_does_not_reconstruct_proposal": (
+                resumed_provider.calls == {
+                    "resident": 1, "location": 1, "event": 1,
+                    "institution": 1,
+                }
             ),
             "capacity_stops_provider": provider.calls == {
                 "resident": 1, "location": 1, "event": 1,

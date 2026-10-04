@@ -167,6 +167,7 @@ def test_semantic_candidate_constructs_deterministic_institution_template():
 
 @pytest.mark.parametrize("candidate", [
     "{bad json",
+    RuntimeError("provider failed"),
     {"name": "x", "role_title": "y", "work_activity_name": "z",
      "employee": "agent_001"},
     {"name": "x", "role_title": "y", "work_activity_name": "z",
@@ -183,6 +184,8 @@ def test_authority_injection_is_rejected_and_consumes_capacity(candidate):
     assert not system.institution_templates
     assert system.next_institution_template_sequence == 1
     assert provider.calls["institution"] == 1
+    if isinstance(candidate, Exception):
+        assert record.reason == "provider_exception:RuntimeError"
 
 
 def test_supplemental_and_live_registration_validate_branch_authority():
