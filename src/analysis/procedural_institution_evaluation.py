@@ -274,6 +274,9 @@ def evaluate_procedural_institutions() -> dict:
             "admission_does_not_form_same_day": (
                 formation.review_day > institution_record.admission_day
             ),
+            "admission_transfers_no_money": (
+                startup.day > institution_record.admission_day
+            ),
             "ordinary_review_selects_employee": (
                 formation.status == "activated"
                 and formation.employee_agent_id == employment.agent_id

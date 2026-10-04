@@ -110,6 +110,10 @@ class ProceduralGrowthPolicy:
             self.generated_institution_startup_grant,
             "generated institution startup grant",
         )
+        if self.generated_institution_wage > 1_000:
+            raise ValueError("generated institution wage exceeds bound")
+        if self.generated_institution_startup_grant > 1_000_000:
+            raise ValueError("generated institution startup grant exceeds bound")
         if (
             not isinstance(
                 self.generated_institution_funding_source_account_id, str

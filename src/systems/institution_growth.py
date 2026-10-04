@@ -639,7 +639,8 @@ class InstitutionGrowthSystem:
         review.reason = record.reason
 
     def validate(self, *, agents: list, locations: list, location_growth,
-                 event_ecology, economy) -> dict[str, bool]:
+                 event_ecology, economy,
+                 activity_records: list[dict] | None = None) -> dict[str, bool]:
         self._validate_state()
         agent_ids = {item.id for item in agents}
         location_ids = {item.id for item in locations}
@@ -656,6 +657,7 @@ class InstitutionGrowthSystem:
             "institution_locations_active": True,
             "institution_economy_provenance": True,
             "no_orphan_institution_economy": True,
+            "institution_employee_selection": True,
         }
         activated = [item for item in self.formation_records
                      if item.status == "activated"]
@@ -674,6 +676,57 @@ class InstitutionGrowthSystem:
             == expected_startups
         )
         for record in self.formation_records:
+            if activity_records is not None and record.status == "activated":
+                template = self.templates[record.template_id]
+                candidate_first_day = (
+                    record.review_day
+                    - self.policy.candidate_activity_window_days
+                )
+                occurrence_ids = {
+                    item.occurrence_id for item in event_ecology.occurrence_history
+                    if item.location_id == record.location_id
+                    and item.template_id
+                    in template.relevant_dynamic_event_template_ids
+                    and item.day < record.review_day
+                }
+                ranked = []
+                for agent in agents:
+                    employed_at_review = any(
+                        employment.agent_id == agent.id
+                        and employment.active
+                        and employment.start_day <= record.review_day
+                        for employment in economy.employments.values()
+                    )
+                    if employed_at_review:
+                        continue
+                    try:
+                        economy.account_for_agent(agent.id)
+                    except Exception:
+                        continue
+                    evidence = [
+                        item for item in activity_records
+                        if item.get("type") == "activity"
+                        and item.get("agent_id") == agent.id
+                        and item.get("location") == record.location_id
+                        and candidate_first_day <= item.get("day", -1)
+                        <= record.review_day
+                    ]
+                    minimum = (
+                        template.minimum_candidate_activities
+                        or self.policy.minimum_candidate_activities
+                    )
+                    if len(evidence) < minimum:
+                        continue
+                    attendance = sum(
+                        item.get("activity_id") == "attend_event"
+                        and item.get("source_event_occurrence_id")
+                        in occurrence_ids
+                        for item in evidence
+                    )
+                    ranked.append((-len(evidence), -attendance, agent.id))
+                checks["institution_employee_selection"] &= bool(
+                    ranked and min(ranked)[2] == record.employee_agent_id
+                )
             if record.status != "activated":
                 continue
             template = self.templates[record.template_id]

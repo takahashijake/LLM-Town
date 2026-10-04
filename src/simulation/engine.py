@@ -1562,6 +1562,7 @@ class SimulationEngine:
             agents=self.agents, locations=self.locations,
             location_growth=self.location_growth,
             event_ecology=self.event_ecology, economy=self.economy,
+            activity_records=self.activity_records,
         )
         if not all(checks.values()):
             failed = sorted(name for name, passed in checks.items() if not passed)

@@ -892,20 +892,36 @@ selection, identity, policy floors, cooldown, persistence, replay, eligibility,
 and occurrence remain deterministic. Admission never means an event happened;
 only the ordinary `EventEcologySystem` can later create an occurrence.
 
+V6 Phase 3 may admit a bounded semantic `InstitutionTemplate` for an
+already-authoritative generated public location whose generated local events
+have actually occurred. The generator cannot form the institution. Existing
+deterministic institution-growth authority independently verifies evidence,
+selects an eligible employee, activates the institution, creates its account and
+employment, and performs the conserved startup transfer. The resulting contract
+feeds the ordinary planner and wage path.
+
+```text
+generated place → generated event ecology → event occurrence history
+→ generated institution template → deterministic formation
+→ account + employment → ordinary work + wages
+```
+
 Procedural growth is disabled in the default V5 world. The deterministic gate
 uses a static provider and a dedicated higher-capacity configuration:
 
 ```bash
 python scripts/evaluate_growth_proposals.py
 python scripts/evaluate_procedural_events.py
+python scripts/evaluate_procedural_institutions.py
 ```
 
 See [V6 procedural growth](docs/v6_procedural_growth.md) for the schemas,
 provider boundary, persistence/replay contract, branch isolation, optional
-existing-client model path, and explicit limitations. V6 does not generate
-institutions, organizations, roles, jobs, commerce, recipes, sellers, goods,
-pricing, supply chains, housing, roads, zoning, land, demographics, births or
-deaths, departures, taxation, finance, government, politics, or law.
+existing-client model path, and explicit limitations. Phase 3 does not generate
+commerce, sellers, goods, recipes, prices, supply chains, multiple arbitrary
+roles, arbitrary hiring, job switching, housing, roads, zoning, land,
+demographics, births or deaths, departures, taxation, finance, government,
+politics, or law.
 
 ## Current limitations
 

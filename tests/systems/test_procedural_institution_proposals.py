@@ -232,3 +232,126 @@ def test_phase_two_migration_and_institution_tampering_fail_closed():
         attack(tampered)
         with pytest.raises((KeyError, TypeError, ValueError)):
             make_system(Provider(), tampered)
+
+
+def test_two_generated_institution_targets_are_fair_and_branch_local():
+    class MultiProvider(Provider):
+        def propose_location(self, context):
+            self.calls["location"] += 1
+            return {
+                "name": f"Story Grove {self.calls['location']}",
+                "description": "A public grove for stories and learning.",
+                "affinities": ["community", "knowledge", "social"],
+            }
+
+        def propose_event(self, context):
+            self.calls["event"] += 1
+            return {
+                "name": f"Story Exchange {self.calls['event']}",
+                "description": "Residents share stories and knowledge.",
+                "tags": ["community", "knowledge"],
+                "required_affinities": ["community", "knowledge"],
+            }
+
+        def propose_institution(self, context):
+            self.calls["institution"] += 1
+            return {
+                "name": f"Story Commons {self.calls['institution']}",
+                "role_title": "story coordinator",
+                "work_activity_name": "Coordinate story programs",
+            }
+
+    data = config()
+    policy = data["procedural_growth"]["policy"]
+    policy.update({
+        "location_proposal_capacity": 2,
+        "event_proposal_capacity": 2,
+        "institution_proposal_capacity": 2,
+        "history_limit": 6,
+    })
+    provider = MultiProvider()
+    system = GrowthProposalSystem.from_config(
+        data, agents=[SimpleNamespace(name="Ada")],
+        locations=[Location("square", "Square", "Square", ["social"])],
+        provider=provider,
+    )
+    base = [Location("square", "Square", "Square", ["social"])]
+    system.review(day=1, context=system.build_context(
+        completed_day=1, agents=[], locations=base, activity_records=[],
+        town_history=[], location_history=[],
+    ))
+    system.review(day=2, context=system.build_context(
+        completed_day=2, agents=[], locations=base, activity_records=[],
+        town_history=[], location_history=[],
+    ))
+    location_templates = sorted(
+        system.location_templates.values(), key=lambda item: item.id
+    )
+    locations = [
+        Location(item.location_id, item.name, item.description,
+                 list(item.affinities))
+        for item in location_templates
+    ]
+    activations = [
+        SimpleNamespace(
+            id=f"location-activation:{index:04d}", status="activated",
+            template_id=item.id, location_id=item.location_id,
+            activation_day=1,
+        )
+        for index, item in enumerate(location_templates, start=1)
+    ]
+    location_growth = SimpleNamespace(
+        activation_records=activations,
+        templates={item.id: item for item in location_templates},
+    )
+    activity = [
+        {"type": "activity", "day": day, "agent_id": agent,
+         "location": location.id}
+        for day in range(2, 12) for location in locations
+        for agent in ("a", "b", "c")
+    ]
+    empty_ecology = SimpleNamespace(templates={}, occurrence_history=[])
+    for day in (6, 7):
+        context = system.build_context(
+            completed_day=day, agents=[], locations=[*base, *locations],
+            activity_records=activity, town_history=[], location_history=[],
+            location_growth=location_growth, event_ecology=empty_ecology,
+        )
+        record = system.review(day=day, context=context)
+        empty_ecology.templates[record.generated_template_id] = (
+            system.event_templates[record.generated_template_id]
+        )
+    event_templates = sorted(
+        system.event_templates.values(), key=lambda item: item.id
+    )
+    occurrences = [
+        SimpleNamespace(
+            occurrence_id=f"occurrence:{event.id}:{day}",
+            template_id=event.id,
+            location_id=system.location_templates[
+                event.location_template_id
+            ].location_id,
+            day=day,
+        )
+        for event in event_templates for day in (8, 9)
+    ]
+    ecology = SimpleNamespace(
+        templates={item.id: item for item in event_templates},
+        occurrence_history=occurrences,
+    )
+    records = []
+    for day in (10, 11):
+        context = system.build_context(
+            completed_day=day, agents=[], locations=[*base, *locations],
+            activity_records=activity, town_history=[], location_history=[],
+            location_growth=location_growth, event_ecology=ecology,
+        )
+        records.append(system.review(day=day, context=context))
+    assert [item.target_location_template_id for item in records] == [
+        item.id for item in location_templates
+    ]
+    for institution in system.institution_templates.values():
+        assert institution.relevant_dynamic_event_template_ids == tuple(
+            event.id for event in event_templates
+            if event.location_template_id == institution.location_template_id
+        )
