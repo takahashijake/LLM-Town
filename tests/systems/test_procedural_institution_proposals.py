@@ -213,6 +213,10 @@ def test_phase_two_migration_and_institution_tampering_fail_closed():
     phase_two["records"] = phase_two["records"][:2]
     phase_two["next_proposal_sequence"] = 3
     phase_two["last_attempt_day"] = 4
+    phase_two.pop("commerce_templates")
+    phase_two.pop("next_commerce_template_sequence")
+    for record in phase_two["records"]:
+        record.pop("target_institution_template_id")
     phase_two.pop("institution_templates")
     phase_two.pop("next_institution_template_sequence")
     restored = make_system(Provider(), phase_two)

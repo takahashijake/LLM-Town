@@ -1,4 +1,4 @@
-"""Bounded authority for one configured institution-commerce lifecycle."""
+"""Finite configured and admitted institution-commerce authority."""
 
 from __future__ import annotations
 
@@ -6,6 +6,10 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.systems.growth_proposals import GrowthProposalSystem
 
 
 ACTIVATION_PATTERN = re.compile(r"commerce-activation:(\d{4,})")
@@ -155,6 +159,7 @@ class CommerceGrowthSystem:
 
     def __init__(
         self, policy: CommerceGrowthPolicy, templates: list[CommerceTemplate], *,
+        generated_admission_days: dict[str, int] | None = None,
         next_sequence: int = 1,
         review_history: list[CommerceReview] | None = None,
         activation_records: list[CommerceActivationRecord] | None = None,
@@ -169,6 +174,7 @@ class CommerceGrowthSystem:
             raise ValueError("commerce purchase activities must be unique")
         self.policy = policy
         self.templates = {item.id: item for item in templates}
+        self.generated_admission_days = dict(generated_admission_days or {})
         self.next_sequence = _positive(next_sequence, "next commerce sequence")
         self.review_history = list(review_history or [])[-policy.history_limit:]
         self.activation_records = list(activation_records or [])
@@ -179,15 +185,25 @@ class CommerceGrowthSystem:
         self._validate_state()
 
     @classmethod
-    def from_config(cls, path: str | Path, state=None) -> "CommerceGrowthSystem":
+    def from_config(
+        cls, path: str | Path, state=None, *,
+        supplemental_templates: list[CommerceTemplate] | None = None,
+        generated_admission_days: dict[str, int] | None = None,
+    ) -> "CommerceGrowthSystem":
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         section = config.get("commerce_growth") if isinstance(config, dict) else None
         if not isinstance(section, dict) or set(section) != {"policy", "templates"}:
             raise ValueError("commerce growth config has an invalid schema")
         policy = CommerceGrowthPolicy(**section["policy"])
         templates = [CommerceTemplate.from_dict(item) for item in section["templates"]]
+        if any(item.id.startswith("generated_") for item in templates):
+            raise ValueError("configured commerce uses generated namespace")
+        for item in supplemental_templates or ():
+            if not item.id.startswith("generated_commerce_template_"):
+                raise ValueError("supplemental commerce must be generated")
+            templates.append(item)
         if state is None:
-            return cls(policy, templates)
+            return cls(policy, templates, generated_admission_days=generated_admission_days)
         allowed = {
             "schema_version", "next_sequence", "review_history",
             "activation_records", "processed_event_keys", "consumed_template_ids",
@@ -202,7 +218,8 @@ class CommerceGrowthSystem:
         )):
             raise ValueError("commerce growth state collections must be lists")
         return cls(
-            policy, templates, next_sequence=state["next_sequence"],
+            policy, templates, generated_admission_days=generated_admission_days,
+            next_sequence=state["next_sequence"],
             review_history=[CommerceReview(**item) for item in state["review_history"]],
             activation_records=[CommerceActivationRecord(**item)
                                 for item in state["activation_records"]],
@@ -224,6 +241,25 @@ class CommerceGrowthSystem:
             "public_history": list(self.public_history),
         }
 
+    def register_generated_template(
+        self, template: CommerceTemplate, *, proposal_authority: GrowthProposalSystem,
+    ) -> None:
+        proposal_authority._validate_state()
+        if proposal_authority.commerce_templates.get(template.id) != template:
+            raise ValueError("commerce lacks admitted proposal provenance")
+        if re.fullmatch(r"generated_commerce_template_\d{4,}", template.id) is None:
+            raise ValueError("commerce template must have generated identity")
+        if (template.id in self.templates
+                or any(item.purchase_activity_id == template.purchase_activity_id
+                       or item.institution_template_id == template.institution_template_id
+                       for item in self.templates.values())):
+            raise ValueError("generated commerce authority collision")
+        record = next(item for item in proposal_authority.records
+                      if item.generated_template_id == template.id
+                      and item.kind == "commerce" and item.status == "admitted")
+        self.templates[template.id] = CommerceTemplate.from_dict(asdict(template))
+        self.generated_admission_days[template.id] = record.admission_day
+
     def template(self, template_id: str) -> CommerceTemplate:
         try:
             return self.templates[template_id]
@@ -231,6 +267,11 @@ class CommerceGrowthSystem:
             raise ValueError("unknown commerce template") from error
 
     def _validate_state(self) -> None:
+        generated_ids = {key for key in self.templates if key.startswith("generated_")}
+        if set(self.generated_admission_days) != generated_ids:
+            raise ValueError("generated commerce lacks admission-day authority")
+        for day in self.generated_admission_days.values():
+            _positive(day, "commerce admission day")
         ids = [item.id for item in self.activation_records]
         if len(ids) != len(set(ids)):
             raise ValueError("commerce activation ids must be unique")
@@ -265,6 +306,23 @@ class CommerceGrowthSystem:
                         f"recipe:institution:{sequence}:{template.recipe_id_suffix}"
                     )):
                 raise ValueError("commerce activation lacks its exact review")
+        for index, record in enumerate(self.activation_records):
+            if (record.template_id in self.generated_admission_days
+                    and record.review_day <= self.generated_admission_days[record.template_id]):
+                raise ValueError("commerce activation predates admission")
+            if (record.review_day < self.policy.earliest_activation_day
+                    or record.review_day % self.policy.review_interval_days):
+                raise ValueError("commerce activation violates review schedule")
+            prior = [item for item in self.activation_records[:index]
+                     if item.status == "activated"]
+            if (len(prior) >= self.policy.commerce_capacity
+                    or any(record.review_day - item.activation_day
+                           < self.policy.activation_cooldown_days for item in prior)):
+                raise ValueError("commerce activation violates capacity or cooldown")
+            template = self.templates[record.template_id]
+            if (record.purchase_activity_id != template.purchase_activity_id
+                    or record.upstream_seller_id != template.upstream_seller_id):
+                raise ValueError("commerce activation contradicts template contract")
         sequences = [int(ACTIVATION_PATTERN.fullmatch(item.id).group(1))
                      for item in self.activation_records]
         if self.next_sequence <= max(sequences, default=0):
@@ -308,17 +366,22 @@ class CommerceGrowthSystem:
     def readiness_reason(
         self, template: CommerceTemplate, *, day: int, agents: list, locations: list,
         institution_growth, location_growth, economy, materials,
-        activity_records: list[dict],
+        activity_records: list[dict], historical: bool = False,
     ) -> tuple[str, object | None]:
         formation = next((item for item in institution_growth.formation_records
                           if item.status == "activated"
                           and item.template_id == template.institution_template_id), None)
-        if formation is None:
+        if formation is None or formation.activation_day >= day:
             return "institution_not_active", None
         binding = location_growth.templates.get(template.location_template_id)
         location_activation = next((item for item in location_growth.activation_records
                                     if item.status == "activated"
                                     and item.template_id == template.location_template_id), None)
+        institution = institution_growth.templates.get(template.institution_template_id)
+        if (institution is None
+                or institution.location_template_id != template.location_template_id
+                or institution.role.work_activity_id != template.production_activity_id):
+            return "institution_binding_invalid", None
         if (binding is None or location_activation is None
                 or formation.location_id != binding.location_id
                 or formation.location_activation_id != location_activation.id
@@ -328,6 +391,8 @@ class CommerceGrowthSystem:
         account = economy.accounts.get(formation.employer_account_id)
         if (employment is None or not employment.active
                 or employment.agent_id != formation.employee_agent_id
+                or employment.employer_account_id != formation.employer_account_id
+                or employment.start_day >= day
                 or employment.institution_id != formation.institution_id
                 or employment.formation_id != formation.id
                 or account is None or account.owner_type != "institution"
@@ -337,6 +402,9 @@ class CommerceGrowthSystem:
         work_days = {item.get("day") for item in economy.work_events
                      if item.get("eligible")
                      and item.get("employment_id") == formation.employment_id
+                     and item.get("activity_id") == template.production_activity_id
+                     and item.get("institution_id") == formation.institution_id
+                     and item.get("formation_id") == formation.id
                      and item.get("agent_id") == formation.employee_agent_id
                      and item.get("location_id") == formation.location_id
                      and work_first <= item.get("day", -1) < day}
@@ -360,12 +428,33 @@ class CommerceGrowthSystem:
         if len(demand) < self.policy.minimum_target_good_purchases:
             return "insufficient_demand", None
         seller = materials.sellers.get(template.upstream_seller_id)
-        if seller is None or not seller.active:
+        if seller is None or not seller.active or seller.commerce_activation_id is not None:
             return "upstream_seller_missing", None
-        if materials.quantity(seller.inventory_id, template.input_good_id) < template.input_quantity:
+        stock = materials.quantity(seller.inventory_id, template.input_good_id)
+        balance = account.balance
+        if historical:
+            # Reconstruct the end of the previous day; never trust a saved ready flag.
+            stock = materials.initial_quantities[seller.inventory_id].get(template.input_good_id, 0)
+            for movement in materials.lot_movements:
+                if movement.day < day and movement.good_id == template.input_good_id:
+                    if movement.destination_inventory_id == seller.inventory_id:
+                        stock += movement.quantity
+                    if movement.source_inventory_id == seller.inventory_id:
+                        stock -= movement.quantity
+            for production in materials.production_records:
+                if production.day < day and production.inventory_id == seller.inventory_id:
+                    stock += dict(production.outputs).get(template.input_good_id, 0)
+            balance = economy.initial_balances[account.id]
+            for transaction in economy.ledger:
+                if transaction.day < day:
+                    if transaction.destination_account_id == account.id:
+                        balance += transaction.amount
+                    if transaction.source_account_id == account.id:
+                        balance -= transaction.amount
+        if stock < template.input_quantity:
             return "upstream_stock_insufficient", None
         cost = materials.price_for_good(template.input_good_id) * template.input_quantity
-        if account.balance < cost:
+        if balance < cost:
             return "institution_funds_insufficient", None
         return "eligible", formation
 
@@ -395,6 +484,9 @@ class CommerceGrowthSystem:
         for template_id in sorted(self.templates):
             template = self.templates[template_id]
             if template.id in self.consumed_template_ids:
+                continue
+            if day <= self.generated_admission_days.get(template.id, 0):
+                last_reason = "proposal_not_mature"
                 continue
             reason, formation = self.readiness_reason(
                 template, day=day, agents=agents, locations=locations,

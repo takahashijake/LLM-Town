@@ -903,7 +903,9 @@ feeds the ordinary planner and wage path.
 ```text
 generated place → generated event ecology → event occurrence history
 → generated institution template → deterministic formation
-→ account + employment → ordinary work + wages
+→ account + employment → ordinary work + wages + local use/demand
+→ bounded commerce offer → persisted template → ordinary commerce activation
+→ procurement → production → resident purchases → institution revenue
 ```
 
 Procedural growth is disabled in the default V5 world. The deterministic gate
@@ -913,15 +915,24 @@ uses a static provider and a dedicated higher-capacity configuration:
 python scripts/evaluate_growth_proposals.py
 python scripts/evaluate_procedural_events.py
 python scripts/evaluate_procedural_institutions.py
+python scripts/evaluate_procedural_commerce.py
 ```
 
-See [V6 procedural growth](docs/v6_procedural_growth.md) for the schemas,
-provider boundary, persistence/replay contract, branch isolation, optional
-existing-client model path, and explicit limitations. Phase 3 does not generate
-commerce, sellers, goods, recipes, prices, supply chains, multiple arbitrary
-roles, arbitrary hiring, job switching, housing, roads, zoning, land,
-demographics, births or deaths, departures, taxation, finance, government,
-politics, or law.
+V6 Phase 4 admits only `{"offer":"community_meals"}` for a deterministically
+selected generated institution with real formation, employment, work, local use
+and purchase demand. Admission persists a generated commerce template; later
+ordinary V5 review and atomic activation grant its exact inventory, seller,
+purchase rule and employee-bound production recipe. Real procurement, production
+and resident purchases produce conserved institution revenue. The provider sees
+semantic names and permitted offers, with no economic IDs or parameters.
+
+See [V6 procedural growth](docs/v6_procedural_growth.md) for schemas, context,
+target selection, schema 4 migration, branch isolation, acceptance gates and the
+optional `evaluate_procedural_commerce_real.py --local-files-only` smoke path.
+LLM-Town does not yet provide unrestricted arbitrary goods, prices, recipes,
+supply chains, multiple arbitrary roles, free hiring/firing or job switching,
+housing, land, roads, zoning, demographics, birth/death, departures, taxation,
+banking/finance, government, politics or law.
 
 ## Current limitations
 

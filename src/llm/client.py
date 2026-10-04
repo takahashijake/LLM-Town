@@ -375,6 +375,13 @@ class TransformersLLMClient:
                 "formation dates, thresholds, commerce, inventory, goods, recipes, "
                 "legal powers, relationships, memories, commitments, or authority."
             )
+        elif kind == "commerce":
+            shape = '{"offer":"community_meals"}'
+            boundary = (
+                "Select only a permitted semantic commerce offer from context. "
+                "Do not select actors, IDs, accounts, locations, prices, quantities, "
+                "recipes, stock, money, timing, demand, or authority."
+            )
         else:
             raise ValueError("unsupported growth proposal kind")
         messages = [{

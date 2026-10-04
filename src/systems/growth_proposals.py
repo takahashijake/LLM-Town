@@ -7,7 +7,7 @@ from copy import deepcopy
 import hashlib
 import json
 import re
-from typing import Protocol
+from typing import Protocol, TYPE_CHECKING
 
 from src.systems.location_growth import KNOWN_LOCATION_AFFINITIES, LocationTemplate
 from src.systems.event_ecology import (
@@ -21,6 +21,13 @@ from src.systems.institution_growth import (
     InstitutionTemplate,
 )
 from src.systems.town_growth import ResidentTemplate
+from src.systems.commerce_growth import CommerceTemplate, CommerceGrowthSystem
+
+if TYPE_CHECKING:
+    from src.systems.economy import EconomySystem
+    from src.systems.materials import MaterialSystem
+    from src.systems.institution_growth import InstitutionGrowthSystem
+    from src.systems.location_growth import LocationGrowthSystem
 
 
 PROPOSAL_ID_PATTERN = re.compile(r"growth-proposal:(\d{4,})")
@@ -31,7 +38,8 @@ EVENT_TEMPLATE_PATTERN = re.compile(r"generated_event_template_(\d{4,})")
 INSTITUTION_TEMPLATE_PATTERN = re.compile(
     r"generated_institution_template_(\d{4,})"
 )
-KINDS = {"resident", "location", "event", "institution"}
+COMMERCE_TEMPLATE_PATTERN = re.compile(r"generated_commerce_template_(\d{4,})")
+KINDS = {"resident", "location", "event", "institution", "commerce"}
 STATUSES = {"admitted", "rejected"}
 
 
@@ -63,6 +71,8 @@ class GrowthProposalProvider(Protocol):
 
     def propose_institution(self, context: dict) -> object | None: ...
 
+    def propose_commerce(self, context: dict) -> object | None: ...
+
 
 @dataclass(frozen=True)
 class ProceduralGrowthPolicy:
@@ -81,6 +91,8 @@ class ProceduralGrowthPolicy:
     generated_institution_funding_source_account_id: str = (
         "account:employer:town_services"
     )
+    commerce_proposal_capacity: int = 0
+    commerce_archetypes: tuple[str, ...] = ("community_meals",)
     history_limit: int = 32
 
     def __post_init__(self) -> None:
@@ -91,15 +103,20 @@ class ProceduralGrowthPolicy:
         for name in (
             "proposal_cooldown_days", "resident_proposal_capacity",
             "location_proposal_capacity", "event_proposal_capacity",
-            "institution_proposal_capacity",
+            "institution_proposal_capacity", "commerce_proposal_capacity",
         ):
             _positive(getattr(self, name), name, allow_zero=True)
         if self.history_limit < (
             self.resident_proposal_capacity + self.location_proposal_capacity
             + self.event_proposal_capacity
-            + self.institution_proposal_capacity
+            + self.institution_proposal_capacity + self.commerce_proposal_capacity
         ):
             raise ValueError("proposal history must hold every bounded attempt")
+        if (
+            not isinstance(self.commerce_archetypes, (tuple, list))
+            or tuple(self.commerce_archetypes) != ("community_meals",)
+        ):
+            raise ValueError("unsupported bounded commerce archetypes")
         _positive(self.event_templates_per_location, "event templates per location")
         _positive(
             self.institution_templates_per_location,
@@ -136,6 +153,7 @@ class GrowthProposalRecord:
     provider_kind: str
     admission_day: int | None
     target_location_template_id: str | None = None
+    target_institution_template_id: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -162,7 +180,7 @@ class GrowthProposalRecord:
             self.generated_template_id, self.admission_day,
         )):
             raise ValueError("rejected proposal cannot claim admitted authority")
-        if self.kind in {"event", "institution"}:
+        if self.kind in {"event", "institution", "commerce"}:
             if (
                 not isinstance(self.target_location_template_id, str)
                 or LOCATION_TEMPLATE_PATTERN.fullmatch(
@@ -172,6 +190,14 @@ class GrowthProposalRecord:
                 raise ValueError("targeted proposal lacks a generated-location target")
         elif self.target_location_template_id is not None:
             raise ValueError("untargeted proposal cannot claim a location target")
+
+        if self.kind == "commerce":
+            if INSTITUTION_TEMPLATE_PATTERN.fullmatch(
+                self.target_institution_template_id or ""
+            ) is None:
+                raise ValueError("commerce lacks generated institution target")
+        elif self.target_institution_template_id is not None:
+            raise ValueError("noncommerce proposal claims institution target")
 
     @classmethod
     def from_dict(cls, data: dict) -> "GrowthProposalRecord":
@@ -184,7 +210,7 @@ class GrowthProposalRecord:
 class GrowthProposalSystem:
     """Own proposal attempts and admitted generated-template provenance only."""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(
         self,
@@ -196,6 +222,8 @@ class GrowthProposalSystem:
         location_templates: list[LocationTemplate] | None = None,
         event_templates: list[DynamicEventTemplate] | None = None,
         institution_templates: list[InstitutionTemplate] | None = None,
+        commerce_templates: list[CommerceTemplate] | None = None,
+        next_commerce_template_sequence: int = 1,
         next_proposal_sequence: int = 1,
         next_resident_template_sequence: int = 1,
         next_location_template_sequence: int = 1,
@@ -230,6 +258,13 @@ class GrowthProposalSystem:
             institution_template_list
         ):
             raise ValueError("generated institution template ids must be unique")
+        commerce_list = list(commerce_templates or ())
+        if len({item.id for item in commerce_list}) != len(commerce_list):
+            raise ValueError("generated commerce template ids must be unique")
+        self.commerce_templates = {item.id: item for item in commerce_list}
+        self.next_commerce_template_sequence = _positive(
+            next_commerce_template_sequence, "next commerce template sequence"
+        )
         self.policy = policy
         self.provider = provider
         self.records = list(records or ())
@@ -314,6 +349,11 @@ class GrowthProposalSystem:
             raise ValueError(
                 "institution growth policy is required for institution proposals"
             )
+        if policy.commerce_proposal_capacity and (
+            institution_policy is None
+            or not isinstance(config.get("commerce_growth", {}).get("policy"), dict)
+        ):
+            raise ValueError("commerce proposals require institution and commerce policy")
         configured_resident_ids = {item.get("id") for item in resident_data}
         configured_location_ids = {item.get("id") for item in location_data}
         configured_event_ids = {item.get("id") for item in event_data}
@@ -412,10 +452,28 @@ class GrowthProposalSystem:
             if set(state) != phase_two_allowed:
                 raise ValueError("procedural growth v2 state has an invalid schema")
             state = dict(state)
-            state["schema_version"] = cls.SCHEMA_VERSION
+            state["schema_version"] = 3
             state["institution_templates"] = []
             state["next_institution_template_sequence"] = 1
+            version = 3
+        if version == 3:
+            phase_three_allowed = {
+                "schema_version", "records", "resident_templates",
+                "location_templates", "event_templates", "institution_templates",
+                "next_proposal_sequence", "next_resident_template_sequence",
+                "next_location_template_sequence", "next_event_template_sequence",
+                "next_institution_template_sequence", "last_attempt_day",
+            }
+            if set(state) != phase_three_allowed:
+                raise ValueError("procedural growth v3 state has invalid schema")
+            state = dict(state)
+            state["schema_version"] = 4
+            state["records"] = [dict(item, target_institution_template_id=None)
+                                for item in state["records"]]
+            state["commerce_templates"] = []
+            state["next_commerce_template_sequence"] = 1
         allowed = {
+            "commerce_templates", "next_commerce_template_sequence",
             "schema_version", "records", "resident_templates", "location_templates",
             "event_templates",
             "institution_templates",
@@ -430,11 +488,14 @@ class GrowthProposalSystem:
             raise ValueError("unsupported procedural growth schema version")
         if any(not isinstance(state.get(name), list) for name in (
             "records", "resident_templates", "location_templates", "event_templates",
-            "institution_templates",
+            "institution_templates", "commerce_templates",
         )):
             raise ValueError("procedural growth collections must be lists")
         return cls(
             policy,
+            commerce_templates=[CommerceTemplate.from_dict(x)
+                                for x in state["commerce_templates"]],
+            next_commerce_template_sequence=state["next_commerce_template_sequence"],
             records=[GrowthProposalRecord.from_dict(x) for x in state["records"]],
             resident_templates=[ResidentTemplate.from_dict(x) for x in state["resident_templates"]],
             location_templates=[LocationTemplate.from_dict(x) for x in state["location_templates"]],
@@ -456,6 +517,9 @@ class GrowthProposalSystem:
 
     def to_dict(self) -> dict:
         return {
+            "commerce_templates": [asdict(self.commerce_templates[key])
+                                   for key in sorted(self.commerce_templates)],
+            "next_commerce_template_sequence": self.next_commerce_template_sequence,
             "schema_version": self.SCHEMA_VERSION,
             "records": [asdict(item) for item in self.records],
             "resident_templates": [
@@ -619,6 +683,104 @@ class GrowthProposalSystem:
             raise ValueError("institution name already exists")
         return payload
 
+    def _commerce_payload(self, candidate: object) -> dict:
+        data = self._parse_candidate(candidate)
+        if set(data) != {"offer"} or data["offer"] not in self.policy.commerce_archetypes:
+            raise ValueError("commerce proposal must select a permitted offer only")
+        return {"offer": data["offer"]}
+
+    def derive_commerce_template(
+        self, template_id: str, institution_id: str, location_id: str,
+    ) -> CommerceTemplate:
+        match = COMMERCE_TEMPLATE_PATTERN.fullmatch(template_id or "")
+        institution = self.institution_templates.get(institution_id)
+        if (match is None or institution is None
+                or institution.location_template_id != location_id
+                or location_id not in self.location_templates):
+            raise ValueError("commerce lacks exact generated target authority")
+        sequence = int(match.group(1))
+        return CommerceTemplate(
+            template_id, institution_id, location_id, "seller:market_stall",
+            "meal_ingredients", 2, "prepared_meal", 4,
+            f"generated_purchase_activity_{sequence:04d}",
+            institution.role.work_activity_id,
+            f"generated_meals_{sequence:04d}", 8,
+        )
+
+    def select_commerce_target(
+        self, *, day: int, commerce_growth: CommerceGrowthSystem,
+        institution_growth: InstitutionGrowthSystem, location_growth: LocationGrowthSystem,
+        economy: EconomySystem, materials: MaterialSystem, agents: list, locations: list,
+        activity_records: list[dict], prior_records: list | None = None,
+    ) -> dict | None:
+        prior = self.records if prior_records is None else prior_records
+        used = {item.target_institution_template_id for item in prior
+                if item.kind == "commerce" and item.status == "admitted"}
+        candidates = []
+        for target_id in sorted(self.institution_templates):
+            if target_id in used:
+                continue
+            institution = self.institution_templates[target_id]
+            if institution_growth.templates.get(target_id) != institution:
+                continue
+            template = self.derive_commerce_template(
+                "generated_commerce_template_0001", target_id,
+                institution.location_template_id,
+            )
+            reason, formation = commerce_growth.readiness_reason(
+                template, day=day + 1, agents=agents, locations=locations,
+                institution_growth=institution_growth, location_growth=location_growth,
+                economy=economy, materials=materials, activity_records=activity_records,
+                historical=True,
+            )
+            if reason != "eligible" or formation.activation_day > day:
+                continue
+            candidates.append((formation.activation_day, target_id, {
+                "institution_template_id": target_id,
+                "location_template_id": institution.location_template_id,
+                "name": institution.name,
+                "place": self.location_templates[institution.location_template_id].name,
+            }))
+        return min(candidates, key=lambda item: item[:2])[2] if candidates else None
+
+    def validate_commerce_bindings(
+        self, commerce_growth: CommerceGrowthSystem, *,
+        institution_growth: InstitutionGrowthSystem, location_growth: LocationGrowthSystem,
+        economy: EconomySystem, materials: MaterialSystem, agents: list, locations: list,
+        activity_records: list[dict],
+    ) -> None:
+        self._validate_state()
+        generated = {key: value for key, value in commerce_growth.templates.items()
+                     if key.startswith("generated_")}
+        if generated != self.commerce_templates:
+            raise ValueError("generated commerce lacks admitted authority")
+        prior = []
+        for record in self.records:
+            if record.kind == "commerce":
+                target = self.select_commerce_target(
+                    day=record.proposal_day, commerce_growth=commerce_growth,
+                    institution_growth=institution_growth, location_growth=location_growth,
+                    economy=economy, materials=materials, agents=agents,
+                    locations=locations, activity_records=activity_records,
+                    prior_records=prior,
+                )
+                if (target is None
+                        or target["institution_template_id"] != record.target_institution_template_id
+                        or target["location_template_id"] != record.target_location_template_id):
+                    raise ValueError("commerce proposal target selection is invalid")
+            prior.append(record)
+        admissions = {item.generated_template_id: item.admission_day
+                      for item in self.records if item.kind == "commerce"
+                      and item.status == "admitted"}
+        if commerce_growth.generated_admission_days != admissions:
+            raise ValueError("commerce admission days contradict proposals")
+        for activation in commerce_growth.activation_records:
+            if activation.template_id.startswith("generated_") and (
+                activation.template_id not in admissions
+                or activation.review_day <= admissions[activation.template_id]
+            ):
+                raise ValueError("commerce activation predates admitted authority")
+
     def _attempt_count(self, kind: str) -> int:
         return sum(item.kind == kind for item in self.records)
 
@@ -628,18 +790,20 @@ class GrowthProposalSystem:
             "location": self.policy.location_proposal_capacity,
             "event": self.policy.event_proposal_capacity,
             "institution": self.policy.institution_proposal_capacity,
+            "commerce": self.policy.commerce_proposal_capacity,
         }[kind]
         return max(0, capacity - self._attempt_count(kind))
 
     def _next_kind(
         self, *, event_available: bool = False,
-        institution_available: bool = False,
+        institution_available: bool = False, commerce_available: bool = False,
     ) -> str | None:
         available = [
-            kind for kind in ("resident", "location", "event", "institution")
+            kind for kind in ("resident", "location", "event", "institution", "commerce")
             if self.remaining_capacity(kind)
             and (kind != "event" or event_available)
             and (kind != "institution" or institution_available)
+            and (kind != "commerce" or commerce_available)
         ]
         if not available:
             return None
@@ -924,7 +1088,13 @@ class GrowthProposalSystem:
             institution_context.get("location_template_id")
             if isinstance(institution_context, dict) else None
         )
+        commerce_context = context.get("commerce_target")
+        commerce_target_id = (commerce_context.get("institution_template_id")
+                              if isinstance(commerce_context, dict) else None)
+        commerce_location_id = (commerce_context.get("location_template_id")
+                                if isinstance(commerce_context, dict) else None)
         kind = self._next_kind(
+            commerce_available=commerce_target_id in self.institution_templates,
             event_available=event_target_id in self.location_templates,
             institution_available=(
                 institution_target_id in self.location_templates
@@ -956,6 +1126,13 @@ class GrowthProposalSystem:
                     "target_location": event_context,
                     "remaining_event_capacity": self.remaining_capacity("event"),
                 }))
+            elif kind == "commerce":
+                candidate = self.provider.propose_commerce(deepcopy({
+                    "target_institution": commerce_context["name"],
+                    "target_place": commerce_context["place"],
+                    "observed_evidence": "sustained work, local use and meal purchases",
+                    "permitted_offers": list(self.policy.commerce_archetypes),
+                }))
             else:
                 semantic_target = {
                     key: value for key, value in institution_context.items()
@@ -979,8 +1156,10 @@ class GrowthProposalSystem:
                 (
                     event_target_id if kind == "event"
                     else institution_target_id if kind == "institution"
+                    else commerce_location_id if kind == "commerce"
                     else None
                 ),
+                commerce_target_id if kind == "commerce" else None,
             )
         else:
             try:
@@ -995,6 +1174,8 @@ class GrowthProposalSystem:
                     if target is None:
                         raise ValueError("event target lacks generated-location authority")
                     payload = self._event_payload(candidate, target)
+                elif kind == "commerce":
+                    payload = self._commerce_payload(candidate)
                 else:
                     if institution_target_id not in self.location_templates:
                         raise ValueError(
@@ -1043,6 +1224,12 @@ class GrowthProposalSystem:
                         cooldown_days=max(
                             14, self.event_policy.dynamic_selection_interval_days
                         ),
+                    )
+                elif kind == "commerce":
+                    sequence = self.next_commerce_template_sequence
+                    template_id = f"generated_commerce_template_{sequence:04d}"
+                    template = self.derive_commerce_template(
+                        template_id, commerce_target_id, commerce_location_id
                     )
                 else:
                     sequence = self.next_institution_template_sequence
@@ -1099,8 +1286,10 @@ class GrowthProposalSystem:
                     (
                         event_target_id if kind == "event"
                         else institution_target_id if kind == "institution"
+                        else commerce_location_id if kind == "commerce"
                         else None
                     ),
+                    commerce_target_id if kind == "commerce" else None,
                 )
             else:
                 record = GrowthProposalRecord(
@@ -1109,8 +1298,10 @@ class GrowthProposalSystem:
                     (
                         event_target_id if kind == "event"
                         else institution_target_id if kind == "institution"
+                        else commerce_location_id if kind == "commerce"
                         else None
                     ),
+                    commerce_target_id if kind == "commerce" else None,
                 )
                 if kind == "resident":
                     self.resident_templates[template_id] = template
@@ -1121,6 +1312,9 @@ class GrowthProposalSystem:
                 elif kind == "event":
                     self.event_templates[template_id] = template
                     self.next_event_template_sequence += 1
+                elif kind == "commerce":
+                    self.commerce_templates[template_id] = template
+                    self.next_commerce_template_sequence += 1
                 else:
                     self.institution_templates[template_id] = template
                     self.next_institution_template_sequence += 1
@@ -1148,10 +1342,36 @@ class GrowthProposalSystem:
             > self.policy.institution_proposal_capacity
         ):
             raise ValueError("institution proposal capacity exceeded")
+        if self._attempt_count("commerce") > self.policy.commerce_proposal_capacity:
+            raise ValueError("commerce proposal capacity exceeded")
         admitted = [item for item in self.records if item.status == "admitted"]
         admitted_ids = [item.generated_template_id for item in admitted]
         if len(admitted_ids) != len(set(admitted_ids)):
             raise ValueError("generated template ids must be unique")
+        if {item.generated_template_id for item in admitted
+            if item.kind == "commerce"} != set(self.commerce_templates):
+            raise ValueError("admitted commerce proposals and templates disagree")
+        for template_id, template in self.commerce_templates.items():
+            record = next(item for item in admitted
+                          if item.generated_template_id == template_id)
+            if (self._commerce_payload(record.canonical_payload)
+                    != record.canonical_payload
+                    or template != self.derive_commerce_template(
+                        template_id, record.target_institution_template_id,
+                        record.target_location_template_id)):
+                raise ValueError("commerce template contradicts proposal")
+        if [item.generated_template_id for item in admitted if item.kind == "commerce"] != [
+            f"generated_commerce_template_{sequence:04d}"
+            for sequence in range(1, len(self.commerce_templates) + 1)
+        ]:
+            raise ValueError("commerce admission identities are not monotonic")
+        commerce_sequences = sorted(int(COMMERCE_TEMPLATE_PATTERN.fullmatch(key).group(1))
+                                    for key in self.commerce_templates)
+        if (commerce_sequences != list(range(1, len(commerce_sequences) + 1))
+                or self.next_commerce_template_sequence != len(commerce_sequences) + 1):
+            raise ValueError("commerce template sequence is inconsistent")
+        if len({item.institution_template_id for item in self.commerce_templates.values()}) != len(self.commerce_templates):
+            raise ValueError("duplicate commerce institution target")
         expected_resident = {item.generated_template_id for item in admitted if item.kind == "resident"}
         expected_location = {item.generated_template_id for item in admitted if item.kind == "location"}
         expected_event = {item.generated_template_id for item in admitted if item.kind == "event"}
@@ -1803,3 +2023,6 @@ class LLMGrowthProposalProvider:
 
     def propose_institution(self, context: dict) -> object:
         return self.llm_client.generate_growth_proposal("institution", context)
+
+    def propose_commerce(self, context: dict) -> object:
+        return self.llm_client.generate_growth_proposal("commerce", context)

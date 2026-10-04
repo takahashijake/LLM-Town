@@ -7,7 +7,9 @@ admits bounded dynamic-event templates, but only for generated public locations
 that passed ordinary V5 activation and accumulated sustained authoritative use.
 Phase 3 may admit a bounded civic-institution template only after a generated
 event at that exact place has actually occurred. Formation remains a separate
-deterministic V5 decision.
+deterministic V5 decision. Phase 4 admits one closed commerce offer for a real
+generated institution with ordinary work, use and demand evidence. Commerce
+activation, procurement, production and sales remain ordinary V5 authority.
 
 ```text
 authoritative state
@@ -33,7 +35,7 @@ authoritative entity
 
 `GrowthProposalProvider` exposes `propose_resident(context)`,
 `propose_location(context)`, `propose_event(context)`, and
-`propose_institution(context)`. The provider receives a copied JSON-compatible
+`propose_institution(context)`, and `propose_commerce(context)`. The provider receives a copied JSON-compatible
 context, never an engine or a state-mutating system. The context contains the
 completed day, bounded resident and active-place identities, seven days of
 aggregate activity counts, the closed affinity vocabulary, capacity counts, and
@@ -210,8 +212,9 @@ memory, and activity behavior remains on these existing paths.
 ## Branch isolation
 
 A generated location may receive bounded local event and institution-template
-authority after the complete causal evidence chain. It receives no commerce,
-production, seller, evidence override, or legal authority. A
+authority after the complete causal evidence chain. A real generated institution
+may subsequently qualify for the bounded Phase 4 commerce lifecycle. No proposal
+grants direct production, seller, evidence override, or legal authority. A
 generated resident receives no Garden or Pavilion role merely by visiting either
 place.
 
@@ -225,8 +228,8 @@ allowlists, so their occurrences cannot qualify either institution or downstream
 employment or commerce.
 Conversely, a generated institution accepts only generated events bound to its
 own generated place. It cannot bind Garden/Pavilion events, roles, accounts,
-employment identities, or commerce templates. Existing commerce references only
-exact checked-in institution-template IDs.
+employment identities, or commerce templates. Each commerce template references its exact institution
+and generated location; child authority comes only from its own activation.
 
 ## Evaluation and optional model path
 
@@ -236,6 +239,7 @@ Run the model-free real-engine gate with:
 python scripts/evaluate_growth_proposals.py
 python scripts/evaluate_procedural_events.py
 python scripts/evaluate_procedural_institutions.py
+python scripts/evaluate_procedural_commerce.py
 ```
 
 Its static provider exercises admission, save immediately after the first
@@ -249,17 +253,120 @@ instructions through the same parser and admission code:
 ```bash
 python scripts/evaluate_growth_proposals_real.py --local-files-only
 python scripts/evaluate_procedural_institutions_real.py --local-files-only
+python scripts/evaluate_procedural_commerce_real.py --local-files-only
 ```
 
 This path is intentionally excluded from ordinary CI. Text generation need not
 be identical across hardware; deterministic replay begins after admission.
 
+## Phase 4: bounded institutional commerce
+
+The full chain is:
+
+```text
+generated resident/location → activation → sustained place use
+→ generated event → real occurrence → generated institution template
+→ deterministic formation → account + employment → ordinary work + wages
+→ sustained work/use + actual meal demand → semantic commerce proposal
+→ persisted generated CommerceTemplate → later ordinary commerce review
+→ atomic inventory/seller/purchase-rule/recipe activation
+→ real upstream procurement → input-consuming production
+→ resident purchases → conserved institution revenue → ordinary wages
+```
+
+The exact candidate schema is:
+
+```json
+{"offer":"community_meals"}
+```
+
+`commerce_proposal_capacity` bounds attempts (default zero). Rejections and
+provider exceptions consume capacity. `commerce_archetypes` is the closed list
+`["community_meals"]`; arbitrary economic parameters are rejected. History must
+hold all attempts across all five kinds. One admitted commerce template per
+generated institution is permitted.
+
+The entire model-visible context is:
+
+```json
+{
+  "target_institution":"Story Grove Commons",
+  "target_place":"Story Grove",
+  "observed_evidence":"sustained work, local use and meal purchases",
+  "permitted_offers":["community_meals"]
+}
+```
+
+These are semantic names and an evidence summary; names never resolve authority.
+The provider sees no account, institution, formation, employment, employee,
+inventory, seller, recipe, activity or provenance IDs; prices, quantities,
+balances, stock, demand records and activation dates are excluded. Its output
+cannot select a target or change the fixed material contract.
+
+Deterministic code considers only admitted generated institutions registered in
+ordinary institution growth. It recomputes commerce readiness from the exact
+activated formation, generated place activation, real institution account and
+active employment, prior eligible operator work, distinct residents/use days,
+actual prepared-meal exchanges, authoritative upstream seller/stock and funds.
+At the end of day D, evidence includes D; ordinary activation review on a later
+day uses its previous-day evidence window. Eligible unused institutions sort by
+formation activation day then generated institution template ID. The model
+cannot alter this ordering.
+
+`generated_commerce_template_0001` and
+`generated_purchase_activity_0001` use contiguous admission sequences. Production
+uses the target institution's existing work activity. The fixed offer transforms
+2 `meal_ingredients` into 4 `prepared_meal`, with target stock 8, and procures
+from the configured `seller:market_stall`. Prices remain material catalog prices.
+The recipe suffix is `generated_meals_0001`. Inventory, seller and full recipe IDs
+come from the ordinary commerce activation sequence, independently of proposal
+text. Registration requires exact admitted proposal provenance and collision
+checks.
+
+Admission changes only proposal/template rosters. Engine ordering places it after
+ordinary commerce review, and replay validation requires review day strictly
+after admission day. It creates no material registry, stock, money transfer,
+production or sale. Later V5 readiness, capacity, review cadence and cooldown
+remain in charge. Engine preflight and atomic material registration create the
+empty institution inventory, account/location-bound seller, one purchase rule
+and recipe restricted to the exact employee and employment. Normal material
+operations procure existing lots, consume inputs, produce traceable output lots
+and atomically transfer purchased goods and currency. Revenue becomes ordinary
+institution money.
+
+Proposal schema **4** adds `commerce_templates`,
+`next_commerce_template_sequence`, and explicit
+`target_institution_template_id` on records. Strict schemas 1→2→3→4 migrations
+add empty commerce state and null institution targets, without fabricating any
+economic authority. Canonical SHA-256 payloads and exact template derivation bind
+both target IDs and the semantic offer. Commerce system schema remains 1: its
+generated roster is reconstructed from admitted proposal state before replaying
+activation records, never from another model call. Missing/fabricated proposals,
+templates and downstream registries fail closed. Historical funds and stock are
+reconstructed from initial balances, ledger, production and lot movements;
+work/use/demand are replayed from authoritative histories.
+
+Garden retains its configured contract. Pavilion has no commerce template.
+Generated commerce binds its own exact formation, location activation, account,
+employment, inventory, seller, recipe and activation provenance. Similar goods or
+names cannot grant another branch's authority.
+
+The Phase 4 evaluator uses a bounded static provider and the real engine. It checks
+repeatability, saves before admission, after admission and after activation,
+provider exhaustion, economic/material reconstruction, procurement/production/
+sales/revenue, static branch isolation and adversarial replay mutations. Its
+configuration raises finite commerce capacity to two to accommodate Garden and
+the generated branch; checked-in defaults remain unchanged.
+
 ## Explicit limitations
 
-Phase 3 stops at one bounded institution and one deterministic employment
-contract. It does not generate commerce, sellers, goods, recipes, prices, supply
-chains, multiple arbitrary roles, arbitrary hiring, job switching, housing,
-land, roads, zoning, demographics, births/deaths, departures, taxes, finance,
-government, politics, or law. Generated events cannot declare that they occurred,
-and generated institution prose cannot declare that an institution exists.
-Bounded procedural institutional commerce remains a separate future phase.
+Phase 4 offers only one fixed food-production archetype and one existing employee
+per institution. LLM-Town does **not** yet provide unrestricted generation of
+arbitrary goods, arbitrary prices, arbitrary recipes, arbitrary supply chains,
+multiple arbitrary roles, free hiring/firing or job switching, housing, land,
+roads, zoning, demographics, birth/death, departures, taxation, banking/finance,
+government, politics or law. Generated events cannot declare occurrences,
+institution prose cannot declare formation, and commerce candidates cannot
+create stock, purchases or revenue. Broader closed, independently validated
+commerce archetypes are a possible next slice, without unrestricted economic
+JSON.

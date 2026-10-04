@@ -415,6 +415,10 @@ class SimulationEngine:
         self.commerce_growth = CommerceGrowthSystem.from_config(
             self.town_growth_path,
             saved_state.get("commerce_growth") if saved_state else None,
+            supplemental_templates=list(self.growth_proposals.commerce_templates.values()),
+            generated_admission_days={item.generated_template_id: item.admission_day
+                                      for item in self.growth_proposals.records
+                                      if item.kind == "commerce" and item.status == "admitted"},
         )
         self.activity_planner.set_location_affinities([
             location for location in self.locations
@@ -1509,6 +1513,12 @@ class SimulationEngine:
             location_growth=self.location_growth,
             event_ecology=self.event_ecology,
         )
+        context["commerce_target"] = self.growth_proposals.select_commerce_target(
+            day=day, commerce_growth=self.commerce_growth,
+            institution_growth=self.institution_growth, location_growth=self.location_growth,
+            economy=self.economy, materials=self.materials, agents=self.agents,
+            locations=self.locations, activity_records=self.activity_records,
+        ) if self.growth_proposals.remaining_capacity("commerce") else None
         record = self.growth_proposals.review(day=day, context=context)
         if record is None or record.status != "admitted":
             return record
@@ -1531,6 +1541,11 @@ class SimulationEngine:
                 self.growth_proposals.event_templates[
                     record.generated_template_id
                 ]
+            )
+        elif record.kind == "commerce":
+            self.commerce_growth.register_generated_template(
+                self.growth_proposals.commerce_templates[record.generated_template_id],
+                proposal_authority=self.growth_proposals,
             )
         else:
             self.institution_growth.register_generated_template(
@@ -1817,6 +1832,8 @@ class SimulationEngine:
         if record.status != "proposed":
             raise ValueError("commerce activation is not pending")
         template = self.commerce_growth.template(record.template_id)
+        if record.review_day <= self.commerce_growth.generated_admission_days.get(template.id, 0):
+            raise ValueError("commerce proposal has not matured")
         review = next((item for item in self.commerce_growth.review_history
                        if item.event_key == record.event_key), None)
         if (review is None or review.status != "proposed"
@@ -1937,6 +1954,10 @@ class SimulationEngine:
             self.plan_system.materials = self.materials
             self.commerce_growth = CommerceGrowthSystem.from_config(
                 self.town_growth_path, growth_before,
+                supplemental_templates=list(self.growth_proposals.commerce_templates.values()),
+                generated_admission_days={item.generated_template_id: item.admission_day
+                                          for item in self.growth_proposals.records
+                                          if item.kind == "commerce" and item.status == "admitted"},
             )
             for agent, (memory, archive) in zip(self.agents, memories_before):
                 agent.memory = memory
@@ -1972,9 +1993,37 @@ class SimulationEngine:
     def validate_commerce_authorities(self) -> None:
         """Reject orphan or contradictory dynamic material authority."""
         self.commerce_growth._validate_state()
-        configured_goods = json.loads(
-            self.materials_path.read_text(encoding="utf-8")
-        ).get("goods", [])
+        self.growth_proposals.validate_commerce_bindings(
+            self.commerce_growth, institution_growth=self.institution_growth,
+            location_growth=self.location_growth, economy=self.economy,
+            materials=self.materials, agents=self.agents, locations=self.locations,
+            activity_records=self.activity_records,
+        )
+        material_config = json.loads(self.materials_path.read_text(encoding="utf-8"))
+        configured_goods = material_config.get("goods", [])
+        configured_sellers = {item["id"]: Seller(**item)
+                              for item in material_config.get("sellers", [])}
+
+        static_sellers = {key: item for key, item in self.materials.sellers.items()
+                          if item.commerce_activation_id is None}
+        static_recipes = {key: item for key, item in self.materials.production_recipes.items()
+                          if item.commerce_activation_id is None}
+        static_rules = {key: item for key, item in self.materials.purchase_activity_rules.items()
+                        if item.commerce_activation_id is None}
+        configured_recipes = {item["id"]: ProductionRecipe.from_dict(item)
+                              for item in material_config.get("production_recipes", [])}
+        configured_rules = {item["activity_id"]: PurchaseActivityRule(**item)
+                            for item in material_config.get("purchase_activity_rules", [])}
+        if (static_sellers != configured_sellers or static_recipes != configured_recipes
+                or static_rules != configured_rules):
+            raise ValueError("static commerce authority contradicts configuration")
+        for inventory in self.materials.inventories.values():
+            if inventory.owner_type == "institution" and inventory.commerce_activation_id is None:
+                raise ValueError("institution inventory lacks commerce provenance")
+        for configured in material_config.get("business_inventories", []):
+            if self.materials.initial_quantities.get(configured["id"]) != configured["quantities"]:
+                raise ValueError("upstream stock baseline contradicts configuration")
+
         live_goods = [{
             "id": item.id, "name": item.name, "category": item.category,
             "unit_price": item.unit_price, "consumable": item.consumable,
@@ -1998,11 +2047,30 @@ class SimulationEngine:
             if (institution is None or location is None
                     or institution.location_template_id != template.location_template_id
                     or upstream is None or upstream.commerce_activation_id is not None
+                    or upstream != configured_sellers.get(template.upstream_seller_id)
                     or template.input_good_id not in self.materials.goods
                     or template.output_good_id not in self.materials.goods
                     or template.production_activity_id
                     != institution.role.work_activity_id):
                 raise ValueError("commerce template references invalid finite authority")
+        for record in self.commerce_growth.activation_records:
+            template = self.commerce_growth.template(record.template_id)
+            reason, formation = self.commerce_growth.readiness_reason(
+                template, day=record.review_day, agents=self.agents,
+                locations=self.locations, institution_growth=self.institution_growth,
+                location_growth=self.location_growth, economy=self.economy,
+                materials=self.materials, activity_records=self.activity_records,
+                historical=True,
+            )
+            if (reason != "eligible" or formation is None
+                    or formation.id != record.institution_formation_id
+                    or formation.institution_id != record.institution_id
+                    or formation.location_id != record.location_id
+                    or formation.location_activation_id != record.location_activation_id
+                    or formation.employee_agent_id != record.operator_agent_id
+                    or formation.employment_id != record.operator_employment_id
+                    or formation.employer_account_id != record.institution_account_id):
+                raise ValueError("commerce record lacks exact historical authority")
         active = [item for item in self.commerce_growth.activation_records
                   if item.status == "activated"]
         active_ids = {item.id for item in active}
@@ -2047,6 +2115,10 @@ class SimulationEngine:
                 self._commerce_material_contract(record, template)
             )
             if (formation is None
+                    or formation.template_id != template.institution_template_id
+                    or formation.location_activation_id != record.location_activation_id
+                    or record.purchase_activity_id != template.purchase_activity_id
+                    or record.upstream_seller_id != template.upstream_seller_id
                     or formation.institution_id != record.institution_id
                     or formation.location_id != record.location_id
                     or formation.employment_id != record.operator_employment_id

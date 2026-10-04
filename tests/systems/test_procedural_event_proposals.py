@@ -224,6 +224,10 @@ def test_phase_one_state_migrates_to_empty_event_authority():
     admit_location(system)
     phase_one = system.to_dict()
     phase_one["schema_version"] = 1
+    phase_one.pop("commerce_templates")
+    phase_one.pop("next_commerce_template_sequence")
+    for record in phase_one["records"]:
+        record.pop("target_institution_template_id")
     phase_one.pop("event_templates")
     phase_one.pop("next_event_template_sequence")
     phase_one.pop("institution_templates")
@@ -233,7 +237,7 @@ def test_phase_one_state_migrates_to_empty_event_authority():
     restored = make_system(Provider(), events=0, state=phase_one)
     assert restored.event_templates == {}
     assert restored.next_event_template_sequence == 1
-    assert restored.to_dict()["schema_version"] == 3
+    assert restored.to_dict()["schema_version"] == 4
 
 
 def test_event_ecology_supplemental_and_live_registration_validate_binding(tmp_path):
