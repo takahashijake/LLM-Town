@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.systems.growth_proposals import GrowthProposalSystem
 
+from src.systems.persistence_validation import require_record_fields, require_sequence
+
 
 ACTIVATION_PATTERN = re.compile(r"commerce-activation:(\d{4,})")
 
@@ -97,9 +99,12 @@ class CommerceReview:
                 or self.status not in {"waiting", "proposed", "activated", "rejected"}
                 or not isinstance(self.reason, str) or not self.reason):
             raise ValueError("invalid commerce review")
-        if self.status == "waiting" and (self.activation_id or self.template_id):
+        identities = (self.activation_id, self.template_id)
+        if self.status == "waiting" and any(item is not None for item in identities):
             raise ValueError("waiting commerce review cannot claim an activation")
-        if self.status != "waiting" and not (self.activation_id and self.template_id):
+        if self.status != "waiting" and any(
+            not isinstance(item, str) or not item for item in identities
+        ):
             raise ValueError("commerce proposal requires stable identities")
 
 
@@ -176,12 +181,12 @@ class CommerceGrowthSystem:
         self.templates = {item.id: item for item in templates}
         self.generated_admission_days = dict(generated_admission_days or {})
         self.next_sequence = _positive(next_sequence, "next commerce sequence")
-        self.review_history = list(review_history or [])[-policy.history_limit:]
+        self.review_history = list(review_history or [])
         self.activation_records = list(activation_records or [])
         self.processed_event_keys = set(processed_event_keys or ())
         self.consumed_template_ids = set(consumed_template_ids or ())
         self.last_activation_day = last_activation_day
-        self.public_history = list(public_history or [])[-policy.history_limit:]
+        self.public_history = list(public_history or [])
         self._validate_state()
 
     @classmethod
@@ -209,7 +214,8 @@ class CommerceGrowthSystem:
             "activation_records", "processed_event_keys", "consumed_template_ids",
             "last_activation_day", "public_history",
         }
-        if (not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION
+        if (not isinstance(state, dict) or (type(state.get("schema_version")) is not int
+                or state.get("schema_version") != cls.SCHEMA_VERSION)
                 or set(state) != allowed):
             raise ValueError("unsupported commerce growth state schema")
         if any(not isinstance(state[name], list) for name in (
@@ -220,8 +226,8 @@ class CommerceGrowthSystem:
         return cls(
             policy, templates, generated_admission_days=generated_admission_days,
             next_sequence=state["next_sequence"],
-            review_history=[CommerceReview(**item) for item in state["review_history"]],
-            activation_records=[CommerceActivationRecord(**item)
+            review_history=[CommerceReview(**require_record_fields(item, CommerceReview)) for item in state["review_history"]],
+            activation_records=[CommerceActivationRecord(**require_record_fields(item, CommerceActivationRecord))
                                 for item in state["activation_records"]],
             processed_event_keys=set(state["processed_event_keys"]),
             consumed_template_ids=set(state["consumed_template_ids"]),
@@ -325,8 +331,7 @@ class CommerceGrowthSystem:
                 raise ValueError("commerce activation contradicts template contract")
         sequences = [int(ACTIVATION_PATTERN.fullmatch(item.id).group(1))
                      for item in self.activation_records]
-        if self.next_sequence <= max(sequences, default=0):
-            raise ValueError("next commerce sequence would reuse identity")
+        require_sequence(sequences, self.next_sequence, "commerce")
         if self.last_activation_day != max(
             (item.activation_day for item in activated), default=None
         ):

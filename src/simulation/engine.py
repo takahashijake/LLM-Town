@@ -1358,6 +1358,41 @@ class SimulationEngine:
             ):
                 raise ValueError("active location contradicts its finite template")
 
+    def required_event_occurrence_ids(self) -> set[str]:
+        """Retain bounded historical proof used by institution admission/replay.
+
+        Earliest occurrences preserve eligibility floors and target age. Actual
+        candidate attendance preserves employee ranking at formed institutions.
+        These are references to the sole occurrence registry, not new authority.
+        """
+        required = set()
+        floor = self.institution_growth.policy.minimum_dynamic_event_occurrences
+        pairs = {}
+        for record in self.event_ecology.occurrence_history:
+            pairs.setdefault((record.template_id, record.location_id), []).append(record)
+        for records in pairs.values():
+            required.update(item.occurrence_id for item in records[:floor])
+        for formation in self.institution_growth.formation_records:
+            if formation.status != "activated":
+                continue
+            template = self.institution_growth.templates[formation.template_id]
+            first_day = (formation.review_day
+                         - self.institution_growth.policy.candidate_activity_window_days)
+            candidates = {
+                row.get("source_event_occurrence_id") for row in self.activity_records
+                if row.get("type") == "activity"
+                and row.get("activity_id") == "attend_event"
+                and row.get("location") == formation.location_id
+                and first_day <= row.get("day", -1) <= formation.review_day
+            }
+            required.update(
+                record.occurrence_id for record in self.event_ecology.occurrence_history
+                if record.occurrence_id in candidates
+                and record.template_id in template.relevant_dynamic_event_template_ids
+                and record.day < formation.review_day
+            )
+        return required
+
     def validate_event_authorities(self) -> None:
         """Fail closed when dynamic event authority lacks exact provenance."""
         checks = self.event_ecology.validate(

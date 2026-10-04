@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from src.analysis.commerce_growth_evaluation import _revenue_funds_later_wage
+from src.analysis.growth_audits import conservation_checks
 from src.systems.growth_proposals import payload_digest
 from src.analysis.procedural_institution_evaluation import (
     StaticProceduralInstitutionProvider, NoCallsProvider, _write_config as _phase3_config,
@@ -255,15 +256,7 @@ def evaluate_procedural_commerce() -> dict:
         for label, mutate in attacks.items():
             scenarios[f"reject_{label}"] = _mutated_load_rejected(root, config, saved, label, mutate)
         fresh.validate_commerce_authorities()
-        invariants = {
-            "currency": fresh.economy.conservation_holds(),
-            "ledger": fresh.economy.ledger_reconstructs_balances(),
-            "materials": fresh.materials.material_conservation_holds(),
-            "history": fresh.materials.material_history_reconstructs_inventories(),
-            "provenance": fresh.materials.provenance_reconciles(),
-            "exchanges": fresh.materials.exchanges_reconcile_with_ledger(),
-            "production": fresh.materials.production_records_are_valid(),
-        }
+        invariants = conservation_checks(fresh)
         diagnostics = {"proposal_day": record.proposal_day, "activation_day": activation.activation_day,
                        "procurements": len(procurement), "productions": len(production), "sales": len(sales),
                        "sales_revenue": sum(item.total_price for item in sales), "provider_calls": provider.calls}

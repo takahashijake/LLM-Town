@@ -987,3 +987,12 @@ V1 remains frozen as the social core. V2 is scoped as a small auditable causal
 loop, not realistic economics, law, or emergent civilization. A first V3 milestone
 should continue deepening grounded response and social follow-through evaluation,
 rather than adding another institution or broad simulation feature.
+
+V6 release assurance (two independent generated commerce branches):
+
+```bash
+python scripts/evaluate_v6_freeze.py
+```
+
+See [the V6 freeze contract](docs/v6_freeze_candidate.md) for comprehensive
+checkpoint replay, corruption diagnostics, CI gates and optional model smoke.

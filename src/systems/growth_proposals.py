@@ -9,6 +9,8 @@ import json
 import re
 from typing import Protocol, TYPE_CHECKING
 
+from src.systems.persistence_validation import require_record_fields
+
 from src.systems.location_growth import KNOWN_LOCATION_AFFINITIES, LocationTemplate
 from src.systems.event_ecology import (
     DynamicEventTemplate,
@@ -167,6 +169,7 @@ class GrowthProposalRecord:
             raise ValueError("invalid growth proposal record")
         _positive(self.proposal_day, "proposal day")
         if self.status == "admitted":
+            _positive(self.admission_day, "admission day")
             if (
                 not isinstance(self.canonical_payload, dict)
                 or payload_digest(self.canonical_payload) != self.canonical_payload_hash
@@ -426,12 +429,17 @@ class GrowthProposalSystem:
         if not isinstance(state, dict):
             raise ValueError("procedural growth state has an invalid schema")
         version = state.get("schema_version")
+        _positive(version, "procedural growth schema version")
         if version in {1, 2, 3}:
-            legacy_fields = set(GrowthProposalRecord.__dataclass_fields__) - {
-                "target_institution_template_id"
+            # Historical schemas are fixed contracts. Deriving them from the
+            # current dataclass could accidentally admit a future authority field.
+            legacy_fields = {
+                "id", "kind", "proposal_day", "status", "reason",
+                "canonical_payload", "canonical_payload_hash",
+                "generated_template_id", "provider_kind", "admission_day",
             }
-            if version == 1:
-                legacy_fields -= {"target_location_template_id"}
+            if version > 1:
+                legacy_fields.add("target_location_template_id")
             legacy_kinds = {
                 1: {"resident", "location"},
                 2: {"resident", "location", "event"},
@@ -508,6 +516,15 @@ class GrowthProposalSystem:
             "institution_templates", "commerce_templates",
         )):
             raise ValueError("procedural growth collections must be lists")
+        for collection, record_type in (
+            ("resident_templates", ResidentTemplate),
+            ("location_templates", LocationTemplate),
+            ("event_templates", DynamicEventTemplate),
+            ("institution_templates", InstitutionTemplate),
+            ("commerce_templates", CommerceTemplate),
+        ):
+            for item in state[collection]:
+                require_record_fields(item, record_type)
         return cls(
             policy,
             commerce_templates=[CommerceTemplate.from_dict(x)
@@ -1677,6 +1694,20 @@ class GrowthProposalSystem:
         institution_growth=None,
         *, locations: list | None = None, activity_records: list[dict] | None = None,
     ) -> None:
+        admissions = {item.generated_template_id: item.admission_day
+                      for item in self.records if item.status == "admitted"}
+        for records, day_field in (
+            (town_growth.migration_records, "review_day"),
+            (location_growth.activation_records, "review_day"),
+            (event_ecology.occurrence_history if event_ecology else (), "day"),
+            (institution_growth.formation_records if institution_growth else (), "review_day"),
+        ):
+            for record in records:
+                if record.template_id.startswith("generated_") and (
+                    record.template_id not in admissions
+                    or getattr(record, day_field) <= admissions[record.template_id]
+                ):
+                    raise ValueError("generated authority predates template admission")
         for template_id, template in self.resident_templates.items():
             if town_growth.templates.get(template_id) != template:
                 raise ValueError("generated resident lacks admitted proposal authority")

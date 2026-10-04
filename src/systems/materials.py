@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from src.systems.economy import EconomyError, EconomySystem
+from src.systems.persistence_validation import require_sequence
 
 
 class MaterialError(ValueError):
@@ -335,15 +338,15 @@ class MaterialSystem:
         self.consumptions = list(consumptions or [])
         self.applied_event_keys = set(applied_event_keys or ())
         self.rejected_operations = list(rejected_operations or [])
-        self.next_transfer_number = int(next_transfer_number)
-        self.next_exchange_number = int(next_exchange_number)
-        self.next_consumption_number = int(next_consumption_number)
+        self.next_transfer_number = next_transfer_number
+        self.next_exchange_number = next_exchange_number
+        self.next_consumption_number = next_consumption_number
         self.production_records = list(production_records or [])
         self.lots = self._unique_by_id(lots or [], "material lot")
         self.lot_movements = list(lot_movements or [])
-        self.next_production_number = int(next_production_number)
-        self.next_lot_number = int(next_lot_number)
-        self.next_movement_number = int(next_movement_number)
+        self.next_production_number = next_production_number
+        self.next_lot_number = next_lot_number
+        self.next_movement_number = next_movement_number
         self.initial_quantities = (
             self._quantity_snapshot()
             if initial_quantities is None
@@ -831,6 +834,19 @@ class MaterialSystem:
                 raise ValueError("static recipe cannot claim dynamic procurement")
 
     def _validate_history(self) -> None:
+        for records, prefix, counter in (
+            (self.inventory_transfers, "material-transfer-", self.next_transfer_number),
+            (self.exchanges, "exchange-", self.next_exchange_number),
+            (self.consumptions, "consumption-", self.next_consumption_number),
+            (self.production_records, "production-", self.next_production_number),
+            (self.lot_movements, "lot-movement-", self.next_movement_number),
+        ):
+            expected = [f"{prefix}{index:08d}" for index in range(1, len(records) + 1)]
+            if [record.id for record in records] != expected:
+                raise ValueError("material history identities are not monotonic")
+            require_sequence(list(range(1, len(records) + 1)), counter, prefix)
+        produced_lots = sum(len(record.output_lot_ids) for record in self.production_records)
+        require_sequence(list(range(1, produced_lots + 1)), self.next_lot_number, "material lot")
         record_groups = (
             (self.inventory_transfers, "inventory transfer"),
             (self.exchanges, "exchange"),
@@ -948,6 +964,47 @@ class MaterialSystem:
         self.next_transfer_number += 1
         return record
 
+    @contextmanager
+    def _atomic_commit(self, *, payment: bool = False) -> Iterator[None]:
+        """Restore coordinated authority on exceptions during commit.
+
+        Records and inventory/lot values are immutable; histories only append.
+        Copy only live maps and replay guards, and truncate appended histories.
+        Restore the same systems so engine references remain valid.
+        """
+        maps = {name: dict(getattr(self, name)) for name in ("_inventories", "lots")}
+        holdings = {key: dict(value) for key, value in self.lot_holdings.items()}
+        keys = set(self.applied_event_keys)
+        histories = {name: len(getattr(self, name)) for name in (
+            "inventory_transfers", "exchanges", "production_records", "lot_movements",
+        )}
+        counters = {name: getattr(self, name) for name in (
+            "next_transfer_number", "next_exchange_number", "next_production_number",
+            "next_lot_number", "next_movement_number",
+        )}
+        if payment:
+            accounts = dict(self.economy._accounts)
+            ledger_length = len(self.economy.ledger)
+            monetary_keys = set(self.economy.applied_event_keys)
+            transaction_number = self.economy.next_transaction_number
+        try:
+            yield
+        except Exception:
+            for name, value in maps.items():
+                setattr(self, name, value)
+            self.lot_holdings = holdings
+            self.applied_event_keys = keys
+            for name, length in histories.items():
+                del getattr(self, name)[length:]
+            for name, value in counters.items():
+                setattr(self, name, value)
+            if payment:
+                self.economy._accounts = accounts
+                del self.economy.ledger[ledger_length:]
+                self.economy.applied_event_keys = monetary_keys
+                self.economy.next_transaction_number = transaction_number
+            raise
+
     def produce(self, recipe_id: str, *, actor_id: str | None, employment_id: str | None,
                 inventory_id: str, day: int, hour: int | None, activity_id: str,
                 location_id: str | None, event_key: str) -> ProductionRecord:
@@ -989,37 +1046,38 @@ class MaterialSystem:
             except MaterialError:
                 self._reject("provenance_shortfall", "production input provenance is insufficient", attempt)
 
-        production_id = f"production-{self.next_production_number:08d}"
-        input_lot_ids = tuple(dict.fromkeys(
-            lot_id for allocations in allocations_by_good.values() for lot_id, _ in allocations
-        ))
-        output_lot_ids = tuple(
-            f"lot:production:{production_id}:{good_id}" for good_id, _ in recipe.outputs
-        )
-        record = ProductionRecord(production_id, recipe.id, actor_id, employment_id,
-                                  inventory_id, int(day), None if hour is None else int(hour),
-                                  recipe.inputs, recipe.outputs, activity_id, event_key,
-                                  input_lot_ids, output_lot_ids)
-        # All validation/allocation is complete before the adjacent state mutations.
-        current = inventory
-        for good_id, quantity in recipe.inputs:
-            current = current.with_quantity(good_id, current.quantity(good_id) - quantity)
-            self._move_allocations(allocations_by_good[good_id], inventory_id, None,
-                                   movement_type="production_input", reference_id=production_id,
-                                   day=day, hour=hour)
-        for (good_id, quantity), lot_id in zip(recipe.outputs, output_lot_ids):
-            current = current.with_quantity(good_id, current.quantity(good_id) + quantity)
-            lot = MaterialLot(lot_id, good_id, "production", production_id, int(day),
-                              None if hour is None else int(hour), quantity, production_id,
-                              recipe.id, input_lot_ids)
-            self.lots[lot_id] = lot
-            self.lot_holdings.setdefault(inventory_id, {})[lot_id] = quantity
-        self._inventories[inventory_id] = current
-        self.production_records.append(record)
-        self.applied_event_keys.add(event_key)
-        self.next_production_number += 1
-        self.next_lot_number += len(output_lot_ids)
-        return record
+        with self._atomic_commit(payment=False):
+            production_id = f"production-{self.next_production_number:08d}"
+            input_lot_ids = tuple(dict.fromkeys(
+                lot_id for allocations in allocations_by_good.values() for lot_id, _ in allocations
+            ))
+            output_lot_ids = tuple(
+                f"lot:production:{production_id}:{good_id}" for good_id, _ in recipe.outputs
+            )
+            record = ProductionRecord(production_id, recipe.id, actor_id, employment_id,
+                                      inventory_id, int(day), None if hour is None else int(hour),
+                                      recipe.inputs, recipe.outputs, activity_id, event_key,
+                                      input_lot_ids, output_lot_ids)
+            # All validation/allocation is complete before the adjacent state mutations.
+            current = inventory
+            for good_id, quantity in recipe.inputs:
+                current = current.with_quantity(good_id, current.quantity(good_id) - quantity)
+                self._move_allocations(allocations_by_good[good_id], inventory_id, None,
+                                       movement_type="production_input", reference_id=production_id,
+                                       day=day, hour=hour)
+            for (good_id, quantity), lot_id in zip(recipe.outputs, output_lot_ids):
+                current = current.with_quantity(good_id, current.quantity(good_id) + quantity)
+                lot = MaterialLot(lot_id, good_id, "production", production_id, int(day),
+                                  None if hour is None else int(hour), quantity, production_id,
+                                  recipe.id, input_lot_ids)
+                self.lots[lot_id] = lot
+                self.lot_holdings.setdefault(inventory_id, {})[lot_id] = quantity
+            self._inventories[inventory_id] = current
+            self.production_records.append(record)
+            self.applied_event_keys.add(event_key)
+            self.next_production_number += 1
+            self.next_lot_number += len(output_lot_ids)
+            return record
 
     def transfer_good(
         self,
@@ -1139,65 +1197,66 @@ class MaterialSystem:
                 "provenance_shortfall", "purchase stock provenance is insufficient", attempt
             )
 
-        exchange_id = f"exchange-{self.next_exchange_number:08d}"
-        transfer_id = f"material-transfer-{self.next_transfer_number:08d}"
-        try:
-            payment = self.economy.transfer(
-                buyer_account_id,
-                seller.account_id,
-                total_price,
+        with self._atomic_commit(payment=True):
+            exchange_id = f"exchange-{self.next_exchange_number:08d}"
+            transfer_id = f"material-transfer-{self.next_transfer_number:08d}"
+            try:
+                payment = self.economy.transfer(
+                    buyer_account_id,
+                    seller.account_id,
+                    total_price,
+                    day=day,
+                    hour=hour,
+                    transaction_type="purchase",
+                    reason=f"Purchase of {quantity} {good.name}",
+                    event_key=f"material-payment:{event_key}",
+                    metadata={
+                        "exchange_id": exchange_id,
+                        "good_id": good_id,
+                        "quantity": quantity,
+                    },
+                )
+            except EconomyError as error:
+                self._reject(
+                    f"payment_{error.code}",
+                    "purchase payment was rejected",
+                    attempt,
+                )
+            transfer = self._commit_transfer(
+                source,
+                destination,
+                good_id,
+                quantity,
                 day=day,
                 hour=hour,
-                transaction_type="purchase",
-                reason=f"Purchase of {quantity} {good.name}",
-                event_key=f"material-payment:{event_key}",
-                metadata={
-                    "exchange_id": exchange_id,
-                    "good_id": good_id,
-                    "quantity": quantity,
-                },
+                reason=f"Authorized purchase {exchange_id}",
+                authorization_type="exchange",
+                authorization_id=exchange_id,
+                event_key=None,
             )
-        except EconomyError as error:
-            self._reject(
-                f"payment_{error.code}",
-                "purchase payment was rejected",
-                attempt,
+            if transfer.id != transfer_id:
+                raise RuntimeError("material transfer counter changed during purchase")
+            exchange = ExchangeRecord(
+                id=exchange_id,
+                day=int(day),
+                hour=None if hour is None else int(hour),
+                buyer_inventory_id=buyer_inventory_id,
+                seller_id=seller_id,
+                seller_inventory_id=seller.inventory_id,
+                buyer_account_id=buyer_account_id,
+                seller_account_id=seller.account_id,
+                good_id=good_id,
+                quantity=quantity,
+                unit_price=good.unit_price,
+                total_price=total_price,
+                monetary_transaction_id=payment.id,
+                inventory_transfer_id=transfer.id,
+                event_key=event_key,
             )
-        transfer = self._commit_transfer(
-            source,
-            destination,
-            good_id,
-            quantity,
-            day=day,
-            hour=hour,
-            reason=f"Authorized purchase {exchange_id}",
-            authorization_type="exchange",
-            authorization_id=exchange_id,
-            event_key=None,
-        )
-        if transfer.id != transfer_id:
-            raise RuntimeError("material transfer counter changed during purchase")
-        exchange = ExchangeRecord(
-            id=exchange_id,
-            day=int(day),
-            hour=None if hour is None else int(hour),
-            buyer_inventory_id=buyer_inventory_id,
-            seller_id=seller_id,
-            seller_inventory_id=seller.inventory_id,
-            buyer_account_id=buyer_account_id,
-            seller_account_id=seller.account_id,
-            good_id=good_id,
-            quantity=quantity,
-            unit_price=good.unit_price,
-            total_price=total_price,
-            monetary_transaction_id=payment.id,
-            inventory_transfer_id=transfer.id,
-            event_key=event_key,
-        )
-        self.exchanges.append(exchange)
-        self.applied_event_keys.add(event_key)
-        self.next_exchange_number += 1
-        return exchange
+            self.exchanges.append(exchange)
+            self.applied_event_keys.add(event_key)
+            self.next_exchange_number += 1
+            return exchange
 
     def find_purchase_route(
         self, agent_id: str, good_id: str, quantity: int,
@@ -1453,7 +1512,19 @@ class MaterialSystem:
             + [(record.day, -1 if record.hour is None else record.hour, 0, record.id, "production", record)
                for record in self.production_records]
         )
-        for _day, _hour, _priority, _id, kind, record in sorted(events):
+        movement_order = {}
+        for index, movement in enumerate(self.lot_movements):
+            movement_order.setdefault(movement.reference_id, index)
+
+        def causal_order(event):
+            day, hour, legacy_priority, record_id, _kind, _record = event
+            # Modern records have one common persisted commit order across
+            # transfers, production and consumption. Legacy records without
+            # movements retain their supported historical priority ordering.
+            return (day, hour, record_id in movement_order,
+                    movement_order.get(record_id, legacy_priority), record_id)
+
+        for _day, _hour, _priority, _id, kind, record in sorted(events, key=causal_order):
             if kind == "production":
                 for good_id, quantity in record.inputs:
                     reconstructed[record.inventory_id][good_id] -= quantity
@@ -1787,7 +1858,7 @@ class MaterialSystem:
     @classmethod
     def from_dict(cls, data: dict, *, economy: EconomySystem) -> "MaterialSystem":
         version = data.get("schema_version", 1)
-        if version not in (1, cls.SCHEMA_VERSION):
+        if type(version) is not int or version not in (1, cls.SCHEMA_VERSION):
             raise ValueError("unsupported material schema version")
         return cls(
             economy=economy,

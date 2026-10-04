@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 
+from src.systems.persistence_validation import require_record_fields
+
 from src.town.location import Location
 
 
@@ -166,13 +168,13 @@ class LocationGrowthSystem:
         self.next_activation_sequence = _positive_int(
             next_activation_sequence, "next location activation sequence"
         )
-        self.review_history = list(review_history or [])[-self.REVIEW_HISTORY_LIMIT:]
+        self.review_history = list(review_history or [])
         self.activation_records = list(activation_records or [])
         self.processed_event_keys = set(processed_event_keys or ())
         self.consumed_template_ids = set(consumed_template_ids or ())
         self.last_activation_day = last_activation_day
         self.last_review_day = last_review_day
-        self.public_history = list(public_history or [])[-self.PUBLIC_HISTORY_LIMIT:]
+        self.public_history = list(public_history or [])
         self._validate_state()
 
     @classmethod
@@ -191,7 +193,8 @@ class LocationGrowthSystem:
         templates.extend(supplemental_templates or ())
         if state is None:
             return cls(policy, templates, base_locations)
-        if not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION:
+        if not isinstance(state, dict) or (type(state.get("schema_version")) is not int
+                or state.get("schema_version") != cls.SCHEMA_VERSION):
             raise ValueError("unsupported location growth schema version")
         allowed_state = {
             "schema_version", "next_activation_sequence", "review_history",
@@ -210,17 +213,13 @@ class LocationGrowthSystem:
         system = cls(
             policy, templates, base_locations,
             next_activation_sequence=state.get("next_activation_sequence", 1),
-            review_history=[DevelopmentReview(**x) for x in state.get("review_history", [])],
-            activation_records=[LocationActivationRecord(**x) for x in state.get("activation_records", [])],
+            review_history=[DevelopmentReview(**require_record_fields(x, DevelopmentReview)) for x in state.get("review_history", [])],
+            activation_records=[LocationActivationRecord(**require_record_fields(x, LocationActivationRecord)) for x in state.get("activation_records", [])],
             processed_event_keys=set(state.get("processed_event_keys", [])),
             consumed_template_ids=set(state.get("consumed_template_ids", [])),
             last_activation_day=state.get("last_activation_day"),
             last_review_day=state.get("last_review_day"),
             public_history=state.get("public_history", []),
-        )
-        sequences = [int(ACTIVATION_ID_PATTERN.fullmatch(x.id).group(1)) for x in system.activation_records]
-        system.next_activation_sequence = max(
-            system.next_activation_sequence, max(sequences, default=0) + 1
         )
         return system
 
@@ -274,6 +273,9 @@ class LocationGrowthSystem:
         return next((x for x in self.activation_records if x.status == "proposed"), None)
 
     def _validate_state(self) -> None:
+        if (len(self.review_history) > self.REVIEW_HISTORY_LIMIT
+                or len(self.public_history) > self.PUBLIC_HISTORY_LIMIT):
+            raise ValueError("growth history exceeds configured bound")
         ids = [x.id for x in self.activation_records]
         event_keys = [x.event_key for x in self.activation_records]
         location_ids = [x.location_id for x in self.activation_records]
@@ -338,7 +340,7 @@ class LocationGrowthSystem:
             int(ACTIVATION_ID_PATTERN.fullmatch(item.id).group(1))
             for item in self.activation_records
         ]
-        if self.next_activation_sequence <= max(sequences, default=0):
+        if self.next_activation_sequence != max(sequences, default=0) + 1:
             raise ValueError("next location activation sequence would reuse identity")
         if len(self.base_location_ids) + len(activated) > self.policy.location_capacity:
             raise ValueError("location capacity exceeded")

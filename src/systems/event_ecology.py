@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 import re
 
+from src.systems.persistence_validation import require_record_fields
+
 from src.town.daily_event import DailyEvent, EVENT_POOL, instantiate_base_event
 
 
@@ -162,7 +164,8 @@ class EventEcologySystem:
             instance.register_generated_template(template)
         if state is None:
             return instance
-        if not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION:
+        if not isinstance(state, dict) or (type(state.get("schema_version")) is not int
+                or state.get("schema_version") != cls.SCHEMA_VERSION):
             raise ValueError("unsupported event ecology schema version")
         if set(state) != {"schema_version", "occurrence_history", "processed_occurrence_ids"}:
             raise ValueError("event ecology state contains unsupported fields")
@@ -174,7 +177,7 @@ class EventEcologySystem:
             policy, list(instance.templates.values()), simulation_seed=simulation_seed,
             configured_template_ids=configured_ids,
             generated_location_templates=generated_location_templates,
-            occurrence_history=[DynamicEventOccurrenceRecord(**item)
+            occurrence_history=[DynamicEventOccurrenceRecord(**require_record_fields(item, DynamicEventOccurrenceRecord))
                                 for item in state["occurrence_history"]],
             processed_occurrence_ids=set(state["processed_occurrence_ids"]),
         )
@@ -223,6 +226,9 @@ class EventEcologySystem:
         }
 
     def _validate_state(self) -> None:
+        days = [item.day for item in self.occurrence_history]
+        if days != sorted(set(days)):
+            raise ValueError("dynamic event days must be unique and monotonic")
         ids = [item.occurrence_id for item in self.occurrence_history]
         if len(ids) != len(set(ids)):
             raise ValueError("dynamic event occurrence identities must be unique")
@@ -300,7 +306,10 @@ class EventEcologySystem:
 
     def select_daily_event(
         self, *, day: int, locations: list, location_growth, activity_records: list[dict],
+        protected_occurrence_ids: set[str] | None = None,
     ) -> DailyEvent:
+        if any(item.day >= day for item in self.occurrence_history):
+            raise ValueError("dynamic event day was already processed")
         candidates = self.eligible_dynamic_candidates(
             day=day, locations=locations, location_growth=location_growth,
             activity_records=activity_records,
@@ -337,8 +346,19 @@ class EventEcologySystem:
             record = DynamicEventOccurrenceRecord(
                 occurrence_id, template.id, location.id, day,
             )
-            self.occurrence_history.append(record)
-            self.occurrence_history = self.occurrence_history[-self.policy.history_limit:]
+            protected = set(protected_occurrence_ids or ())
+            if not protected.issubset(self.processed_occurrence_ids):
+                raise ValueError("protected event evidence lacks occurrence authority")
+            required = [item for item in self.occurrence_history
+                        if item.occurrence_id in protected]
+            room = self.policy.history_limit - len(required)
+            if room < 1:
+                raise ValueError("event history capacity cannot retain required authority")
+            optional = [item for item in self.occurrence_history
+                        if item.occurrence_id not in protected] + [record]
+            self.occurrence_history = sorted(
+                required + optional[-room:], key=lambda item: item.day,
+            )
             self.processed_occurrence_ids = {
                 item.occurrence_id for item in self.occurrence_history
             }

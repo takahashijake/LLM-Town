@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 
+from src.systems.persistence_validation import require_record_fields, require_sequence
+
 
 FORMATION_PATTERN = re.compile(r"institution-formation:(\d{4,})")
 INSTITUTION_PATTERN = re.compile(r"institution:(\d{4,})")
@@ -145,12 +147,12 @@ class InstitutionReview:
         _positive(self.day, "institution review day")
         if (self.event_key != f"institution-review:day:{self.day}"
                 or self.status not in {"waiting", "proposed", "activated", "rejected"}
-                or not self.reason):
+                or not isinstance(self.reason, str) or not self.reason):
             raise ValueError("invalid institution review")
         identities = (self.formation_id, self.template_id, self.candidate_agent_id)
-        if self.status == "waiting" and any(identities):
+        if self.status == "waiting" and any(item is not None for item in identities):
             raise ValueError("waiting institution review cannot claim authority")
-        if self.status != "waiting" and not all(identities):
+        if self.status != "waiting" and any(not isinstance(item, str) or not item for item in identities):
             raise ValueError("institution proposal requires stable identities")
 
 
@@ -228,12 +230,12 @@ class InstitutionGrowthSystem:
             configured_template_ids or self.templates
         )
         self.next_sequence = _positive(next_sequence, "next institution sequence")
-        self.review_history = list(review_history or [])[-policy.history_limit:]
+        self.review_history = list(review_history or [])
         self.formation_records = list(formation_records or [])
         self.processed_event_keys = set(processed_event_keys or ())
         self.consumed_template_ids = set(consumed_template_ids or ())
         self.last_activation_day = last_activation_day
-        self.public_history = list(public_history or [])[-policy.history_limit:]
+        self.public_history = list(public_history or [])
         self._validate_state()
 
     @classmethod
@@ -278,7 +280,8 @@ class InstitutionGrowthSystem:
             "formation_records", "processed_event_keys", "consumed_template_ids",
             "last_activation_day", "public_history",
         }
-        if (not isinstance(state, dict) or state.get("schema_version") != cls.SCHEMA_VERSION
+        if (not isinstance(state, dict) or (type(state.get("schema_version")) is not int
+                or state.get("schema_version") != cls.SCHEMA_VERSION)
                 or set(state) != allowed):
             raise ValueError("unsupported institution growth state schema")
         if any(not isinstance(state[key], list) for key in (
@@ -288,8 +291,8 @@ class InstitutionGrowthSystem:
             raise ValueError("institution growth state collections must be lists")
         return cls(
             policy, templates, next_sequence=state["next_sequence"],
-            review_history=[InstitutionReview(**item) for item in state["review_history"]],
-            formation_records=[InstitutionFormationRecord(**item)
+            review_history=[InstitutionReview(**require_record_fields(item, InstitutionReview)) for item in state["review_history"]],
+            formation_records=[InstitutionFormationRecord(**require_record_fields(item, InstitutionFormationRecord))
                                for item in state["formation_records"]],
             processed_event_keys=set(state["processed_event_keys"]),
             consumed_template_ids=set(state["consumed_template_ids"]),
@@ -440,8 +443,7 @@ class InstitutionGrowthSystem:
                 raise ValueError("institution formation lacks its review")
         sequences = [int(FORMATION_PATTERN.fullmatch(item.id).group(1))
                      for item in self.formation_records]
-        if self.next_sequence <= max(sequences, default=0):
-            raise ValueError("next institution sequence would reuse identity")
+        require_sequence(sequences, self.next_sequence, "institution")
         if self.last_activation_day != max(
             (item.activation_day for item in activated), default=None
         ):
@@ -753,7 +755,8 @@ class InstitutionGrowthSystem:
                 and employment.institution_id == record.institution_id
                 and employment.formation_id == record.id
                 and employment.employer_account_id == account.id
-                and employment.role_template_id == template.role.role_template_id
+                and record.role_template_id == template.role.role_template_id
+                and employment.role_template_id == record.role_template_id
                 and employment.active
                 and employment.title == template.role.title
                 and employment.wage == template.role.wage

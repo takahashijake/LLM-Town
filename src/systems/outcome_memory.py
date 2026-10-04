@@ -67,7 +67,8 @@ class OutcomeMemorySystem:
                            if item.id == memory.source_id
                            and item.status == "activated"), None)
             return bool(
-                record and memory.event_type == "resident_arrival"
+                record and self._growth_source_matches(memory, record, record.arrival_location_id)
+                and memory.event_type == "resident_arrival"
                 and memory.knowledge_basis in {"participant", "public_event"}
                 and (
                     memory.owner_id == record.agent_id
@@ -79,14 +80,15 @@ class OutcomeMemorySystem:
                            if item.id == memory.source_id
                            and item.status == "activated"), None)
             return bool(
-                record and memory.event_type == "location_opened"
+                record and self._growth_source_matches(memory, record, record.location_id)
+                and memory.event_type == "location_opened"
                 and memory.knowledge_basis == "public_event"
             )
         elif memory.source_system == "institution_growth":
             record = next((item for item in authority.formation_records
                            if item.id == memory.source_id
                            and item.status == "activated"), None)
-            return bool(record and (
+            return bool(record and self._growth_source_matches(memory, record, record.location_id) and (
                 (
                     memory.event_type == "institution_established"
                     and memory.knowledge_basis == "public_event"
@@ -101,7 +103,7 @@ class OutcomeMemorySystem:
             record = next((item for item in authority.activation_records
                            if item.id == memory.source_id
                            and item.status == "activated"), None)
-            return bool(record and (
+            return bool(record and self._growth_source_matches(memory, record, record.location_id) and (
                 (
                     memory.event_type == "institution_commerce_opened"
                     and memory.knowledge_basis == "public_event"
@@ -115,6 +117,14 @@ class OutcomeMemorySystem:
         else:
             return False
         return any(record.id == memory.source_id for record in records)
+
+    def _growth_source_matches(self, memory: Memory, record, location_id: str) -> bool:
+        """A valid record at another place or time conveys no source authority."""
+        return (
+            memory.owner_id in self.agents
+            and memory.day == record.activation_day
+            and memory.location == location_id
+        )
 
     @staticmethod
     def memory_id(owner_id: str, source_system: str, source_id: str,
@@ -178,7 +188,11 @@ class OutcomeMemorySystem:
             "complete_causal_provenance": all(
                 memory.has_authoritative_provenance for memory in all_memories
             ),
-            "known_owners": all(memory.owner_id in self.agents for memory in all_memories),
+            "known_owners": all(memory.owner_id in self.agents for memory in all_memories)
+            and all(
+                memory.owner_id == agent.id for agent in self.agents.values()
+                for memory in agent.memory + agent.memory_archive if memory.causal
+            ),
             "known_knowledge_bases": all(
                 memory.knowledge_basis in KNOWLEDGE_BASES for memory in all_memories
             ),

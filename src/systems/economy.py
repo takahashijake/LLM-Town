@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from src.systems.persistence_validation import require_sequence
+
 
 class EconomyError(ValueError):
     """A rejected economic mutation. State is unchanged when this is raised."""
@@ -168,7 +170,7 @@ class EconomySystem:
         self.applied_event_keys = set(applied_event_keys or ())
         self.work_events = list(work_events or [])
         self.rejected_transactions = list(rejected_transactions or [])
-        self.next_transaction_number = int(next_transaction_number)
+        self.next_transaction_number = next_transaction_number
         self.wealth_need_gain = max(0, int(wealth_need_gain))
         total = sum(account.balance for account in accounts)
         self.initial_total_currency = (
@@ -323,6 +325,12 @@ class EconomySystem:
             self.account_for_agent(job.agent_id)
 
     def _validate_ledger(self) -> None:
+        if [item.id for item in self.ledger] != [
+            f"txn-{index:08d}" for index in range(1, len(self.ledger) + 1)
+        ]:
+            raise ValueError("ledger identities are not monotonic")
+        require_sequence(list(range(1, len(self.ledger) + 1)),
+                         self.next_transaction_number, "ledger")
         transaction_ids = [transaction.id for transaction in self.ledger]
         if len(transaction_ids) != len(set(transaction_ids)):
             raise ValueError("transaction ids must be unique")
@@ -569,7 +577,8 @@ class EconomySystem:
 
     @classmethod
     def from_dict(cls, data: dict) -> "EconomySystem":
-        if data.get("schema_version", 1) != cls.SCHEMA_VERSION:
+        version = data.get("schema_version", 1)
+        if type(version) is not int or version != cls.SCHEMA_VERSION:
             raise ValueError("unsupported economy schema version")
         return cls(
             accounts=[EconomicAccount(**item) for item in data.get("accounts", [])],

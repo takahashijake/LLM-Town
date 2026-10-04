@@ -370,3 +370,19 @@ institution prose cannot declare formation, and commerce candidates cannot
 create stock, purchases or revenue. Broader closed, independently validated
 commerce archetypes are a possible next slice, without unrestricted economic
 JSON.
+
+## V6 integrated release assurance
+
+The [V6 freeze contract](v6_freeze_candidate.md) defines concurrent generated
+branches, exact persisted record schemas, transaction rollback, migration policy
+and the integrated corruption/replay gate. Run:
+
+```bash
+python scripts/evaluate_v6_freeze.py
+python scripts/evaluate_v6_freeze.py --comprehensive
+```
+
+Both branches reuse `community_meals`; this adds assurance of multiplicity,
+without expanding economic authority. Compileall and the integrated model-free
+gate now run in CI alongside pytest. The optional commerce-model script accepts
+`--multi-branch`; model output is never used for historical reconstruction.

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 
+from src.systems.persistence_validation import require_record_fields
+
 from src.systems.economy import EconomyError, EconomySystem
 
 
@@ -98,8 +100,11 @@ class ResidentTemplate:
             "id", "name", "personality", "goals", "initial_needs",
             "initial_location_policy",
         }
-        if set(data) - allowed:
+        if not isinstance(data, dict) or set(data) - allowed:
             raise ValueError("resident template contains unsupported fields")
+        if (not isinstance(data.get("goals"), list)
+                or not isinstance(data.get("initial_needs"), dict)):
+            raise ValueError("resident template goals and needs have invalid shapes")
         return cls(
             id=data.get("id", ""),
             name=data.get("name", ""),
@@ -229,15 +234,18 @@ class TownGrowthSystem:
         self.next_resident_sequence = _positive_int(
             next_resident_sequence, "next resident sequence"
         )
-        self.review_history = list(review_history or [])[-self.REVIEW_HISTORY_LIMIT:]
+        self.review_history = list(review_history or [])
         self.migration_records = list(migration_records or [])
         self.last_successful_activation_day = last_successful_activation_day
         self.processed_event_keys = set(processed_event_keys or ())
         self.consumed_template_ids = set(consumed_template_ids or ())
-        self.public_history = list(public_history or [])[-self.PUBLIC_HISTORY_LIMIT:]
+        self.public_history = list(public_history or [])
         self._validate_state()
 
     def _validate_state(self) -> None:
+        if (len(self.review_history) > self.REVIEW_HISTORY_LIMIT
+                or len(self.public_history) > self.PUBLIC_HISTORY_LIMIT):
+            raise ValueError("growth history exceeds configured bound")
         migration_ids = [item.id for item in self.migration_records]
         agent_ids = [item.agent_id for item in self.migration_records]
         event_keys = [item.event_key for item in self.migration_records]
@@ -337,7 +345,7 @@ class TownGrowthSystem:
             int(AGENT_ID_PATTERN.fullmatch(item.agent_id).group(1))
             for item in self.migration_records
         ]
-        if self.next_migration_sequence <= max(migration_sequences, default=0):
+        if self.next_migration_sequence != max(migration_sequences, default=0) + 1:
             raise ValueError("next migration sequence would reuse identity")
         if self.next_resident_sequence <= max(resident_sequences, default=0):
             raise ValueError("next resident sequence would reuse identity")
@@ -388,8 +396,15 @@ class TownGrowthSystem:
         if not isinstance(state, dict):
             raise ValueError("town growth state must be an object")
         version = state.get("schema_version")
-        if version != cls.SCHEMA_VERSION:
+        if type(version) is not int or version != cls.SCHEMA_VERSION:
             raise ValueError("unsupported town growth schema version")
+        allowed = {
+            "schema_version", "next_migration_sequence", "next_resident_sequence",
+            "review_history", "migration_records", "last_successful_activation_day",
+            "processed_event_keys", "consumed_template_ids", "public_history",
+        }
+        if not set(state).issubset(allowed):
+            raise ValueError("town growth state contains unsupported fields")
         collection_fields = (
             "review_history", "migration_records", "processed_event_keys",
             "consumed_template_ids", "public_history",
@@ -407,10 +422,10 @@ class TownGrowthSystem:
                 "next_resident_sequence", cls._safe_next_resident_sequence(agents)
             ),
             review_history=[
-                MigrationReview(**item) for item in state.get("review_history", [])
+                MigrationReview(**require_record_fields(item, MigrationReview)) for item in state.get("review_history", [])
             ],
             migration_records=[
-                MigrationRecord(**item) for item in state.get("migration_records", [])
+                MigrationRecord(**require_record_fields(item, MigrationRecord)) for item in state.get("migration_records", [])
             ],
             last_successful_activation_day=state.get(
                 "last_successful_activation_day"
@@ -428,13 +443,13 @@ class TownGrowthSystem:
             int(AGENT_ID_PATTERN.fullmatch(item.agent_id).group(1))
             for item in system.migration_records
         ]
-        if system.next_migration_sequence <= max(migration_sequences, default=0):
+        if system.next_migration_sequence != max(migration_sequences, default=0) + 1:
             raise ValueError("next migration sequence would reuse identity")
         minimum_resident_sequence = max(
             cls._safe_next_resident_sequence(agents),
             max(resident_sequences, default=0) + 1,
         )
-        if system.next_resident_sequence < minimum_resident_sequence:
+        if system.next_resident_sequence != minimum_resident_sequence:
             raise ValueError("next resident sequence would reuse identity")
         while f"agent_{system.next_resident_sequence:03d}" in existing_ids:
             system.next_resident_sequence += 1

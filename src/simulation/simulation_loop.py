@@ -129,6 +129,7 @@ class SimulationLoop:
             locations=engine.locations,
             location_growth=engine.location_growth,
             activity_records=engine.activity_records,
+            protected_occurrence_ids=engine.required_event_occurrence_ids(),
         )
 
         engine.daily_event_history.append({
