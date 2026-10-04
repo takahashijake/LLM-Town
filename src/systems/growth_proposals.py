@@ -1,4 +1,4 @@
-"""Bounded, untrusted proposals for V5 resident, location, and event templates."""
+"""Bounded, untrusted proposals for V5 growth templates."""
 
 from __future__ import annotations
 
@@ -15,6 +15,11 @@ from src.systems.event_ecology import (
     EventEcologyPolicy,
     KNOWN_DYNAMIC_EVENT_TAGS,
 )
+from src.systems.institution_growth import (
+    InstitutionGrowthPolicy,
+    InstitutionRoleTemplate,
+    InstitutionTemplate,
+)
 from src.systems.town_growth import ResidentTemplate
 
 
@@ -23,7 +28,10 @@ RESIDENT_TEMPLATE_PATTERN = re.compile(r"generated_resident_template_(\d{4,})")
 LOCATION_TEMPLATE_PATTERN = re.compile(r"generated_location_template_(\d{4,})")
 LOCATION_ID_PATTERN = re.compile(r"generated_location_(\d{4,})")
 EVENT_TEMPLATE_PATTERN = re.compile(r"generated_event_template_(\d{4,})")
-KINDS = {"resident", "location", "event"}
+INSTITUTION_TEMPLATE_PATTERN = re.compile(
+    r"generated_institution_template_(\d{4,})"
+)
+KINDS = {"resident", "location", "event", "institution"}
 STATUSES = {"admitted", "rejected"}
 
 
@@ -53,6 +61,8 @@ class GrowthProposalProvider(Protocol):
 
     def propose_event(self, context: dict) -> object | None: ...
 
+    def propose_institution(self, context: dict) -> object | None: ...
+
 
 @dataclass(frozen=True)
 class ProceduralGrowthPolicy:
@@ -64,6 +74,13 @@ class ProceduralGrowthPolicy:
     location_proposal_capacity: int = 0
     event_proposal_capacity: int = 0
     event_templates_per_location: int = 1
+    institution_proposal_capacity: int = 0
+    institution_templates_per_location: int = 1
+    generated_institution_wage: int = 18
+    generated_institution_startup_grant: int = 300
+    generated_institution_funding_source_account_id: str = (
+        "account:employer:town_services"
+    )
     history_limit: int = 32
 
     def __post_init__(self) -> None:
@@ -74,14 +91,32 @@ class ProceduralGrowthPolicy:
         for name in (
             "proposal_cooldown_days", "resident_proposal_capacity",
             "location_proposal_capacity", "event_proposal_capacity",
+            "institution_proposal_capacity",
         ):
             _positive(getattr(self, name), name, allow_zero=True)
         if self.history_limit < (
             self.resident_proposal_capacity + self.location_proposal_capacity
             + self.event_proposal_capacity
+            + self.institution_proposal_capacity
         ):
             raise ValueError("proposal history must hold every bounded attempt")
         _positive(self.event_templates_per_location, "event templates per location")
+        _positive(
+            self.institution_templates_per_location,
+            "institution templates per location",
+        )
+        _positive(self.generated_institution_wage, "generated institution wage")
+        _positive(
+            self.generated_institution_startup_grant,
+            "generated institution startup grant",
+        )
+        if (
+            not isinstance(
+                self.generated_institution_funding_source_account_id, str
+            )
+            or not self.generated_institution_funding_source_account_id.strip()
+        ):
+            raise ValueError("generated institution funding source is invalid")
 
 
 @dataclass(frozen=True)
@@ -123,16 +158,16 @@ class GrowthProposalRecord:
             self.generated_template_id, self.admission_day,
         )):
             raise ValueError("rejected proposal cannot claim admitted authority")
-        if self.kind == "event":
+        if self.kind in {"event", "institution"}:
             if (
                 not isinstance(self.target_location_template_id, str)
                 or LOCATION_TEMPLATE_PATTERN.fullmatch(
                     self.target_location_template_id
                 ) is None
             ):
-                raise ValueError("event proposal lacks a generated-location target")
+                raise ValueError("targeted proposal lacks a generated-location target")
         elif self.target_location_template_id is not None:
-            raise ValueError("non-event proposal cannot claim a location target")
+            raise ValueError("untargeted proposal cannot claim a location target")
 
     @classmethod
     def from_dict(cls, data: dict) -> "GrowthProposalRecord":
@@ -145,7 +180,7 @@ class GrowthProposalRecord:
 class GrowthProposalSystem:
     """Own proposal attempts and admitted generated-template provenance only."""
 
-    SCHEMA_VERSION = 2
+    SCHEMA_VERSION = 3
 
     def __init__(
         self,
@@ -156,34 +191,50 @@ class GrowthProposalSystem:
         resident_templates: list[ResidentTemplate] | None = None,
         location_templates: list[LocationTemplate] | None = None,
         event_templates: list[DynamicEventTemplate] | None = None,
+        institution_templates: list[InstitutionTemplate] | None = None,
         next_proposal_sequence: int = 1,
         next_resident_template_sequence: int = 1,
         next_location_template_sequence: int = 1,
         next_event_template_sequence: int = 1,
+        next_institution_template_sequence: int = 1,
         last_attempt_day: int | None = None,
         configured_resident_template_ids: set[str] | None = None,
         configured_location_template_ids: set[str] | None = None,
         configured_event_template_ids: set[str] | None = None,
+        configured_institution_template_ids: set[str] | None = None,
+        configured_institution_keys: set[str] | None = None,
+        configured_institution_names: set[str] | None = None,
+        configured_role_template_ids: set[str] | None = None,
+        configured_work_activity_ids: set[str] | None = None,
         base_resident_names: set[str] | None = None,
         base_location_ids: set[str] | None = None,
         base_location_names: set[str] | None = None,
         event_policy: EventEcologyPolicy | None = None,
+        institution_policy: InstitutionGrowthPolicy | None = None,
     ):
         resident_template_list = list(resident_templates or ())
         location_template_list = list(location_templates or ())
         event_template_list = list(event_templates or ())
+        institution_template_list = list(institution_templates or ())
         if len({item.id for item in resident_template_list}) != len(resident_template_list):
             raise ValueError("generated resident template ids must be unique")
         if len({item.id for item in location_template_list}) != len(location_template_list):
             raise ValueError("generated location template ids must be unique")
         if len({item.id for item in event_template_list}) != len(event_template_list):
             raise ValueError("generated event template ids must be unique")
+        if len({item.id for item in institution_template_list}) != len(
+            institution_template_list
+        ):
+            raise ValueError("generated institution template ids must be unique")
         self.policy = policy
         self.provider = provider
         self.records = list(records or ())
         self.resident_templates = {item.id: item for item in resident_template_list}
         self.location_templates = {item.id: item for item in location_template_list}
         self.event_templates = {item.id: item for item in event_template_list}
+        self.institution_templates = {
+            item.id: item for item in institution_template_list
+        }
         self.next_proposal_sequence = _positive(
             next_proposal_sequence, "next proposal sequence"
         )
@@ -196,14 +247,26 @@ class GrowthProposalSystem:
         self.next_event_template_sequence = _positive(
             next_event_template_sequence, "next event template sequence"
         )
+        self.next_institution_template_sequence = _positive(
+            next_institution_template_sequence,
+            "next institution template sequence",
+        )
         self.last_attempt_day = last_attempt_day
         self.configured_resident_template_ids = set(configured_resident_template_ids or ())
         self.configured_location_template_ids = set(configured_location_template_ids or ())
         self.configured_event_template_ids = set(configured_event_template_ids or ())
+        self.configured_institution_template_ids = set(
+            configured_institution_template_ids or ()
+        )
+        self.configured_institution_keys = set(configured_institution_keys or ())
+        self.configured_institution_names = set(configured_institution_names or ())
+        self.configured_role_template_ids = set(configured_role_template_ids or ())
+        self.configured_work_activity_ids = set(configured_work_activity_ids or ())
         self.base_resident_names = set(base_resident_names or ())
         self.base_location_ids = set(base_location_ids or ())
         self.base_location_names = set(base_location_names or ())
         self.event_policy = event_policy
+        self.institution_policy = institution_policy
         self._validate_state()
 
     @classmethod
@@ -216,10 +279,18 @@ class GrowthProposalSystem:
         location_data = location_section.get("templates", [])
         event_data = config.get("event_ecology", {}).get("templates", [])
         event_policy_data = config.get("event_ecology", {}).get("policy")
+        institution_section = config.get("institution_growth", {})
+        institution_data = institution_section.get("templates", [])
+        institution_policy_data = institution_section.get("policy")
         event_policy = (
             EventEcologyPolicy(**event_policy_data)
             if isinstance(event_policy_data, dict)
             else EventEcologyPolicy(1, 7, 1, 1, 1, 1)
+        )
+        institution_policy = (
+            InstitutionGrowthPolicy(**institution_policy_data)
+            if isinstance(institution_policy_data, dict)
+            else None
         )
         procedural = config.get("procedural_growth")
         if procedural is None:
@@ -232,9 +303,29 @@ class GrowthProposalSystem:
             policy = ProceduralGrowthPolicy(**procedural["policy"])
         if policy.event_proposal_capacity and not isinstance(event_policy_data, dict):
             raise ValueError("event ecology policy is required for event proposals")
+        if (
+            policy.institution_proposal_capacity
+            and institution_policy is None
+        ):
+            raise ValueError(
+                "institution growth policy is required for institution proposals"
+            )
         configured_resident_ids = {item.get("id") for item in resident_data}
         configured_location_ids = {item.get("id") for item in location_data}
         configured_event_ids = {item.get("id") for item in event_data}
+        configured_institution_ids = {item.get("id") for item in institution_data}
+        configured_institution_keys = {
+            item.get("institution_key") for item in institution_data
+        }
+        configured_institution_names = {item.get("name") for item in institution_data}
+        configured_role_ids = {
+            item.get("role", {}).get("role_template_id")
+            for item in institution_data if isinstance(item, dict)
+        }
+        configured_activity_ids = {
+            item.get("role", {}).get("work_activity_id")
+            for item in institution_data if isinstance(item, dict)
+        }
         configured_location_entity_ids = {
             item.get("location_id") for item in location_data
             if isinstance(item, dict)
@@ -251,6 +342,9 @@ class GrowthProposalSystem:
         ) or any(
             isinstance(item, str) and EVENT_TEMPLATE_PATTERN.fullmatch(item)
             for item in configured_event_ids
+        ) or any(
+            isinstance(item, str) and INSTITUTION_TEMPLATE_PATTERN.fullmatch(item)
+            for item in configured_institution_ids
         ):
             raise ValueError("checked-in configuration uses a generated namespace")
         common = dict(
@@ -258,6 +352,11 @@ class GrowthProposalSystem:
             configured_resident_template_ids=configured_resident_ids,
             configured_location_template_ids=configured_location_ids,
             configured_event_template_ids=configured_event_ids,
+            configured_institution_template_ids=configured_institution_ids,
+            configured_institution_keys=configured_institution_keys,
+            configured_institution_names=configured_institution_names,
+            configured_role_template_ids=configured_role_ids,
+            configured_work_activity_ids=configured_activity_ids,
             base_resident_names=(
                 ({item.name for item in agents} - {
                     item.get("name") for item in (state or {}).get("resident_templates", [])
@@ -274,6 +373,7 @@ class GrowthProposalSystem:
                 | {item.get("name") for item in location_data if isinstance(item, dict)}
             ),
             event_policy=event_policy,
+            institution_policy=institution_policy,
         )
         if state is None:
             return cls(policy, **common)
@@ -291,16 +391,33 @@ class GrowthProposalSystem:
             if set(state) != legacy_allowed:
                 raise ValueError("procedural growth v1 state has an invalid schema")
             state = dict(state)
-            state["schema_version"] = cls.SCHEMA_VERSION
+            state["schema_version"] = 2
             state["records"] = [dict(item, target_location_template_id=None)
                                 for item in state["records"]]
             state["event_templates"] = []
             state["next_event_template_sequence"] = 1
+            version = 2
+        if version == 2:
+            phase_two_allowed = {
+                "schema_version", "records", "resident_templates",
+                "location_templates", "event_templates",
+                "next_proposal_sequence", "next_resident_template_sequence",
+                "next_location_template_sequence", "next_event_template_sequence",
+                "last_attempt_day",
+            }
+            if set(state) != phase_two_allowed:
+                raise ValueError("procedural growth v2 state has an invalid schema")
+            state = dict(state)
+            state["schema_version"] = cls.SCHEMA_VERSION
+            state["institution_templates"] = []
+            state["next_institution_template_sequence"] = 1
         allowed = {
             "schema_version", "records", "resident_templates", "location_templates",
             "event_templates",
+            "institution_templates",
             "next_proposal_sequence", "next_resident_template_sequence",
             "next_location_template_sequence", "next_event_template_sequence",
+            "next_institution_template_sequence",
             "last_attempt_day",
         }
         if not isinstance(state, dict) or set(state) != allowed:
@@ -309,6 +426,7 @@ class GrowthProposalSystem:
             raise ValueError("unsupported procedural growth schema version")
         if any(not isinstance(state.get(name), list) for name in (
             "records", "resident_templates", "location_templates", "event_templates",
+            "institution_templates",
         )):
             raise ValueError("procedural growth collections must be lists")
         return cls(
@@ -317,10 +435,17 @@ class GrowthProposalSystem:
             resident_templates=[ResidentTemplate.from_dict(x) for x in state["resident_templates"]],
             location_templates=[LocationTemplate.from_dict(x) for x in state["location_templates"]],
             event_templates=[DynamicEventTemplate.from_dict(x) for x in state["event_templates"]],
+            institution_templates=[
+                InstitutionTemplate.from_dict(x)
+                for x in state["institution_templates"]
+            ],
             next_proposal_sequence=state["next_proposal_sequence"],
             next_resident_template_sequence=state["next_resident_template_sequence"],
             next_location_template_sequence=state["next_location_template_sequence"],
             next_event_template_sequence=state["next_event_template_sequence"],
+            next_institution_template_sequence=state[
+                "next_institution_template_sequence"
+            ],
             last_attempt_day=state["last_attempt_day"],
             **common,
         )
@@ -348,10 +473,24 @@ class GrowthProposalSystem:
                 }
                 for key in sorted(self.event_templates)
             ],
+            "institution_templates": [
+                asdict(self.institution_templates[key]) | {
+                    "relevant_dynamic_event_template_ids": list(
+                        self.institution_templates[
+                            key
+                        ].relevant_dynamic_event_template_ids
+                    ),
+                    "role": asdict(self.institution_templates[key].role),
+                }
+                for key in sorted(self.institution_templates)
+            ],
             "next_proposal_sequence": self.next_proposal_sequence,
             "next_resident_template_sequence": self.next_resident_template_sequence,
             "next_location_template_sequence": self.next_location_template_sequence,
             "next_event_template_sequence": self.next_event_template_sequence,
+            "next_institution_template_sequence": (
+                self.next_institution_template_sequence
+            ),
             "last_attempt_day": self.last_attempt_day,
         }
 
@@ -454,6 +593,28 @@ class GrowthProposalSystem:
             raise ValueError("event name already exists at target")
         return payload
 
+    def _institution_payload(self, candidate: object) -> dict:
+        data = self._parse_candidate(candidate)
+        if set(data) != {"name", "role_title", "work_activity_name"}:
+            raise ValueError("institution proposal has an invalid schema")
+        payload = {
+            "name": self._clean_text(data["name"], "institution name", 80),
+            "role_title": self._clean_text(
+                data["role_title"], "institution role title", 80
+            ),
+            "work_activity_name": self._clean_text(
+                data["work_activity_name"], "institution work activity", 120
+            ),
+        }
+        names = self.configured_institution_names | {
+            item.name for item in self.institution_templates.values()
+        }
+        if payload["name"].casefold() in {
+            item.casefold() for item in names if isinstance(item, str)
+        }:
+            raise ValueError("institution name already exists")
+        return payload
+
     def _attempt_count(self, kind: str) -> int:
         return sum(item.kind == kind for item in self.records)
 
@@ -462,14 +623,19 @@ class GrowthProposalSystem:
             "resident": self.policy.resident_proposal_capacity,
             "location": self.policy.location_proposal_capacity,
             "event": self.policy.event_proposal_capacity,
+            "institution": self.policy.institution_proposal_capacity,
         }[kind]
         return max(0, capacity - self._attempt_count(kind))
 
-    def _next_kind(self, *, event_available: bool = False) -> str | None:
+    def _next_kind(
+        self, *, event_available: bool = False,
+        institution_available: bool = False,
+    ) -> str | None:
         available = [
-            kind for kind in ("resident", "location", "event")
+            kind for kind in ("resident", "location", "event", "institution")
             if self.remaining_capacity(kind)
             and (kind != "event" or event_available)
+            and (kind != "institution" or institution_available)
         ]
         if not available:
             return None
@@ -481,6 +647,7 @@ class GrowthProposalSystem:
         activity_records: list[dict], town_history: list[dict],
         location_history: list[dict],
         location_growth=None,
+        event_ecology=None,
     ) -> dict:
         first_day = max(1, completed_day - 6)
         aggregates = []
@@ -499,6 +666,11 @@ class GrowthProposalSystem:
             completed_day=completed_day, locations=locations,
             activity_records=activity_records, location_growth=location_growth,
         )
+        institution_target = self.select_institution_target(
+            completed_day=completed_day, locations=locations,
+            activity_records=activity_records, location_growth=location_growth,
+            event_ecology=event_ecology,
+        )
         result = {
             "completed_day": completed_day,
             "population_count": len(agents),
@@ -513,6 +685,9 @@ class GrowthProposalSystem:
             "remaining_resident_capacity": self.remaining_capacity("resident"),
             "remaining_location_capacity": self.remaining_capacity("location"),
             "remaining_event_capacity": self.remaining_capacity("event"),
+            "remaining_institution_capacity": self.remaining_capacity(
+                "institution"
+            ),
             "recent_growth_history": history,
         }
         if target is not None:
@@ -537,7 +712,131 @@ class GrowthProposalSystem:
                     if item.location_template_id == template.id
                 ),
             }
+        if institution_target is not None:
+            template, location, activation, recent, event_ids, first_event_day = (
+                institution_target
+            )
+            result["institution_target"] = {
+                "location_template_id": template.id,
+                "location_id": location.id,
+                "name": location.name,
+                "description": location.description,
+                "affinities": list(template.affinities),
+                "activation_day": activation.activation_day,
+                "recent_use": recent,
+                "observed_generated_events": [
+                    {
+                        "name": self.event_templates[event_id].name,
+                        "description": self.event_templates[event_id].description,
+                    }
+                    for event_id in event_ids
+                ],
+                "relevant_dynamic_event_template_ids": list(event_ids),
+                "oldest_generated_event_day": first_event_day,
+                "remaining_location_institution_capacity": (
+                    self.policy.institution_templates_per_location
+                    - sum(
+                        item.location_template_id == template.id
+                        for item in self.institution_templates.values()
+                    )
+                ),
+            }
         return result
+
+    def select_institution_target(
+        self, *, completed_day: int, locations: list,
+        activity_records: list[dict], location_growth, event_ecology,
+    ):
+        """Choose a generated place from authoritative use and occurrence history."""
+        if (
+            location_growth is None or event_ecology is None
+            or self.institution_policy is None
+        ):
+            return None
+        active = {item.id: item for item in locations}
+        first_day = (
+            completed_day - self.institution_policy.recent_activity_window_days + 1
+        )
+        candidates = []
+        for template in self.location_templates.values():
+            activation = next((
+                item for item in location_growth.activation_records
+                if item.status == "activated" and item.template_id == template.id
+                and item.location_id == template.location_id
+                and item.activation_day is not None
+                and item.activation_day <= completed_day
+            ), None)
+            location = active.get(template.location_id)
+            if activation is None or location is None or (
+                location.name != template.name
+                or location.description != template.description
+                or tuple(location.affinities or ()) != template.affinities
+            ):
+                continue
+            admitted_count = sum(
+                item.location_template_id == template.id
+                for item in self.institution_templates.values()
+            )
+            if admitted_count >= self.policy.institution_templates_per_location:
+                continue
+            generated_event_ids = {
+                item.id for item in self.event_templates.values()
+                if item.location_template_id == template.id
+                and event_ecology.templates.get(item.id) == item
+            }
+            occurrences = [
+                item for item in event_ecology.occurrence_history
+                if item.template_id in generated_event_ids
+                and item.location_id == template.location_id
+                and item.day <= completed_day
+            ]
+            event_ids = tuple(sorted({item.template_id for item in occurrences}))
+            if (
+                not event_ids
+                or len(occurrences)
+                < self.institution_policy.minimum_dynamic_event_occurrences
+            ):
+                continue
+            recent_rows = [
+                row for row in activity_records
+                if row.get("type") == "activity"
+                and row.get("location") == location.id
+                and first_day <= row.get("day", -1) <= completed_day
+            ]
+            residents = {
+                row.get("agent_id") for row in recent_rows
+                if isinstance(row.get("agent_id"), str)
+            }
+            days = {row.get("day") for row in recent_rows}
+            if (
+                len(residents) < self.institution_policy.minimum_distinct_residents
+                or len(days) < self.institution_policy.minimum_activity_days
+            ):
+                continue
+            last_target_day = max((
+                item.proposal_day for item in self.records
+                if item.kind == "institution"
+                and item.target_location_template_id == template.id
+            ), default=0)
+            first_event_day = min(item.day for item in occurrences)
+            recent = {
+                "activity_count": len(recent_rows),
+                "distinct_resident_count": len(residents),
+                "activity_day_count": len(days),
+                "generated_event_occurrence_count": len(occurrences),
+            }
+            candidates.append((
+                admitted_count, activation.activation_day, first_event_day,
+                last_target_day, template.id, template, location, activation,
+                recent, event_ids,
+            ))
+        if not candidates:
+            return None
+        selected = min(candidates, key=lambda item: item[:5])
+        return (
+            selected[5], selected[6], selected[7], selected[8], selected[9],
+            selected[2],
+        )
 
     def select_event_target(
         self, *, completed_day: int, locations: list, activity_records: list[dict],
@@ -616,7 +915,17 @@ class GrowthProposalSystem:
             event_context.get("location_template_id")
             if isinstance(event_context, dict) else None
         )
-        kind = self._next_kind(event_available=event_target_id in self.location_templates)
+        institution_context = context.get("institution_target")
+        institution_target_id = (
+            institution_context.get("location_template_id")
+            if isinstance(institution_context, dict) else None
+        )
+        kind = self._next_kind(
+            event_available=event_target_id in self.location_templates,
+            institution_available=(
+                institution_target_id in self.location_templates
+            ),
+        )
         if kind is None or day < self.policy.earliest_proposal_day:
             return None
         if (day - self.policy.earliest_proposal_day) % self.policy.review_interval_days:
@@ -637,18 +946,37 @@ class GrowthProposalSystem:
                 candidate = self.provider.propose_resident(deepcopy(context))
             elif kind == "location":
                 candidate = self.provider.propose_location(deepcopy(context))
-            else:
+            elif kind == "event":
                 candidate = self.provider.propose_event(deepcopy({
                     "completed_day": context.get("completed_day"),
                     "target_location": event_context,
                     "remaining_event_capacity": self.remaining_capacity("event"),
+                }))
+            else:
+                semantic_target = {
+                    key: value for key, value in institution_context.items()
+                    if key not in {
+                        "location_template_id",
+                        "relevant_dynamic_event_template_ids",
+                    }
+                }
+                candidate = self.provider.propose_institution(deepcopy({
+                    "completed_day": context.get("completed_day"),
+                    "target_location": semantic_target,
+                    "remaining_institution_capacity": self.remaining_capacity(
+                        "institution"
+                    ),
                 }))
         except Exception as error:
             rejection_reason = f"provider_exception:{type(error).__name__}"
             record = GrowthProposalRecord(
                 proposal_id, kind, day, "rejected", rejection_reason,
                 None, None, None, provider_kind, None,
-                event_target_id if kind == "event" else None,
+                (
+                    event_target_id if kind == "event"
+                    else institution_target_id if kind == "institution"
+                    else None
+                ),
             )
         else:
             try:
@@ -658,11 +986,17 @@ class GrowthProposalSystem:
                     payload = self._resident_payload(candidate)
                 elif kind == "location":
                     payload = self._location_payload(candidate)
-                else:
+                elif kind == "event":
                     target = self.location_templates.get(event_target_id)
                     if target is None:
                         raise ValueError("event target lacks generated-location authority")
                     payload = self._event_payload(candidate, target)
+                else:
+                    if institution_target_id not in self.location_templates:
+                        raise ValueError(
+                            "institution target lacks generated-location authority"
+                        )
+                    payload = self._institution_payload(candidate)
                 if kind == "resident":
                     sequence = self.next_resident_template_sequence
                     template_id = f"generated_resident_template_{sequence:04d}"
@@ -687,7 +1021,7 @@ class GrowthProposalSystem:
                         id=template_id, location_id=location_id, name=payload["name"],
                         description=payload["description"], affinities=tuple(payload["affinities"]),
                     )
-                else:
+                elif kind == "event":
                     sequence = self.next_event_template_sequence
                     template_id = f"generated_event_template_{sequence:04d}"
                     if template_id in self.configured_event_template_ids:
@@ -706,18 +1040,73 @@ class GrowthProposalSystem:
                             14, self.event_policy.dynamic_selection_interval_days
                         ),
                     )
+                else:
+                    sequence = self.next_institution_template_sequence
+                    template_id = (
+                        f"generated_institution_template_{sequence:04d}"
+                    )
+                    institution_key = f"generated_institution_key_{sequence:04d}"
+                    role_id = f"generated_role_template_{sequence:04d}"
+                    activity_id = f"generated_work_activity_{sequence:04d}"
+                    if (
+                        template_id in self.configured_institution_template_ids
+                        or institution_key in self.configured_institution_keys
+                        or role_id in self.configured_role_template_ids
+                        or activity_id in self.configured_work_activity_ids
+                    ):
+                        raise ValueError(
+                            "generated institution identity collides with configuration"
+                        )
+                    event_ids = tuple(
+                        institution_context.get(
+                            "relevant_dynamic_event_template_ids", ()
+                        )
+                    )
+                    if not event_ids:
+                        raise ValueError(
+                            "institution target lacks generated-event authority"
+                        )
+                    template = InstitutionTemplate(
+                        id=template_id,
+                        institution_key=institution_key,
+                        name=payload["name"],
+                        location_template_id=institution_target_id,
+                        startup_funding_source_account_id=(
+                            self.policy.
+                            generated_institution_funding_source_account_id
+                        ),
+                        startup_grant=(
+                            self.policy.generated_institution_startup_grant
+                        ),
+                        relevant_dynamic_event_template_ids=event_ids,
+                        role=InstitutionRoleTemplate(
+                            role_template_id=role_id,
+                            title=payload["role_title"],
+                            wage=self.policy.generated_institution_wage,
+                            work_activity_id=activity_id,
+                            work_activity_name=payload["work_activity_name"],
+                        ),
+                    )
             except Exception as error:
                 reason = f"invalid_candidate:{type(error).__name__}: {error}"[:200]
                 record = GrowthProposalRecord(
                     proposal_id, kind, day, "rejected", reason, None, None, None,
                     provider_kind, None,
-                    event_target_id if kind == "event" else None,
+                    (
+                        event_target_id if kind == "event"
+                        else institution_target_id if kind == "institution"
+                        else None
+                    ),
                 )
             else:
                 record = GrowthProposalRecord(
                     proposal_id, kind, day, "admitted", "admitted", payload,
                     payload_digest(payload), template_id, provider_kind, day,
-                    event_target_id if kind == "event" else None,
+                    (
+                        event_target_id if kind == "event"
+                        else institution_target_id if kind == "institution"
+                        else None
+                    ),
                 )
                 if kind == "resident":
                     self.resident_templates[template_id] = template
@@ -725,9 +1114,12 @@ class GrowthProposalSystem:
                 elif kind == "location":
                     self.location_templates[template_id] = template
                     self.next_location_template_sequence += 1
-                else:
+                elif kind == "event":
                     self.event_templates[template_id] = template
                     self.next_event_template_sequence += 1
+                else:
+                    self.institution_templates[template_id] = template
+                    self.next_institution_template_sequence += 1
         self.records.append(record)
         self.records = self.records[-self.policy.history_limit:]
         self.next_proposal_sequence += 1
@@ -747,6 +1139,11 @@ class GrowthProposalSystem:
             raise ValueError("location proposal capacity exceeded")
         if self._attempt_count("event") > self.policy.event_proposal_capacity:
             raise ValueError("event proposal capacity exceeded")
+        if (
+            self._attempt_count("institution")
+            > self.policy.institution_proposal_capacity
+        ):
+            raise ValueError("institution proposal capacity exceeded")
         admitted = [item for item in self.records if item.status == "admitted"]
         admitted_ids = [item.generated_template_id for item in admitted]
         if len(admitted_ids) != len(set(admitted_ids)):
@@ -754,10 +1151,15 @@ class GrowthProposalSystem:
         expected_resident = {item.generated_template_id for item in admitted if item.kind == "resident"}
         expected_location = {item.generated_template_id for item in admitted if item.kind == "location"}
         expected_event = {item.generated_template_id for item in admitted if item.kind == "event"}
+        expected_institution = {
+            item.generated_template_id for item in admitted
+            if item.kind == "institution"
+        }
         if (
             expected_resident != set(self.resident_templates)
             or expected_location != set(self.location_templates)
             or expected_event != set(self.event_templates)
+            or expected_institution != set(self.institution_templates)
         ):
             raise ValueError("admitted proposals and generated templates disagree")
         if set(self.resident_templates) & self.configured_resident_template_ids:
@@ -766,6 +1168,13 @@ class GrowthProposalSystem:
             raise ValueError("generated location template collides with configuration")
         if set(self.event_templates) & self.configured_event_template_ids:
             raise ValueError("generated event template collides with configuration")
+        if (
+            set(self.institution_templates)
+            & self.configured_institution_template_ids
+        ):
+            raise ValueError(
+                "generated institution template collides with configuration"
+            )
         records = {item.generated_template_id: item for item in admitted}
         for template_id, template in self.resident_templates.items():
             record = records.get(template_id)
@@ -884,10 +1293,103 @@ class GrowthProposalSystem:
             for target_id in self.location_templates
         ):
             raise ValueError("generated event per-location capacity exceeded")
+        institution_names = {
+            item.casefold() for item in self.configured_institution_names
+            if isinstance(item, str)
+        }
+        institution_keys = set(self.configured_institution_keys)
+        role_ids = set(self.configured_role_template_ids)
+        activity_ids = set(self.configured_work_activity_ids)
+        for template_id, template in self.institution_templates.items():
+            record = records.get(template_id)
+            payload = record.canonical_payload if record else None
+            match = INSTITUTION_TEMPLATE_PATTERN.fullmatch(template_id)
+            sequence = int(match.group(1)) if match else 0
+            target = self.location_templates.get(template.location_template_id)
+            event_ids = template.relevant_dynamic_event_template_ids
+            if (
+                match is None or payload is None or target is None
+                or record.target_location_template_id != target.id
+                or set(payload) != {
+                    "name", "role_title", "work_activity_name"
+                }
+                or payload != {
+                    "name": self._clean_text(
+                        payload.get("name"), "institution name", 80
+                    ),
+                    "role_title": self._clean_text(
+                        payload.get("role_title"),
+                        "institution role title", 80,
+                    ),
+                    "work_activity_name": self._clean_text(
+                        payload.get("work_activity_name"),
+                        "institution work activity", 120,
+                    ),
+                }
+                or not event_ids
+                or tuple(sorted(event_ids)) != event_ids
+                or any(
+                    event_id not in self.event_templates
+                    or self.event_templates[event_id].location_template_id
+                    != target.id
+                    for event_id in event_ids
+                )
+                or template != InstitutionTemplate(
+                    id=template_id,
+                    institution_key=(
+                        f"generated_institution_key_{sequence:04d}"
+                    ),
+                    name=payload["name"],
+                    location_template_id=target.id,
+                    startup_funding_source_account_id=(
+                        self.policy.
+                        generated_institution_funding_source_account_id
+                    ),
+                    startup_grant=(
+                        self.policy.generated_institution_startup_grant
+                    ),
+                    relevant_dynamic_event_template_ids=event_ids,
+                    role=InstitutionRoleTemplate(
+                        role_template_id=(
+                            f"generated_role_template_{sequence:04d}"
+                        ),
+                        title=payload["role_title"],
+                        wage=self.policy.generated_institution_wage,
+                        work_activity_id=(
+                            f"generated_work_activity_{sequence:04d}"
+                        ),
+                        work_activity_name=payload["work_activity_name"],
+                    ),
+                )
+                or template.name.casefold() in institution_names
+                or template.institution_key in institution_keys
+                or template.role.role_template_id in role_ids
+                or template.role.work_activity_id in activity_ids
+            ):
+                raise ValueError(
+                    "institution template contradicts its proposal"
+                )
+            institution_names.add(template.name.casefold())
+            institution_keys.add(template.institution_key)
+            role_ids.add(template.role.role_template_id)
+            activity_ids.add(template.role.work_activity_id)
+        if any(
+            sum(item.location_template_id == target_id
+                for item in self.institution_templates.values())
+            > self.policy.institution_templates_per_location
+            for target_id in self.location_templates
+        ):
+            raise ValueError(
+                "generated institution per-location capacity exceeded"
+            )
         proposal_sequences = [int(PROPOSAL_ID_PATTERN.fullmatch(item.id).group(1)) for item in self.records]
         resident_sequences = [int(RESIDENT_TEMPLATE_PATTERN.fullmatch(item).group(1)) for item in self.resident_templates]
         location_sequences = [int(LOCATION_TEMPLATE_PATTERN.fullmatch(item).group(1)) for item in self.location_templates]
         event_sequences = [int(EVENT_TEMPLATE_PATTERN.fullmatch(item).group(1)) for item in self.event_templates]
+        institution_sequences = [
+            int(INSTITUTION_TEMPLATE_PATTERN.fullmatch(item).group(1))
+            for item in self.institution_templates
+        ]
         if self.next_proposal_sequence <= max(proposal_sequences, default=0):
             raise ValueError("next proposal sequence was rewound")
         if proposal_sequences != list(range(1, len(self.records) + 1)):
@@ -912,11 +1414,26 @@ class GrowthProposalSystem:
             raise ValueError("event template sequence is not contiguous")
         if self.next_event_template_sequence != len(event_sequences) + 1:
             raise ValueError("next event template sequence is inconsistent")
+        if self.next_institution_template_sequence <= max(
+            institution_sequences, default=0
+        ):
+            raise ValueError("next institution template sequence was rewound")
+        if sorted(institution_sequences) != list(
+            range(1, len(institution_sequences) + 1)
+        ):
+            raise ValueError("institution template sequence is not contiguous")
+        if self.next_institution_template_sequence != len(
+            institution_sequences
+        ) + 1:
+            raise ValueError(
+                "next institution template sequence is inconsistent"
+            )
         if self.last_attempt_day != (max((item.proposal_day for item in self.records), default=None)):
             raise ValueError("last proposal attempt day is inconsistent")
 
     def validate_bindings(
         self, town_growth, location_growth, event_ecology=None,
+        institution_growth=None,
         *, locations: list | None = None, activity_records: list[dict] | None = None,
     ) -> None:
         for template_id, template in self.resident_templates.items():
@@ -1024,7 +1541,9 @@ class GrowthProposalSystem:
                 ):
                     raise ValueError("generated event predates target activation")
                 if locations is not None:
-                    target = self.location_templates[template.location_template_id]
+                    target = self.location_templates[
+                        template.location_template_id
+                    ]
                     location = next((item for item in locations
                                      if item.id == target.location_id), None)
                     if location is None or (
@@ -1032,7 +1551,9 @@ class GrowthProposalSystem:
                         or location.description != target.description
                         or tuple(location.affinities or ()) != target.affinities
                     ):
-                        raise ValueError("generated event target contradicts authority")
+                        raise ValueError(
+                            "generated event target contradicts authority"
+                        )
                 if activity_records is not None:
                     first_day = (
                         record.admission_day
@@ -1045,7 +1566,8 @@ class GrowthProposalSystem:
                         == self.location_templates[
                             template.location_template_id
                         ].location_id
-                        and first_day <= row.get("day", -1) <= record.admission_day
+                        and first_day <= row.get("day", -1)
+                        <= record.admission_day
                     ]
                     if (
                         len({row.get("agent_id") for row in recent
@@ -1054,7 +1576,101 @@ class GrowthProposalSystem:
                         or len({row.get("day") for row in recent})
                         < self.event_policy.minimum_activity_days
                     ):
-                        raise ValueError("generated event lacks sustained target use")
+                        raise ValueError(
+                            "generated event lacks sustained target use"
+                        )
+        if institution_growth is not None:
+            for template_id, template in self.institution_templates.items():
+                if institution_growth.templates.get(template_id) != template:
+                    raise ValueError(
+                        "generated institution lacks admitted proposal authority"
+                    )
+                record = next(
+                    item for item in self.records
+                    if item.generated_template_id == template_id
+                )
+                binding = self.location_templates.get(
+                    template.location_template_id
+                )
+                if binding is None:
+                    raise ValueError(
+                        "generated institution lacks generated-location authority"
+                    )
+                expected_event_ids = tuple(sorted({
+                    occurrence.template_id
+                    for occurrence in event_ecology.occurrence_history
+                    if occurrence.location_id == binding.location_id
+                    and occurrence.day <= record.proposal_day
+                    and occurrence.template_id in self.event_templates
+                    and self.event_templates[
+                        occurrence.template_id
+                    ].location_template_id == binding.id
+                })) if event_ecology is not None else ()
+                if (
+                    template.relevant_dynamic_event_template_ids
+                    != expected_event_ids
+                ):
+                    raise ValueError(
+                        "generated institution event allowlist is not exact"
+                    )
+                for event_id in template.relevant_dynamic_event_template_ids:
+                    event_template = self.event_templates.get(event_id)
+                    if (
+                        event_template is None
+                        or event_ecology is None
+                        or event_ecology.templates.get(event_id) != event_template
+                        or event_template.location_template_id != binding.id
+                        or not any(
+                            occurrence.template_id == event_id
+                            and occurrence.location_id == binding.location_id
+                            and occurrence.day <= record.proposal_day
+                            for occurrence in event_ecology.occurrence_history
+                        )
+                    ):
+                        raise ValueError(
+                            "generated institution has invalid event provenance"
+                        )
+                activation = next((
+                    item for item in location_growth.activation_records
+                    if item.status == "activated"
+                    and item.template_id == binding.id
+                    and item.location_id == binding.location_id
+                    and item.activation_day <= record.proposal_day
+                ), None)
+                if activation is None:
+                    raise ValueError(
+                        "generated institution predates target activation"
+                    )
+                if activity_records is not None:
+                    first_day = (
+                        record.proposal_day
+                        - self.institution_policy.recent_activity_window_days + 1
+                    )
+                    recent = [
+                        row for row in activity_records
+                        if row.get("type") == "activity"
+                        and row.get("location") == binding.location_id
+                        and first_day <= row.get("day", -1)
+                        <= record.proposal_day
+                    ]
+                    if (
+                        len({row.get("agent_id") for row in recent
+                             if isinstance(row.get("agent_id"), str)})
+                        < self.institution_policy.minimum_distinct_residents
+                        or len({row.get("day") for row in recent})
+                        < self.institution_policy.minimum_activity_days
+                    ):
+                        raise ValueError(
+                            "generated institution lacks sustained target use"
+                        )
+            for formation in institution_growth.formation_records:
+                if (
+                    formation.template_id.startswith("generated_")
+                    and formation.template_id not in self.institution_templates
+                ):
+                    raise ValueError(
+                        "formation references unauthorized generated institution"
+                    )
 
 
 class LLMGrowthProposalProvider:
@@ -1073,3 +1689,6 @@ class LLMGrowthProposalProvider:
 
     def propose_event(self, context: dict) -> object:
         return self.llm_client.generate_growth_proposal("event", context)
+
+    def propose_institution(self, context: dict) -> object:
+        return self.llm_client.generate_growth_proposal("institution", context)

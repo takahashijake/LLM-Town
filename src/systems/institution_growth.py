@@ -10,6 +10,18 @@ import re
 
 FORMATION_PATTERN = re.compile(r"institution-formation:(\d{4,})")
 INSTITUTION_PATTERN = re.compile(r"institution:(\d{4,})")
+GENERATED_INSTITUTION_TEMPLATE_PATTERN = re.compile(
+    r"generated_institution_template_(\d{4,})"
+)
+GENERATED_INSTITUTION_KEY_PATTERN = re.compile(
+    r"generated_institution_key_(\d{4,})"
+)
+GENERATED_ROLE_TEMPLATE_PATTERN = re.compile(
+    r"generated_role_template_(\d{4,})"
+)
+GENERATED_WORK_ACTIVITY_PATTERN = re.compile(
+    r"generated_work_activity_(\d{4,})"
+)
 
 
 def _positive(value: object, name: str, *, zero: bool = False) -> int:
@@ -101,7 +113,7 @@ class InstitutionTemplate:
                 or len(events) != len(set(events))):
             raise ValueError("institution event allowlist is invalid")
         for key in ("minimum_activity_days", "minimum_candidate_activities"):
-            if key in data:
+            if key in data and data[key] is not None:
                 _positive(data[key], f"institution template {key}")
         return cls(
             id=data["id"], institution_key=data["institution_key"],
@@ -198,6 +210,7 @@ class InstitutionGrowthSystem:
         consumed_template_ids: set[str] | None = None,
         last_activation_day: int | None = None,
         public_history: list[dict] | None = None,
+        configured_template_ids: set[str] | None = None,
     ) -> None:
         if len({item.id for item in templates}) != len(templates):
             raise ValueError("institution template ids must be unique")
@@ -205,8 +218,15 @@ class InstitutionGrowthSystem:
             raise ValueError("institution template keys must be unique")
         if len({item.name for item in templates}) != len(templates):
             raise ValueError("institution template names must be unique")
+        if len({item.role.role_template_id for item in templates}) != len(templates):
+            raise ValueError("institution role template ids must be unique")
+        if len({item.role.work_activity_id for item in templates}) != len(templates):
+            raise ValueError("institution work activity ids must be unique")
         self.policy = policy
         self.templates = {item.id: item for item in templates}
+        self.configured_template_ids = set(
+            configured_template_ids or self.templates
+        )
         self.next_sequence = _positive(next_sequence, "next institution sequence")
         self.review_history = list(review_history or [])[-policy.history_limit:]
         self.formation_records = list(formation_records or [])
@@ -217,15 +237,42 @@ class InstitutionGrowthSystem:
         self._validate_state()
 
     @classmethod
-    def from_config(cls, path: str | Path, state=None) -> "InstitutionGrowthSystem":
+    def from_config(
+        cls, path: str | Path, state=None, *,
+        supplemental_templates: list[InstitutionTemplate] | None = None,
+        location_growth=None, event_ecology=None,
+    ) -> "InstitutionGrowthSystem":
         config = json.loads(Path(path).read_text(encoding="utf-8"))
         section = config.get("institution_growth") if isinstance(config, dict) else None
         if not isinstance(section, dict) or set(section) != {"policy", "templates"}:
             raise ValueError("institution growth config has an invalid schema")
         policy = InstitutionGrowthPolicy(**section["policy"])
         templates = [InstitutionTemplate.from_dict(item) for item in section["templates"]]
+        configured_ids = {item.id for item in templates}
+        if any(
+            GENERATED_INSTITUTION_TEMPLATE_PATTERN.fullmatch(item.id)
+            or GENERATED_INSTITUTION_KEY_PATTERN.fullmatch(item.institution_key)
+            or GENERATED_ROLE_TEMPLATE_PATTERN.fullmatch(
+                item.role.role_template_id
+            )
+            or GENERATED_WORK_ACTIVITY_PATTERN.fullmatch(
+                item.role.work_activity_id
+            )
+            for item in templates
+        ):
+            raise ValueError(
+                "checked-in institution configuration uses generated namespace"
+            )
+        combined = list(templates)
+        validator = cls(policy, combined, configured_template_ids=configured_ids)
+        for template in supplemental_templates or ():
+            validator.register_generated_template(
+                template, location_growth=location_growth,
+                event_ecology=event_ecology,
+            )
+        templates = list(validator.templates.values())
         if state is None:
-            return cls(policy, templates)
+            return validator
         allowed = {
             "schema_version", "next_sequence", "review_history",
             "formation_records", "processed_event_keys", "consumed_template_ids",
@@ -248,6 +295,7 @@ class InstitutionGrowthSystem:
             consumed_template_ids=set(state["consumed_template_ids"]),
             last_activation_day=state["last_activation_day"],
             public_history=state["public_history"],
+            configured_template_ids=configured_ids,
         )
 
     def to_dict(self) -> dict:
@@ -267,6 +315,78 @@ class InstitutionGrowthSystem:
             return self.templates[template_id]
         except KeyError as error:
             raise ValueError("unknown institution template") from error
+
+    def register_generated_template(
+        self, template: InstitutionTemplate, *, location_growth,
+        event_ecology,
+    ) -> None:
+        """Register an admitted possibility without forming an institution."""
+        if not isinstance(template, InstitutionTemplate):
+            raise ValueError("generated institution template has invalid type")
+        template_match = GENERATED_INSTITUTION_TEMPLATE_PATTERN.fullmatch(
+            template.id
+        )
+        if template_match is None:
+            raise ValueError("generated institution uses a reserved namespace")
+        sequence = template_match.group(1)
+        if (
+            GENERATED_INSTITUTION_KEY_PATTERN.fullmatch(
+                template.institution_key
+            ) is None
+            or template.institution_key
+            != f"generated_institution_key_{sequence}"
+            or template.role.role_template_id
+            != f"generated_role_template_{sequence}"
+            or template.role.work_activity_id
+            != f"generated_work_activity_{sequence}"
+        ):
+            raise ValueError("generated institution identities are inconsistent")
+        existing = list(self.templates.values())
+        if (
+            template.id in self.templates
+            or template.institution_key in {
+                item.institution_key for item in existing
+            }
+            or template.name.casefold() in {
+                item.name.casefold() for item in existing
+            }
+            or template.role.role_template_id in {
+                item.role.role_template_id for item in existing
+            }
+            or template.role.work_activity_id in {
+                item.role.work_activity_id for item in existing
+            }
+        ):
+            raise ValueError("generated institution identity collides")
+        location_template = location_growth.templates.get(
+            template.location_template_id
+        ) if location_growth is not None else None
+        if (
+            location_template is None
+            or not template.location_template_id.startswith(
+                "generated_location_template_"
+            )
+        ):
+            raise ValueError(
+                "generated institution lacks generated-location authority"
+            )
+        if not template.relevant_dynamic_event_template_ids:
+            raise ValueError("generated institution lacks event authority")
+        for event_id in template.relevant_dynamic_event_template_ids:
+            event_template = (
+                event_ecology.templates.get(event_id)
+                if event_ecology is not None else None
+            )
+            if (
+                not event_id.startswith("generated_event_template_")
+                or event_template is None
+                or event_template.location_template_id
+                != template.location_template_id
+            ):
+                raise ValueError(
+                    "generated institution event authority is invalid"
+                )
+        self.templates[template.id] = template
 
     def _validate_state(self) -> None:
         ids = [item.id for item in self.formation_records]

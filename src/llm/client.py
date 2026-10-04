@@ -363,6 +363,18 @@ class TransformersLLMClient:
                 "Do not assign IDs, occurrence or timing, thresholds, institutions, "
                 "roles, jobs, money, inventory, commerce, law, memories, or authority."
             )
+        elif kind == "institution":
+            shape = (
+                '{"name":"...","role_title":"...",'
+                '"work_activity_name":"..."}'
+            )
+            boundary = (
+                "Propose one small civic institution appropriate for the supplied "
+                "public place and its observed local event history. Do not assign "
+                "IDs, employees, wages, money, accounts, event IDs, locations, "
+                "formation dates, thresholds, commerce, inventory, goods, recipes, "
+                "legal powers, relationships, memories, commitments, or authority."
+            )
         else:
             raise ValueError("unsupported growth proposal kind")
         messages = [{

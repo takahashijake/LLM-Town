@@ -360,6 +360,11 @@ class SimulationEngine:
             state=saved_state.get("growth_proposals") if saved_state else None,
             provider=self.growth_proposal_provider,
         )
+        if self.growth_proposals.policy.institution_proposal_capacity:
+            self.economy.get_account(
+                self.growth_proposals.policy.
+                generated_institution_funding_source_account_id
+            )
         self.town_growth = TownGrowthSystem.from_config(
             self.town_growth_path,
             self.agents,
@@ -396,6 +401,16 @@ class SimulationEngine:
         self.institution_growth = InstitutionGrowthSystem.from_config(
             self.town_growth_path,
             saved_state.get("institution_growth") if saved_state else None,
+            supplemental_templates=list(
+                self.growth_proposals.institution_templates.values()
+            ),
+            location_growth=self.location_growth,
+            event_ecology=self.event_ecology,
+        )
+        self.growth_proposals.validate_bindings(
+            self.town_growth, self.location_growth, self.event_ecology,
+            self.institution_growth, locations=self.locations,
+            activity_records=self.activity_records,
         )
         self.commerce_growth = CommerceGrowthSystem.from_config(
             self.town_growth_path,
@@ -1492,6 +1507,7 @@ class SimulationEngine:
             town_history=self.town_growth.public_history,
             location_history=self.location_growth.public_history,
             location_growth=self.location_growth,
+            event_ecology=self.event_ecology,
         )
         record = self.growth_proposals.review(day=day, context=context)
         if record is None or record.status != "admitted":
@@ -1510,14 +1526,23 @@ class SimulationEngine:
             self.event_ecology.register_generated_location_authority(
                 template.id, template
             )
-        else:
+        elif record.kind == "event":
             self.event_ecology.register_generated_template(
                 self.growth_proposals.event_templates[
                     record.generated_template_id
                 ]
             )
+        else:
+            self.institution_growth.register_generated_template(
+                self.growth_proposals.institution_templates[
+                    record.generated_template_id
+                ],
+                location_growth=self.location_growth,
+                event_ecology=self.event_ecology,
+            )
         self.growth_proposals.validate_bindings(
             self.town_growth, self.location_growth, self.event_ecology,
+            self.institution_growth,
             locations=self.locations, activity_records=self.activity_records,
         )
         return record
@@ -1717,7 +1742,12 @@ class SimulationEngine:
             self.economy = EconomySystem.from_dict(economy_before)
             self.materials.economy = self.economy
             self.institution_growth = InstitutionGrowthSystem.from_config(
-                self.town_growth_path, growth_before
+                self.town_growth_path, growth_before,
+                supplemental_templates=list(
+                    self.growth_proposals.institution_templates.values()
+                ),
+                location_growth=self.location_growth,
+                event_ecology=self.event_ecology,
             )
             for agent, (memory, archive) in zip(self.agents, memories_before):
                 agent.memory = memory
