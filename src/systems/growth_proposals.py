@@ -426,6 +426,23 @@ class GrowthProposalSystem:
         if not isinstance(state, dict):
             raise ValueError("procedural growth state has an invalid schema")
         version = state.get("schema_version")
+        if version in {1, 2, 3}:
+            legacy_fields = set(GrowthProposalRecord.__dataclass_fields__) - {
+                "target_institution_template_id"
+            }
+            if version == 1:
+                legacy_fields -= {"target_location_template_id"}
+            legacy_kinds = {
+                1: {"resident", "location"},
+                2: {"resident", "location", "event"},
+                3: {"resident", "location", "event", "institution"},
+            }[version]
+            if not isinstance(state.get("records"), list) or any(
+                not isinstance(item, dict) or set(item) != legacy_fields
+                or item.get("kind") not in legacy_kinds
+                for item in state["records"]
+            ):
+                raise ValueError("legacy proposal record has an invalid schema")
         if version == 1:
             legacy_allowed = {
                 "schema_version", "records", "resident_templates", "location_templates",

@@ -158,3 +158,32 @@ def test_pending_commerce_cannot_claim_another_formation(tmp_path):
     record.institution_formation_id = "institution-formation:9999"
     with pytest.raises(ValueError, match="historical authority"):
         engine.validate_commerce_authorities()
+
+
+@pytest.mark.parametrize("version", [1, 2, 3])
+def test_legacy_record_schema_cannot_smuggle_new_target_field(version):
+    from tests.systems.test_procedural_institution_proposals import make_system, Provider
+
+    system, *_ = admitted_chain()
+    state = system.to_dict()
+    state.update(schema_version=version)
+    state.pop("commerce_templates")
+    state.pop("next_commerce_template_sequence")
+    for record in state["records"]:
+        record.pop("target_institution_template_id")
+    if version < 3:
+        state.pop("institution_templates")
+        state.pop("next_institution_template_sequence")
+        state["records"] = [item for item in state["records"] if item["kind"] != "institution"]
+    if version == 1:
+        state.pop("event_templates")
+        state.pop("next_event_template_sequence")
+        state["records"] = [item for item in state["records"] if item["kind"] != "event"]
+        for record in state["records"]:
+            record.pop("target_location_template_id")
+    state["next_proposal_sequence"] = len(state["records"]) + 1
+    state["last_attempt_day"] = state["records"][-1]["proposal_day"]
+    field = "target_location_template_id" if version == 1 else "target_institution_template_id"
+    state["records"][0][field] = "forged_authority"
+    with pytest.raises(ValueError, match="legacy proposal record"):
+        make_system(Provider(), state)
