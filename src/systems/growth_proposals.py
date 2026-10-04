@@ -1584,6 +1584,113 @@ class GrowthProposalSystem:
                             "generated event lacks sustained target use"
                         )
         if institution_growth is not None:
+            if (
+                locations is not None and activity_records is not None
+                and event_ecology is not None
+                and self.institution_policy is not None
+            ):
+                active = {item.id: item for item in locations}
+                prior_institution_records: list[GrowthProposalRecord] = []
+                event_admissions = {
+                    item.generated_template_id: item.admission_day
+                    for item in self.records
+                    if item.kind == "event" and item.status == "admitted"
+                }
+                for institution_record in (
+                    item for item in self.records
+                    if item.kind == "institution"
+                ):
+                    first_day = (
+                        institution_record.proposal_day
+                        - self.institution_policy.recent_activity_window_days
+                        + 1
+                    )
+                    candidates = []
+                    for location_template in self.location_templates.values():
+                        activation = next((
+                            item for item in location_growth.activation_records
+                            if item.status == "activated"
+                            and item.template_id == location_template.id
+                            and item.location_id == location_template.location_id
+                            and item.activation_day
+                            <= institution_record.proposal_day
+                        ), None)
+                        location = active.get(location_template.location_id)
+                        if activation is None or location is None or (
+                            location.name != location_template.name
+                            or location.description
+                            != location_template.description
+                            or tuple(location.affinities or ())
+                            != location_template.affinities
+                        ):
+                            continue
+                        prior_admitted = [
+                            item for item in prior_institution_records
+                            if item.status == "admitted"
+                            and item.target_location_template_id
+                            == location_template.id
+                        ]
+                        if len(prior_admitted) >= (
+                            self.policy.institution_templates_per_location
+                        ):
+                            continue
+                        generated_event_ids = {
+                            item.id for item in self.event_templates.values()
+                            if item.location_template_id == location_template.id
+                            and event_admissions.get(item.id, 10**18)
+                            <= institution_record.proposal_day
+                            and event_ecology.templates.get(item.id) == item
+                        }
+                        occurrences = [
+                            item for item in event_ecology.occurrence_history
+                            if item.template_id in generated_event_ids
+                            and item.location_id == location_template.location_id
+                            and item.day <= institution_record.proposal_day
+                        ]
+                        if (
+                            not occurrences
+                            or len(occurrences) < (
+                                self.institution_policy.
+                                minimum_dynamic_event_occurrences
+                            )
+                        ):
+                            continue
+                        recent = [
+                            row for row in activity_records
+                            if row.get("type") == "activity"
+                            and row.get("location")
+                            == location_template.location_id
+                            and first_day <= row.get("day", -1)
+                            <= institution_record.proposal_day
+                        ]
+                        if (
+                            len({row.get("agent_id") for row in recent
+                                 if isinstance(row.get("agent_id"), str)})
+                            < self.institution_policy.minimum_distinct_residents
+                            or len({row.get("day") for row in recent})
+                            < self.institution_policy.minimum_activity_days
+                        ):
+                            continue
+                        last_target_day = max((
+                            item.proposal_day
+                            for item in prior_institution_records
+                            if item.target_location_template_id
+                            == location_template.id
+                        ), default=0)
+                        candidates.append((
+                            len(prior_admitted), activation.activation_day,
+                            min(item.day for item in occurrences),
+                            last_target_day, location_template.id,
+                        ))
+                    expected_target = min(candidates)[4] if candidates else None
+                    if (
+                        institution_record.target_location_template_id
+                        != expected_target
+                    ):
+                        raise ValueError(
+                            "institution proposal target selection is invalid"
+                        )
+                    prior_institution_records.append(institution_record)
             for template_id, template in self.institution_templates.items():
                 if institution_growth.templates.get(template_id) != template:
                     raise ValueError(
