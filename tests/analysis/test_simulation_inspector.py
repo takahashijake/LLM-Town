@@ -7,7 +7,7 @@ from src.analysis.simulation_inspector import compare, inspect, timeline
 
 def fixture():
     return {
-        "economy": {"transactions": [
+        "economy": {"ledger": [
             {"id": "transaction-1", "day": 2, "hour": 8, "amount": 50,
              "from_account_id": "treasury", "to_account_id": "resident-1",
              "metadata": {"secret": "forbidden"}},
