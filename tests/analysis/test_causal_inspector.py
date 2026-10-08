@@ -462,3 +462,46 @@ def test_holding_output_is_independently_bounded(material_save):
     result = trace(material_save, type='lot', identity=lot, depth=0, limit=1)
     assert len(result['ownership']) == 1
     assert result['truncated']
+
+
+@pytest.mark.integration
+def test_consumption_cannot_borrow_another_residents_authority(generated_world):
+    save = deepcopy(generated_world)
+    consumed = save['materials']['consumptions'][0]
+    assert 'committed_movement' in relations(trace(save, type='consumption', identity=consumed['id']))
+    consumed['agent_id'] = 'agent_999'
+    result = trace(save, type='consumption', identity=consumed['id'])
+    assert result['edges'] == []
+    assert result['unresolved'][0]['code'] == 'consumption_owner_or_good_mismatch'
+
+
+def test_seller_inventory_must_control_the_payment_account(material_save):
+    material_save['materials']['inventories'][1]['account_id'] = 'buyer_account'
+    result = trace(material_save, type='exchange', identity='exchange-00000001')
+    assert not {'payment_leg', 'goods_leg'} & relations(result)
+    assert result['unresolved']
+
+
+def test_coherently_reconciled_self_transfer_is_not_verified(material_save):
+    section = material_save['materials']
+    transfer = section['inventory_transfers'][0]
+    movement = section['lot_movements'][0]
+    transfer['destination_inventory_id'] = transfer['source_inventory_id']
+    movement['destination_inventory_id'] = movement['source_inventory_id']
+    lot = section['lots'][0]['id']
+    section['lot_holdings'] = {'buyer_inventory': {}, 'seller_inventory': {lot: 5}}
+    section['inventories'][0]['quantities'] = {}
+    section['inventories'][1]['quantities'] = {'meal': 5}
+    result = trace(material_save, type='lot', identity=lot)
+    assert result['edges'] == [] and result['ownership'] == []
+    assert result['unresolved'][0]['code'] == 'movement_authorization_mismatch'
+
+
+def test_coherent_payment_rewrite_cannot_change_fixed_catalog_price(material_save):
+    material_save['materials']['exchanges'][0].update(unit_price=9, total_price=9)
+    material_save['economy']['ledger'][0]['amount'] = 9
+    material_save['economy']['accounts'][0]['balance'] = 91
+    material_save['economy']['accounts'][1]['balance'] = 59
+    result = trace(material_save, type='exchange', identity='exchange-00000001')
+    assert not {'payment_leg', 'goods_leg'} & relations(result)
+    assert result['unresolved'][0]['code'] == 'exchange_contract_mismatch'

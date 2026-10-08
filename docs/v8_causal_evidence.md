@@ -115,7 +115,9 @@ parent ancestry. Input ownership must replay at the production's saved movement
 commit position. Transfer/consumption/production movement groups must match
 references, inventory legs, goods and quantities. Exchange payment and goods
 edges additionally require reciprocal monetary metadata and exchange authorization,
-accounts, price multiplication, seller/buyer bindings and equal commit dates.
+accounts, fixed saved catalog price, price multiplication, seller/buyer inventory
+account bindings and equal commit dates. Consumption requires the owning resident
+and exact consumable-good effect contract; self-transfers are rejected.
 Shared upstream lots can feed different inventories only through actual movements;
 sharing ancestry never merges their separate production or commerce identities.
 
@@ -151,7 +153,8 @@ python scripts/inspect_town.py compare BEFORE.json AFTER.json
 ```
 
 Trace defaults: depth 6, limit 100, direction `both`. Depth is 0–32; limit is
-1–1000 and independently caps nodes, edges, diagnostics and associations.
+1–1000 and independently caps nodes, edges, diagnostics, associations and
+current ownership facts.
 `upstream` follows dependencies; `downstream` follows effects. `both` can legitimately
 reach other branches through shared upstream supply; every node remains typed and
 separate. Traversal marks truncation, never interprets a cutoff as absence.

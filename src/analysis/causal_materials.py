@@ -10,9 +10,10 @@ from dataclasses import fields
 
 from src.analysis.causal_evidence import EvidenceGraph, RecordIndex, RecordRef, OwnershipFact
 from src.analysis.inspection_records import safe_identity
+from src.analysis.inspection_save import records
 from src.systems.economy import EconomicAccount, TransactionRecord
 from src.systems.materials import (
-    Inventory, InventoryTransferRecord, ExchangeRecord, ProductionRecord,
+    GoodDefinition, Inventory, InventoryTransferRecord, ExchangeRecord, ProductionRecord,
     ProductionRecipe, MaterialLot, LotMovement, ConsumptionRecord, Seller,
 )
 
@@ -58,7 +59,9 @@ def audit_ledger(save: dict, index: RecordIndex) -> str | None:
         require(all(integer(v) for v in initial.values()), 'invalid_ledger_baseline')
         balances = Counter(initial)
         for row in accounts.values():
-            require(complete(row, EconomicAccount) and integer(row.get('balance')),
+            require(complete(row, EconomicAccount) and integer(row.get('balance'))
+                    and row.get('owner_type') in {'agent', 'employer', 'institution', 'system'}
+                    and safe_identity(row.get('owner_id')),
                     'invalid_account_contract')
         for number, ref in enumerate(index.of_type('transaction'), 1):
             row = index.row(ref)
@@ -106,6 +109,12 @@ def audit_materials(save: dict, index: RecordIndex) -> str | None:
                 stamp(row)
                 require(ref.identity == f'{prefix}-{number:08d}', 'invalid_material_record_sequence')
         inventories, lots = rows['inventory'], rows['lot']
+        catalog = records(save, ('materials', 'goods'))
+        require(all(complete(row, GoodDefinition) and safe_identity(row.get('id'))
+                    and integer(row.get('unit_price'), 1) for row in catalog),
+                'goods_catalog_incomplete')
+        goods = {row['id']: row for row in catalog}
+        require(len(goods) == len(catalog), 'duplicate_goods_identity')
         initial, holdings = section.get('initial_quantities'), section.get('lot_holdings')
         require(isinstance(initial, dict) and set(initial) == set(inventories)
                 and all(quantities(v) for v in initial.values()), 'invalid_material_baseline')
@@ -125,7 +134,7 @@ def audit_materials(save: dict, index: RecordIndex) -> str | None:
                         and index.row(account).get('owner_id') == row['owner_id'],
                         'inventory_owner_mismatch')
         for row in lots.values():
-            require(integer(row['initial_quantity'], 1) and integer(row['created_day'])
+            require(row.get('good_id') in goods and integer(row['initial_quantity'], 1) and integer(row['created_day'])
                     and isinstance(row['parent_lot_ids'], list)
                     and all(safe_identity(k) for k in row['parent_lot_ids'])
                     and len(set(row['parent_lot_ids'])) == len(row['parent_lot_ids']),
@@ -194,12 +203,25 @@ def audit_materials(save: dict, index: RecordIndex) -> str | None:
                                                  for key in sorted(row['outputs'])],
                         'production_output_mismatch')
             else:
+                if ref.namespace == 'consumption':
+                    inventory = inventories.get(row['inventory_id'])
+                    good = goods.get(row['good_id'])
+                    require(inventory is not None and inventory['owner_type'] == 'agent'
+                            and inventory['owner_id'] == row['agent_id'] and good is not None
+                            and good.get('consumable') is True and safe_identity(good.get('need_effect'))
+                            and row.get('need') == good['need_effect']
+                            and integer(good.get('need_effect_amount'))
+                            and integer(row.get('quantity'), 1)
+                            and row.get('need_effect_amount') == good['need_effect_amount'] * row['quantity'],
+                            'consumption_owner_or_good_mismatch')
                 require(integer(row['quantity'], 1) and dict(totals) == {row['good_id']: row['quantity']},
                         'movement_quantity_mismatch')
             for movement in movements:
                 if ref.namespace == 'transfer':
                     source, target = row['source_inventory_id'], row['destination_inventory_id']
-                    require(movement['movement_type'] == row['authorization_type'],
+                    require(safe_identity(row.get('authorization_type'))
+                            and safe_identity(row.get('authorization_id'))
+                            and source != target and movement['movement_type'] == row['authorization_type'],
                             'movement_authorization_mismatch')
                 else:
                     source, target = row['inventory_id'], None
@@ -267,11 +289,13 @@ def add_material_edges(graph: EvidenceGraph, save: dict, ledger_error: str | Non
                   'MaterialSystem.lot_movements_reconcile_with_events + ownership replay')
         graph.add(index.get('lot', row['lot_id']), ref, 'moved_lot',
                   'MaterialSystem.provenance_history_reconstructs_holdings')
+    prices = {row['id']: row['unit_price'] for row in records(save, ('materials', 'goods'))}
     for ref in index.of_type('exchange'):
         row = index.row(ref)
         tx, transfer = index.get('transaction', row['monetary_transaction_id']), index.get('transfer', row['inventory_transfer_id'])
         t, goods = index.row(tx), index.row(transfer)
         seller, buyer = index.row(index.get('seller', row['seller_id'])), index.row(index.get('inventory', row['buyer_inventory_id']))
+        seller_inventory = index.row(index.get('inventory', row['seller_inventory_id']))
         valid = not ledger_error and tx and transfer and (
             t['transaction_type'] == 'purchase' and t['source_account_id'] == row['buyer_account_id']
             and t['destination_account_id'] == row['seller_account_id'] and t['amount'] == row['total_price']
@@ -280,9 +304,12 @@ def add_material_edges(graph: EvidenceGraph, save: dict, ledger_error: str | Non
             and goods['source_inventory_id'] == row['seller_inventory_id']
             and goods['destination_inventory_id'] == row['buyer_inventory_id']
             and goods['good_id'] == row['good_id'] and goods['quantity'] == row['quantity']
-            and integer(row['unit_price'], 1) and row['total_price'] == row['unit_price'] * row['quantity']
+            and integer(row['unit_price'], 1) and row['unit_price'] == prices.get(row['good_id'])
+            and row['total_price'] == row['unit_price'] * row['quantity']
             and seller.get('inventory_id') == row['seller_inventory_id']
-            and seller.get('account_id') == row['seller_account_id'] and buyer.get('account_id') == row['buyer_account_id']
+            and seller.get('account_id') == row['seller_account_id']
+            and seller_inventory.get('account_id') == row['seller_account_id']
+            and buyer.get('account_id') == row['buyer_account_id']
             and stamp(t) == stamp(row) == stamp(goods))
         if valid:
             graph.add(tx, ref, 'payment_leg', 'MaterialSystem.exchanges_reconcile_with_ledger: reciprocal payment')
