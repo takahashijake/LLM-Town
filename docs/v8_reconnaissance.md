@@ -71,3 +71,10 @@ inspector diagnosis and freeze results even when another gate fails.
 - Normal V6 freeze: PASS, 77/77 scenarios, 42/42 invariants, 35/35 reconstruction
   checks and 730/730 rejected mutations. Approximately 254.88 seconds (log
   creation-to-completion timestamps, not an instrumented runtime).
+
+- Full repaired baseline: **948 passed in 1077.69 seconds**. The two later
+  baseline regression additions were separately included in the focused tests.
+- Comprehensive V6 gate (hash seed 77): **PASS**, 77/77 scenarios, 42/42
+  invariants, 69/69 checkpoint checks and 730/730 rejected mutations, in
+  1081.60 seconds. The normal and comprehensive authoritative digest is
+  `9aec1a80d08364b98816a0607c719933ff41420abedf99e49e929c5b6f0760df`.
