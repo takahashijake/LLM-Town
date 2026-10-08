@@ -8,8 +8,8 @@ python -m ruff check --select E9,F src/analysis/inspection_*.py src/analysis/sim
 python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py -m "not integration" -q
 ```
 
-Scoped Ruff checks syntax, undefined/unused names and imports only in touched
-inspector modules/scripts/tests. It adds no repository-wide formatting rewrite.
+Scoped Ruff checks syntax, undefined/unused names and imports in the selected
+inspection/causal analysis modules, inspector scripts and tests. It adds no repository-wide formatting rewrite.
 Install test dependencies with `python -m pip install -r requirements.txt -r
 requirements-dev.txt`. The existing full suite remains mandatory.
 
@@ -37,7 +37,7 @@ or leaked text. Narrative-only changes need not invalidate unrelated authority.
 PYTHONHASHSEED=1 python scripts/evaluate_v6_freeze.py --output /tmp/v8-freeze.json
 PYTHONHASHSEED=77 python scripts/evaluate_v6_freeze.py --comprehensive --output /tmp/v8-comprehensive.json
 python scripts/showcase_v8.py --output /tmp/v8-showcase
- git diff --check
+git diff --check
 ```
 
 The original V6 thresholds, scenarios and invariants are unchanged. Normal and
@@ -69,6 +69,6 @@ repeated whole-history joins. Occurrence associations are independently capped.
 Review findings fixed: pre-filter truncation; missing real schema fields/date
 projection; CLI import bootstrap; malformed exchange chronology escaping controlled
 diagnostics; cross-branch location substitution lacking work-location binding;
-material identity namespace impersonation; same-day repair order; avoidable
+material identity namespace impersonation; same-day repair order; explicit reconciled current-holder facts; avoidable
 commerce/plan joins; missing input/output budgets. Corresponding focused tests
 cover these paths. See `v8_verification.md` for executed acceptance results.

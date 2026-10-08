@@ -444,3 +444,21 @@ def test_repair_cannot_precede_terminal_parent_within_same_day(tmp_path):
     engine.state.save(engine, 2, 12)
     save = json.loads((tmp_path / 'state.json').read_text())
     assert 'repair_successor' not in relations(trace(save, type='commitment', identity=child.id))
+
+
+def test_current_holders_are_reconciled_snapshot_facts(material_save):
+    lot = material_save['materials']['lots'][0]['id']
+    result = trace(material_save, type='lot', identity=lot)
+    assert {(r['owner_id'], r['quantity']) for r in result['ownership']} == {('buyer_agent', 1), ('seller', 4)}
+    assert all(r['evidence'] == 'persisted_fact' and r['source_path'] == 'materials.lot_holdings'
+               for r in result['ownership'])
+    material_save['materials']['lot_holdings']['buyer_inventory'][lot] = 99
+    result = trace(material_save, type='lot', identity=lot)
+    assert result['ownership'] == [] and result['unresolved']
+
+
+def test_holding_output_is_independently_bounded(material_save):
+    lot = material_save['materials']['lots'][0]['id']
+    result = trace(material_save, type='lot', identity=lot, depth=0, limit=1)
+    assert len(result['ownership']) == 1
+    assert result['truncated']

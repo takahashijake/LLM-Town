@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import fields
 
-from src.analysis.causal_evidence import EvidenceGraph, RecordIndex, RecordRef
+from src.analysis.causal_evidence import EvidenceGraph, RecordIndex, RecordRef, OwnershipFact
 from src.analysis.inspection_records import safe_identity
 from src.systems.economy import EconomicAccount, TransactionRecord
 from src.systems.materials import (
@@ -114,6 +114,8 @@ def audit_materials(save: dict, index: RecordIndex) -> str | None:
         replay = {key: Counter() for key in inventories}
         baseline = {key: Counter() for key in inventories}
         for row in inventories.values():
+            require(safe_identity(row.get('owner_type')) and safe_identity(row.get('owner_id')),
+                    'invalid_inventory_owner')
             require(quantities(row['quantities']), 'invalid_inventory_quantities')
             account = index.get('account', row.get('account_id'))
             require(row.get('account_id') is None or account is not None,
@@ -243,6 +245,12 @@ def add_material_edges(graph: EvidenceGraph, save: dict, ledger_error: str | Non
             for ref in index.of_type(kind):
                 graph.unknown(ref, material_error)
         return material_error
+    for inventory_id, lots in save['materials']['lot_holdings'].items():
+        inventory = index.get('inventory', inventory_id)
+        owner = index.row(inventory)
+        for lot_id, quantity in lots.items():
+            graph.ownership.append(OwnershipFact(index.get('lot', lot_id), inventory,
+                                                 owner['owner_type'], owner['owner_id'], quantity))
     for ref in index.of_type('production'):
         row = index.row(ref)
         for identity in row['input_lot_ids']:

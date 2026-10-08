@@ -92,6 +92,22 @@ class EvidenceAssociation:
                 'evidence': 'association_only', 'code': self.code}
 
 
+@dataclass(frozen=True, order=True)
+class OwnershipFact:
+    lot: RecordRef
+    inventory: RecordRef
+    owner_type: str
+    owner_id: str
+    quantity: int
+
+    def to_dict(self) -> dict:
+        return {'evidence': 'persisted_fact', 'lot': self.lot.to_dict(),
+                'inventory': self.inventory.to_dict(), 'owner_type': self.owner_type,
+                'owner_id': self.owner_id, 'quantity': self.quantity,
+                'source_path': 'materials.lot_holdings',
+                'contract': 'MaterialSystem.provenance_history_reconstructs_holdings: current snapshot reconciled'}
+
+
 class RecordIndex:
     """Namespace-local identity resolution. Never join arbitrary field values."""
 
@@ -162,6 +178,7 @@ class EvidenceGraph:
         self.edges: set[EvidenceEdge] = set()
         self.unresolved: set[UnresolvedEvidence] = set()
         self.associations: set[EvidenceAssociation] = set()
+        self.ownership: list[OwnershipFact] = []
 
     def add(self, cause: RecordRef, effect: RecordRef, label: str, contract: str) -> None:
         if len(self.edges) >= MAX_RECORDS:
@@ -212,12 +229,16 @@ class EvidenceGraph:
         associations = [item for item in sorted(self.associations) if item.target in visited or item.source in visited]
         if len(associations) > limit:
             truncated = True
+        ownership = [item for item in sorted(self.ownership) if item.lot in visited]
+        if len(ownership) > limit:
+            truncated = True
         payload = {
             'schema_version': EVIDENCE_VERSION, 'kind': 'causal_trace',
             'root': root.to_dict(), 'direction': direction, 'depth': depth, 'limit': limit,
             'nodes': [self.index.nodes[ref].to_dict() for ref in sorted(visited)],
             'edges': [edge.to_dict() for edge in sorted(selected)],
             'unresolved': [item.to_dict() for item in diagnostics[:limit]],
+            'ownership': [item.to_dict() for item in ownership[:limit]],
             'associations': [item.to_dict() for item in associations[:limit]], 'truncated': truncated,
             'policy': 'Verified edges check persisted contracts; full eligibility and file authenticity are not proven. Private knowledge and narrative are excluded.',
         }

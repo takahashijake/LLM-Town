@@ -41,8 +41,6 @@ may be retained or pruned. Matching timestamps, local activity or event template
 cannot prove that a particular occurrence was the cause of formation. Reports
 must expose this limitation without guessing a qualifying history.
 
-Implementation, commands, resource budgets, regression results and demonstration
-instructions are documented after their acceptance checks complete.
 
 ## Regression strategy
 
@@ -94,7 +92,10 @@ allowlisted fields and corrected lifecycle chronology/filtering. The independent
 causal evidence schema is **1**, identified by `kind: causal_trace`. A report's
 `signature` hashes its canonical JSON before inserting the signature itself.
 Edge IDs hash the typed endpoints, relationship, contract and evidence class.
-Nodes retain their persisted collection path and source ordinal. Institution
+Nodes retain their persisted collection path and source ordinal.
+The separately bounded `ownership` array reports current inventory/owner/quantity
+facts from saved `lot_holdings` only after replay reconciles them. It does not
+introduce another causal edge or a new authoritative state. Institution
 queries accept either institution ID or exact formation ID and return the
 canonical formation reference. IDs in different namespaces cannot alias.
 

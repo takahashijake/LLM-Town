@@ -33,6 +33,9 @@ def format_trace(report: dict) -> str:
     for edge in report['edges']:
         lines.append(f"VERIFIED {label(edge['source'])} -> {label(edge['target'])}: "
                      + LABELS[edge['relationship']])
+    for holding in report['ownership']:
+        lines.append(f"CURRENT HOLDER {label(holding['lot'])}: {holding['owner_type']}:{holding['owner_id']} "
+                     f"holds {holding['quantity']} in {label(holding['inventory'])}")
     for unresolved in report['unresolved']:
         lines.append(f"UNRESOLVED {label(unresolved['ref'])}: {unresolved['code']}")
     for association in report['associations']:
