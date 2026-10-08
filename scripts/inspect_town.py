@@ -1,6 +1,13 @@
 """Read-only inspection CLI for persisted LLM-Town JSON saves."""
 import argparse
 import json
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from src.analysis.simulation_inspector import SOURCES, compare, inspect, timeline
 
 def main():

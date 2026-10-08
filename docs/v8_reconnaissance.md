@@ -60,3 +60,14 @@ separate branch registries. A partial trace is useful only when incompleteness
 is visible; it must not claim to prove full formation eligibility from retained
 records alone. Release coverage remains intact; independent CI jobs allow fast
 inspector diagnosis and freeze results even when another gate fails.
+
+## Baseline checks completed
+
+- Inspector + focused material replay, growth persistence, commitment execution
+  and plan tests: 117 passed in 0.33 seconds.
+- Documented CLI initially failed with `ModuleNotFoundError: src` without
+  `PYTHONPATH`. Added the standard repository-root bootstrap and a subprocess
+  regression that runs from outside the repository.
+- Normal V6 freeze: PASS, 77/77 scenarios, 42/42 invariants, 35/35 reconstruction
+  checks and 730/730 rejected mutations. Approximately 254.88 seconds (log
+  creation-to-completion timestamps, not an instrumented runtime).

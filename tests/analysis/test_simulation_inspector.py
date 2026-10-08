@@ -92,3 +92,19 @@ def test_real_persisted_schema_projects_ledger_and_occurrences(tmp_path):
     changed = copy.deepcopy(save)
     changed['economy']['ledger'][0]['amount'] += 1
     assert not compare(save, changed)['sources']['ledger']['same_projection']
+
+
+def test_documented_cli_runs_without_pythonpath(tmp_path):
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+
+    path = tmp_path / 'save.json'
+    path.write_text(json.dumps(fixture()))
+    env = {k: v for k, v in os.environ.items() if k != 'PYTHONPATH'}
+    script = Path(__file__).resolve().parents[2] / 'scripts/inspect_town.py'
+    result = subprocess.run([sys.executable, str(script), 'timeline', str(path)],
+                            cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)['total'] == 2
