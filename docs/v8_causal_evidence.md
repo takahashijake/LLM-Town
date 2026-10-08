@@ -125,7 +125,9 @@ Repair references require a terminal predecessor, preserved participants/type,
 acyclic bounded ancestry and nondecreasing dates/ticks where available. Transfer
 fulfillment requires the exact authorized goods transfer, participant inventories,
 quantity, event key and resolution time. Source-plan edges require an actor-owned
-commitment and a supported bounded template. Acquisition/delivery plan execution
+commitment, matching bounded template, stable/legacy identity and valid step
+structure/lifecycle. Execution records must match actor, counterparty, outcome
+status and resolution timestamp; acquisition proof must match the purchase date. Acquisition/delivery plan execution
 requires the exact completed step, execution key and authoritative supporting
 purchase or fulfilled transfer record. Attempt/execution edges say that the
 commitment identifies those records; those observations alone do not prove an

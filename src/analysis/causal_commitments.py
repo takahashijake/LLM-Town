@@ -5,7 +5,7 @@ from src.analysis.causal_evidence import EvidenceGraph
 from src.analysis.causal_materials import integer, complete
 from src.analysis.inspection_records import safe_identity
 from src.systems.commitments import SocialCommitment, COMMITMENT_STATUSES, COMMITMENT_TYPES
-from src.systems.plans import AgentPlan, PlanStep, TEMPLATE_ACTIONS, KNOWN_PLAN_TYPES, PLAN_STATUSES
+from src.systems.plans import AgentPlan, PlanStep, TEMPLATE_ACTIONS, KNOWN_PLAN_TYPES, PLAN_STATUSES, STEP_STATUSES
 
 
 def commitment_contract(row: dict) -> bool:
@@ -18,6 +18,7 @@ def commitment_contract(row: dict) -> bool:
 def add_commitment_edges(graph: EvidenceGraph, *, material_valid: bool) -> None:
     index = graph.index
     fulfilled = set()
+    fulfillment_transfers = {}
     valid_actions = set()
     for ref in index.of_type('commitment'):
         row = index.row(ref)
@@ -92,6 +93,7 @@ def add_commitment_edges(graph: EvidenceGraph, *, material_valid: bool) -> None:
                               'CommitmentSystem.fulfill_transfer + validate_invariants: exact authorized goods proof')
                     found = True
                     fulfilled.add(ref)
+                    fulfillment_transfers[ref] = transfer
         # Non-material execution facts lack persisted co-location authority;
         # expose their records, but do not certify fulfillment from an ID alone.
         if not found:
@@ -106,7 +108,18 @@ def add_commitment_edges(graph: EvidenceGraph, *, material_valid: bool) -> None:
                      and row['day'] >= commitment['created_day']
                      and (row.get('tick') is None or integer(row['tick'])))
             if kind == 'execution':
-                valid = valid and row.get('source_commitment_id') == source.identity and row.get('event_key') == f'commitment-action:{source.identity}'
+                valid = (valid and row.get('source_commitment_id') == source.identity
+                         and row.get('event_key') == f'commitment-action:{source.identity}'
+                         and row.get('activity_event_key') == row.get('event_key')
+                         and row.get('status') == 'executed'
+                         and row.get('counterpart_id') == commitment.get('proposer_id')
+                         and row.get('commitment_type') == commitment.get('commitment_type')
+                         and commitment.get('status') == 'fulfilled'
+                         and row.get('day') == commitment.get('resolution_day')
+                         and row.get('tick') == commitment.get('resolution_tick')
+                         and (commitment.get('commitment_type') != 'transfer'
+                              or source in fulfillment_transfers
+                              and row.get('material_transfer_id') == fulfillment_transfers[source].identity))
             else:
                 valid = valid and row.get('event_key') == f"commitment-attempt:{source.identity}:{row.get('kind')}:{row['day']}:{row.get('tick')}"
             if valid:
@@ -124,10 +137,20 @@ def add_commitment_edges(graph: EvidenceGraph, *, material_valid: bool) -> None:
         steps = row.get('steps')
         plan_type = row.get('plan_type')
         step_contract = (isinstance(steps, list) and 1 <= len(steps) <= 4
-                         and all(isinstance(step, dict) and complete(step, PlanStep) for step in steps)
+                         and all(isinstance(step, dict) and complete(step, PlanStep)
+                                 and safe_identity(step.get('id'))
+                                 and type(step.get('status')) is str and step['status'] in STEP_STATUSES
+                                 and integer(step.get('attempts')) and integer(step.get('max_attempts'), 1)
+                                 for step in steps)
+                         and len({step['id'] for step in steps}) == len(steps)
                          and plan_type in KNOWN_PLAN_TYPES
                          and tuple(step['action_type'] for step in steps) == TEMPLATE_ACTIONS[plan_type.removeprefix('commitment_')])
         if (source and commitment_contract(parent) and complete(row, AgentPlan) and step_contract
+                and plan_type == f"commitment_{parent.get('commitment_type')}"
+                and integer(row.get('current_step_index')) and row['current_step_index'] <= len(steps)
+                and (ref.identity.startswith('plan-') or ref.identity == f"plan:commitment:{row.get('agent_id')}:{row.get('source_id')}")
+                and (row.get('status') != 'active' or parent.get('status') == 'accepted')
+                and (row.get('status') != 'completed' or all(step['status'] in {'completed', 'skipped'} for step in steps))
                 and row.get('status') in PLAN_STATUSES and row.get('source_type') == 'commitment'
                 and row.get('agent_id') == parent.get('counterpart_id')
                 and integer(row.get('created_day'), 1) and integer(parent.get('created_day'), 1)
@@ -173,6 +196,7 @@ def add_commitment_edges(graph: EvidenceGraph, *, material_valid: bool) -> None:
                             and exchange in verified_exchanges and exchange.identity == ref.identity
                             and e.get('event_key') == f"commitment:{source.identity}:preparation"
                             and e.get('buyer_inventory_id') == f"inventory:agent:{p['agent_id']}"
+                            and (e.get('day'), e.get('hour')) == (row.get('day'), row.get('tick'))
                             and isinstance(meta, dict) and e.get('good_id') == meta.get('good_id')
                             and integer(meta.get('quantity'), 1) and e.get('quantity') == meta['quantity']):
                         proof = exchange

@@ -505,3 +505,48 @@ def test_coherent_payment_rewrite_cannot_change_fixed_catalog_price(material_sav
     result = trace(material_save, type='exchange', identity='exchange-00000001')
     assert not {'payment_leg', 'goods_leg'} & relations(result)
     assert result['unresolved'][0]['code'] == 'exchange_contract_mismatch'
+
+
+@pytest.mark.parametrize('field,value', [('current_step_index', 99), ('current_step_index', True),
+                                        ('id', 'invented-plan'), ('status', 'active')])
+def test_plan_projection_requires_intrinsic_saved_contract(commitment_save, field, value):
+    save, _ = commitment_save
+    plan = save['plans']['plans'][0]
+    plan[field] = value
+    report = trace(save, type='plan', identity=plan['id'])
+    assert 'source_plan' not in relations(report)
+    assert report['unresolved']
+
+
+def test_duplicate_plan_steps_cannot_certify_execution(commitment_save):
+    save, _ = commitment_save
+    plan = save['plans']['plans'][0]
+    plan['steps'][1]['id'] = plan['steps'][0]['id']
+    assert 'source_plan' not in relations(trace(save, type='plan', identity=plan['id']))
+
+
+@pytest.mark.parametrize('field,value', [('status', 'failed'), ('counterpart_id', 'agent_003'),
+                                        ('material_transfer_id', 'material-transfer-99999999'),
+                                        ('day', 99)])
+def test_execution_record_cannot_overstate_or_borrow_outcome(commitment_save, field, value):
+    save, identity = commitment_save
+    save['commitments']['execution_records'][0][field] = value
+    result = trace(save, type='commitment', identity=identity, depth=8, limit=200)
+    assert 'recorded_execution' not in relations(result)
+    assert len([e for e in result['edges'] if e['relationship'] == 'plan_execution_proof']) == 1
+
+
+def test_plan_template_must_match_source_commitment_type(commitment_save):
+    save, _ = commitment_save
+    plan = save['plans']['plans'][0]
+    save['commitments']['commitments'][0]['commitment_type'] = 'help'
+    assert 'source_plan' not in relations(trace(save, type='plan', identity=plan['id']))
+
+
+def test_preparation_proof_cannot_borrow_purchase_from_another_date(commitment_save):
+    save, identity = commitment_save
+    save['commitments']['attempt_records'][0]['day'] = 99
+    save['commitments']['attempt_records'][0]['event_key'] = f'commitment-attempt:{identity}:preparation:99:8'
+    save['plans']['execution_records'][0]['day'] = 99
+    result = trace(save, type='commitment', identity=identity, depth=8, limit=200)
+    assert len([e for e in result['edges'] if e['relationship'] == 'plan_execution_proof']) == 1
