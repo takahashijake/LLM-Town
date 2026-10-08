@@ -11,6 +11,34 @@ grounded dialogue. The model never receives arbitrary authority to mutate state.
 V1 remains frozen; V2 integrates deterministic economy, material production and
 provenance, crime/evidence, and justice without changing that boundary.
 
+## V8 read-only causal investigation
+
+V8 adds typed causal tracing over existing saved authority, without running the
+simulation or loading an LLM. It verifies institution startup and registration,
+commerce branch bindings, material production/ownership replay, exchange payment
+and goods legs, and a bounded subset of commitment repair and plan execution.
+Missing proof is explicitly unresolved; shared residents, locations, dates and
+prose never establish causation. Existing timeline/show/compare commands remain.
+
+```bash
+python scripts/inspect_town.py timeline SAVE.json --limit 25
+python scripts/inspect_town.py trace SAVE.json --type institution --id institution:0001 --format text
+python scripts/inspect_town.py trace SAVE.json --type lot --id LOT_ID --direction upstream
+python scripts/inspect_town.py trace SAVE.json --type commitment --id COMMITMENT_ID
+python scripts/inspect_town.py compare BEFORE.json AFTER.json
+python scripts/showcase_v8.py --output /tmp/llm-town-v8
+```
+
+Trace reports use versioned JSON, stable typed identities, bounded traversal and
+controlled explanations. Private memories, beliefs, journals, dialogue, proposal
+text and arbitrary nested narrative remain excluded. Complete historical formation
+eligibility and general social causality are not claimed.
+
+See [V8 contracts and demonstration](docs/v8_causal_evidence.md),
+[testing tiers](docs/v8_testing.md), [reconnaissance](docs/v8_reconnaissance.md),
+and [verification results](docs/v8_verification.md). The
+[V7 document](docs/v7_simulation_inspector.md) records the initial projection scope.
+
 ## Key capabilities
 
 - Bounded, alternating conversation sessions (four utterances by default)
