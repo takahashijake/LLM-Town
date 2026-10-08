@@ -17,7 +17,7 @@ SCHEMA_VERSION = 1
 SOURCES = {
     "relationship_events": ("relationship_events",),
     "reputation_updates": ("reputation_updates",),
-    "ledger": ("economy", "transactions"),
+    "ledger": ("economy", "ledger"),
     "employment": ("economy", "employments"),
     "exchanges": ("materials", "exchanges"),
     "inventory_transfers": ("materials", "inventory_transfers"),
@@ -26,7 +26,7 @@ SOURCES = {
     "lot_movements": ("materials", "lot_movements"),
     "migrations": ("town_growth", "migration_records"),
     "locations": ("location_growth", "activation_records"),
-    "occurrences": ("event_ecology", "occurrence_records"),
+    "occurrences": ("event_ecology", "occurrence_history"),
     "institutions": ("institution_growth", "formation_records"),
     "commerce": ("commerce_growth", "activation_records"),
     "commitments": ("commitments", "commitments"),
