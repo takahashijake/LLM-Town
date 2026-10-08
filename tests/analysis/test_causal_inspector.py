@@ -550,3 +550,20 @@ def test_preparation_proof_cannot_borrow_purchase_from_another_date(commitment_s
     save['plans']['execution_records'][0]['day'] = 99
     result = trace(save, type='commitment', identity=identity, depth=8, limit=200)
     assert len([e for e in result['edges'] if e['relationship'] == 'plan_execution_proof']) == 1
+
+
+def test_pruned_exchange_does_not_hide_missing_authorization(material_save):
+    material_save['materials']['exchanges'] = []
+    result = trace(material_save, type='lot', identity=material_save['materials']['lots'][0]['id'])
+    assert 'moved_lot' in relations(result)
+    assert not {'payment_leg', 'goods_leg'} & relations(result)
+    assert any(u['code'] == 'exchange_authorization_missing' for u in result['unresolved'])
+
+
+def test_unsupported_authorizer_is_explicit_without_inventing_cause(material_save):
+    transfer = material_save['materials']['inventory_transfers'][0]
+    transfer['authorization_type'] = 'custom_authority'
+    material_save['materials']['lot_movements'][0]['movement_type'] = 'custom_authority'
+    result = trace(material_save, type='lot', identity=material_save['materials']['lots'][0]['id'])
+    assert 'moved_lot' in relations(result)
+    assert any(u['code'] == 'authorization_contract_not_inspected' for u in result['unresolved'])

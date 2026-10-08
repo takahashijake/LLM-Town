@@ -222,3 +222,8 @@ eligibility would benefit from a separately designed persisted witness contract;
 this implementation does not invent one or expand save schemas. Large histories
 are bounded and indexed, but reading a JSON snapshot still requires memory for
 that snapshot; this is not a streaming forensic database.
+
+Pruned exchange or commitment authorizations remain explicit diagnostics even
+when the physical transfer replay is valid. Unknown authorization contracts are
+reported as uninspected; physical movement alone never supplies payment or
+commitment causality.

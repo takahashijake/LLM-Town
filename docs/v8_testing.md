@@ -72,5 +72,5 @@ diagnostics; cross-branch location substitution lacking work-location binding;
 material identity namespace impersonation; consumer/seller ownership and
 coherent self-transfer/catalog-price corruption; intrinsic plan structure,
 source template and exact execution outcome/date bindings; same-day repair order; explicit reconciled current-holder facts; avoidable
-commerce/plan joins; missing input/output budgets. Corresponding focused tests
+commerce/plan joins; missing input/output budgets; pruned or unsupported transfer authorization diagnostics. Corresponding focused tests
 cover these paths. See `v8_verification.md` for executed acceptance results.

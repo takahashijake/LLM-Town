@@ -289,6 +289,13 @@ def add_material_edges(graph: EvidenceGraph, save: dict, ledger_error: str | Non
                   'MaterialSystem.lot_movements_reconcile_with_events + ownership replay')
         graph.add(index.get('lot', row['lot_id']), ref, 'moved_lot',
                   'MaterialSystem.provenance_history_reconstructs_holdings')
+    for transfer in index.of_type('transfer'):
+        row = index.row(transfer)
+        namespace = {'exchange': 'exchange', 'commitment': 'commitment'}.get(row['authorization_type'])
+        if namespace is None:
+            graph.unknown(transfer, 'authorization_contract_not_inspected')
+        elif index.get(namespace, row['authorization_id']) is None:
+            graph.unknown(transfer, f'{namespace}_authorization_missing')
     prices = {row['id']: row['unit_price'] for row in records(save, ('materials', 'goods'))}
     for ref in index.of_type('exchange'):
         row = index.row(ref)
