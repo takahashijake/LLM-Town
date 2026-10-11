@@ -34,17 +34,17 @@ release gates. No existing test, invariant threshold or freeze digest was change
 
 ## Executed gates
 
-Commands below were executed locally; unfinished gates are marked pending.
+All required local gates completed successfully on 2026-10-11 (Python 3.13.11).
 
 | Command | Result |
 | --- | --- |
 | `python -m compileall -q src scripts tests` | PASS |
 | `python -m pytest -q --junitxml=/tmp/v9-clean-baseline.xml` in untouched V8 worktree | 1,038 passed in 1,213.24 seconds |
-| `python -m pytest -q --junitxml=/tmp/v9-final-pytest.xml` | Running; outcome pending |
+| `python -m pytest -q --junitxml=/tmp/v9-final-pytest.xml` | 1,139 passed in 1,269.72 seconds; zero failures, errors or skips |
 | Combined feature and inspector acceptance command below | 197 passed in 64.83 seconds |
 | `python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py -q` | 96 passed in 35.60 seconds |
 | `PYTHONHASHSEED=1 python scripts/evaluate_v6_freeze.py --output /tmp/v9-freeze-final.json` | PASS, 77 scenarios, 42 invariants, 35 checkpoints, 730 mutations |
-| `PYTHONHASHSEED=77 python scripts/evaluate_v6_freeze.py --comprehensive --output /tmp/v9-comprehensive.json` | Running; outcome pending |
+| `PYTHONHASHSEED=77 python scripts/evaluate_v6_freeze.py --comprehensive --output /tmp/v9-comprehensive.json` | PASS, 77 scenarios, 42 invariants, 69 checkpoints, 730 mutations |
 | `PYTHONHASHSEED=77 python scripts/evaluate_v9_collective_projects.py --output /tmp/v9-accepted` | PASS, 29/29 checks, four reconstruction boundaries |
 | `python scripts/evaluate_institution_growth.py` | PASS, 30/30 scenarios, 22/22 invariants |
 | `python scripts/evaluate_event_ecology.py` | PASS, 28/28 scenarios, 21/21 invariants |
@@ -93,8 +93,8 @@ reversed top-level dictionary insertion order.
 | --- | --- | --- |
 | Correctness | The final work slot could be consumed on the first day, preventing the required second day. Reserve the final slot for another work day and for missing distinct residents. | Work/day/resident boundaries and complete actual seeded trajectory |
 | Security/untrusted output | A copied resident or changed offered activity could impersonate execution if equality or mutable metadata were trusted. Require exact resident/activity/log object identity and capture canonical action/place/source/tag bindings. Reject mixed or narrative authority. | Forged actors, copied rows/activities/residents, wrong locations/clocks, modified offers, prose claims |
-| Replay/persistence | Existing global activity RNG was not persisted, so fresh-process continuation could diverge. V9 saves retain and validate that bounded stream; malformed states do not change it. | Four checkpoints, unrelated starting seeds, subprocess continuation, eight RNG corruption cases |
-| Historical eligibility | A forged roster could include a later arrival. Reconcile the exact sorted activation roster against authoritative migration dates. | Future-arrival roster regression and wrong institution/project binding |
+| Replay/persistence | Existing global activity RNG was not persisted, so fresh-process continuation could diverge. V9 saves retain and validate that bounded stream; malformed states do not change it. | Four checkpoints, unrelated starting seeds, subprocess continuation, eight RNG corruption cases and real mid-day cancellation resume |
+| Historical eligibility | A forged roster or workshop record could claim participation before arrival. Reconcile the exact sorted activation roster and workshop dates against authoritative migrations. | Future-arrival roster regression and wrong institution/project binding; chronological workshop validation |
 | Scheduling/capacity | Previously issued offers could become stale after another actor executed. Recheck remaining work requirements and workshop capacity at execution; cap ephemeral offers at 64. | Stale work and workshop offers; large resident pool |
 | Test effectiveness | Initial inspector extension violated V7's mandatory-source and V8's nested-collection assumptions. Keep V7 source contracts unchanged and index civic activities separately. | Existing 96 inspector tests unchanged; typed V9 graph tests |
 | Maintainability | Avoid donations, generic templates, broad world generation and a duplicate workshop history. Keep finite immutable records and reuse planner/executor/location behavior. | Small integration changes; strict schema/finite template tests |
@@ -133,8 +133,10 @@ and inspection still process existing histories within their established budgets
 
 ## Release status and limits
 
-Release status is finalized after all local gates complete. GitHub CI for the V9
-PR must be reported separately; pending remote CI is not a local test pass. CI
+All required local gates passed. The [V9 freeze candidate](v9_freeze_candidate.md)
+records release signatures and the implemented scope. PR #6 remains unmerged and
+stacked on open PR #5. GitHub CI is reported separately; pending remote CI is not
+a local test pass. CI
 adds a V9 evaluator/lint job and uploads controlled reports without generated
 saves or private dialogue.
 
@@ -158,7 +160,7 @@ New tests: `tests/systems/test_collective_projects.py`,
 `tests/analysis/test_collective_project_evaluation.py`.
 
 New documentation: `docs/v9_collective_projects.md`, `docs/v9_verification.md`,
-and the freeze-candidate report after all release gates pass.
+and `docs/v9_freeze_candidate.md`.
 
 Modified integration: `src/behavior/activity.py`, `src/behavior/planner.py`,
 `src/simulation/activity_system.py`, `src/simulation/engine.py`,
