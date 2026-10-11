@@ -373,7 +373,7 @@ class TownGrowthSystem:
             or set(config) - {
                 "policy", "templates", "location_growth", "event_ecology",
                 "institution_growth", "commerce_growth",
-                "procedural_growth",
+                "procedural_growth", "collective_projects",
             }
             or not {"policy", "templates"}.issubset(config)
         ):

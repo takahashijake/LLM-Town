@@ -105,7 +105,7 @@ def records(save: dict, path: tuple[str, ...]) -> list[dict]:
 
 
 def check_versions(save: dict) -> None:
-    supported = {'economy': {1}, 'materials': {1, 2}, 'town_growth': {1},
+    supported = {'collective_projects': {1}, 'economy': {1}, 'materials': {1, 2}, 'town_growth': {1},
                  'location_growth': {1}, 'event_ecology': {1},
                  'institution_growth': {1}, 'commerce_growth': {1},
                  'plans': set(range(1, 8)), 'growth_proposals': {1, 2, 3, 4}}

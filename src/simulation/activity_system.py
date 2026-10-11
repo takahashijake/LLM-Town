@@ -23,6 +23,7 @@ class ActivitySystem:
         self.crime_system = crime_system
         self.commitment_system = commitment_system
         self.plan_system = plan_system
+        self.collective_projects = None
 
     def get_activity_need_effects(self, activity) -> dict[str, int]:
         effects_by_tag = {
@@ -99,6 +100,9 @@ class ActivitySystem:
             ),
         }
 
+        if self.collective_projects and self.collective_projects.policy.enabled:
+            activity_record['source_project_id'] = activity.source_project_id
+            activity_record['source_project_effect_id'] = activity.source_project_effect_id
         self.activity_records.append(activity_record)
         self.logger.log_event(activity_record)
 
@@ -152,10 +156,12 @@ class ActivitySystem:
                     commitment_opportunities=opportunities,
                     goal_dependency=goal_dependency,
                     employment=employment,
+                    project_opportunities=(self.collective_projects.opportunities(agent, day, hour)
+                                           if self.collective_projects else []),
                 )
             except TypeError as error:
                 if not any(name in str(error) for name in (
-                    "commitment_opportunities", "employment",
+                    "commitment_opportunities", "employment", "project_opportunities",
                 )):
                     raise
                 activity = self.activity_planner.choose_activity(
@@ -166,6 +172,14 @@ class ActivitySystem:
 
             agent.set_activity(activity)
             self.log_activity_event(day, hour, agent, activity)
+
+            if self.collective_projects and (
+                activity.source_project_id or activity.source_project_effect_id
+            ):
+                if not self.collective_projects.execute(
+                    agent, activity, self.activity_records[-1], day, hour
+                ):
+                    raise ValueError('civic activity lacks execution authority')
 
             activity_need_effects = self.get_activity_need_effects(activity)
 

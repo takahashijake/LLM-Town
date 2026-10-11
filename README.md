@@ -11,6 +11,28 @@ grounded dialogue. The model never receives arbitrary authority to mutate state.
 V1 remains frozen; V2 integrates deterministic economy, material production and
 provenance, crime/evidence, and justice without changing that boundary.
 
+## V9 collective civic projects
+
+An activated Community Garden institution can sponsor a learning program. Residents
+independently choose and execute garden work over several days. Exact activity
+records support progress; enough distinct residents and work sessions unlock a
+persistent garden workshop from the following day. Dialogue and promises cannot
+complete work. V9 is opt-in, preserving the frozen default scenario.
+
+Run the complete model-free showcase and four save/resume checks:
+
+```bash
+python scripts/evaluate_v9_collective_projects.py --output /tmp/llm-town-v9
+cat /tmp/llm-town-v9/walkthrough.txt
+python scripts/inspect_town.py trace /tmp/llm-town-v9/uninterrupted.json --type project --id civic-project:garden_learning --format text
+```
+
+The showcase includes an incomplete checkpoint, rejected forged evidence, verified
+completion, subsequent workshop executions and matching reconstructed authority.
+See [architecture and contracts](docs/v9_collective_projects.md) and
+[executed verification](docs/v9_verification.md). This branch is stacked on the
+unmerged [V8 PR #5](https://github.com/takahashijake/LLM-Town/pull/5).
+
 ## V8 read-only causal investigation
 
 V8 adds typed causal tracing over existing saved authority, without running the

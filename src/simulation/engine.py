@@ -16,6 +16,7 @@ from src.llm.client import TransformersLLMClient
 from src.llm.context import _prune_context_to_budget
 from src.simulation.simulation_loop import SimulationLoop
 from src.simulation.activity_system import ActivitySystem
+from src.simulation.project_random_state import restore_project_random_state
 from src.simulation.conversation_context_preparer import ConversationContextPreparer
 from src.simulation.conversation_effects_applier import ConversationEffectsApplier
 from src.simulation.conversation_output_processor import ConversationOutputProcessor
@@ -56,6 +57,7 @@ from src.systems.location_growth import (
 )
 from src.systems.event_ecology import EventEcologySystem
 from src.systems.institution_growth import InstitutionGrowthSystem
+from src.systems.collective_projects import CollectiveProjectSystem, ProjectPolicy
 from src.systems.commerce_growth import CommerceGrowthSystem
 from src.systems.growth_proposals import GrowthProposalSystem
 
@@ -437,6 +439,16 @@ class SimulationEngine:
         self.validate_institution_authorities()
         self.validate_commerce_authorities()
         self.activity_planner.set_commerce_authority(self.materials)
+        self.collective_projects = CollectiveProjectSystem(
+            ProjectPolicy.from_config(growth_config.get('collective_projects', {})),
+            institutions=self.institution_growth, agents=self.agents,
+            locations=self.locations, activity_records=self.activity_records,
+            state=(saved_state.get('collective_projects') if saved_state else None),
+            town_growth=self.town_growth,
+        )
+        if saved_state and 'collective_projects' in saved_state and saved_state['collective_projects'] is None:
+            raise ValueError('present civic authority cannot be null')
+        self.activity_system.collective_projects = self.collective_projects
         self.activity_system.economy_system = self.economy
         self.activity_system.material_system = self.materials
         self.activity_system.crime_system = self.crime
@@ -452,6 +464,25 @@ class SimulationEngine:
             town_arc_system=self.town_arc_system,
             reputation_system=self.reputation_system,
         )
+
+        if saved_state and 'collective_projects' in saved_state:
+            civic = saved_state['collective_projects']
+            if not self.collective_projects.policy.enabled and 'v9_random_state' in saved_state:
+                raise ValueError('disabled project policy contains V9 arbitration authority')
+            expected_review = saved_state['current_day'] - (not saved_state.get('day_complete', False))
+            if ((civic['projects'] and civic['last_review_day'] != expected_review)
+                    or civic['last_review_day'] > saved_state['current_day']
+                    or any(r.get('day', 0) > saved_state['current_day']
+                           or (r.get('day') == saved_state['current_day']
+                               and r.get('hour', 0) > saved_state['current_hour'])
+                           for r in self.activity_records if r.get('civic_execution_key'))):
+                raise ValueError('future civic authority')
+            if self.collective_projects.policy.enabled:
+                if 'v9_random_state' not in saved_state:
+                    raise ValueError('V9 continuation requires activity arbitration state')
+                restore_project_random_state(saved_state['v9_random_state'])
+        elif saved_state and 'v9_random_state' in saved_state:
+            raise ValueError('missing project authority for V9 continuation')
 
     def apply_conversation_effects(
         self,
@@ -575,6 +606,13 @@ class SimulationEngine:
         
     def sync_activity_system_refs(self) -> None:
         self.activity_system.activity_records = self.activity_records
+        if getattr(self, 'collective_projects', None) is not None:
+            self.collective_projects.activities = self.activity_records
+            self.collective_projects.agents = self.agents
+            self.collective_projects.locations = self.locations
+            self.collective_projects.institutions = self.institution_growth
+            self.collective_projects.town_growth = self.town_growth
+            self.activity_system.collective_projects = self.collective_projects
         self.activity_system.economy_system = getattr(self, "economy", None)
         self.activity_system.material_system = getattr(self, "materials", None)
         self.activity_system.crime_system = getattr(self, "crime", None)
