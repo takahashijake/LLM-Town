@@ -170,6 +170,7 @@ class ActivityPlanner:
         commitment_opportunities=None,
         goal_dependency=None,
         employment=None,
+        project_opportunities=None,
     ) -> Activity:
         agent.initialize_needs()
         deferred_commitment_decision = None
@@ -295,12 +296,18 @@ class ActivityPlanner:
             activity.commitment_decision = deferred_commitment_decision
             return activity
 
+        # Civic work competes in the ordinary pool after needs, agreements,
+        # intents and events have had their existing arbitration opportunities.
+        if agent.get_primary_need() in {'social', 'knowledge', 'community'}:
+            candidates.extend(project_opportunities or [])
         activity = random.choice(candidates)
         # Authoritative institution work is an ordinary bounded opportunity.
         # The legacy choice above deliberately preserves the existing seeded
         # arbitration stream; biography text is not consulted for job authority.
         if (
-            employment is not None
+            not activity.source_project_id
+            and not activity.source_project_effect_id
+            and employment is not None
             and employment.active
             and current_day >= employment.start_day
             and employment.institution_id is not None

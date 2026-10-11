@@ -91,3 +91,33 @@ jobs:
             outputs/v8-showcase/institution-*.json
             outputs/v8-showcase/lot-*.json
             outputs/v8-showcase/unresolved-lot.json
+
+  collective-projects:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Scoped V9 lint
+        run: >-
+          python -m ruff check --select E9,F
+          src/systems/collective_projects.py src/simulation/project_random_state.py
+          src/analysis/collective_project_evaluation.py src/analysis/causal_projects.py
+          scripts/evaluate_v9_collective_projects.py
+          tests/systems/test_collective_projects.py tests/simulation/test_project_persistence.py
+          tests/analysis/test_collective_project_evaluation.py
+      - name: Evidence-backed collective project showcase
+        env:
+          PYTHONHASHSEED: "77"
+        run: python scripts/evaluate_v9_collective_projects.py --output outputs/v9-showcase
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v9-project-reports
+          path: |
+            outputs/v9-showcase/report.json
+            outputs/v9-showcase/walkthrough.txt
+            outputs/v9-showcase/causal-evidence.json
+            outputs/v9-showcase/rejected-evidence.json

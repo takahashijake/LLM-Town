@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.analysis.causal_projects import add_project_edges
 from src.analysis.causal_evidence import EvidenceGraph, RecordIndex
 from src.analysis.causal_materials import add_material_edges, audit_ledger
 from src.analysis.causal_growth import add_growth_edges
@@ -19,6 +20,7 @@ def build_graph(source: str | Path | dict) -> EvidenceGraph:
     material_error = add_material_edges(graph, save, ledger_error)
     add_growth_edges(graph, save, ledger_error, material_valid=material_error is None)
     add_commitment_edges(graph, material_valid=material_error is None)
+    add_project_edges(graph, save)
     return graph
 
 
