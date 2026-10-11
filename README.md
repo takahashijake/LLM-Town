@@ -1,9 +1,42 @@
 # LLM-Town
 
-The current v1 verification record is in
+LLM-Town is a Python social simulation where deterministic systems own money,
+goods, jobs, town growth and civic work. Optional local-LLM dialogue adds language
+without gaining authority over those systems.
+
+## Explore a real town in one command
+
+Install the existing dependencies with `./setup.sh` and activate `.venv`, then:
+
+```bash
+python scripts/showcase_town.py --output /tmp/llm-town-v10
+```
+
+Open `/tmp/llm-town-v10/index.html` directly in your browser. The offline Town
+Observatory lets you explore residents, public places, events, employment,
+commerce and collective activity across meaningful checkpoints. Inspect verified
+causal dependencies, explicit uncertainty, and before/after state differences.
+No model, GPU, server, CDN or network is required to inspect the report.
+Use a new output directory; raw saves and private narrative are never exported.
+
+Independently reproduce the package and resume its simulation checkpoints:
+
+```bash
+PYTHONHASHSEED=77 python scripts/showcase_town.py --verify /tmp/llm-town-v10
+```
+
+The canonical 100-day garden world and separately labeled 180-day commerce
+fixture reuse the existing V9/V8 evaluators. The same revision, inputs and seeds
+must match all public fingerprints and authoritative continuation checks.
+[Quickstart, architecture, files and limits](docs/v10_town_observatory.md) ·
+[Executed release-candidate evidence](docs/v10_freeze_candidate.md).
+
+V10 is a review candidate stacked on open [V9 PR #6](https://github.com/takahashijake/LLM-Town/pull/6)
+and [V8 PR #5](https://github.com/takahashijake/LLM-Town/pull/5); these milestones
+are not described as merged releases. Historical V1 verification is recorded in
 [`docs/v1_freeze_report.md`](docs/v1_freeze_report.md).
 
-LLM-Town is a persistent, text-based social simulation in which four residents
+LLM-Town is a persistent social simulation in which four residents
 plan activities, pursue goals, remember events, and hold bounded multi-turn
 conversations. It uses a hybrid architecture: deterministic code owns simulation
 state and applies validated effects, while a local language model realizes
@@ -91,7 +124,7 @@ and [verification results](docs/v8_verification.md). The
 
 The repository implements the economic, material, narrow theft/evidence, justice,
 and production/provenance foundations described below. General policing, courts, other crime types, debt,
-taxes, dynamic markets, romance, factions, politics, a GUI, and semantic vector
+taxes, dynamic markets, romance, factions, politics, an interactive simulation GUI, and semantic vector
 memory remain outside the current scope.
 
 ## Architecture overview

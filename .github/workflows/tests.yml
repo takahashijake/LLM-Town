@@ -21,8 +21,10 @@ jobs:
           src/analysis/inspection_*.py src/analysis/simulation_inspector.py
           src/analysis/causal*.py scripts/inspect_town.py scripts/showcase_v8.py
           tests/analysis/test_causal_inspector.py tests/analysis/test_simulation_inspector.py
+          src/analysis/observatory*.py src/analysis/town_showcase.py scripts/showcase_town.py
+          scripts/check_observatory_browser.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py
       - name: Fast inspector regressions
-        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py -m "not integration" -q
+        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py -m "not integration" -q
 
   pytest:
     runs-on: ubuntu-latest
@@ -121,3 +123,32 @@ jobs:
             outputs/v9-showcase/walkthrough.txt
             outputs/v9-showcase/causal-evidence.json
             outputs/v9-showcase/rejected-evidence.json
+
+  town-observatory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Generate canonical public package
+        env:
+          PYTHONHASHSEED: "1"
+        run: python scripts/showcase_town.py --output outputs/v10-observatory
+      - name: Independent hash-seed replay and checkpoint continuation
+        env:
+          PYTHONHASHSEED: "77"
+        run: python scripts/showcase_town.py --verify outputs/v10-observatory
+      - name: Install browser QA tools (no runtime dependency)
+        run: |
+          python -m pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: File protocol, responsive and injection browser checks
+        run: python scripts/check_observatory_browser.py --report outputs/v10-observatory/index.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v10-public-observatory
+          path: outputs/v10-observatory/
+          retention-days: 14
