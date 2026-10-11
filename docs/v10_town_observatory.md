@@ -63,7 +63,9 @@ Choose the scenario and checkpoint in the persistent toolbar. The six views are:
 1. Town overview: metrics with expandable authoritative sources and definitions,
    plus buttons for the meaningful checkpoint sequence.
 2. Timeline: category/day/exact-entity filters and bounded pages. Each row retains
-   its subsystem path and persisted source ordinal.
+   its subsystem path and persisted source ordinal. Source labels identify native
+   input collections or explicit projection arguments; they are never file paths
+   to execute or fetch from the browser.
 3. Entities: resident IDs and current public location, activated locations,
    institutions, accounts/balances, employment/wages, inventories/quantities,
    sellers and civic projects. Exact-ID event links are associations only.

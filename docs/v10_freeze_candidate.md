@@ -17,12 +17,20 @@ Connected GitHub metadata plus `git fetch origin` verified:
 - No inline review threads on #5/#6; no review submissions on #6 at inspection.
 - V9 CI run `38098523328`: feature, fast inspector, V8 showcase and normal freeze
   succeeded at reconnaissance; full pytest and comprehensive freeze were pending.
-  Dependency CI must be rechecked before final delivery.
+  V9 remained open at the final verification check. Pending dependency CI is
+  not represented as successful.
 
-Main's inherited V7 `transactions`/`ledger` fixture regression is already repaired
+Main's inherited V7 `transactions`/`ledger` fixture regression was independently
+reproduced on an isolated checkout (**1 failed, 5 passed**, `KeyError: transactions`)
+and is already repaired
 by V8; V10 retains that dependency and does not duplicate its repair. No frozen
 configuration, deterministic transition, threshold or expected digest is changed.
 The inherited long-tail evaluator RNG defect described below is repaired in V10.
+
+Runtime implementation revision: `bd2ebda41eaea507fcda971083322ccbdd4e7810`.
+Final delivery additionally records completed verification without changing runtime.
+Review: [PR #7](https://github.com/takahashijake/LLM-Town/pull/7), a draft targeting
+`v9-collective-projects`. No dependency is merged.
 
 ## Product contract
 
@@ -41,28 +49,32 @@ are unchanged. The new `inspect_town.py report` command is read-only and bounded
 
 ## Executed verification
 
-This section is updated after gates finish; pending work is not a pass.
+Local verification is complete. Pending remote jobs are reported separately.
 
 | Gate | Result |
 | --- | --- |
 | Baseline full V9 pytest | 1,139 passed, 0 failures/errors/skips, 1,385.79 s |
-| Compilation | Passed during implementation; final rerun pending |
-| Scoped Ruff E9/F | Passed during implementation; final rerun pending |
+| Compilation | PASS on final runtime revision |
+| Scoped Ruff E9/F and JS syntax | PASS on final runtime revision |
 | Observatory unit/adversarial tests | 54 passed after empty-civic correction |
 | Observatory + V7/V8/V9 feature and persistence acceptance | 265 passed, 0 failures/errors/skips, 274.83 s |
-| Final complete pytest | Pending |
-| Normal V6 freeze, hash seed 1 | Pending |
-| Comprehensive V6 freeze, hash seed 77 | 77/77 scenarios, 42/42 invariants, 69/69 checkpoints, 730/730 mutations before tail repair; post-repair rerun pending |
+| Fast CI-equivalent verification | 142 passed, 25 integration tests deselected; 4.33 s |
+| Final complete pytest | 1,209 passed, 0 failures/errors/skips, 1,421.78 s |
+| Normal V6 freeze, hash seed 1 | Post-repair PASS: 77/77 scenarios, 42/42 invariants, 35/35 checkpoints, 730/730 mutations; 259.99 s |
+| Comprehensive V6 freeze, hash seed 77 | Post-repair PASS: 77/77 scenarios, 42/42 invariants, 69/69 checkpoints, 730/730 mutations; 1,117.84 s |
 | Reused V9 evaluator | 29 checks passed in first generated package |
 | Reused V8 showcase | Passed in first generated package |
-| Independent whole-package replay, second hash seed | Passed at initial runtime revision; final-revision rerun pending |
+| Independent whole-package replay, second hash seed | Passed at initial runtime revision; final-delivery rerun recorded in PR |
 | Chromium file-protocol / desktop / mobile / injection smoke | Passed: 0 external requests, 0 JS errors, widths 1440 and 390 |
-| Git diff checks | Pending final rerun |
+| Git diff checks | PASS; documentation-only verification update pending commit |
 
 Initial spot measurement: generation 82.67 s (garden 19.37 s, commerce 62.04 s),
 projection 1.07 s, presentation/export 0.075 s, public package 10,980,159 bytes.
-These are measured local values, not performance thresholds. Final artifacts and
-measurements will be recorded after implementation freezes.
+These are measured local values, not performance thresholds. Runtime-head generation under concurrent regression load took 130.37 s; projection
+1.69 s, export 0.108 s, public package 10,997,229 bytes. Twenty inspections of a
+3,503,470-byte final save averaged 0.154 s; its public checkpoint contains 775
+events and 38 entities (391,002 bytes). Final-delivery example generation and replay
+are repeated after the documentation commit; their results belong in the PR.
 
 A negative test discovered and repaired a V10 metric error: reconciled material
 holdings alone did not prove valid reciprocal exchange references. Exchange
@@ -114,7 +126,7 @@ V10 captures the actual end-of-horizon RNG in an optional evaluator-only sink an
 uses it for the 210-day capacity stress, restoring the caller afterward. No engine
 save field, policy, threshold, duration or expected digest changes. Two focused
 tests prove caller isolation, exact continuation across seeds 1/77 and no
-checkpoint publication after a failed horizon. Final freeze gates are rerun.
+checkpoint publication after a failed horizon. Both final freeze gates passed as recorded above.
 Full regression runs were deliberately interrupted/restarted after the empty
 civic and evaluator corrections; their partial results are not full passes.
 
@@ -131,3 +143,68 @@ resolve the indicated imports. These broad scanner categories are assessed with
 concrete tests, not suppressed or presented as independent proof of security.
 Dependency bot comments report no introduced critical findings; their quoted
 secret findings point to privacy-test sentinels, not newly introduced credentials.
+
+## Exact executed commands
+
+Run from the repository root; generated worlds and diagnostics stay outside Git.
+
+```bash
+python -m compileall -q src scripts tests
+python -m ruff check --select E9,F \
+  src/analysis/inspection_*.py src/analysis/simulation_inspector.py \
+  src/analysis/causal*.py src/analysis/observatory*.py \
+  src/analysis/town_showcase.py src/analysis/procedural_institution_evaluation.py \
+  src/analysis/v6_freeze_evaluation.py scripts/inspect_town.py \
+  scripts/showcase_v8.py scripts/showcase_town.py scripts/check_observatory_browser.py \
+  tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py \
+  tests/analysis/test_causal_inspector.py tests/analysis/test_simulation_inspector.py \
+  tests/analysis/test_v6_freeze_evaluation.py
+node --check src/analysis/observatory_assets/report.js
+python -m pytest tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py \
+  tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py \
+  tests/analysis/test_collective_project_evaluation.py \
+  tests/simulation/test_project_persistence.py tests/systems/test_collective_projects.py \
+  -q --junitxml=/tmp/v10-final-feature.xml
+python -m pytest tests/analysis/test_v6_freeze_evaluation.py -m 'not integration' -q
+python -m pytest -q --junitxml=/tmp/v10-complete.xml
+PYTHONHASHSEED=1 python scripts/evaluate_v6_freeze.py --output /tmp/v10-normal-final.json
+PYTHONHASHSEED=77 python scripts/evaluate_v6_freeze.py --comprehensive --output /tmp/v10-comprehensive-final.json
+PYTHONHASHSEED=1 python scripts/showcase_town.py --output /tmp/llm-town-v10-runtime
+PYTHONHASHSEED=77 python scripts/showcase_town.py --verify /tmp/llm-town-v10-runtime
+python scripts/check_observatory_browser.py --report /tmp/llm-town-v10-runtime/index.html
+git diff --check
+```
+
+The unified runner executes these real existing commands in disposable directories:
+
+```bash
+python scripts/evaluate_v9_collective_projects.py --output TEMP_GARDEN
+python scripts/showcase_v8.py --output TEMP_COMMERCE
+```
+
+The complete suite includes existing persistence, economy, materials, commitment,
+plan and town-growth integrations; none is replaced by new Observatory tests.
+Browser QA ran locally with the downloaded Chromium dependency libraries in a
+temporary `LD_LIBRARY_PATH` because this container could not install system
+packages via sudo. CI uses the standard Playwright `--with-deps` setup. No
+browser dependency or system-library change was added to runtime requirements.
+
+Post-repair normal and comprehensive modes both retain the exact frozen digest:
+`9aec1a80d08364b98816a0607c719933ff41420abedf99e49e929c5b6f0760df`.
+Both diagnostics contain empty failure lists. Neither gate is a retry with altered
+thresholds: both run the corrected seeded continuation and all original checks.
+
+Runtime-head GitHub Actions run `38101369987` has successful fast-inspector, V8
+showcase, V9 collective-project, normal freeze and Observatory jobs. The
+Observatory job includes real package generation, hash-seed replay and Chromium
+checks. Comprehensive freeze and full pytest were pending at this status read;
+local success is not represented as their CI conclusion.
+
+## Changed boundaries
+
+New public projection, presentation and runner modules live in `src/analysis/`
+with three local report assets. New CLI/browser QA scripts and two test modules
+cover the product contract. Existing causal modules retain audit metadata only;
+`inspect_town.py` adds the report subcommand. Two evaluator modules and focused
+freeze tests repair continuation RNG. README, V10 documents and GitHub Actions
+provide reproduction and release gates. No runtime dependency is added.
