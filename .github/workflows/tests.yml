@@ -23,8 +23,10 @@ jobs:
           tests/analysis/test_causal_inspector.py tests/analysis/test_simulation_inspector.py
           src/analysis/observatory*.py src/analysis/town_showcase.py scripts/showcase_town.py
           scripts/check_observatory_browser.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py
+          src/analysis/procedural_institution_evaluation.py src/analysis/v6_freeze_evaluation.py
+          tests/analysis/test_v6_freeze_evaluation.py
       - name: Fast inspector regressions
-        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py -m "not integration" -q
+        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py tests/analysis/test_v6_freeze_evaluation.py -m "not integration" -q
 
   pytest:
     runs-on: ubuntu-latest

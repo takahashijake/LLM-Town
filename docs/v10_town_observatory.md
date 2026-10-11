@@ -103,9 +103,10 @@ Existing seeded evaluators -> SimulationEngine -> deterministic systems
 
 `observatory.py` validates, aggregates, projects and compares. Existing
 `inspection_save`, `inspection_records` and `causal_*` contracts supply JSON
-budgets, privacy allowlists, typed indexing and verified evidence. The graph now
-retains its existing replay audit results for reuse by metrics; trace serialization
-and signatures remain unchanged. Each checkpoint builds one graph for all queries
+budgets, privacy allowlists, typed indexing and verified evidence. The graph retains its existing replay audit results and the V9 empty-state
+validation result for reuse by metrics; trace serialization and signatures remain
+unchanged. The freeze evaluator captures its seeded horizon RNG separately, so
+its 210-day capacity tail does not use an unrelated caller stream. Each checkpoint builds one graph for all queries
 and performs each ledger/material replay once. `observatory_presentation.py` only
 assembles the document. Local assets hold presentation code. `town_showcase.py`
 owns trusted generation, temporary-storage lifecycle, export and independent
