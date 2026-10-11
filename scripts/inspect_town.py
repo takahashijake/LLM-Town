@@ -1,6 +1,8 @@
 """Read-only inspection CLI for persisted LLM-Town JSON saves."""
 import argparse
 import json
+import os
+import subprocess
 from pathlib import Path
 import sys
 
@@ -38,8 +40,22 @@ def main() -> None:
     c = sub.add_parser("compare")
     c.add_argument("left")
     c.add_argument("right")
+    r = sub.add_parser("report", help="write a self-contained offline public observatory")
+    r.add_argument("save")
+    r.add_argument("--before", help="optional earlier save for checkpoint comparison")
+    r.add_argument("--output", type=Path, required=True, help="new HTML file")
+    r.add_argument("--base-location", action="append", help="explicit trusted base location ID")
+    r.add_argument("--type", choices=sorted([*COLLECTIONS, "civic_activity"]))
+    r.add_argument("--id")
     args = parser.parse_args()
-    if args.command == "timeline":
+    if args.command == "report":
+        from src.analysis.observatory_presentation import write_observatory
+        if bool(args.type) != bool(args.id):
+            raise InspectionError('report causal query requires both type and identity')
+        result = write_observatory(args.save, args.output, before=args.before,
+                                  base_location_ids=tuple(args.base_location) if args.base_location else None,
+                                  queries=((args.type, args.id),) if args.type else ())
+    elif args.command == "timeline":
         result = timeline(args.save, limit=args.limit, offset=args.offset,
                           kinds={args.source} if args.source else None)
     elif args.command == "show":
@@ -55,9 +71,24 @@ def main() -> None:
     else:
         print(json.dumps(result, indent=2, sort_keys=True))
 
-if __name__ == "__main__":
+def run_cli() -> None:
+    """Bound report rendering in a disposable worker; existing CLI stays direct."""
+    if len(sys.argv) > 1 and sys.argv[1] == 'report' and os.environ.get('LLM_TOWN_REPORT_WORKER') != '1':
+        try:
+            run = subprocess.run([sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]],
+                                 env={**os.environ, 'LLM_TOWN_REPORT_WORKER': '1'}, timeout=60)
+        except subprocess.TimeoutExpired:
+            print(json.dumps({'error': 'report exceeded 60 second execution budget',
+                              'kind': 'inspection_error', 'schema_version': 1}), file=sys.stderr)
+            raise SystemExit(2) from None
+        raise SystemExit(run.returncode)
     try:
         main()
-    except (InspectionError, ValueError) as error:
-        print(json.dumps({'error': str(error), 'kind': 'inspection_error', 'schema_version': 1}), file=sys.stderr)
-        raise SystemExit(2)
+    except (InspectionError, ValueError, OSError) as error:
+        print(json.dumps({'error': str(error) if isinstance(error, InspectionError) else 'invalid inspection input or output',
+                          'kind': 'inspection_error', 'schema_version': 1}), file=sys.stderr)
+        raise SystemExit(2) from None
+
+
+if __name__ == "__main__":
+    run_cli()

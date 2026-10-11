@@ -21,6 +21,7 @@ def build_graph(source: str | Path | dict) -> EvidenceGraph:
     add_growth_edges(graph, save, ledger_error, material_valid=material_error is None)
     add_commitment_edges(graph, material_valid=material_error is None)
     add_project_edges(graph, save)
+    graph.audit_errors = {'ledger': ledger_error, 'materials': material_error}
     return graph
 
 
