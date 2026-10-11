@@ -186,6 +186,7 @@ class EvidenceGraph:
         self.ownership: list[OwnershipFact] = []
         self.project_audits: dict[RecordRef, dict] = {}
         self.audit_errors: dict[str, str | None] = {}
+        self.project_authority_valid: bool | None = None
 
     def add(self, cause: RecordRef, effect: RecordRef, label: str, contract: str) -> None:
         if len(self.edges) >= MAX_RECORDS:

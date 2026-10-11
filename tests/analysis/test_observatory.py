@@ -291,3 +291,27 @@ def test_multiple_queries_reuse_one_graph_and_one_replay(material_save, monkeypa
                            ('lot', material_save['materials']['lots'][0]['id'])))
     assert len(report['traces']) == 2
     assert counts == {'ledger': 1, 'materials': 1}
+
+
+@pytest.mark.parametrize('state', [
+    {'schema_version': 1, 'projects': [], 'contributions': [], 'effects': []},
+    {'schema_version': 1, 'projects': [], 'contributions': [], 'effects': [], 'policy': {'enabled': 'yes'}},
+])
+def test_malformed_empty_civic_authority_is_unknown_not_verified_zero(state):
+    report = obs.checkpoint({'collective_projects': state})
+    for key in ('contributions', 'completed_effects', 'workshops'):
+        assert report['metrics'][key]['value'] is None
+    assert 'project_contract_unresolved' in report['uncertainties']
+
+
+def test_valid_preactivation_empty_authority_has_verified_zero(tmp_path):
+    from src.analysis.collective_project_evaluation import engine
+    config = json.loads(Path('data/town_growth.json').read_text())
+    config['collective_projects'] = {'enabled': True}
+    path = tmp_path/'config.json'; path.write_text(json.dumps(config))
+    town = engine(tmp_path, 'empty', path)
+    town.state.save(town, 0, 0, day_complete=True)
+    report = obs.checkpoint(town.state.path)
+    for key in ('contributions', 'completed_effects', 'workshops'):
+        assert report['metrics'][key]['value'] == 0
+    assert 'project_contract_unresolved' not in report['uncertainties']

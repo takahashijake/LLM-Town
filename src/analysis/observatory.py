@@ -190,7 +190,9 @@ def checkpoint(source: str | Path | dict, *, label: str = 'checkpoint',
     if not exchange_valid:
         uncertainties.add('exchange_contract_unresolved')
     civic_refs = graph.index.of_type('project')
-    civic_valid = bool(civic_refs) and all(ref in graph.project_audits for ref in civic_refs)
+    civic_valid = graph.project_authority_valid is True and all(ref in graph.project_audits for ref in civic_refs)
+    if 'collective_projects' in save and not civic_valid:
+        uncertainties.add('project_contract_unresolved')
     employments = _rows(save, ENTITY_SOURCES['employment'])
     employment_valid = day is not None and all(
         type(r.get('active')) is bool and type(r.get('start_day')) is int
@@ -214,9 +216,9 @@ def checkpoint(source: str | Path | dict, *, label: str = 'checkpoint',
         'activity_executions': len(_rows(save, ('activity_records',))) if 'activity_records' in save else None,
         'commitments': len(_rows(save, PUBLIC_SOURCES['commitments'])) if 'commitments' in save else None,
         'projects': len(civic_refs) if 'collective_projects' in save else None,
-        'contributions': len(graph.index.of_type('contribution')) if civic_valid else (0 if 'collective_projects' in save and not civic_refs else None),
-        'completed_effects': sum(e.relationship == 'unlocked_learning_activity' for e in graph.edges) if civic_valid else (0 if 'collective_projects' in save and not civic_refs else None),
-        'workshops': sum(e.relationship == 'enabled_workshop_execution' for e in graph.edges) if civic_valid else (0 if 'collective_projects' in save and not civic_refs else None),
+        'contributions': len(graph.index.of_type('contribution')) if civic_valid else None,
+        'completed_effects': sum(e.relationship == 'unlocked_learning_activity' for e in graph.edges) if civic_valid else None,
+        'workshops': sum(e.relationship == 'enabled_workshop_execution' for e in graph.edges) if civic_valid else None,
     }
     if ledger_error:
         uncertainties.add(ledger_error)
