@@ -226,6 +226,6 @@ class SimulationState:
                            object_pairs_hook=_unique_fields,
                            parse_constant=_reject_constant,
                            parse_float=_finite_float)
-        if not isinstance(state, dict):
-            raise ValueError('save must contain an object')
+        if not isinstance(state, dict) or not state:
+            raise ValueError('save must contain a nonempty object')
         return state

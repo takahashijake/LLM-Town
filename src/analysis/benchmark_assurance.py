@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import random
 import time
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 from src.analysis.collective_project_evaluation import authoritative_signature
 from src.analysis.observatory import checkpoint, canonical
@@ -57,7 +57,7 @@ class PersistenceObservations:
                 })
         town.state.save = observed_save
 
-    def finish(self, reconstruct) -> dict:
+    def finish(self, reconstruct: Callable[[], SimulationEngine]) -> dict:
         """Measure reconstruction/projection and gate identity preservation only."""
         town = self.town
         before_bytes = town.state.path.read_bytes()

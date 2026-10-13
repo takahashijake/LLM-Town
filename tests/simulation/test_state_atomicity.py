@@ -43,6 +43,7 @@ def test_interrupted_checkpoint_preserves_previous_save(town, monkeypatch):
     '{"current_day":Infinity}',
     '{"needs":1e999}',
     '',
+    '{}',
     '[]',
 ])
 def test_ambiguous_save_rejected_without_mutation(tmp_path, text):
