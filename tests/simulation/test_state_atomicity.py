@@ -68,6 +68,12 @@ def test_duplicate_authority_cannot_be_hidden_by_json_last_key_wins(town):
     with pytest.raises(ValueError, match='duplicate'):
         town.state.load()
     assert town.state.path.read_text() == attacked
+    private_attack = saved[:-1] + ', "PRIVATE_FIELD_SENTINEL": 1, "PRIVATE_FIELD_SENTINEL": 2}'
+    town.state.path.write_text(private_attack)
+    with pytest.raises(ValueError) as rejected:
+        town.state.load()
+    assert 'PRIVATE_FIELD_SENTINEL' not in str(rejected.value)
+    assert town.state.path.read_text() == private_attack
 
 
 @pytest.mark.parametrize('stage', ['serialize', 'sync', 'replace'])

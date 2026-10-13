@@ -16,7 +16,7 @@ def _unique_fields(pairs: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in pairs:
         if key in result:
-            raise ValueError(f'duplicate save field: {key}')
+            raise ValueError('duplicate save field')
         result[key] = value
     return result
 
