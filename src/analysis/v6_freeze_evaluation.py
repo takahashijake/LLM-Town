@@ -550,7 +550,9 @@ def evaluate_v6_freeze(*, comprehensive: bool = False) -> dict:
         root = Path(directory)
         config = write_config(root)
         provider = MultiBranchProvider()
-        fresh = _horizon(root, 'fresh', config, (HORIZON_DAYS,), provider)
+        continuation_rng = []
+        fresh = _horizon(root, 'fresh', config, (HORIZON_DAYS,), provider,
+                         rng_checkpoint=continuation_rng)
         scenarios.update(branch_checks(fresh))
         invariants = conservation_checks(fresh) | authority_checks(fresh)
         repeat = _horizon(root, 'repeat', config, (HORIZON_DAYS,), MultiBranchProvider())
@@ -668,7 +670,15 @@ def evaluate_v6_freeze(*, comprehensive: bool = False) -> dict:
         scenarios['historical_review_idempotency'] = before == authoritative_signature(replayed)
         scenarios['historical_provider_calls_zero'] = guard.calls == 0
         counters = replayed.growth_proposals.to_dict()
-        _run(replayed, 210)
+        # The helper restores its caller's RNG. Resume the seeded trajectory's
+        # actual stream, rather than a machine-dependent caller stream, for this
+        # genuine capacity stress. No world policy or freeze threshold changes.
+        caller_rng = random.getstate()
+        try:
+            random.setstate(continuation_rng[0])
+            _run(replayed, 210)
+        finally:
+            random.setstate(caller_rng)
         scenarios['exhaustion_no_proposals_or_calls'] = (
             counters == replayed.growth_proposals.to_dict() and guard.calls == 0)
         scenarios['event_history_reaches_bound'] = (

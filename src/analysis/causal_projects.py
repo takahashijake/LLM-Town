@@ -30,9 +30,11 @@ def add_project_edges(graph: EvidenceGraph, save: dict) -> None:
                 or state['last_review_day'] > save.get('current_day', -1)):
             raise ValueError('future project review')
     except (ValueError, TypeError, KeyError):
+        graph.project_authority_valid = False
         for ref in refs + graph.index.of_type('contribution') + graph.index.of_type('project_effect'):
             graph.unknown(ref, 'project_contract_invalid')
         return
+    graph.project_authority_valid = True
     index = graph.index
     for ref in refs:
         row = index.row(ref)

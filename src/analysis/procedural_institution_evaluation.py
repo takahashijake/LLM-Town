@@ -122,7 +122,8 @@ def _run(engine, days: int) -> None:
         engine.run(days, [8])
 
 
-def _horizon(root: Path, name: str, config: Path, splits, provider):
+def _horizon(root: Path, name: str, config: Path, splits, provider, *,
+             rng_checkpoint: list[tuple] | None = None) -> SimulationEngine:
     caller_state = random.getstate()
     random.seed(23)
     try:
@@ -131,6 +132,8 @@ def _horizon(root: Path, name: str, config: Path, splits, provider):
             if index:
                 engine = _engine(root, name, config, provider, load=True)
             _run(engine, days)
+        if rng_checkpoint is not None:
+            rng_checkpoint.append(random.getstate())
         return engine
     finally:
         random.setstate(caller_state)
