@@ -45,9 +45,11 @@ def test_unknown_gate_and_existing_output_never_write(tmp_path):
 def test_release_matrix_retains_all_required_gates_and_hash_seeds(tmp_path):
     gates = {name: (cmd, seed, deadline) for name, cmd, seed, deadline in release_gates(tmp_path)}
     assert set(gates) == {'compile', 'lint', 'javascript', 'diff', 'pytest', 'freeze-normal',
-                          'freeze-comprehensive', 'v8', 'v9', 'v10-generate', 'v10-replay', 'browser'}
+                          'freeze-comprehensive', 'v8', 'v9', 'v10-generate', 'v10-replay', 'browser', 'fresh-process-replay'}
     assert gates['freeze-normal'][1] == gates['v10-generate'][1] == '1'
     assert gates['freeze-comprehensive'][1] == gates['v10-replay'][1] == '77'
+    assert gates['fresh-process-replay'][1] == '1'
+    assert gates['fresh-process-replay'][0][1] == 'scripts/evaluate_release_replay.py'
     assert '--comprehensive' in gates['freeze-comprehensive'][0]
     assert all(0 < deadline <= 3600 for _, _, deadline in gates.values())
 
