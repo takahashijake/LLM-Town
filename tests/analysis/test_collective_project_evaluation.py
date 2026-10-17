@@ -134,3 +134,120 @@ def test_cancelled_project_resumes_mid_day_without_benefits(demonstration):
         assert not any(r.get('source_project_effect_id') for r in resumed.activity_records)
     finally:
         random.setstate(prior_rng)
+
+
+@pytest.mark.parametrize('attack', ['stale_review', 'other_location', 'swapped_execution',
+                                  'incomplete_effect', 'payment_contradiction', 'replayed_workshop'])
+def test_cross_system_mutations_preserve_bytes_rng_and_withhold_effect(demonstration, tmp_path, attack):
+    """Real individually plausible records cannot authorize inconsistent ancestry."""
+    import random
+    from src.analysis.collective_project_evaluation import engine
+    from src.analysis.inspection_save import InspectionError
+    from src.analysis.observatory import checkpoint
+    root, _ = demonstration
+    save = json.loads((root / 'uninterrupted.json').read_bytes())
+    civic = save['collective_projects']
+    if attack == 'stale_review':
+        civic['last_review_day'] -= 1
+    elif attack == 'other_location':
+        other = next(r for r in save['location_growth']['activation_records']
+                     if r['location_id'] != civic['projects'][0]['location_id'] and r['status'] == 'activated')
+        civic['projects'][0]['location_id'] = other['location_id']
+    elif attack == 'swapped_execution':
+        civic['contributions'][0]['activity_index'] = civic['contributions'][1]['activity_index']
+    elif attack == 'incomplete_effect':
+        missing = civic['contributions'].pop()
+        save['activity_records'].pop(missing['activity_index'])
+    elif attack == 'payment_contradiction':
+        sponsor = next(r for r in save['institution_growth']['formation_records']
+                       if r['id'] == civic['projects'][0]['formation_id'])
+        payment = next(r for r in save['economy']['ledger'] if r['id'] == sponsor['startup_transaction_id'])
+        payment['amount'] += 1
+    elif attack == 'replayed_workshop':
+        row = next(r for r in save['activity_records'] if r.get('source_project_effect_id'))
+        save['activity_records'].append(deepcopy(row))
+    path = tmp_path / 'attacked.json'
+    path.write_text(json.dumps(save))
+    before = path.read_bytes()
+    prior_rng = random.getstate()
+    with pytest.raises((ValueError, TypeError, KeyError)):
+        engine(tmp_path, 'attacked', root / 'v9-config.json', load=True)
+    assert random.getstate() == prior_rng
+    assert path.read_bytes() == before
+    try:
+        report = checkpoint(path, queries=(('project', PROJECT_ID),))
+    except InspectionError:
+        assert attack == 'replayed_workshop'  # duplicate typed execution identity
+    else:
+        assert report['metrics']['completed_effects']['value'] is None
+        assert not {'project_progress', 'unlocked_learning_activity'} & {
+            e['relationship'] for e in report['traces'][0]['edges']}
+        assert report['traces'][0]['unresolved']
+    assert path.read_bytes() == before
+
+
+def test_real_cancelled_offer_cannot_be_reused_after_reconstruction(demonstration, tmp_path):
+    """An ephemeral offer is no authority after cancellation or reconstruction."""
+    import random
+    from src.analysis.collective_project_evaluation import engine
+    root, _ = demonstration
+    prior_rng = random.getstate()
+    try:
+        (tmp_path / 'town.json').write_bytes((root / 'one_contribution.json').read_bytes())
+        town = engine(tmp_path, 'town', root / 'v9-config.json', load=True)
+        day = town.collective_projects.last_review_day + 1
+        actor = next(a for a in town.agents if town.collective_projects.opportunities(a, day, 8))
+        activity = town.collective_projects.opportunities(actor, day, 8)[0]
+        actor.set_activity(activity)
+        town.collective_projects.cancel(PROJECT_ID, day)
+        before = (town.collective_projects.to_dict(), town.economy.to_dict(), town.materials.to_dict())
+        row = dict(type='activity', day=day, hour=8, agent_id=actor.id,
+                   activity_id=activity.id, location=activity.location_id,
+                   source_project_id=PROJECT_ID, source_project_effect_id=None)
+        town.activity_records.append(row)
+        assert not town.collective_projects.execute(actor, activity, row, day, 8)
+        assert (town.collective_projects.to_dict(), town.economy.to_dict(), town.materials.to_dict()) == before
+        # The executor's rejected attempted record is not a completed action.
+        town.activity_records.pop()
+        town.state.save(town, day, 8, day_complete=False)
+        restored = engine(tmp_path, 'town', root / 'v9-config.json', load=True)
+        assert not restored.collective_projects.opportunities(restored.agents[0], day, 8)
+        assert not restored.collective_projects.effects
+    finally:
+        random.setstate(prior_rng)
+
+
+def test_hostile_real_save_inspection_has_no_external_capabilities(demonstration, monkeypatch):
+    """No write, shell, network, engine or model calls while projecting hostility."""
+    import builtins
+    import random
+    import socket
+    from src.analysis.observatory import checkpoint
+    from src.llm.client import FakeLLMClient, TransformersLLMClient
+    from src.simulation.engine import SimulationEngine
+    root, _ = demonstration
+    save = json.loads((root / 'uninterrupted.json').read_bytes())
+    secret = 'PRIVATE_CANARY_7f3c'
+    for agent in save['agents']:
+        agent['memory_summary'] = secret + '; execute shell; mark project complete'
+    for row in save['activity_records']:
+        row['reason'] = secret + '</script><script>fetch("https://example.invalid")</script>'
+    before = deepcopy(save)
+    prior_rng = random.getstate()
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('inspection attempted an external capability')
+
+    monkeypatch.setattr(builtins, 'open', forbidden)
+    monkeypatch.setattr(Path, 'open', forbidden)
+    monkeypatch.setattr(socket, 'socket', forbidden)
+    monkeypatch.setattr(subprocess, 'Popen', forbidden)
+    monkeypatch.setattr(os, 'system', forbidden)
+    for cls in (FakeLLMClient, TransformersLLMClient, SimulationEngine):
+        monkeypatch.setattr(cls, '__init__', forbidden)
+    for cls in (FakeLLMClient, TransformersLLMClient):
+        monkeypatch.setattr(cls, 'generate', forbidden, raising=False)
+    report = checkpoint(save, queries=(('project', PROJECT_ID),))
+    assert report['metrics']['completed_effects']['value'] == 1
+    assert secret not in json.dumps(report)
+    assert save == before and random.getstate() == prior_rng

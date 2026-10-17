@@ -56,3 +56,23 @@ def test_successful_replacement_preserves_save_schema(town):
     restored = engine(town.state.path.parent, 'checkpoint', config, load=True)
     assert json.loads(json.dumps(restored.materials.to_dict())) == saved['materials']
     assert not list(town.state.path.parent.glob('*.tmp'))
+
+
+@pytest.mark.parametrize('existing', [False, True])
+def test_flush_failure_never_publishes_partial_checkpoint(town, monkeypatch, existing):
+    town, _ = town
+    before = town.state.path.read_bytes()
+    if not existing:
+        town.state.path.unlink()
+    contents = set(town.state.path.parent.iterdir())
+
+    def interrupted_flush(*args):
+        raise OSError(errno.EIO, 'injected flush failure')
+
+    monkeypatch.setattr('os.fsync', interrupted_flush)
+    with pytest.raises(OSError, match='injected flush failure'):
+        town.state.save(town, 1, 8)
+    assert town.state.path.exists() == existing
+    if existing:
+        assert town.state.path.read_bytes() == before
+    assert set(town.state.path.parent.iterdir()) == contents
