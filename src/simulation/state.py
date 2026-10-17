@@ -1,6 +1,8 @@
 import json
+import os
 import random
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 class SimulationState:
@@ -172,7 +174,22 @@ class SimulationState:
         if civic is not None and civic.policy.enabled:
             state['collective_projects'] = civic.to_dict()
             state['v9_random_state'] = {'version': 1, 'state': random.getstate()}
-        self.path.write_text(json.dumps(state, indent=2))
+        # Serialize before opening anything, then publish one complete checkpoint.
+        # A sibling temporary file keeps replacement on the same filesystem.
+        payload = json.dumps(state, indent=2)
+        temporary = None
+        try:
+            with NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.path.parent,
+                                    prefix=f'.{self.path.name}.', suffix='.tmp',
+                                    delete=False) as handle:
+                temporary = Path(handle.name)
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, self.path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
 
     def load(self) -> dict | None:
         if not self.path.exists() or self.path.stat().st_size == 0:
