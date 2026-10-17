@@ -51,3 +51,32 @@ def test_failed_horizon_does_not_publish_rng_checkpoint(monkeypatch, tmp_path):
     with pytest.raises(ValueError):
         helpers._horizon(tmp_path, 'fixture', tmp_path/'config', (5,), None, rng_checkpoint=captured)
     assert not captured and random.getstate() == original
+
+
+def test_actual_horizon_continuation_is_independent_of_intervening_engine(tmp_path):
+    """Real legacy engines must resume the horizon witness, not the caller RNG."""
+    import random
+    from src.analysis.procedural_institution_evaluation import _horizon, _run, _engine
+    from src.analysis.v6_freeze_evaluation import MultiBranchProvider, write_config
+    from src.analysis.growth_audits import authoritative_signature
+    config = write_config(tmp_path)
+    original = random.getstate()
+    results = []
+    try:
+        for caller_seed in (1, 77):
+            random.seed(caller_seed)
+            caller = random.getstate()
+            captured = []
+            town = _horizon(tmp_path, f'world-{caller_seed}', config, (2,),
+                            MultiBranchProvider(), rng_checkpoint=captured)
+            assert random.getstate() == caller
+            # A separate engine consumes arbitrary process RNG between runs.
+            _horizon(tmp_path, f'interference-{caller_seed}', config, (1,), MultiBranchProvider())
+            random.random()
+            town = _engine(tmp_path, f'world-{caller_seed}', config, MultiBranchProvider(), load=True)
+            random.setstate(captured[0])
+            _run(town, 2)
+            results.append(authoritative_signature(town))
+        assert results[0] == results[1]
+    finally:
+        random.setstate(original)

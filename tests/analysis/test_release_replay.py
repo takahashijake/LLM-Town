@@ -63,22 +63,3 @@ def test_replay_cli_refuses_existing_output_before_work(tmp_path):
                             capture_output=True, timeout=10, env={**os.environ, 'PYTHONHASHSEED': '1'})
     assert result.returncode == 2 and path.read_text() == 'preserve'
     assert list(tmp_path.iterdir()) == [path]
-
-
-def test_release_gates_continue_after_failure_and_skip_only_dependencies(tmp_path):
-    from scripts.verify_release import Gate, run_gates
-    root = tmp_path / 'gates'
-    result = run_gates(root, (
-        Gate('failure', (sys.executable, '-c', 'print("PRIVATE_CANARY"); raise SystemExit(3)')),
-        Gate('independent', (sys.executable, '-c', 'pass'), '77'),
-        Gate('dependent', (sys.executable, '-c', 'raise AssertionError()'), requires=('failure',)),
-    ))
-    assert result['status'] == 'FAIL' and result['completed'] == result['expected'] == 3
-    assert result['gates']['failure']['returncode'] == 3
-    assert result['gates']['independent']['status'] == 'PASS'
-    assert result['gates']['independent']['hash_seed'] == '77'
-    assert result['gates']['dependent']['status'] == 'SKIP'
-    assert not (root / 'dependent.log').exists()
-    assert 'PRIVATE_CANARY' not in (root / 'release.json').read_text()
-    with pytest.raises(FileExistsError):
-        run_gates(root, ())

@@ -136,8 +136,85 @@ def test_cancelled_project_resumes_mid_day_without_benefits(demonstration):
         random.setstate(prior_rng)
 
 
-@pytest.mark.parametrize('attack', ['stale_review', 'other_location', 'swapped_execution',
-                                  'incomplete_effect', 'payment_contradiction', 'replayed_workshop'])
+@pytest.mark.integration
+@pytest.mark.parametrize('boundary', ['formation', 'one_contribution', 'before_completion', 'after_completion'])
+def test_failed_checkpoint_commit_preserves_actual_lifecycle_boundary(demonstration, tmp_path, monkeypatch, boundary):
+    """A failed save cannot lose institution, work or next-day workshop authority."""
+    import random
+    from src.analysis.collective_project_evaluation import engine, authoritative_signature
+    root, _ = demonstration
+    path = tmp_path / 'boundary.json'
+    prior = (root / f'{boundary}.json').read_bytes()
+    path.write_bytes(prior)
+    caller = random.getstate()
+    try:
+        town = engine(tmp_path, 'boundary', root / 'v9-config.json', load=True)
+        signature = authoritative_signature(town)
+        def fail_replace(*args):
+            raise OSError('checkpoint commit fault')
+        with monkeypatch.context() as patch:
+            patch.setattr('src.simulation.state.os.replace', fail_replace)
+            with pytest.raises(OSError, match='commit fault'):
+                town.state.save(town, json.loads(prior)['current_day'], json.loads(prior)['current_hour'])
+        assert path.read_bytes() == prior
+        restored = engine(tmp_path, 'boundary', root / 'v9-config.json', load=True)
+        assert authoritative_signature(restored) == signature
+        assert not list(tmp_path.glob('.boundary.json.*'))
+    finally:
+        random.setstate(caller)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize('attack', ['swapped_execution', 'arrival_binding', 'sponsor_binding',
+                                   'incomplete_effect', 'future_workshop', 'money_amount'])
+def test_contradictory_authority_rejected_by_loader_and_inspector(demonstration, tmp_path, attack):
+    """Individually valid identities cannot authorize contradictory joined records."""
+    import random
+    from src.analysis.collective_project_evaluation import engine
+    from src.analysis.inspection_save import InspectionError
+    root, _ = demonstration
+    save = json.loads((root / 'uninterrupted.json').read_text())
+    civic = save['collective_projects']
+    first = civic['contributions'][0]
+    if attack == 'swapped_execution':
+        other = civic['contributions'][1]
+        first['activity_index'], other['activity_index'] = other['activity_index'], first['activity_index']
+    elif attack == 'arrival_binding':
+        first['actor_id'] = 'agent_006'  # existing migrant; another actor executed the work
+    elif attack == 'sponsor_binding':
+        formation = save['institution_growth']['formation_records'][0]
+        formation['employee_agent_id'] = next(a['id'] for a in save['agents'] if a['id'] != formation['employee_agent_id'])
+    elif attack == 'incomplete_effect':
+        civic['contributions'].pop()
+    elif attack == 'future_workshop':
+        row = next(r for r in save['activity_records'] if r.get('source_project_effect_id'))
+        row['day'] = civic['effects'][0]['available_day'] - 1
+    else:
+        save['economy']['ledger'][0]['amount'] += 1
+    frozen = deepcopy(save)
+    path = tmp_path / 'attacked.json'
+    path.write_text(json.dumps(save))
+    prior_bytes, caller = path.read_bytes(), random.getstate()
+    try:
+        with pytest.raises((ValueError, TypeError, KeyError)):
+            engine(tmp_path, 'attacked', root / 'v9-config.json', load=True)
+        assert random.getstate() == caller and path.read_bytes() == prior_bytes
+        assert sorted(p for p in tmp_path.rglob('*') if p.is_file()) == [path]
+        try:
+            report = trace(path, type='project', identity=PROJECT_ID)
+        except InspectionError:
+            pass  # Invalid global authority may reject the entire query.
+        else:
+            if attack != 'money_amount':
+                assert not any(e['relationship'] in {'project_progress', 'unlocked_learning_activity'}
+                               for e in report['edges'])
+                assert report['unresolved']
+        assert path.read_bytes() == prior_bytes and save == frozen
+    finally:
+        random.setstate(caller)
+
+
+@pytest.mark.parametrize('attack', ['stale_review', 'other_location', 'incomplete_effect', 'payment_contradiction', 'replayed_workshop'])
 def test_cross_system_mutations_preserve_bytes_rng_and_withhold_effect(demonstration, tmp_path, attack):
     """Real individually plausible records cannot authorize inconsistent ancestry."""
     import random
@@ -153,8 +230,6 @@ def test_cross_system_mutations_preserve_bytes_rng_and_withhold_effect(demonstra
         other = next(r for r in save['location_growth']['activation_records']
                      if r['location_id'] != civic['projects'][0]['location_id'] and r['status'] == 'activated')
         civic['projects'][0]['location_id'] = other['location_id']
-    elif attack == 'swapped_execution':
-        civic['contributions'][0]['activity_index'] = civic['contributions'][1]['activity_index']
     elif attack == 'incomplete_effect':
         missing = civic['contributions'].pop()
         save['activity_records'].pop(missing['activity_index'])

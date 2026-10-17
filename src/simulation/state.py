@@ -1,18 +1,45 @@
+from __future__ import annotations
+
 import json
+import math
 import os
 import random
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+import tempfile
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.simulation.engine import SimulationEngine
+
+
+def _unique_fields(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('duplicate save field')
+        result[key] = value
+    return result
+
+
+def _reject_constant(value: str) -> None:
+    raise ValueError(f'non-finite save value: {value}')
+
+
+def _finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError('non-finite save number')
+    return parsed
 
 
 class SimulationState:
-    def __init__(self, path: str = "data/save_state.json"):
+    def __init__(self, path: str | Path = "data/save_state.json"):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def save(
         self,
-        engine,
+        engine: SimulationEngine,
         current_day: int,
         current_hour: int,
         *,
@@ -174,25 +201,31 @@ class SimulationState:
         if civic is not None and civic.policy.enabled:
             state['collective_projects'] = civic.to_dict()
             state['v9_random_state'] = {'version': 1, 'state': random.getstate()}
-        # Serialize before opening anything, then publish one complete checkpoint.
-        # A sibling temporary file keeps replacement on the same filesystem.
-        payload = json.dumps(state, indent=2)
-        temporary = None
+        # Serialize before opening any file. Stage beside the destination so
+        # replacement is atomic on the same filesystem; never truncate the
+        # last complete checkpoint on a serialization or I/O failure.
+        serialized = json.dumps(state, indent=2, allow_nan=False)
+        descriptor, name = tempfile.mkstemp(
+            prefix=f'.{self.path.name}.', dir=self.path.parent,
+        )
+        temporary = Path(name)
         try:
-            with NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.path.parent,
-                                    prefix=f'.{self.path.name}.', suffix='.tmp',
-                                    delete=False) as handle:
-                temporary = Path(handle.name)
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
+            os.close(descriptor)
+            temporary.write_text(serialized, encoding='utf-8')
+            with temporary.open('rb') as staged:
+                os.fsync(staged.fileno())
             os.replace(temporary, self.path)
         finally:
-            if temporary is not None:
-                temporary.unlink(missing_ok=True)
+            temporary.unlink(missing_ok=True)
 
     def load(self) -> dict | None:
-        if not self.path.exists() or self.path.stat().st_size == 0:
+        if not self.path.exists():
             return None
 
-        return json.loads(self.path.read_text())
+        state = json.loads(self.path.read_text(encoding='utf-8'),
+                           object_pairs_hook=_unique_fields,
+                           parse_constant=_reject_constant,
+                           parse_float=_finite_float)
+        if not isinstance(state, dict) or not state:
+            raise ValueError('save must contain a nonempty object')
+        return state

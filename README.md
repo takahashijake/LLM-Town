@@ -29,7 +29,12 @@ The canonical 100-day garden world and separately labeled 180-day commerce
 fixture reuse the existing V9/V8 evaluators. The same revision, inputs and seeds
 must match all public fingerprints and authoritative continuation checks.
 [Quickstart, architecture, files and limits](docs/v10_town_observatory.md) ·
-[Executed release-candidate evidence](docs/v10_freeze_candidate.md).
+[Executed release-candidate evidence](docs/v10_freeze_candidate.md) ·
+[V10.1 integration assurance and ordered merge plan](docs/v10_1_release_assurance.md).
+
+Run all existing model-free release gates with
+`python scripts/verify_release.py --output /tmp/llm-town-release-NEW`.
+Use a new directory; browser QA requires the documented Playwright setup.
 
 V10 is a review candidate stacked on open [V9 PR #6](https://github.com/takahashijake/LLM-Town/pull/6)
 and [V8 PR #5](https://github.com/takahashijake/LLM-Town/pull/5); these milestones
