@@ -76,6 +76,21 @@ def test_worker_timeout_produces_private_safe_scenario_failure(monkeypatch):
     monkeypatch.setattr(subprocess, 'run', timeout_worker)
     report = evaluate_release_replay(scenarios=('legacy',))
     assert report['status'] == 'FAIL'
-    assert report['checks'] == {'legacy:legacy-full:timeout': False}
+    assert report['checks'] == {'legacy:legacy-full:timeout': False, 'execution_revision_stable': True}
     assert report['runs'] == []
     assert 'PRIVATE_CANARY' not in json.dumps(report)
+
+
+def test_source_drift_cannot_be_reported_as_one_verified_revision(monkeypatch):
+    from src.analysis import release_replay
+    revisions = iter([{'commit': 'before', 'inputs_sha256': {'agents.json': 'one'}},
+                      {'commit': 'after', 'inputs_sha256': {'agents.json': 'two'}}])
+    monkeypatch.setattr(release_replay, 'execution_revision', lambda root: next(revisions))
+    def timed_out(command, **kwargs):
+        raise subprocess.TimeoutExpired(command, 900)
+    monkeypatch.setattr(subprocess, 'run', timed_out)
+    report = evaluate_release_replay(scenarios=('legacy',))
+    assert report['status'] == 'FAIL'
+    assert report['checks']['execution_revision_stable'] is False
+    assert report['revision']['commit'] == 'before'
+    assert report['ending_revision']['commit'] == 'after'

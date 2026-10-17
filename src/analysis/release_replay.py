@@ -6,6 +6,7 @@ Timing is observational; conservation, reconstruction and replay are hard gates.
 from __future__ import annotations
 
 from contextlib import redirect_stdout
+from hashlib import sha256
 import json
 import os
 import platform
@@ -28,6 +29,15 @@ from src.simulation.engine import SimulationEngine
 from src.simulation.project_random_state import restore_project_random_state
 
 SCENARIOS = {'legacy': (23, 30), 'procedural': (23, 180), 'collective': (11, 100)}
+
+
+def execution_revision(root: Path) -> dict:
+    """Bind the worker code and all configured world inputs, without exporting data."""
+    metadata = _git_metadata(root)
+    metadata['inputs_sha256'] = {name: sha256((root / 'data' / name).read_bytes()).hexdigest()
+        for name in ('agents.json', 'locations.json', 'economy.json', 'materials.json',
+                     'crime.json', 'justice.json', 'town_growth.json')}
+    return metadata
 
 
 def signatures(town: SimulationEngine) -> dict[str, str]:
@@ -164,6 +174,7 @@ def evaluate_release_replay(*, long_horizon: bool = False,
     if not scenarios or any(name not in SCENARIOS for name in scenarios):
         raise ValueError('unknown release replay scenario')
     script = Path(__file__).resolve().parents[2] / 'scripts/evaluate_release_replay.py'
+    starting_revision = execution_revision(script.parents[1])
     results = []
     checks = {}
     with TemporaryDirectory(prefix='release-replay-') as directory:
@@ -204,8 +215,10 @@ def evaluate_release_replay(*, long_horizon: bool = False,
                 resumed = run(name, days, f'{name}-{label}', 77,
                               root / f'{name}-full' / f'{label}.json')
                 checks[f'{name}:{label}:continuation'] = bool(resumed and resumed['signatures'] == baseline['signatures'])
+    ending_revision = execution_revision(script.parents[1])
+    checks['execution_revision_stable'] = starting_revision == ending_revision
     return {'schema_version': 1, 'kind': 'release_replay', 'status': 'PASS' if all(checks.values()) else 'FAIL',
-            'revision': _git_metadata(script.parents[1]),
+            'revision': starting_revision, 'ending_revision': ending_revision,
             'environment': {'python': platform.python_version(), 'platform': platform.platform()},
             'checks': checks, 'runs': results,
             'rng_contract': 'V9 persisted state; legacy/V6 explicit harness RNG sidecar; engines remain process-isolated',
