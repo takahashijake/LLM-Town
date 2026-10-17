@@ -49,3 +49,19 @@ Regression invocation:
 python -m pytest tests/analysis/test_simulation_inspector.py -q
 python scripts/evaluate_v6_freeze.py
 ```
+
+## V8 compatibility update
+
+The sections above describe V7's original historical scope. V8 preserves these
+commands and report schema 1, fixes the comparison fixture's stale ledger path,
+adds the standalone CLI bootstrap, projects actual account/transfer/lifecycle
+fields, validates bounded JSON input and filters complete admitted histories
+before output truncation. The 1000-event limit caps output, not the pre-filter
+search window. Lifecycle dates now participate in timeline chronology.
+
+Directed tracing is a separate versioned interface described in
+[V8 causal evidence](v8_causal_evidence.md). It verifies narrow reciprocal
+contracts and reports incomplete eligibility evidence explicitly. It continues
+to exclude private knowledge and narrative; it does not make resident-observed
+knowledge inspection part of this operator interface. Comparison still measures
+allowlisted history projections, not full-world equivalence or raw UUID replay.

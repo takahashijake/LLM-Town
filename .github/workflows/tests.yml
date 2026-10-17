@@ -5,6 +5,25 @@ on:
   pull_request:
 
 jobs:
+  inspector-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Compile Python sources
+        run: python -m compileall -q src scripts tests
+      - name: Scoped inspector lint
+        run: >-
+          python -m ruff check --select E9,F
+          src/analysis/inspection_*.py src/analysis/simulation_inspector.py
+          src/analysis/causal*.py scripts/inspect_town.py scripts/showcase_v8.py
+          tests/analysis/test_causal_inspector.py tests/analysis/test_simulation_inspector.py
+      - name: Fast inspector regressions
+        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py -m "not integration" -q
+
   pytest:
     runs-on: ubuntu-latest
     steps:
@@ -16,11 +35,59 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
-      - name: Install test dependencies
-        run: python -m pip install -r requirements.txt -r requirements-dev.txt
-      - name: Compile Python sources
-        run: python -m compileall -q src scripts tests
-      - name: Run test suite
-        run: python -m pytest
-      - name: Run integrated V6 freeze gate
-        run: python scripts/evaluate_v6_freeze.py
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Complete regression suite
+        run: python -m pytest -q --junitxml=outputs/pytest.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-regression
+          path: outputs/pytest.xml
+
+  release-assurance:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: normal
+            arguments: ""
+            hash_seed: "1"
+          - mode: comprehensive
+            arguments: "--comprehensive"
+            hash_seed: "77"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Integrated V6 freeze gate
+        env:
+          PYTHONHASHSEED: ${{ matrix.hash_seed }}
+        run: python scripts/evaluate_v6_freeze.py ${{ matrix.arguments }} --output outputs/freeze.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: freeze-${{ matrix.mode }}
+          path: outputs/freeze.json
+
+  showcase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Reconstruct seeded causal investigation
+        run: python scripts/showcase_v8.py --output outputs/v8-showcase
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v8-showcase-reports
+          path: |
+            outputs/v8-showcase/showcase.json
+            outputs/v8-showcase/institution-*.json
+            outputs/v8-showcase/lot-*.json
+            outputs/v8-showcase/unresolved-lot.json
