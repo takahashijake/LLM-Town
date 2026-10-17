@@ -11,6 +11,9 @@ from src.analysis.inspection_save import InspectionError, MAX_RECORDS, records, 
 
 EVIDENCE_VERSION = 1
 COLLECTIONS = {
+    'project': ('collective_projects', 'projects'),
+    'contribution': ('collective_projects', 'contributions'),
+    'project_effect': ('collective_projects', 'effects'),
     'occurrence': ('event_ecology', 'occurrence_history'),
     'institution': ('institution_growth', 'formation_records'),
     'location': ('location_growth', 'activation_records'),
@@ -33,7 +36,7 @@ COLLECTIONS = {
     'plan': ('plans', 'plans'),
     'plan_execution': ('plans', 'execution_records'),
 }
-KEY_FIELDS = {'occurrence': 'occurrence_id', 'attempt': 'event_key', 'execution': 'event_key',
+KEY_FIELDS = {'civic_activity': 'civic_execution_key', 'occurrence': 'occurrence_id', 'attempt': 'event_key', 'execution': 'event_key',
               'plan_execution': 'execution_key'}
 
 
@@ -116,8 +119,10 @@ class RecordIndex:
         self.nodes: dict[RecordRef, EvidenceNode] = {}
         self.by_type: dict[str, list[RecordRef]] = defaultdict(list)
         total = 0
-        for namespace, path in COLLECTIONS.items():
+        for namespace, path in list(COLLECTIONS.items()) + [("civic_activity", ("activity_records",))]:
             for ordinal, row in enumerate(records(save, path)):
+                if namespace == "civic_activity" and not row.get("civic_execution_key"):
+                    continue
                 total += 1
                 if total > MAX_RECORDS:
                     raise InspectionError('causal records exceed input budget')
@@ -155,7 +160,7 @@ class RecordIndex:
         return self.by_type[namespace]
 
     def root(self, namespace: str, identity: str) -> RecordRef:
-        if namespace not in COLLECTIONS:
+        if namespace not in COLLECTIONS and namespace != "civic_activity":
             raise InspectionError('unsupported causal query type')
         if not safe_identity(identity):
             raise InspectionError('invalid causal query identity')
@@ -179,6 +184,7 @@ class EvidenceGraph:
         self.unresolved: set[UnresolvedEvidence] = set()
         self.associations: set[EvidenceAssociation] = set()
         self.ownership: list[OwnershipFact] = []
+        self.project_audits: dict[RecordRef, dict] = {}
 
     def add(self, cause: RecordRef, effect: RecordRef, label: str, contract: str) -> None:
         if len(self.edges) >= MAX_RECORDS:
@@ -242,6 +248,9 @@ class EvidenceGraph:
             'associations': [item.to_dict() for item in associations[:limit]], 'truncated': truncated,
             'policy': 'Verified edges check persisted contracts; full eligibility and file authenticity are not proven. Private knowledge and narrative are excluded.',
         }
+        audits = [self.project_audits[ref] for ref in sorted(visited) if ref in self.project_audits]
+        if audits:
+            payload["project_audits"] = audits
         encoded = json.dumps(payload, sort_keys=True, separators=(',', ':'))
         payload['signature'] = sha256(encoded.encode()).hexdigest()
         return bounded_report(payload)

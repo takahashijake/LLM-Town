@@ -24,3 +24,5 @@ class Activity:
     source_goal_dependencies: tuple[dict, ...] = ()
     source_event_template_id: str | None = None
     source_event_occurrence_id: str | None = None
+    source_project_id: str | None = None
+    source_project_effect_id: str | None = None

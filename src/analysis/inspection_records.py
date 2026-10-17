@@ -27,6 +27,9 @@ SOURCES = {
 # Exclude free-text and nested belief fields, even if they appear on an
 # authoritative record. Relationships among events use exact matching IDs.
 ALLOWED_FIELDS = frozenset({
+    "eligible_actor_ids", "project_id", "actor_id", "deadline_day", "resolution_day", "available_day",
+    "activity_index", "execution_key", "source_project_id", "source_project_effect_id",
+    "civic_execution_key", "civic_status",
     "id", "day", "hour", "tick", "sequence", "status", "event_key",
     "agent_id", "resident_id", "actor_id", "owner_id", "target_id",
     "source_id", "destination_id", "from_id", "to_id", "account_id",

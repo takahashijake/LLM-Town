@@ -29,7 +29,7 @@ def main() -> None:
     i.add_argument("--limit", type=int, default=50)
     tr = sub.add_parser("trace")
     tr.add_argument("save")
-    tr.add_argument("--type", choices=sorted(COLLECTIONS), required=True)
+    tr.add_argument("--type", choices=sorted([*COLLECTIONS, "civic_activity"]), required=True)
     tr.add_argument("--id", required=True)
     tr.add_argument("--format", choices=["json", "text"], default="json")
     tr.add_argument("--depth", type=int, default=6)

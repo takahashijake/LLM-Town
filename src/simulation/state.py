@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 
 
@@ -167,6 +168,10 @@ class SimulationState:
             ),
         }
 
+        civic = getattr(engine, 'collective_projects', None)
+        if civic is not None and civic.policy.enabled:
+            state['collective_projects'] = civic.to_dict()
+            state['v9_random_state'] = {'version': 1, 'state': random.getstate()}
         self.path.write_text(json.dumps(state, indent=2))
 
     def load(self) -> dict | None:
