@@ -25,6 +25,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run isolated simulation seeds and write structured metrics."
     )
+    parser.add_argument("--assurance-profile", choices=("legacy", "v6", "v9"),
+                        help="Model-free release configuration and persistence observations (up to 400 days).")
     parser.add_argument("--days", type=int, default=30)
     parser.add_argument("--seeds", type=int, nargs="+", required=True)
     parser.add_argument("--hours", type=int, nargs="+", default=[8, 12, 18, 22])
@@ -61,6 +63,7 @@ def main() -> int:
     args = parse_args()
     config = BenchmarkConfig(
         days=args.days,
+        assurance_profile=args.assurance_profile,
         seeds=tuple(args.seeds),
         hours=tuple(args.hours),
         fake_llm=args.fake_llm,

@@ -35,8 +35,13 @@ class BenchmarkConfig:
     agents_path: str = "data/agents.json"
     locations_path: str = "data/locations.json"
     max_conversation_turns: int = 4
+    assurance_profile: str | None = None
 
     def validate(self) -> None:
+        if self.assurance_profile not in (None, 'legacy', 'v6', 'v9'):
+            raise ValueError('unknown assurance profile')
+        if self.assurance_profile and (not self.fake_llm or self.days > 400):
+            raise ValueError('assurance profiles require fake LLM and at most 400 days')
         if self.days < 1:
             raise ValueError("days must be at least 1")
         if not self.seeds:
@@ -140,6 +145,11 @@ def _run_one(
     state_path = run_dir / "save_state.json"
     simulation_output_path = run_dir / "simulation.log"
 
+    profile_options = {}
+    if config.assurance_profile:
+        from src.analysis.benchmark_assurance import configure_profile, PersistenceObservations
+        profile_options = configure_profile(config.assurance_profile, run_dir, seed)
+    observations = None
     _seed_random_generators(seed, fake_llm=config.fake_llm)
     started = time.perf_counter()
     with simulation_output_path.open("w", encoding="utf-8") as output:
@@ -153,9 +163,22 @@ def _run_one(
                 state_path=state_path,
                 logs_dir=logs_dir,
                 max_conversation_turns=config.max_conversation_turns,
+                **profile_options,
             )
+            if config.assurance_profile:
+                observations = PersistenceObservations(engine)
             engine.run(days=config.days, hours=list(config.hours))
     elapsed = time.perf_counter() - started
+
+    assurance = None
+    if observations is not None:
+        with simulation_output_path.open('a', encoding='utf-8') as output, contextlib.redirect_stdout(output):
+            assurance = observations.finish(lambda: SimulationEngine(
+                agents_path=str((project_root / config.agents_path).resolve()),
+                locations_path=str((project_root / config.locations_path).resolve()),
+                load_state=True, llm_client=FakeLLMClient(), state_path=state_path,
+                logs_dir=logs_dir, **profile_options,
+            ))
 
     conversations_path = logs_dir / "conversations" / "conversations.jsonl"
     events_path = logs_dir / "events" / "events.jsonl"
@@ -172,6 +195,7 @@ def _run_one(
 
     return {
         "seed": seed,
+        "assurance": assurance,
         "elapsed_seconds": round(elapsed, 6),
         "artifacts": {
             "run_directory": run_dir.name,
@@ -203,6 +227,8 @@ def run_benchmark(
     """
 
     config.validate()
+    if config.assurance_profile and Path(project_root).resolve() != Path.cwd():
+        raise ValueError("assurance profiles must run from the project root")
     project_root = Path(project_root).resolve()
     output_dir = Path(output_dir).resolve()
 
@@ -249,6 +275,22 @@ def run_benchmark(
         json.dumps(document, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    if config.assurance_profile:
+        # General quality metrics can include private social beliefs. Publish
+        # only this explicit release-observation projection in CI.
+        public = {
+            "schema_version": 1, "kind": "release-stability-observations",
+            "revision": {key: revision[key] for key in ("commit", "dirty", "source_sha256")},
+            "environment": document["environment"],
+            "profile": config.assurance_profile, "days": config.days,
+            "hours": list(config.hours),
+            "runs": [{"seed": run["seed"], "elapsed_seconds": run["elapsed_seconds"],
+                      "seconds_per_day": run["elapsed_seconds"] / config.days,
+                      "assurance": run["assurance"]} for run in runs],
+        }
+        (output_dir / "assurance.json").write_text(
+            json.dumps(public, indent=2, sort_keys=True) + "\n", encoding="utf-8",
+        )
     return document
 
 
@@ -278,6 +320,7 @@ def compare_benchmarks(
         "model_name",
         "agents_sha256",
         "locations_sha256",
+        "assurance_profile",
     )
     mismatches = {
         field: {
