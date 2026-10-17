@@ -318,10 +318,14 @@ def test_hostile_real_save_inspection_has_no_external_capabilities(demonstration
     monkeypatch.setattr(socket, 'socket', forbidden)
     monkeypatch.setattr(subprocess, 'Popen', forbidden)
     monkeypatch.setattr(os, 'system', forbidden)
+    monkeypatch.setattr(os, 'open', forbidden)
+    monkeypatch.setattr(os, 'write', forbidden)
     for cls in (FakeLLMClient, TransformersLLMClient, SimulationEngine):
         monkeypatch.setattr(cls, '__init__', forbidden)
     for cls in (FakeLLMClient, TransformersLLMClient):
-        monkeypatch.setattr(cls, 'generate', forbidden, raising=False)
+        monkeypatch.setattr(cls, 'generate_conversation', forbidden)
+        monkeypatch.setattr(cls, 'generate_conversation_batch', forbidden)
+    monkeypatch.setattr(TransformersLLMClient, 'generate_growth_proposal', forbidden)
     report = checkpoint(save, queries=(('project', PROJECT_ID),))
     assert report['metrics']['completed_effects']['value'] == 1
     assert secret not in json.dumps(report)

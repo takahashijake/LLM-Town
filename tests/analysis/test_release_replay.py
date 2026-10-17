@@ -63,3 +63,19 @@ def test_replay_cli_refuses_existing_output_before_work(tmp_path):
                             capture_output=True, timeout=10, env={**os.environ, 'PYTHONHASHSEED': '1'})
     assert result.returncode == 2 and path.read_text() == 'preserve'
     assert list(tmp_path.iterdir()) == [path]
+
+
+def test_worker_timeout_produces_private_safe_scenario_failure(monkeypatch):
+    original = subprocess.run
+
+    def timeout_worker(command, **kwargs):
+        if '--worker' in command:
+            raise subprocess.TimeoutExpired(command, 900, output='PRIVATE_CANARY')
+        return original(command, **kwargs)
+
+    monkeypatch.setattr(subprocess, 'run', timeout_worker)
+    report = evaluate_release_replay(scenarios=('legacy',))
+    assert report['status'] == 'FAIL'
+    assert report['checks'] == {'legacy:legacy-full:timeout': False}
+    assert report['runs'] == []
+    assert 'PRIVATE_CANARY' not in json.dumps(report)

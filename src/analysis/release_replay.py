@@ -45,8 +45,9 @@ def boundary_labels(town: SimulationEngine, day: int, complete: bool) -> list[st
         labels.append(f'day-{day}')
     if complete and any(r.status == 'activated' for r in town.institution_growth.formation_records):
         labels.append('institution')
-    if complete and any(r.buyer_inventory_id in {a.inventory_id for a in town.commerce_growth.activation_records if a.template_id.startswith('generated_')}
-                        for r in town.materials.exchanges):
+    inventories = {a.inventory_id for a in town.commerce_growth.activation_records
+                   if a.template_id.startswith('generated_') and a.status == 'activated'}
+    if complete and any(r.buyer_inventory_id in inventories for r in town.materials.exchanges):
         labels.append('inventory-transfer')
     civic = town.collective_projects
     if complete and civic.projects and not civic.contributions:
@@ -173,8 +174,12 @@ def evaluate_release_replay(*, long_horizon: bool = False,
                        '--scenario', name, '--days', str(days)]
             if resume:
                 command += ['--resume', str(resume)]
-            result = subprocess.run(command, capture_output=True, text=True, timeout=900,
-                                    env={**os.environ, 'PYTHONHASHSEED': str(hash_seed)})
+            try:
+                result = subprocess.run(command, capture_output=True, text=True, timeout=900,
+                                        env={**os.environ, 'PYTHONHASHSEED': str(hash_seed)})
+            except subprocess.TimeoutExpired:
+                checks[f'{name}:{label}:timeout'] = False
+                return None
             # Never include uncontrolled worker logs/private exception values in public reports.
             if result.returncode:
                 checks[f'{name}:{label}:worker_exit_{result.returncode}'] = False
