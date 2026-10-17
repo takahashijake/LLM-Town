@@ -37,9 +37,13 @@ Run all existing model-free release gates with
 `python scripts/verify_release.py --output /tmp/llm-town-release-NEW`.
 Use a new directory; browser QA requires the documented Playwright setup.
 
-V10 is a review candidate stacked on [V9 PR #6](https://github.com/takahashijake/LLM-Town/pull/6).
-[V8 PR #5](https://github.com/takahashijake/LLM-Town/pull/5) has reached main;
-V9 and V10 still require verification against their actual integration targets. Historical V1 verification is recorded in
+[V8 #5](https://github.com/takahashijake/LLM-Town/pull/5),
+[V9 #6](https://github.com/takahashijake/LLM-Town/pull/6), and
+[V10 #7](https://github.com/takahashijake/LLM-Town/pull/7) have reached main.
+[QA #9](https://github.com/takahashijake/LLM-Town/pull/9) tracks complementary
+fresh-process replay and joined-evidence assurance against integrated main.
+
+Historical V1 verification is recorded in
 [`docs/v1_freeze_report.md`](docs/v1_freeze_report.md).
 
 LLM-Town is a persistent social simulation in which four residents

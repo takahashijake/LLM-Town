@@ -1,8 +1,9 @@
 # V10.1 fresh-process integration assurance
 
 This document supplements [the integrated V10.1 assurance record](v10_1_release_assurance.md).
-It describes the complementary work in PR #9. Verification remains incomplete
-until the execution table and final-head CI evidence below are complete.
+It describes the complementary work in PR #9. All required local gates passed
+at the fixed implementation revision below. Final delivery-head CI is tracked
+separately in the PR; local success alone is not a remote CI conclusion.
 No existing release threshold, golden output, or authoritative transition changes.
 
 ## Refreshed dependency graph
@@ -24,6 +25,11 @@ and existing benchmarks before implementation. The supplied workspace was an
 empty directory inside another working tree; a dedicated clone avoids touching
 that tree or its unrelated modified files.
 
+The initial reconnaissance queried #5–#7 without enumerating every open PR.
+It consequently missed assurance #8, created 2026-10-13, although that work was
+already available. This was a reconnaissance gap. Before final acceptance its
+implementation was integrated and duplicate work removed from the resulting diff.
+
 During implementation, external repository activity merged assurance #8 into
 V10 and merged #5 into main. A fresh fetch found:
 
@@ -44,11 +50,22 @@ strict save parsing, all tests, and independent evaluator jobs remain intact.
 V8 and V9 exact heads remain ancestors of V10; updated V10 is an ancestor of
 this QA branch. No PR was merged by this task.
 
-Ending implementation revision and final delivery revision are recorded with
-the final execution evidence and PR metadata; a document cannot contain its
+The final implementation revision is
+`330dc3dfe7b345c681b270104064864a1d97c827`. The final delivery revision is
+recorded in PR metadata after the evidence-only update; a document cannot contain its
 own commit hash. Review `git log --oneline origin/v10-town-observatory..HEAD`
 and `git diff origin/v10-town-observatory...HEAD` for the complete history and
 focused resulting change.
+
+Subsequent external activity merged V9 as
+`d44bd3bfb09ddb10930fe5f0e82d93f59a8fd895` and V10 as
+`2baed38cec383c0426b0786f5ff03bc2704cb471`. Only QA #9 remained open.
+PR #9 was retargeted to actual main. `git diff` confirmed that main's tree
+exactly equals V10 dependency `5be1b4c28e72b3ac76354b574f409c28e31a00ea`.
+Read-only `git merge-tree --write-tree origin/main HEAD` produced exactly
+HEAD's tree `fceacab6a429e3843c5d327718a12b497349d2a0` at revision 330dc3d,
+with no conflicts. This checks the actual target integration tree without
+creating a merge commit or changing the fixed evaluation checkout.
 
 ## Named regression boundaries
 
@@ -63,7 +80,12 @@ projection. Every trajectory runs in a new Python process; checkpoint files,
 logs and RNG sidecars exist only in a temporary workspace. Only controlled
 counts, timings, signatures, boundary coordinates and boolean checks escape.
 A worker timeout produces a named scenario failure without exposing captured
-stdout/stderr. An existing output file is rejected before simulation begins.
+stdout/stderr. Start/end source revision and code fingerprints, plus hashes of
+all seven configured world JSON inputs, must match; source drift fails the gate
+and both revisions remain in the machine report. This protects against the
+runner mislabeling changes visible at its captured boundaries. It does not
+authenticate source or detect every transient edit restored between captures;
+use a fixed checkout, as in CI, for release verification. An existing output file is rejected before simulation begins.
 
 | Scenario | Seed / duration | Fresh-process continuation boundaries |
 | --- | --- | --- |
@@ -132,6 +154,12 @@ existed. Our focused atomic correction passed its three initial tests. Upstream
 so the final branch retains that implementation and its lifecycle-boundary
 regressions, rather than maintaining two writers or duplicate tests.
 
+Review also found that the first replay prototype sampled revision metadata
+only at the end. The final runner records both execution boundaries and fails
+on code/input/revision drift, with a regression test for changed provenance.
+The initial 28-check matrix result therefore remains preliminary evidence;
+final acceptance uses the revised immutable-source matrix, which passed all 29 checks at 330dc3d.
+
 No new simulation RNG defect was found. An initial new test mistakenly reused
 an engine's unchanged run-start coordinates and reran day 1; it was corrected
 to reconstruct at the saved boundary before continuing. A prototype looked for
@@ -170,7 +198,36 @@ remains the single convenient release command, now also invoking fresh-process
 replay. Existing optional `--gate` selection remains explicitly scoped, never
 presented as a full release verification.
 
-Execution table: **pending integrated completion**. Runtime: Python 3.13.11,
+Completed local verification:
+
+| Gate | Observed execution result |
+| --- | --- |
+| Compilation, scoped Ruff, JavaScript syntax, diff | PASS; also exercised through the existing release command's explicitly selected four-gate scope |
+| New replay-focused module | 6 passed in 11.38 s after provenance hardening |
+| Existing release-runner contract after adding the thirteenth gate | 13 passed in 4.39 s; exact gate set now requires fresh-process replay |
+| Joined lifecycle/persistence/release focused run | 59 passed, 1 stale gate-set expectation failed; that expectation was corrected as described above and its 13-test module reran successfully |
+| Fast inspector / Observatory CI-equivalent scope | 148 passed, 26 integration tests deselected in 6.85 s |
+| Final complete pytest | **1,260 passed**, 0 failures/errors/skips, 1,665.08 s; all 13 new cases included |
+| Normal V6 freeze / hash seed 1 | PASS: 77 scenarios, 42 invariants, 35 checkpoints, 730/730 rejected mutations; exact frozen digest preserved |
+| Comprehensive V6 freeze / hash seed 77 | PASS: 77 scenarios, 42 invariants, 69 replay checks, 730/730 rejected mutations; exact frozen digest preserved |
+| V8 showcase / simulation seed 23 / 180 days | PASS; 30 branch checks, two commerce branches, independent 90+90 reconstruction; actual save has 243 ledger entries and no transactions key |
+| V9 showcase / simulation seed 11 / hash seed 77 | 29/29 PASS in 73.401 s; signature `cc7883f38f910375e390c773e217eb796d13c109e7f58cd9c09e37462b2664a5`; six workshops |
+| V10 generation / hash seed 1 | PASS at `330dc3dfe7b345c681b270104064864a1d97c827`; fingerprint `b0d097a4df7c8c3270863b543c756d5fec65c6daed2c2f0d24ae7753098b2a3f` |
+| V10 independent replay / hash seed 77 | PASS at fixed revision 330dc3d; fresh regeneration and all independent evaluator continuations matched |
+| Chromium file/offline/injection/mobile QA | PASS: six sections, widths 1440/390, zero external requests and zero JS errors |
+| New fresh-process matrix | 29/29 PASS at 330dc3d, including identical starting/ending execution revision and input hashes; 14 processes, eight independent checkpoint continuations; all three signature scopes match |
+| Bare standard-library environment | Complete 29-check, 14-process matrix PASS; no model, numeric or test libraries installed |
+| Existing V6 stability profile / seed 23 / hash seed 77 / 390 days | PASS again at fixed 330dc3d; reconstruction and inspection preserve authority/input; no retained history removed |
+
+The browser initially failed to launch because the container lacks system NSS/
+NSPR/AT-SPI libraries. The unchanged browser QA passed with
+`LD_LIBRARY_PATH=/tmp/v10-browser-libs/extracted/usr/lib/x86_64-linux-gnu`,
+using previously extracted local dependencies. A first library-path retry pointed
+at the parent directory and likewise could not launch; neither environment
+failure was represented as a browser product failure or successful check.
+CI installs the required Chromium system dependencies normally.
+
+Runtime: Python 3.13.11,
 pytest 8.3.4, Ruff 0.16.10, Node 20.20.2, Playwright 1.63.0; Linux, CPU-only,
 FakeLLMClient, no weights downloaded. CI retains Python 3.11.
 
@@ -190,34 +247,86 @@ projection latency, final history counts, file bytes and process peak RSS
 Resource peaks cover process lifetime; parallel local work distorts timings.
 No algorithmic optimization or history truncation is justified by one noisy run.
 
+Observed uninterrupted worlds in the new matrix (one concurrent local sample):
+
+| World | Save bytes | Transactions / activities | Total simulation s | Causal trace s | Peak RSS KiB |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Legacy, 30 days | 942,080 | 32 / 136 | 1.665 | 0.074 | 42,404 |
+| Procedural, 180 days | 7,462,534 | 243 / 1,174 | 93.015 | 0.407 | 88,988 |
+| Collective, 100 days | 3,503,470 | 118 / 537 | 15.103 | 0.099 | 62,112 |
+
+The repeated 390-day profile at fixed revision 330dc3d observed **188.077 s**
+(0.482 s/day), 780 saves taking 86.396 s, reconstruction 0.380 s, public
+projection 0.718 s, and peak RSS 150,152 KiB. Its authoritative signature was
+`272afa4d3309bd2beb3ab91b73e50606d01171d7577dc49b0318385358a982b8`,
+identical to the earlier sample. Save size grew from 74,240 to 15,390,426 bytes;
+population 4→8, locations 4→8, institutions 0→3, daily events 1→390,
+transactions 1→302, and activities 4→2,854.
+
+An earlier identical profile under heavier concurrent load took 413.198 s
+(1.059 s/day), including 192.509 s saving. The large timing variation without
+an authoritative-signature change demonstrates why these observations do not
+set an absolute CI performance threshold. Whole-save serialization remains
+proportional to retained history and accounts for a substantial observed cost.
+No history was removed. Future optimization should profile serialization and
+full-history audits before changing retention policy; public inspection already
+reuses one graph per checkpoint rather than rebuilding it per query.
+
 CI retains independent fast inspection, full pytest, both freeze modes, V8,
 V9, V10 generation/replay/browser, joined integration regressions and existing
-stability jobs. The added matrix has exactly three model-free replay jobs,
+stability jobs. A second complete 29-check matrix passed in a bare Python virtual environment
+without Torch, Transformers, NumPy, pytest or Ruff. The three new replay jobs
+therefore install no Python packages; their engine/evaluation path uses the
+standard library and FakeLLMClient. Existing full-suite adapter dependencies
+and tests are retained. The added matrix has exactly three model-free replay jobs,
 `fail-fast: false`, and no dependency on other jobs. Its 20-minute job deadline
 and 900-second worker deadline bound evaluation. Only `outputs/replay.json` is
 uploaded for seven days. Temporary private saves, narrative and uncontrolled
 worker logs are never artifacts. V10 package exports remain public projections.
 
-Final-head CI status: **pending**; local success is not remote success.
+Implementation-head CI is tracked in
+[run 39072445799](https://github.com/takahashijake/LLM-Town/actions/runs/39072445799).
+At evidence preparation, 12/14 jobs passed and full pytest/comprehensive freeze
+were still running, with no failures. Earlier runs using the pre-integration
+12-gate expectation are superseded. The final evidence/CI-only commit preserves
+implementation source hash
+`884bdf326248e7c049803bef5e7bee5dc86ca50f3d8bef666c71d7a0c67c4b91`.
+Its exact ending SHA and final-head CI conclusion are recorded in
+[PR #9](https://github.com/takahashijake/LLM-Town/pull/9) and the
+[branch checks](https://github.com/takahashijake/LLM-Town/actions?query=branch%3Av10.1-release-assurance).
+Do not infer remote success from this local table.
 
-## Ordered integration plan
+## Ordered integration plan and observed disposition
 
-1. Re-fetch every head, base and review/check state before acting. #5 was merged
-   externally; verify the actual new main, including its complete required gates.
-   Its initial post-merge tree equals V8, but a tree comparison is not a CI result.
-2. Keep #6 targeted to the actual updated main. Inspect conflicts and reviews,
-   verify its integration against that exact target, and rerun full pytest,
-   freeze and domain gates before an authorized maintainer merges V9.
-3. Review and integrate QA #9 into V10 only after its final-head independent
-   checks pass. Preserve draft #7 until a maintainer explicitly approves readiness.
-4. After V9 actually reaches main, retarget V10 (including #8 and #9) to that
-   freshly fetched main. Revalidate ancestry, conflicts, private/public boundaries,
-   full suite, both frozen digests, every showcase, independent replay and browser
-   QA against the actual integration candidate. Obtain any required reviews.
-5. Only an authorized maintainer then merges V10. Rerun release verification on
-   the resulting main commit. Record final merge SHAs and actual CI conclusions.
+External activity completed the required original order; no PR was merged by
+this task. Do not attempt to merge already merged feature PRs again.
+
+| Stage | Actual merge into main | Independently observed post-merge CI |
+| --- | --- | --- |
+| V8 #5 | `fe577fe111c4645b950efc3e9b24272a49e10cde` | run 39071472049 completed successfully; a separate run was still executing at inspection |
+| V9 #6 | `d44bd3bfb09ddb10930fe5f0e82d93f59a8fd895` | push run 39072444399 in progress at inspection |
+| V10 #7, including assurance #8 | `2baed38cec383c0426b0786f5ff03bc2704cb471` | push run 39072517266 queued at inspection |
+
+Those are observed conclusions, not inferred success from predecessor branches.
+Exact predecessor heads remain ancestors. Current main's tree equals the
+integrated V10 dependency, and the read-only QA merge calculation equals the
+fixed 330dc3d implementation tree. The final PR update records fresh conclusions.
+
+The remaining integration steps are:
+
+1. Re-fetch main, QA #9's head, review threads and branch/ruleset policy. If the
+   target changed, inspect its changes and recalculate the integration tree;
+   repeat affected correctness/replay gates against that actual candidate.
+2. Review QA #9's focused diff against main, require every final-head independent
+   CI job to pass, and obtain any required maintainer reviews. Preserve the
+   previous feature and assurance history; do not duplicate or revert it.
+3. Only an authorized maintainer then merges QA #9. Run
+   `python scripts/verify_release.py --output NEW_DIRECTORY` against the resulting
+   main commit, and record its exact merge SHA and actual CI conclusions.
 
 Do not force push, rewrite shared branches, bypass protection, automatically
-merge a draft, or equate a stacked-branch pass with post-integration assurance.
-The observed original main had `protected: false`; absence of enforced checks
-is not authorization to skip release review. Recheck current policy at each stage.
+merge a draft, or equate a feature-branch pass with post-integration assurance.
+Both original main and re-fetched main at 2baed38 reported `protected: false`,
+required status checks off, and the repository ruleset list was empty. QA #9
+had no review submissions or review threads at the latest inspection. Absence
+of enforced policy is not a reason to skip independent release review.
