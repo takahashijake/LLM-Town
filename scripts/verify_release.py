@@ -23,7 +23,8 @@ def release_gates(output: Path) -> list[tuple[str, list[str], str | None, int]]:
                   'src/simulation/state.py', 'src/analysis/benchmark.py',
                   'src/analysis/benchmark_assurance.py', 'scripts/verify_release.py',
                   'scripts/benchmark_simulation.py', 'tests/simulation/test_state_atomicity.py',
-                  'tests/analysis/test_release_assurance.py'], None, 120),
+                  'tests/analysis/test_release_assurance.py', 'src/analysis/release_replay.py',
+                  'scripts/evaluate_release_replay.py', 'tests/analysis/test_release_replay.py'], None, 120),
         ('javascript', ['node', '--check', 'src/analysis/observatory_assets/report.js'], None, 120),
         ('diff', ['git', 'diff', '--check'], None, 120),
         ('pytest', [python, '-m', 'pytest', '-q', f'--junitxml={output / "pytest.xml"}'], None, 3600),
@@ -33,6 +34,7 @@ def release_gates(output: Path) -> list[tuple[str, list[str], str | None, int]]:
         ('v9', [python, 'scripts/evaluate_v9_collective_projects.py', '--output', str(output / 'v9')], '77', 600),
         ('v10-generate', [python, 'scripts/showcase_town.py', '--output', str(output / 'v10')], '1', 600),
         ('v10-replay', [python, 'scripts/showcase_town.py', '--verify', str(output / 'v10')], '77', 600),
+        ('fresh-process-replay', [python, 'scripts/evaluate_release_replay.py', '--output', str(output / 'replay.json')], '1', 1800),
         ('browser', [python, 'scripts/check_observatory_browser.py', '--report', str(output / 'v10/index.html')], None, 180),
     ]
 

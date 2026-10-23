@@ -29,8 +29,10 @@ jobs:
           scripts/verify_release.py scripts/benchmark_simulation.py
           tests/simulation/test_state_atomicity.py tests/analysis/test_release_assurance.py
           tests/analysis/test_collective_project_evaluation.py
+          src/analysis/release_replay.py scripts/evaluate_release_replay.py
+          tests/analysis/test_release_replay.py
       - name: Fast inspector regressions
-        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py tests/analysis/test_v6_freeze_evaluation.py -m "not integration" -q
+        run: python -m pytest tests/analysis/test_simulation_inspector.py tests/analysis/test_causal_inspector.py tests/analysis/test_observatory.py tests/analysis/test_town_showcase.py tests/analysis/test_v6_freeze_evaluation.py tests/analysis/test_release_replay.py -m "not integration" -q
 
   pytest:
     runs-on: ubuntu-latest
@@ -214,4 +216,25 @@ jobs:
         with:
           name: stability-${{ matrix.profile }}
           path: outputs/stability/assurance.json
+          retention-days: 7
+
+  fresh-process-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [legacy, procedural, collective]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Replay real authority across hash seeds and checkpoints
+        run: python scripts/evaluate_release_replay.py --scenario ${{ matrix.scenario }} --output outputs/replay.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-${{ matrix.scenario }}
+          path: outputs/replay.json
           retention-days: 7
